@@ -1,5 +1,8 @@
 ---
 title: "Reverse Engineering tool repository (roundup)"
+image:
+  path: /assets/img/covers/re-resources-reverse-engineering-tool-repository-roundup.webp
+  alt: "Reverse Engineering tool repository (roundup)"
 date: 2023-12-09 22:22:00 +0700
 categories: ["Technique Reverse", "Resources"]
 tags: [reverse-engineering, resources]
@@ -15,7 +18,7 @@ Table of contents: [1. Triage & file identification](#1-triage--file-identificat
 
 | Tool | Platform | Price | Use |
 |---|---|---|---|
-| **Detect It Easy (DIE)** (priority) | X | free | Identifies packers/compilers/protectors, entropy, signatures, YARA. *(Already in the repo: `die_win64_portable_3.08_x64`)* |
+| **Detect It Easy (DIE)** (priority) | X | free | Identifies packers/compilers/protectors, entropy, signatures, YARA. |
 | `file` | L/M | free | Quick file type identification by magic |
 | `strings` / **FLOSS** | X | free | Extracts strings; FLOSS (Mandiant) also decodes encrypted strings/stack strings |
 | **PE-bear** | W | free | View & edit PE structure visually |
@@ -79,8 +82,8 @@ Table of contents: [1. Triage & file identification](#1-triage--file-identificat
 
 | Tool | Platform | Price | Notes |
 |---|---|---|---|
-| **dnSpy / dnSpyEx** (priority) | W | free | Decompile + **debug + edit** .NET. *(Already in the repo: `dnSpy-net-win64`)* |
-| **ILSpy** (priority) | X | free | .NET decompiler; `ilspycmd` CLI version; AvaloniaILSpy is cross-platform. *(Already in the repo: `ILSpy_binaries_9.0.0...`)* |
+| **dnSpy / dnSpyEx** (priority) | W | free | Decompile + **debug + edit** .NET. |
+| **ILSpy** (priority) | X | free | .NET decompiler; `ilspycmd` CLI version; AvaloniaILSpy is cross-platform. |
 | **dotPeek** (JetBrains) | W | free | Decompiler, supports symbol servers |
 | **de4dot / de4dot-cex** | W | free | Removes .NET obfuscation (many protectors) |
 | **.NET Reactor Slayer** | W | free | Unpacks .NET Reactor |
@@ -92,7 +95,7 @@ Table of contents: [1. Triage & file identification](#1-triage--file-identificat
 
 | Tool | Platform | Price | Notes |
 |---|---|---|---|
-| **JADX / jadx-gui** (priority) | X | free | APK/DEX/JAR -> Java; basic deobfuscation, generates Frida snippets. *(Already in the repo: `jadx-gui-1.5.1-win`)* |
+| **JADX / jadx-gui** (priority) | X | free | APK/DEX/JAR -> Java; basic deobfuscation, generates Frida snippets. |
 | **CFR** | X | free | Java decompiler, very good with new syntax |
 | **Procyon** | X | free | Java decompiler |
 | **Vineflower** (successor of Fernflower/Quiltflower) | X | free | High-quality decompiler |
@@ -110,7 +113,7 @@ Table of contents: [1. Triage & file identification](#1-triage--file-identificat
 
 | Tool | Platform | Price | Notes |
 |---|---|---|---|
-| **pycdc / pycdas** (Decompyle++) (priority) | X | free | Decompile/disassemble .pyc without depending on the runtime. *(Already in the repo: `pycdc-master`)* |
+| **pycdc / pycdas** (Decompyle++) (priority) | X | free | Decompile/disassemble .pyc without depending on the runtime. |
 | **uncompyle6 / decompyle3** | X | free | Decompilers for Python <=3.8 (decompyle3 up to ~3.9) |
 | **PyLingual** | web | free | Modern .pyc decompiler (supports newer Python 3.x), runs on the web |
 | **pyinstxtractor / pyinstxtractor-ng** | X | free | Extracts EXEs built by PyInstaller |

@@ -1,5 +1,8 @@
 ---
 title: "Lesson 0.3: Set up a safe lab before touching anything dangerous"
+image:
+  path: /assets/img/covers/re-0-3-set-up-safe-lab-before-touching.webp
+  alt: "Lesson 0.3: Set up a safe lab before touching anything dangerous"
 date: 2022-01-29 21:43:00 +0700
 categories: ["Technique Reverse", "Part 00 · Getting Started"]
 tags: [reverse-engineering, basics]

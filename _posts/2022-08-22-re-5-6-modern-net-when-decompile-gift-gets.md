@@ -1,5 +1,8 @@
 ---
 title: "Lesson 5.6: Modern .NET, when the decompile gift gets taken back"
+image:
+  path: /assets/img/covers/re-5-6-modern-net-when-decompile-gift-gets.webp
+  alt: "Lesson 5.6: Modern .NET, when the decompile gift gets taken back"
 date: 2022-08-22 15:21:00 +0700
 categories: ["Technique Reverse", "Part 05 · C# and .NET"]
 tags: [reverse-engineering, dotnet]
@@ -46,6 +49,63 @@ NativeAOT is still new and not as common as the traditional IL kind, but it's be
 The triage step (recall [Lesson 2.1](/posts/re-2-1-five-minute-triage-die-strings-pe/)) decides which direction you go. If DIE reports ".NET" with assembly info, and dnSpy shows a namespace tree, this is pure IL (framework-dependent, self-contained, or R2R) and you can decompile freely. If the file is very large and DIE still recognizes the .NET signs but it opens a bit strangely, it's likely a single-file bundle, so extract it and then open. If DIE reports a plain native PE (for example "C++" or just "PE") but you know for sure the origin is a .NET app, or you see strings related to the CoreCLR/NativeAOT runtime, mutexes, .NET type names in a file with no managed header, it's very likely NativeAOT, so switch to IDA/Ghidra.
 
 A manual check tip: a PE with managed code has a CLI header (the COM Descriptor Data Directory is nonzero). Pure native has this entry empty. PE-bear or DIE shows you this.
+
+## Lab
+
+The goal is to tell the three modern .NET publish styles apart and to know which ones can still be decompiled and which ones must be reversed as native code. You need Detect It Easy (with its command-line `diec`), dnSpy and optionally PE-bear. If you have the dotnet SDK, do part A, otherwise do part B.
+
+For part A, create a minimal app:
+
+```bash
+dotnet new console -o aotdemo
+cd aotdemo
+```
+
+Edit `Program.cs` so it has a bit of logic (read an argument, print a string), then publish it three ways into three different folders:
+
+```bash
+# 1. single-file (self-contained, still IL)
+dotnet publish -c Release -r win-x64 --self-contained true \
+  -p:PublishSingleFile=true -o out-singlefile
+
+# 2. ReadyToRun (native + IL)
+dotnet publish -c Release -r win-x64 --self-contained true \
+  -p:PublishReadyToRun=true -o out-r2r
+
+# 3. NativeAOT (native only, needs the aot workload)
+dotnet publish -c Release -r win-x64 \
+  -p:PublishAot=true -o out-aot
+```
+
+Run `diec` on the exe in each of the three folders and note what DIE says for each. Try opening each exe in dnSpy and see which ones show the namespace tree and decompile to C#, and which one dnSpy gives up on. Compare the three file sizes and explain them. For the NativeAOT build, open it in Ghidra or IDA and check whether any managed-style method names remain, and look for strings related to the runtime.
+
+For part B, without the SDK, use .NET files you already have as samples. Run `diec dnSpy.exe` and `diec ILSpy.exe` (or the accompanying `.dll` files) and see whether DIE recognizes them as a .NET apphost or a real assembly, and why the main code lives in the `.dll` and not in the apphost `.exe` (discussed in Lesson 2.1). Open a .NET DLL such as ILSpy's `ICSharpCode.Decompiler.dll` in dnSpy and confirm it decompiles to C#, which stands for plain IL. Then use PE-bear or DIE to check a file's Data Directory: a COM Descriptor (CLI header) entry that is non-zero means managed code, and zero means pure native. Confirm this yourself on a .NET DLL and on any native DLL, for instance a `Qt5Core.dll` from the DIE folder. Finally write down your own identification rules: which signs tell you to open dnSpy and which tell you to switch to IDA or Ghidra.
+
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+Comparing the three publish styles:
+
+| Style | What DIE says | Opens in dnSpy? | IL still present? | Approach |
+|---|---|---|---|---|
+| single-file (self-contained) | .NET, very large file, bundle marker | Yes (it lists the inner assemblies itself), or extract first | Yes | Decompile normally after extracting |
+| ReadyToRun | .NET, with native code too | Yes | Yes (with native) | Read the IL, ignore the native part |
+| NativeAOT | Native PE (no managed marker) | No | No | Reverse like C++ with IDA/Ghidra |
+
+Single-file is essentially a bundle: the original .NET DLLs are glued onto the end of the exe in a dedicated bundle format. Recent dnSpy builds recognize it and let you browse each assembly as if it were a separate file. If dnSpy can't open it, use ExtractAllTheThings or a bundle extraction script to split it into individual `.dll` files and open those normally. The size is large (tens of MB) because the runtime is packed in.
+
+ReadyToRun holds two versions of the same logic in the file: the original IL and a precompiled native version for fast startup. dnSpy reads the IL part and decompiles to C# as usual, and the native part is just a compiled copy that adds no information. The practical conclusion is that when you meet R2R, just read the IL and don't bother with the native part unless you have a special reason.
+
+NativeAOT is the big difference. The program is compiled straight to machine code, with no IL or managed metadata left. dnSpy and ILSpy are helpless because there is nothing for them to read. You have to open it in IDA or Ghidra and reverse it like a C++ binary: read assembly, rebuild the logic, recover structs. The .NET runtime does leave a few traces (type tables for reflection, runtime strings), and some community scripts try to restore method names from them, but the result is never as nice as decompiling IL.
+
+Identifying by the CLI header (part B). Every PE with managed code declares a CLI header, which is the **COM Descriptor** entry in the Data Directory table of the Optional Header (index 14). A non-zero COM Descriptor (pointing to an RVA) means the file has managed code and opens in dnSpy or ILSpy, which holds for every .NET DLL and for R2R and single-file builds. A COM Descriptor of zero means a pure native PE, which holds for NativeAOT and for native DLLs like `Qt5Core.dll`. In PE-bear, open the Optional Header tab, scroll to Data Directories and look at the .NET MetaData (COM Descriptor) row. DIE also shows directly whether a file is .NET, based on this same header.
+
+A condensed set of rules. Triage with DIE before anything else. If DIE says .NET and dnSpy shows a namespace tree, it is plain IL and you can decompile freely (framework-dependent, self-contained, R2R). If a .NET file is very large and opens strangely, it is single-file, so extract the bundle and open the pieces. If you know it's a .NET app but DIE says pure native and dnSpy gives up, it is NativeAOT, so switch to IDA or Ghidra and reverse it like C++.
+
+This matters because misreading the publish style is the biggest time sink when you start with .NET RE. People can sit for an hour trying to force dnSpy to open a NativeAOT binary when one DIE triage would have told them to open IDA. One minute of triage saves an hour of frustration.
+
+</details>
 
 ## Key takeaways
 Modern .NET has several publish modes, increasingly hard: framework-dependent, self-contained, single-file, R2R, NativeAOT. Single-file is just a bundle, so extract it (dnSpy, ExtractAllTheThings) and open each DLL, since it's still IL. R2R keeps both native and IL, so just read the IL and decompile as usual.

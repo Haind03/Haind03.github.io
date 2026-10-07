@@ -1,5 +1,8 @@
 ---
 title: "Lesson 6.5: Kotlin in bytecode, or why JADX gives you Java and not Kotlin"
+image:
+  path: /assets/img/covers/re-6-5-kotlin-bytecode-why-jadx-gives-you.webp
+  alt: "Lesson 6.5: Kotlin in bytecode, or why JADX gives you Java and not Kotlin"
 date: 2022-10-20 20:46:00 +0700
 categories: ["Technique Reverse", "Part 06 · Java, Kotlin and Android"]
 tags: [reverse-engineering, android, java]
@@ -114,4 +117,91 @@ Kotlin compiles to the same bytecode as Java, so JADX shows Java and the origina
 A data class gives itself away through `component1/2...`, `copy`, and `equals`/`hashCode`/`toString` per field. An extension function becomes a static method with a `$this$...` parameter. Coroutines become a state machine with `label` + `switch`, so read each `case` in order like the sequential steps of the source.
 
 ## Lab
-Practice at `labs/6.5/`: open a Kotlin app in JADX and recognize each of the patterns above yourself.
+
+The goal is to take an Android app written in Kotlin, open it in JADX-GUI, and point out by hand the traces the Kotlin compiler leaves behind. You don't need a real device, just an APK file. Choose any APK you are sure is written in Kotlin. Legitimate sources include open-source apps on F-Droid (most are Kotlin; download the APK directly), a Kotlin demo app you build yourself with Android Studio, or your own app. Don't use a commercial app you have no right to analyze.
+
+Open the APK in JADX-GUI. Pick any class in the app's main package and confirm it has an `@Metadata` annotation at the top, which is the evidence that the class was originally Kotlin. In a few methods, look for lines like `Intrinsics.checkNotNullParameter` or `Intrinsics.checkNotNull...`, and remind yourself that these are compiler noise with the real logic behind them. Then find a data class: a class with the full set of `component1()`, `component2()`, `copy(...)` and field-based `equals`/`hashCode`/`toString`, and write down its name and fields. Find a `companion object`, which shows up as a static field named `Companion` of type `ClassName.Companion`. As an advanced step, find a `suspend fun` (a coroutine). The sign is a method taking a parameter of type `Continuation`, with a `label` variable and a `switch` inside. Read each `case` in increasing order and rewrite its original sequential logic.
+
+Two questions to reflect on. Why doesn't JADX give you back the original Kotlin code even though the app was written in Kotlin? And if you want to recover real parameter names instead of `p0, p1`, which information can you use? Do it yourself first, then open the solution.
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+Almost every Kotlin class appears in JADX like this:
+
+```java
+@Metadata(mv = {1, 9, 0}, k = 1, xi = 48, d1 = {"\u0000..."}, d2 = {"Lcom/app/LoginManager;", "", "()V", "login", "", "user", "", "pass"})
+public final class LoginManager {
+```
+
+`k = 1` means a class, `d1` is an encoded string table, and `d2` lists signatures and names. Seeing `@Metadata` is enough to know the class was originally Kotlin, since a class compiled from pure Java has no such annotation.
+
+At the top of public functions you often see:
+
+```java
+Intrinsics.checkNotNullParameter(user, "user");
+Intrinsics.checkNotNullParameter(pass, "pass");
+```
+
+This is code the compiler inserts to enforce Kotlin's non-null constraints. When reading the logic, skip the `Intrinsics.*` lines and start from the line right after them. They also happen to leak the original parameter names (`"user"`, `"pass"`) as strings, which is useful when the bytecode has lost its variable names.
+
+A typical data class looks like this:
+
+```java
+public final class User {
+    private final int id;
+    private final String name;
+    public final int component1() { return this.id; }
+    public final String component2() { return this.name; }
+    public final User copy(int id, String name) { return new User(id, name); }
+    public boolean equals(Object o) { /* compares id and name */ }
+    public int hashCode() { /* mixes id and name */ }
+    public String toString() { return "User(id=" + this.id + ", name=" + this.name + ")"; }
+}
+```
+
+The set of `componentN` plus `copy` plus field-based `equals`/`hashCode`/`toString` is an unmistakable signature. It is only a data holder and contains no logic worth reading.
+
+A companion object shows up in Java as:
+
+```java
+public static final User.Companion Companion = new User.Companion(null);
+public static final class Companion { /* the class's static functions and consts */ }
+```
+
+Every member you declared in Kotlin's `companion object` ends up in this inner `Companion` class.
+
+A `suspend fun fetch()` that calls two suspend functions becomes:
+
+```java
+public final Object fetch(Continuation $completion) {
+    ContinuationImpl cont;        // restore/save state
+    switch (cont.label) {
+        case 0:
+            cont.label = 1;
+            Object t = getToken(cont);
+            if (t == IntrinsicsKt.getCOROUTINE_SUSPENDED()) return t;
+            // fall through and use t
+        case 1:
+            cont.label = 2;
+            Object d = download(token, cont);
+            if (d == IntrinsicsKt.getCOROUTINE_SUSPENDED()) return d;
+            return d;
+    }
+}
+```
+
+The way to read it is to treat `label` as the step number. `case 0` is step 1 (call getToken) and `case 1` is step 2 (call download). Chained in order they give the linear logic:
+
+```
+token = getToken()
+data  = download(token)
+return data
+```
+
+The `== COROUTINE_SUSPENDED ... return` lines are just the suspension mechanism while waiting, not business logic, so ignore them when working out the intent.
+
+As for the questions: JADX reads DEX bytecode, and Kotlin compiles to the same kind of bytecode as Java, so the decompiler can only rebuild Java. The original Kotlin syntax (coroutines, data classes, extensions) was already lowered into JVM constructs before it reached the bytecode. To recover real parameter names, use the strings in `@Metadata` (`d2`) and the name strings in `Intrinsics.checkNotNullParameter(x, "originalName")`.
+
+</details>
+

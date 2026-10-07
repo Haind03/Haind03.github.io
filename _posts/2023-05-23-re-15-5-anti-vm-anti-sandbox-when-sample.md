@@ -1,5 +1,8 @@
 ---
 title: "Lesson 15.5: Anti-VM and anti-sandbox, when the sample knows it's being watched"
+image:
+  path: /assets/img/covers/re-15-5-anti-vm-anti-sandbox-when-sample.webp
+  alt: "Lesson 15.5: Anti-VM and anti-sandbox, when the sample knows it's being watched"
 date: 2023-05-23 14:29:00 +0700
 categories: ["Technique Reverse", "Part 15 · Anti-Reversing and Bypasses"]
 tags: [reverse-engineering, anti-debug]
@@ -68,7 +71,46 @@ In practice the two directions complement each other: hardening gets you past mo
 
 ## Lab
 
-See `labs/15.5/`. You'll build a C program that demonstrates the CPUID hypervisor check along with a few artifact checks, run it on a real machine and in a VM to see the different results, then practice patching it so it always reports "real machine".
+The goal is to see with your own eyes a program recognizing that it's running inside a VM, and to practice getting past that check. The file is `antivm.c`, a program that checks a few VM indicators (the CPUID hypervisor bit, the vendor string, and a registry artifact on Windows) and prints a conclusion. Build it with `cl antivm.c` on Windows with MSVC, or `x86_64-w64-mingw32-gcc antivm.c -o antivm.exe` with MinGW. On Linux or WSL, only the CPUID part works: `gcc antivm.c -o antivm -DLINUX_BUILD`.
+
+Run `antivm` on a real machine if you have one and check that the hypervisor bit reads 0. Then run it inside VMware, VirtualBox or WSL and check that the bit reads 1 and a vendor string shows up. Open `antivm.exe` in IDA or Ghidra, find the `cpuid` calls and the constant `0x40000000`, and identify the branch that decides "running in a VM". In x64dbg, set a breakpoint on `cpuid`, run to it, and once it returns, change `ecx` to clear bit 31 (AND with `0x7FFFFFFF`), then continue and confirm the program now reports it looks like a real machine. Finally try a static patch instead: change the branch that checks bit 31 so it never treats the machine as a VM.
+
+Two questions to think about. Why is a single bit (ECX[31]) enough to give away a VM, while registry artifacts aren't nearly as reliable? And if a piece of malware combines five anti-VM checks, is patching each one in the debugger really the fastest approach, or is hardening the VM itself better?
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 15.5</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/15.5/src/antivm.c" download><i class="fa-solid fa-file-code"></i>src/antivm.c</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+Real output from an actual run. Building the Linux version and running it inside WSL2 (itself a lightweight VM on Hyper-V):
+
+```
+$ gcc antivm.c -o antivm -DLINUX_BUILD
+$ ./antivm
+[+] Hypervisor present bit (CPUID.1:ECX[31]) = 1
+    CPUID 0x40000000 vendor: "Microsoft Hv"
+
+==> Conclusion: running inside a VM/hypervisor
+```
+
+This confirms the theory from the lesson directly: ECX bit 31 is indeed 1 under virtualization, and the `0x40000000` leaf returns a real vendor string ("Microsoft Hv" since WSL2 runs on Hyper-V). On a real bare-metal machine, this bit is 0 and the vendor string is empty. The registry part only compiles on Windows (`_WIN32`), so the Linux build here skips it; on VMware or VirtualBox under Windows it would pick up the artifact keys.
+
+Finding the checks in a disassembler. In IDA or Ghidra, look for the `cpuid` instruction. There are two spots: one `cpuid` right after `mov eax, 1`, followed by code extracting bit 31 of ECX (usually `shr ecx, 31`, or `bt ecx, 31` / `and ecx, 0x80000000`), and another `cpuid` after `mov eax, 0x40000000`, followed by instructions copying ebx/ecx/edx into a buffer. The constant `0x40000000` is very distinctive, so searching for that immediate value finds it right away.
+
+Getting past it in x64dbg. Set a breakpoint on the address of the first `cpuid` (leaf 1). Run (F9) to it, then step over `cpuid` (F8), at which point ECX holds the feature bits. In the Registers pane, change ECX by ANDing it with `0x7FFFFFFF` to clear bit 31, either by double-clicking ECX and typing the new value, or via the command box: `ecx = ecx & 0x7FFFFFFF`. Continue running, and the program now sees bit 31 as 0. Note that if the vendor string check is still active, you also have to handle the `cpuid` leaf `0x40000000` call (forcing ebx/ecx/edx to 0 after it returns), otherwise the vendor branch still gives it away. This is exactly why patching each check individually gets tiring once there are several.
+
+For a static patch, at the branch that checks bit 31, change the jump instruction. For example, if there's a `jc running_in_vm` (jump on carry), change it to a `nop`, or invert the condition so it never takes the VM branch. Save the patch (Ctrl+P in x64dbg) and run the patched file.
+
+Why does one bit matter more than artifacts? The hypervisor present bit is set by the CPU or hypervisor itself according to the specification, so it's honest and consistent across every standard VM. Registry or file artifacts can be removed (removing VMware Tools gets rid of them), so they're less reliable, but conversely, even a hardened VM can still be given away if an artifact was left behind by accident.
+
+What about several checks at once? If a sample has five checks, patching each one by hand on every run is tiring and easy to miss one. Hardening the VM itself (hiding the hypervisor bit at the QEMU/VMware configuration level, removing guest tools, changing the MAC address, bumping up resources) solves it once for every run and every sample, so for serious analysis hardening wins. Patching or hooking individual checks is better suited to a handful of one-off cases or when you don't control the VM's configuration.
+
+</details>
 
 ## Key takeaways
 A sample that "does nothing" in a VM usually has anti-VM, it isn't broken. The two classic hypervisor checks are `cpuid` eax=1 bit 31 of ecx, and `cpuid` eax=0x40000000 returning a vendor string. VMware and VirtualBox leave registry, file, driver, service and process artifacts, and these are exposed through strings.

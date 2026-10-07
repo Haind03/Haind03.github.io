@@ -1,11 +1,14 @@
 ---
 title: "Lesson 7.2: pycdc and pycdas, two scalpels for .pyc files"
+image:
+  path: /assets/img/covers/re-7-2-pycdc-pycdas-two-scalpels-pyc-files.webp
+  alt: "Lesson 7.2: pycdc and pycdas, two scalpels for .pyc files"
 date: 2022-11-04 23:28:00 +0700
 categories: ["Technique Reverse", "Part 07 · Python"]
 tags: [reverse-engineering, python]
 render_with_liquid: false
 ---
-In the last lesson you learned what a `.pyc` file is and how to read its magic number. Now it's time to open it up. The main toolset is Decompyle++ (the repo is called `pycdc`), made of two programs: `pycdc` tries to rebuild the Python source, and `pycdas` dumps the bytecode in a human-readable form. Both are already in this repo at `pycdc-master/pycdc-master`, along with a few sample `.pyc` files to play with.
+In the last lesson you learned what a `.pyc` file is and how to read its magic number. Now it's time to open it up. The main toolset is Decompyle++ (the repo is called `pycdc`), made of two programs: `pycdc` tries to rebuild the Python source, and `pycdas` dumps the bytecode in a human-readable form.
 
 What makes this set worth it: it's written in C++ and doesn't depend on a Python runtime. Other decompilers like uncompyle6 run on Python itself and can usually only decompile a `.pyc` from the same version line as the interpreter running them. pycdc reads the file structure directly, so on a machine with only Python 3.11 you can still try a `.pyc` from 2.7 or 3.6. In return, it has to implement its own knowledge of each bytecode version, so the newest versions (3.12, 3.13) aren't fully supported. Below you'll see both the strength and the weakness clearly, with real run results.
 
@@ -19,7 +22,7 @@ cmake . -DCMAKE_BUILD_TYPE=Release
 make -j4
 ```
 
-When done you have two executables, `pycdc` and `pycdas`, right in the folder. This repo includes a prebuilt version, but if it complains about a missing `GLIBC`/`GLIBCXX` (built on another machine with an older glibc), just rebuild as above and that goes away. On Windows use Visual Studio or MinGW, with a similar CMake process.
+When done you have two executables, `pycdc` and `pycdas`, right in the folder. A prebuilt version may exist for your platform, but if it complains about a missing `GLIBC`/`GLIBCXX` (built on another machine with an older glibc), just rebuild as above and that goes away. On Windows use Visual Studio or MinGW, with a similar CMake process.
 
 ## pycdc: try to rebuild the source
 
@@ -29,7 +32,7 @@ The simplest syntax:
 ./pycdc path_to_file.pyc
 ```
 
-It prints the rebuilt source straight to stdout. With a clean 3.8 bytecode file from the repo's test suite, the result is nearly perfect:
+It prints the rebuilt source straight to stdout. With a clean 3.8 bytecode file from the pycdc test suite, the result is nearly perfect:
 
 ```
 $ ./pycdc tests/compiled/test_calls.3.8.pyc
@@ -49,7 +52,7 @@ It reads like the original source. This is the ideal case: a well-supported vers
 
 ## When pycdc gives up: the weakness with new Python
 
-The repo comes with a file `out_sequencer.pyc`. Run pycdc:
+The pycdc test suite has a file `out_sequencer.pyc`. Run pycdc:
 
 ```
 $ ./pycdc out_sequencer.pyc
@@ -96,7 +99,7 @@ Note: with this 3.13 file, even the `[Disassembly]` section of pycdas shows skew
 
 ## Two header traps, through real sample files
 
-The repo has two more files illustrating two common errors. `ok.pyc` is 0 bytes, and whatever you run gives:
+The pycdc project has two more files illustrating two common errors. `ok.pyc` is 0 bytes, and whatever you run gives:
 
 ```
 $ ./pycdc ok.pyc
@@ -121,7 +124,126 @@ Run `pycdas file.pyc` first to learn the version and look at Names/Constants ove
 
 ## Lab
 
-The folder `labs/7.2/` has instructions to build pycdc and run it on exactly the sample files in the repo (`ok.pyc`, `out_sequencer.pyc`, `apple_collector_game.pyc`) so you can see all three outcomes yourself: a clean decompile, a failed decompile because of a new version, and a header error. `solution.md` comes with the real output.
+The task is to build Decompyle++ yourself and run it on the sample `.pyc` files `ok.pyc`, `out_sequencer.pyc` and `apple_collector_game.pyc`, so you can see all three common outcomes yourself: a clean decompile, a failed decompile because of a new Python version, and a header error. You need `cmake`, `make` and `g++` (or Visual Studio on Windows). If a prebuilt copy complains about a missing GLIBC or GLIBCXX, you have to rebuild it:
+
+```sh
+cd pycdc
+cmake . -DCMAKE_BUILD_TYPE=Release
+make -j4
+```
+
+Afterwards the folder holds the two programs `pycdc` and `pycdas`.
+
+Begin by running `./pycdas` and then `./pycdc` on a file from `tests/compiled/`, for example `tests/compiled/test_calls.3.8.pyc`. This is a clean decompile, so use it as the baseline for comparison. Then run `./pycdc ok.pyc` and explain the error message by looking at the file size. Run `./pycdc out_sequencer.pyc` and note what it reports, which Python version the file is, and why pycdc cannot rebuild the source. For the same file switch to `./pycdas out_sequencer.pyc`, read the `[Names]` and `[Constants]` sections, and describe the scenario the file carries out (hint: base64, zlib, marshal). Finally run `./pycdc apple_collector_game.pyc`. It reports `Bad MAGIC!` even though the file is not empty, so look at the first 4 bytes with `xxd -l 4 apple_collector_game.pyc` and explain why.
+
+Two questions to think about. When should you trust the source pycdc prints, and when not? And what does `apple_collector_game.pyc` lack to be a valid `.pyc`, and how can you read its contents? Do it yourself before opening the solution.
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+All the output below is real, from a pycdc built from source (CMake + make, g++ on WSL) and run on the sample files.
+
+### Task 1: the clean case
+
+```
+$ ./pycdc tests/compiled/test_calls.3.8.pyc
+# Source Generated with Decompyle++
+# File: test_calls.3.8.pyc (Python 3.8)
+
+import sys
+import os
+sys.stdout.write('Test\n')
+sys.stdout.write(os.path.join('foo', 'bar'))
+print('\n')
+print(eval('4 * 13'))
+print()
+```
+
+The start of pycdas output:
+
+```
+$ ./pycdas tests/compiled/test_calls.3.8.pyc
+test_calls.3.8.pyc (Python 3.8)
+[Code]
+    File Name: tests/input/test_calls.py
+    Object Name: <module>
+    ...
+```
+
+Python 3.8 is well supported, so the decompile is nearly verbatim. This is the baseline to compare against.
+
+### Task 2: ok.pyc
+
+```
+$ ./pycdc ok.pyc
+Bad MAGIC!
+Could not load file ok.pyc
+```
+
+The file `ok.pyc` is 0 bytes (check with `ls -l`). With no magic number it can't be loaded. The lesson is that on a `Bad MAGIC!` error, first think of an empty or truncated download.
+
+### Task 3: out_sequencer.pyc, where pycdc fails
+
+```
+$ ./pycdc out_sequencer.pyc
+Unsupported opcode: LOAD_FROM_DICT_OR_GLOBALS
+# Source Generated with Decompyle++
+# File: out_sequencer.pyc (Python 3.13)
+
+if not None + None:
+    pass
+# WARNING: Decompyle incomplete
+```
+
+The version is Python 3.13 (magic `f3 0d 0d 0a`). pycdc meets the opcode `LOAD_FROM_DICT_OR_GLOBALS` (new in 3.12/3.13), which it doesn't implement yet, so it stops and prints nonsense. The lines `Unsupported opcode` and `WARNING: Decompyle incomplete` are the signal not to trust the output.
+
+### Task 4: out_sequencer.pyc, reading it with pycdas
+
+```
+$ ./pycdas out_sequencer.pyc
+out_sequencer.pyc (Python 3.13)
+[Code]
+    File Name: <genetic_sequencer>
+    Object Name: <module>
+    [Names]
+        'base64'
+        'zlib'
+        'marshal'
+        'types'
+        'encoded_catalyst_strand'
+        'print'
+        'b85decode'
+        'compressed_catalyst'
+        'decompress'
+        'marshalled_genetic_code'
+        'loads'
+        'catalyst_code_object'
+        'FunctionType'
+        'globals'
+```
+
+The `[Constants]` section also holds a long base85 blob and strings like `--- Calibrating Genetic Sequencer ---`. The scenario read from Names is that the file takes a base85 string (`encoded_catalyst_strand`), runs `base64.b85decode` on it, then `zlib.decompress`, then `marshal.loads` to get a code object (`catalyst_code_object`), and finally `types.FunctionType` turns that into a function and runs it. It is a self-decrypting loader: the real logic is compressed and marshaled, hidden in the blob, and the outer `.pyc` layer is just a wrapper.
+
+To go further (not required in this lab), extract the base85 blob and run `marshal.loads(zlib.decompress(base64.b85decode(blob)))` in a Python session to get the inner code object, then bring it into pycdc. Since it is 3.13, pycdc may still stumble, and then you read the bytecode with the `dis` module of Python 3.13. Note that the `[Disassembly]` part of pycdas on this 3.13 file shows wrong opcodes (it maps the 3.13 opcode table incorrectly), so rely only on Names and Constants and not on that disassembly.
+
+### Task 5: apple_collector_game.pyc
+
+```
+$ ./pycdc apple_collector_game.pyc
+Bad MAGIC!
+Could not load file apple_collector_game.pyc
+
+$ xxd -l 4 apple_collector_game.pyc
+00000000: e300 0000
+```
+
+The file is nearly 12 KB, so it is not empty. The first four bytes are `e3 00 00 00`. A valid `.pyc` must start with a magic number (for example `f3 0d 0d 0a`). The byte `e3` here is the marshal code for a code object (`TYPE_CODE`), which means this file is a **raw marshaled code object** with the 16-byte `.pyc` header stripped off. To read it, prepend a header (the correct magic number for the version plus 12 bytes of padding) and open it with pycdc, or read it directly with `marshal.loads(open('apple_collector_game.pyc','rb').read())` in a Python session of the same version that created it.
+
+### Answers to the questions
+
+Trust pycdc's source only when there is no `Unsupported opcode` or `Decompyle incomplete` warning and the code reads meaningfully. With a warning, treat the output as garbage and switch to pycdas or another decompiler. The file `apple_collector_game.pyc` lacks the `.pyc` header (magic + flags/timestamp + size). You can read it by prepending a header or by using the `marshal` module directly.
+
+</details>
 
 ## Key takeaways
 pycdc rebuilds source and pycdas dumps bytecode, and neither needs a Python runtime of the exact version. Build with cmake + make in a few minutes if the prebuilt version has library errors. `Unsupported opcode` or `WARNING: Decompyle incomplete` means you shouldn't trust the source pycdc printed, so switch to pycdas. pycdc is weak with Python 3.12/3.13, which is a real limitation, not something you did wrong.

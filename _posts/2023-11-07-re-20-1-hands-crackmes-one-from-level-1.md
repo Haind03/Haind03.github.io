@@ -1,11 +1,14 @@
 ---
 title: "Lesson 20.1: Hands-on with crackmes.one, from level 1 to level 4"
+image:
+  path: /assets/img/covers/re-20-1-hands-crackmes-one-from-level-1.webp
+  alt: "Lesson 20.1: Hands-on with crackmes.one, from level 1 to level 4"
 date: 2023-11-07 09:28:00 +0700
 categories: ["Technique Reverse", "Part 20 · Real-World Practice"]
 tags: [reverse-engineering, ctf]
 render_with_liquid: false
 ---
-After 19 parts, you have the tools and the theory. Now it's time to sit down and take apart real binaries until your hands know the moves. There's no better place to practice than crackmes.one: thousands of challenges made by the community for learning, sorted by difficulty, language and platform, completely legal to pick apart. This lesson shows you how to make use of that collection and gives sample writeups for four levels, each using a crackme I built myself (in `labs/20.1/`) representing the kind of challenge you'll meet.
+After 19 parts, you have the tools and the theory. Now it's time to sit down and take apart real binaries until your hands know the moves. There's no better place to practice than crackmes.one: thousands of challenges made by the community for learning, sorted by difficulty, language and platform, completely legal to pick apart. This lesson shows you how to make use of that collection and gives sample writeups for four levels, each using a crackme I built myself representing the kind of challenge you'll meet.
 
 ## How to use crackmes.one
 
@@ -19,7 +22,7 @@ And most important: apply the loop from [Lesson 0.4](/posts/re-0-4-reverse-engin
 
 The typical shape is that the program reads input and calls `strcmp` against a fixed string sitting right in the binary. No encryption, nothing.
 
-Take `labs/20.1/src/level1.c` as the example. The first step is always triage. Run `strings` before anything else:
+Take `level1.c` as the example. The first step is always triage. Run `strings` before anything else:
 
 ```
 $ strings -n 6 level1 | grep -i flag
@@ -46,7 +49,7 @@ There are two roads and either one is fine: finding the password is understandin
 
 One step up, the author doesn't leave the password bare anymore. They transform each character and then compare against a constant array embedded in the binary. `strings` is useless because the password doesn't exist as a string.
 
-`labs/20.1/src/level2.c` does it like this: `enc[i] = (pw[i] ^ 0x2A) + 3`, then compares `enc` against the `TARGET` array. When you read the decompiler you'll see a loop over the input, an `xor 0x2A`, a `+3`, and a comparison against a byte array. That array can be read right in `.rodata`:
+`level2.c` does it like this: `enc[i] = (pw[i] ^ 0x2A) + 3`, then compares `enc` against the `TARGET` array. When you read the decompiler you'll see a loop over the input, an `xor 0x2A`, a `+3`, and a comparison against a byte array. That array can be read right in `.rodata`:
 
 ```
 TARGET = 5C 1C 4C 5B 1C 61 21 1B
@@ -66,7 +69,7 @@ It outputs `s3cr3t42`, and entering it into the crackme gives "Correct!". The ke
 
 Level 3 is the line between someone who imitates and someone who understands. The serial is no longer fixed but depends on the username through an algorithm. Patching works, but the task asks for a keygen: generate a valid serial for any username, which means you have to understand and correctly reproduce the algorithm.
 
-`labs/20.1/src/level3.c` computes the serial from the username with a linear hash and then prints hex:
+`level3.c` computes the serial from the username with a linear hash and then prints hex:
 
 ```c
 acc = 0x1337;
@@ -107,9 +110,82 @@ Set a time limit as well. If you're stuck on one for more than two evenings, rea
 
 ## Lab
 
-In `labs/20.1/` there are `src/level1.c`, `level2.c` and `level3.c`, three crackmes representing levels 1 to 3, built with gcc. The answers and solutions are in `solution.md`, but try on your own first. There's also `src/keygen_level3.py`, a reference keygen for level3. The main task is to create a crackmes.one account, solve in order starting from difficulty 1, and write a writeup for each.
+The goal is to practice on real challenges and apply everything you've learned. The main task has two parts. In Part A, go to crackmes.one and create an account (you need one to download, and the archive password is always `crackmes.one`). Filter for Difficulty = 1, high Quality, Language = C/C++ and a Platform that fits your machine. Solve at least 3 level-1 challenges, then 3 level-2 ones, inside a VM, and write a writeup for each: what triage showed, where the check function is, how you solved it, and what the password or serial is. When your hands are steady, move up to level 3 (keygen) and then level 4 (with anti-reverse). Apply the loop from Lesson 0.4: triage, static, dynamic, notes.
 
-Details in `labs/20.1/README.md`.
+Part B is three crackmes that come with the lab: `level1.c`, `level2.c` and `level3.c`, representing levels 1 to 3. Build them on Linux (or with MinGW on Windows):
+
+```
+gcc -O0 -o level1 level1.c
+gcc -O0 -o level2 level2.c
+gcc -O0 -o level3 level3.c
+```
+
+For level1 (tier 1), find the password or patch it. Running `strings level1 | grep -i flag` exposes the password right away, or you can open a decompiler, find `strcmp`, and patch the `jne` after `test eax,eax` into `nop nop` so the check always passes. For level2 (tier 2), the serial is transformed. `strings` doesn't show the password, so open a decompiler and recognize the loop that compares `(c ^ 0x2A) + 3` against the `TARGET` array in `.rodata`, then reverse it by subtracting 3 and XORing back to get the serial. For level3 (tier 3), write a keygen. Reverse the function that computes the serial from the username (a linear hash: multiply by 33, XOR with a constant, print 8 hex characters), copy the algorithm to Python (`keygen_level3.py`), and generate a serial for any username. Run `python3 keygen_level3.py <username>` and then enter the username/serial pair into level3.
+
+For an extra challenge, try Z3 or angr on level3 instead of writing the keygen by hand, to get used to solver thinking for more complex challenges. You can also add an XOR layer to the "Correct!" string of one level yourself and practice solving it dynamically in a debugger. Do it yourself before opening the solution.
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 20.1</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/20.1/src/keygen_level3.py" download><i class="fa-solid fa-file-code"></i>src/keygen_level3.py</a>
+<a class="lab-file" href="/assets/labs/20.1/src/level1.c" download><i class="fa-solid fa-file-code"></i>src/level1.c</a>
+<a class="lab-file" href="/assets/labs/20.1/src/level2.c" download><i class="fa-solid fa-file-code"></i>src/level2.c</a>
+<a class="lab-file" href="/assets/labs/20.1/src/level3.c" download><i class="fa-solid fa-file-code"></i>src/level3.c</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+Everything was built with gcc on Linux.
+
+For level1, the password is `letmein123`. The static way:
+
+```
+$ strings -n 6 level1 | grep -i flag
+letmein123
+Correct! Flag: FLAG{level1_strings_win}
+```
+
+The patching way: the disassembly around the check is
+
+```asm
+1270:  call   strcmp
+1275:  test   eax, eax
+1277:  jne    128a       ; bytes: 75 11
+```
+
+Overwrite `75 11` with `90 90` at file offset `0x1277`. I checked this: the patched build still prints `Correct! Flag: FLAG{level1_strings_win}` even with a wrong password.
+
+For level2, the correct serial is `s3cr3t42`. The forward algorithm is `enc[i] = (pw[i] ^ 0x2A) + 3`, compared against
+
+```
+TARGET = 5C 1C 4C 5B 1C 61 21 1B
+```
+
+Reversing it:
+
+```python
+TARGET = [0x5C,0x1C,0x4C,0x5B,0x1C,0x61,0x21,0x1B]
+print(''.join(chr(((b-3)&0xFF)^0x2A) for b in TARGET))  # s3cr3t42
+```
+
+Entering `s3cr3t42` gives `Correct! Flag: FLAG{level2_serial_math}`.
+
+For level3, the algorithm that computes the serial from the username is:
+
+```
+acc = 0x1337
+for ch in name:  acc = (acc*33 + ch) & 0xFFFFFFFF
+acc ^= 0xC0FFEE
+serial = "%08X" % acc
+```
+
+The keygen (`keygen_level3.py`) reproduces it exactly. The real test results: `reverser` gives serial `F10E026B` and `Correct! Valid serial. Flag: FLAG{level3_keygen_done}`; `alice` gives a valid serial and `Correct!`; and `reverser` with `DEADBEEF` (a made-up serial) gives `Nope.`.
+
+The x64dbg and ScyllaHide steps at level 4 describe the standard procedure for Windows, and the techniques match lessons 14.2, 15.9 and 17.1.
+
+</details>
 
 ## Key takeaways
 

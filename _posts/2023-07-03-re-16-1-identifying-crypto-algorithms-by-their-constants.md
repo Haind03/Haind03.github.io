@@ -1,5 +1,8 @@
 ---
 title: "Lesson 16.1: Identifying crypto algorithms by their constants"
+image:
+  path: /assets/img/covers/re-16-1-identifying-crypto-algorithms-by-their-constants.webp
+  alt: "Lesson 16.1: Identifying crypto algorithms by their constants"
 date: 2023-07-03 21:32:00 +0700
 categories: ["Technique Reverse", "Part 16 · Crypto and Algorithms"]
 tags: [reverse-engineering, crypto]
@@ -47,6 +50,73 @@ When the constants match and the loop structure matches too, only then do you co
 ## When constants are hidden
 
 Sophisticated malware sometimes doesn't leave constants bare. It may build the constant table at runtime (computing the S-box at runtime instead of embedding it), or xor the constants with a key and decode them at use. Then static findcrypt will miss. How to get past it: run dynamically, set a breakpoint after the init code and dump the memory region holding the table, then run findcrypt on the dump. At that point the constants show up in their true form in memory.
+
+## Lab
+
+The task is to see for yourself the magic constants of crypto algorithms sitting inside a binary, and to use automatic tools to narrow down the region. The file `hashdemo.c` is a program that embeds the MD5 init values, MD5's T table, and the TEA delta. Build it on Linux with `gcc -O0 -o hashdemo hashdemo.c`, or on Windows with `gcc -O0 -o hashdemo.exe hashdemo.c` or `cl hashdemo.c`. For tools you can use Detect It Easy, IDA with FindCrypt, Ghidra with FindCrypt-Ghidra, or capa.
+
+Build `hashdemo` and open it in IDA or Ghidra, then run FindCrypt (IDA) or FindCrypt-Ghidra and see which region it marks and which algorithm it names. Next search by hand: use a byte-sequence search for `01 23 45 67` (which is `0x67452301` in little-endian) and note which section it lands in. If you have capa, run `capa hashdemo` and see which capabilities it reports. Then open `tea_round` in the disassembly and check whether the constant `0x9E3779B9` appears intact, and if not, what the compiler turned it into. Finally, confirm that each constant you found matches an algorithm in the table of this lesson.
+
+Two questions to think about. Why does `0x67452301` appear in the binary as the bytes `01 23 45 67` (hint: little-endian, Lesson 1.1)? And if a programmer changed the MD5 init values to other numbers (a "custom" MD5), could FindCrypt still catch it, and how else would you recognize it? Do it yourself before opening the solution.
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 16.1</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/16.1/src/hashdemo.c" download><i class="fa-solid fa-file-code"></i>src/hashdemo.c</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+The figures below come from a real `gcc -O0` build on Linux x86-64.
+
+### FindCrypt narrows the region
+
+FindCrypt scans the binary and matches the `md5_state` and `md5_T` arrays against known MD5 signatures, reporting something like "MD5 initial values" and "MD5 T-table" with addresses in `.data` or `.rodata`. This is the fastest way: you know MD5 is there before reading a single line of code.
+
+### Searching by hand
+
+`0x67452301` is stored little-endian, so on disk it is the byte string `01 23 45 67`. Searching for it in the binary finds it in the initialized data region (the `md5_state` array). A Python check on the build confirms it:
+
+```
+MD5 0x67452301   -> FOUND at offset 0x3010 (.data region)
+MD5 T0 0xd76aa478 -> FOUND at offset 0x1171 (embedded in .rodata/.text)
+```
+
+### capa
+
+If you have capa, it usually reports a capability such as "hash data via MD5" or flags a reference to the MD5 constants, because capa has rules that recognize these init values. capa answers at the level of what the program does, rather than where the constants are.
+
+### The TEA delta, a compiler trap
+
+This is the most important lesson of the lab. In the source, `tea_round` adds `0x9E3779B9`:
+
+```c
+return sum + 0x9e3779b9u;
+```
+
+But the real disassembly is:
+
+```asm
+tea_round:
+    ...
+    mov    -0x4(%rbp),%eax
+    sub    $0x61c88647,%eax      ; NOT add 0x9e3779b9
+    ...
+```
+
+The compiler recognized that `+ 0x9E3779B9` is equivalent to `- 0x61C88647` (because `0x9E3779B9 = -0x61C88647` read as a signed 32-bit number, in two's complement: `0x100000000 - 0x9E3779B9 = 0x61C88647`). It chose a `sub` with the smaller constant. The practical consequence is that searching for `B9 79 37 9E` as little-endian bytes in this code will MISS, because the constant has been transformed. FindCrypt still catches TEA in implementations that use the delta directly, but when it shows up as an optimized immediate you have to watch for the two's complement form `0x61C88647` as well. That is why you should always confirm by structure and not only by byte strings.
+
+### Matching the algorithms
+
+The values `0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476` are MD5 (or SHA-1 if `0xC3D2E1F0` is also present). The table starting `0xD76AA478...` is MD5's T table. `0x9E3779B9` (or the form `0x61C88647`) is the TEA/XTEA delta.
+
+### Answers to the questions
+
+`0x67452301` becomes `01 23 45 67` because x86 is little-endian: the lowest byte is stored first (Lesson 1.1). If the MD5 init values were changed to other numbers, FindCrypt would not match the standard signature and would miss it. You then recognize it by structure: a compression loop that processes 64-byte blocks, four state variables, many rotate and add operations, and four rounds of 16 steps. That structure is characteristic of MD5 even when the constants have been replaced, and this is exactly when "confirm by structure" saves you.
+
+</details>
 
 ## Key takeaways
 Standard crypto algorithms carry fixed constants, and the compiler can't change them. Know a few common numbers: MD5/SHA `0x67452301`, SHA-256 `0x6A09E667`, TEA delta `0x9E3779B9`, CRC32 `0xEDB88320`. Run findcrypt/capa/signsrch first to mark out the crypto instead of reading it by hand.

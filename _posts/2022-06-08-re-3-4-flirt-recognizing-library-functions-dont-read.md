@@ -1,5 +1,8 @@
 ---
 title: "Lesson 3.4: FLIRT and recognizing library functions, don't read code the author didn't write"
+image:
+  path: /assets/img/covers/re-3-4-flirt-recognizing-library-functions-dont-read.webp
+  alt: "Lesson 3.4: FLIRT and recognizing library functions, don't read code the author didn't write"
 date: 2022-06-08 21:00:00 +0700
 categories: ["Technique Reverse", "Part 03 · C"]
 tags: [reverse-engineering, c]
@@ -95,7 +98,52 @@ Open a C binary, and before reading any function, check whether the file is stat
 
 ## Lab
 
-See `labs/3.4/`. You'll build the same program in static and dynamic forms, open the static one in IDA to see the forest of functions, then apply the libc FLIRT and count how many functions get named, compared to the tidy dynamic version.
+In this lab you see the forest of functions in a static binary with your own eyes, then use FLIRT to clear it away so only the author's code is left. The source is `greet.c`. The program has only two functions written by the author (`make_tag` and `main`), and everything else in a static binary is libc and CRT.
+
+Build two variants on Linux:
+
+```sh
+gcc -O0 -no-pie greet.c -o greet_dyn
+gcc -O0 -no-pie -static greet.c -o greet_static
+ls -l greet_dyn greet_static
+```
+
+Notice right away that `greet_static` is many times larger than `greet_dyn`. Open `greet_dyn` in IDA (or Ghidra) and look at how many functions the Functions table has. `main` and `make_tag` sit in a fairly tidy list. Then open `greet_static` and compare the function count. Scroll through it and you will see countless unfamiliar `sub_` entries, which is libc.
+
+Now apply FLIRT. In IDA, press `Shift+F5` (Signatures), press `Ins`, and pick the libc set matching the GCC on your machine. When the scan finishes, count how many functions got real names (`strlen`, `snprintf`, `printf`, `malloc` and so on). The "Applied" column gives the number. Filter the Functions table to drop the functions that already have library names. The remaining `sub_` entries are the author's code, so confirm that `main` and `make_tag` are in that small group. Optionally, open the same `greet_static` in Ghidra, try `Tools > Function ID`, and compare its coverage with IDA's FLIRT.
+
+Two questions to think about. Why is the static build harder for an analyst even though it is more convenient to run? And if FLIRT names no function at all, what does that say about the signature set you chose?
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 3.4</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/3.4/src/greet.c" download><i class="fa-solid fa-file-code"></i>src/greet.c</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+After building and comparing sizes with `ls -l greet_dyn greet_static`, a typical result (exact numbers depend on the glibc version) is:
+
+```
+-rwxr-xr-x  greet_dyn      ~16 KB
+-rwxr-xr-x  greet_static   ~900 KB to over 2 MB
+```
+
+The static one is dozens of times larger because the entire libc is stuffed in.
+
+For the function counts, `greet_dyn` has just a handful of author functions plus a few PLT stubs (`printf`, `snprintf`, `strlen`, `__libc_start_main` and so on). It is very tidy, usually under 20 rows, and `main` and `make_tag` are found immediately. In `greet_static` the Functions table jumps to thousands of functions (typically 1500 to 2500 depending on glibc). You can scroll forever, and most are unnamed `sub_` entries. `main` and `make_tag` are buried in that sea and hard to find by eye. This is exactly why static linking makes life harder for the analyst: not because the author's code is harder, but because it is diluted among the whole libc.
+
+To apply FLIRT in IDA, press `Shift+F5` to open the Signatures window, press `Ins` to see the available signatures, and pick the GCC libc set. The usual names are the entries starting with `libc` for 64-bit ELF. If you are unsure, try the newest libc set first and try another if it is wrong. IDA rescans, and the "Applied" column shows the number of matches. You should expect hundreds to over a thousand functions renamed to `strlen`, `snprintf`, `vfprintf`, `malloc`, `memcpy`, `__libc_start_main` and so on, so most of the Functions table now carries real names. If "Applied = 0" after the scan, the signature set does not match the glibc version. That does no harm, so choose another set and rescan.
+
+To isolate the author's code, filter the Functions table (type into the filter box) to hide the known library names. The remaining group of unnamed `sub_` entries is very small, and in it you find `main`, which takes `argc` and `argv`, calls `make_tag`, and then calls `printf` twice, and `make_tag`, which calls `strlen` and then `snprintf` with the format string `"[user:%s len=%zu]"`. A cross-checking trick is to go from the string. Find `"Hello, %s"` in the Strings window and follow the xref, and it leads straight to `main`. Combining FLIRT (clearing libc) with going from strings (Lessons 3.1 and 2.2) is the fastest way to locate the author's code in a static binary.
+
+For Ghidra, open `greet_static`, go to `Tools > Function ID` and enable the bundled FID databases. Ghidra usually recognizes part of it (the CRT and some common glibc functions) but with clearly lower coverage than FLIRT, and many functions stay `FUN_`. This is where your eye for the shapes of `strlen`, `strcmp` and `memcpy` pays off.
+
+The takeaways are that the first thing to do when opening a C binary is to decide whether it is static or dynamic and apply signatures before reading, that FLIRT turns a table of 2000 functions into a handful worth reading and saves most of your time, and that when the tool can't help, the familiar shapes of libc functions are still your lifeline.
+
+</details>
 
 ## Key takeaways
 Static linking stuffs libc code into the file and bloats the function table to thousands, most of which isn't the author's code. FLIRT in IDA recognizes and names library functions by byte fingerprint; apply it via `Shift+F5` and pick the set matching the compiler. A wrong set names nothing, which is harmless, so just try another. For unfamiliar libraries you can make your own signatures with FLAIR (`pelf`/`plb` + `sigmake`), while Ghidra uses FunctionID with narrower coverage, so practice recognizing by eye.

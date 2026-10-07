@@ -1,5 +1,8 @@
 ---
 title: "Lesson 1.6: From source to binary, and why the same code comes out in two different shapes"
+image:
+  path: /assets/img/covers/re-1-6-from-source-binary-why-same-code.webp
+  alt: "Lesson 1.6: From source to binary, and why the same code comes out in two different shapes"
 date: 2022-03-01 14:05:00 +0700
 categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
@@ -69,7 +72,64 @@ During triage, knowing whether the file is stripped sets the right expectation f
 
 ## Lab
 
-The lab is at `labs/1.6/`. You build the same C file four ways (-O0 and -O2, with and without strip), then open them in Ghidra to see inlining, strength reduction, and the difference between stripped and non-stripped with your own eyes. The solution with comparisons is at `labs/1.6/solution.md`, but try it before opening.
+In this lab you take one small C program and build it several ways, then open each build in Ghidra (or IDA) to watch the optimizer work. The goal is to see inlining, loop unrolling and strength reduction with your own eyes, and to feel the difference between a binary that still has symbols and one that has been stripped. The program is `optdemo.c`. It contains a few deliberate baits for the optimizer: a tiny function that is easy to inline, a loop with a fixed trip count, and a multiplication and a division by constants.
+
+On Linux, gcc or clang both work. Build four variants to compare: an unoptimized build with symbols (the easiest to read), an `-O2` build with symbols (inlining and strength reduction show up), an `-O2` build that is then stripped (internal function names are gone), and optionally an `-O3` build to see even more aggressive optimization.
+
+```sh
+gcc -O0 -g optdemo.c -o optdemo_O0
+gcc -O2 -g optdemo.c -o optdemo_O2
+gcc -O2 optdemo.c -o optdemo_O2_stripped
+strip optdemo_O2_stripped
+gcc -O3 optdemo.c -o optdemo_O3
+```
+
+On Windows you can use MSVC, where `/Od` is the equivalent of `-O0`:
+
+```
+cl /Od optdemo.c /Fe:optdemo_Od.exe
+cl /O2 optdemo.c /Fe:optdemo_O2.exe
+```
+
+Start by opening `optdemo_O0` and finding the four functions `square`, `sum_fixed`, `scale` and `compute`. They should all be there and call each other in a clear way. Then open `optdemo_O2` and answer a few questions. Do you still see `call square`, and where did `square` go? Is the loop in `sum_fixed` still a loop, or has it turned into a constant? What does `x * 8` become inside `scale`, and what does `x / 3` look like? Next open `optdemo_O2_stripped` and check what the functions are called now and what information you lost compared with the build that kept its symbols. Finally, work out how the optimization level and stripping change the difficulty of reversing the same logic.
+
+Two hints. `sum_fixed()` always returns 0+1+2+3 = 6, and the optimizer knows that at compile time, so ask yourself whether it still computes anything. And at `-O2` a division by 3 usually becomes an `imul` with a strange 32-bit constant (a reciprocal) followed by `shr` or `sar`, so do not mistake it for a real multiplication.
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 1.6</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/1.6/src/optdemo.c" download><i class="fa-solid fa-file-code"></i>src/optdemo.c</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+Try it yourself first. The exact output depends on your gcc or clang version, but the patterns below hold for every recent release.
+
+At `-O0` the binary is honest. All four functions are intact and separate, and `compute` contains three `call` instructions, to `square`, `sum_fixed` and `scale`, so the control flow matches the source exactly. Every function has a full prologue and epilogue, local variables are spilled to the stack (`[rbp-x]`), and there are many seemingly pointless `mov` instructions shuffling values through memory. That is the price of not optimizing, and in exchange the code stays close to what the author wrote. It is the reason to build with `-O0` first when you are learning.
+
+At `-O2` the optimizer gets to work. You will not find `call square` any more. The body of `square`, a single multiplication, has been pasted straight into `compute`, and with a constant `n` the whole squaring can even be folded at compile time. The lesson is that in optimized code a "missing" function does not mean the author never wrote it, only that it was inlined.
+
+`sum_fixed` turns into a constant. It always yields 6 and the optimizer works that out at compile time, so the loop disappears completely, with no counter and no backward jump. Most likely `compute` just adds `6` to the result, or folds it into a larger constant. This is loop unrolling pushed to the limit: the whole loop is unrolled and then collapsed into one number.
+
+`scale` shows strength reduction. `x * 8` almost certainly becomes `lea` or `shl reg, 3`, with no `imul` at all, because a shift is cheaper. `x / 3` is the interesting part. You will see something like this:
+
+```asm
+mov   eax, x
+movsxd rax, eax          ; or similar
+imul  rax, rax, 0x55555556   ; multiply by a "magic number" (the reciprocal of 3)
+shr   rax, 32            ; or sar, take the high part
+... a few sign-fixing instructions
+```
+
+This is not a real multiplication by a big number. It is how the compiler divides by a constant without using the very slow `div` instruction. The constant `0x55555556` is the multiplicative inverse of 3 in fixed-point form. Once you see the pattern of an `imul` with a magic number followed by `shr`, you can recognize it immediately as a division by a constant.
+
+Stripping removes names. In `optdemo_O2`, Ghidra shows `compute` and `scale` (the functions that were not fully inlined) with their real names. In `optdemo_O2_stripped` they all become `FUN_00401xxx` in Ghidra or `sub_401xxx` in IDA. `main` can often still be recognized from the way the runtime calls it, but the internal functions lose their names entirely. What you lose is the internal function names. What you keep is the logic, the constants and the instruction structure. In other words, stripping slows you down because you have to rename things yourself, but it does not hide the behavior.
+
+Putting it together: `-O2` inlines, unrolls, strength-reduces and interleaves instructions, so it is much harder to read than `-O0`. Small functions get inlined and vanish as separate functions, fixed-count loops can be computed ahead of time into a constant, and multiplication or division by a constant turns into shifts or an `imul` with a magic number that you should not misread. Stripping loses internal names but not logic. Real release software is almost always `-O2` and stripped, so you accept both layers of difficulty by default, and the habit of renaming functions early (Lesson 0.4) together with recognizing optimizer patterns is what gets you through.
+
+</details>
 
 ## Key takeaways
 Compilation has four stages: preprocessor, compiler, assembler, linker, and macros disappear right at stage one. Dynamic linking exposes imports, which are golden clues during triage, while static linking stuffs library code inside and makes things harder. At runtime the loader maps sections, loads DLLs, fills the IAT and handles relocations, so "on disk" differs from "in memory".

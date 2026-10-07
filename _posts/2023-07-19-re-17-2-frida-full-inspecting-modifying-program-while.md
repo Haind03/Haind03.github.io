@@ -1,5 +1,8 @@
 ---
 title: "Lesson 17.2: Frida in full, inspecting and modifying a program while it runs"
+image:
+  path: /assets/img/covers/re-17-2-frida-full-inspecting-modifying-program-while.webp
+  alt: "Lesson 17.2: Frida in full, inspecting and modifying a program while it runs"
 date: 2023-07-19 23:03:00 +0700
 categories: ["Technique Reverse", "Part 17 · Patching, Hooking, Injection"]
 tags: [reverse-engineering, frida, hooking]
@@ -124,7 +127,71 @@ The Frida host and frida-server (on Android/iOS) must be the same version, and a
 
 ## Lab
 
-See `labs/17.2/`. The task: use Frida to hook the compare function of a small program to expose the correct string it's comparing against your input, then try forcing the return value to get past the check. A sample `hook.js` is provided in `src/`.
+The goal is to use Frida to hook the compare function of a program so that you (1) see the correct string it compares your input against, and (2) force the return value to pass the check without knowing the password. Install Frida with `pip install frida-tools` (you need `frida` and `frida-trace` on your PATH). Then build the target, `target.c`. On Linux:
+
+```
+gcc -O0 target.c -o target
+```
+
+On Windows, with MSVC or with MinGW:
+
+```
+cl /Od target.c
+gcc -O0 target.c -o target.exe
+```
+
+Run `target` normally first, enter a wrong password and see it print `Nope.`. Then spawn the target under Frida with the sample script `hook.js`:
+
+```
+frida -l hook.js -f ./target
+```
+
+Enter any string and watch the line `[strcmp] '...' vs '...'`. One side is your input and the other is the correct password. Enter the password that was just revealed and confirm you get `Correct!`. Then open `hook.js` and uncomment the line `retval.replace(0);` in `onLeave`. Run again, enter any wrong string, and this time it still prints `Correct!` because every `strcmp` is forced to return 0.
+
+Some questions to think about. Why does hooking `strcmp` in libc catch the password comparison without your needing to know where `main` is? If the program wrote its own byte-by-byte comparison loop instead of calling `strcmp`, would this still work, and where would you hook then? And does forcing `retval` past the check reveal the real password? When do you need the real password and when is passing the check enough?
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 17.2</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/17.2/src/hook.js" download><i class="fa-solid fa-file-code"></i>src/hook.js</a>
+<a class="lab-file" href="/assets/labs/17.2/src/target.c" download><i class="fa-solid fa-file-code"></i>src/target.c</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+The target `target.c` compares the input with the string `Fr1da_H00k_Me` using `strcmp`: entering `Fr1da_H00k_Me` prints `Correct!` and entering anything else prints `Nope.`.
+
+To reveal the password through the `strcmp` hook, run:
+
+```
+frida -l hook.js -f ./target
+```
+
+When you enter any string, the `onEnter` of the hook prints both sides of `strcmp`:
+
+```
+[strcmp] 'abc'  vs  'Fr1da_H00k_Me'
+```
+
+The first side is the input you just typed and the second is the `secret` the program compares against. The correct password is exposed immediately without reading a line of assembly. The core point is that `strcmp` is an exported libc function, so `Module.findExportByName("libc.so.6", "strcmp")` finds its address even though your own program has no symbols at all. Every `strcmp` call in the process goes through that one point, so hooking one place catches them all. Entering `Fr1da_H00k_Me` then makes the program print `Correct!`, which is the way to get the real answer.
+
+To force the check without the password, uncomment the line in `onLeave`:
+
+```javascript
+onLeave(retval) {
+    retval.replace(0);   // strcmp == 0 means the two strings are equal
+}
+```
+
+`strcmp` returns 0 when the two strings match. Forcing every call to return 0 makes `if (strcmp(...) == 0)` always true, so whatever you enter prints `Correct!`. That is the way to pass the check without the answer.
+
+On the questions, the hook catches the comparison without needing `main` because the comparison goes through libc's `strcmp`, a common exported point, and Frida hooks by export name, independent of the author's code. If the program wrote its own comparison loop, hooking `strcmp` would miss it because there is no `strcmp` call. Then you have to find the program's own compare function (read it statically in Ghidra or IDA to get an address, for example `0x401234`) and use `Interceptor.attach(ptr("0x401234"), ...)`, or hook at a higher level such as the function that reads the input. Forcing `retval` doesn't reveal the real password: it only makes the program believe it matched, and you still don't know the password. When the goal is just to get in or past the check, forcing `retval` is enough and the fastest. When you need the password itself (for example to solve a later layer that uses the password as a key) you have to get the real value as in the first step.
+
+The Frida output lines above are representative samples that follow Frida's standard behavior, so your own output will differ in the details.
+
+</details>
 
 ## Key takeaways
 Frida injects a JS agent into the running process, sees everything from the inside, and works cross-platform. `Interceptor.attach` with `onEnter` (parameters) and `onLeave` (return value) is the main tool. `args[i]` is numbered by logical parameter order and Frida handles the calling convention, but each is a NativePointer, so you have to interpret the type yourself.

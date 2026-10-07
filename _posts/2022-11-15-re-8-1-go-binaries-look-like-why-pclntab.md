@@ -1,5 +1,8 @@
 ---
 title: "Lesson 8.1: What Go binaries look like, and why pclntab is a gift"
+image:
+  path: /assets/img/covers/re-8-1-go-binaries-look-like-why-pclntab.webp
+  alt: "Lesson 8.1: What Go binaries look like, and why pclntab is a gift"
 date: 2022-11-15 22:09:00 +0700
 categories: ["Technique Reverse", "Part 08 · Go"]
 tags: [reverse-engineering, golang]
@@ -7,7 +10,7 @@ render_with_liquid: false
 ---
 The first time you open a Go binary in IDA, it feels like getting lost in a strange city: tens of thousands of functions, most named `runtime.*`, a tiny hello world file that weighs almost 2 MB. But Go is much easier to breathe in than a stripped C++ binary, because Go packs a precious thing into the binary: a table of function names. This lesson shows you how to recognize a Go binary and make use of that table.
 
-All the numbers and asm below come from a binary built for real with Go 1.22.0 on Linux x64, and if you redo it in the lab you'll get something similar.
+All the numbers and asm below come from a binary built with Go 1.22.0 on Linux x64, and if you redo it in the lab you'll get something similar.
 
 ## Why Go binaries are so big and have so many functions
 
@@ -85,6 +88,109 @@ A syntax note: `go tool objdump` uses the Plan 9 form (`AX`, `MOVQ`), while IDA/
 ## What Go leaves in the code
 
 A few patterns you'll see a lot are covered in detail in [Lesson 8.3](/posts/re-8-3-gos-string-slice-interface-goroutine-assembly/), and I list them here so they don't catch you off guard. Strings aren't null-terminated: a Go string is a (pointer, length) pair, so a string in Go often sits stuck against other strings in one big blob, cut out by length, and seeing a huge block of text glued together is characteristic of Go. Go also inserts bounds checks on array indexes everywhere, so the code has lots of compare instructions followed by a jump to `runtime.panicIndex`. A `go f()` call turns into `runtime.newproc`, and Go functions return multiple values, which in the register ABI means returning through several registers.
+
+## Lab
+
+In this lab you recognize and dissect a Go binary yourself, and see the traits from this lesson first-hand: size, build info, pclntab and the register ABI. You need the Go toolchain (check with `go version`). The source is `main.go`, which defines a small non-inlined `add` function and prints a greeting.
+
+Start by building `hello` from `main.go`, then build a C hello world with gcc and compare the two sizes. Explain why the Go binary is hundreds of times bigger. Next read the build info with `go version hello` and `go version -m hello`, and note the Go version, GOARCH and GOOS. Try again with `strings hello | grep '^go1\.'` to see how you would do it without a toolchain.
+
+Then find the pclntab by searching the file for its magic number (4 bytes, for example `f1 ff ff ff` for Go 1.20 and later) and write down the offset. To prove that pclntab survives stripping, rebuild with `-ldflags="-s -w"` into `hello_s`, compare its size with the normal build, check whether `go tool nm hello_s` still lists `main.*`, and search for the pclntab magic again in `hello_s`. Draw your conclusion.
+
+Finally look at the register ABI. Build a version with inlining disabled (`-gcflags="-N -l"`) into `hello2`, and run `go tool objdump -s '^main\.add$' hello2`. Work out which registers the parameters `a` and `b` arrive in and where the result is returned, and compare with System V in C (RDI, RSI). The build commands are these.
+
+```
+go build -o hello main.go
+go build -ldflags="-s -w" -o hello_s main.go
+go build -gcflags="-N -l" -o hello2 main.go
+```
+
+Two questions to think about. Why is a "stripped" Go binary still easier to reverse than a stripped C binary? And if you meet a Go binary without the usual symbols, how else can you get the function names back? Try it yourself before opening the solution.
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 8.1</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/8.1/src/main.go" download><i class="fa-solid fa-file-code"></i>src/main.go</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+The numbers below come from a real build with Go 1.22.0 on Linux x64. Yours may differ slightly depending on the version.
+
+For size:
+
+```
+hello (Go)          1,911,953 bytes  (~1.9 MB)
+hc (C, gcc dynamic)    15,960 bytes  (~16 KB)
+```
+
+Go is about 120 times larger. The reason is that Go links statically and embeds the whole runtime (the goroutine scheduler, the garbage collector, reflection) into every binary, while a C hello world only links dynamically to the libc already on the machine.
+
+For build info:
+
+```
+$ go version hello
+hello: go1.22.0
+
+$ go version -m hello
+hello: go1.22.0
+    path    command-line-arguments
+    build   -buildmode=exe
+    build   -compiler=gc
+    build   GOARCH=amd64
+    build   GOOS=linux
+    build   GOAMD64=v1
+    ...
+```
+
+Without a toolchain, `strings hello | grep '^go1\.'` still shows the string `go1.22.0`.
+
+For pclntab, search for the 4-byte magic. For Go 1.22 (in the 1.20+ group) the magic is `f1 ff ff ff`.
+
+```
+pclntab magic f1ffffff at offset 0x4030b
+```
+
+To check that pclntab survives stripping, compare the sizes.
+
+```
+hello (normal)          1,911,953 bytes
+hello_s (-s -w)         1,245,336 bytes
+```
+
+Stripping saves about 35% (it drops the DWARF debug info and the regular symbol table). Check the symbols.
+
+```
+$ go tool nm hello_s | grep -c 'main\.'
+0
+```
+
+`nm` no longer sees the regular symbols. But searching again for the pclntab magic shows `f1ffffff` still at offset `0x4030b`. The pclntab is intact. The conclusion is that a "stripped" Go binary still keeps the function name table in pclntab, so tools like GoReSym can still recover thousands of function names. This is why Go binaries are almost never truly stripped.
+
+For the register ABI:
+
+```
+$ go tool objdump -s '^main\.add$' hello2
+TEXT main.add(SB)
+    PUSHQ BP
+    MOVQ  SP, BP
+    SUBQ  $0x8, SP
+    MOVQ  AX, 0x18(SP)     ; parameter a arrives in AX
+    MOVQ  BX, 0x20(SP)     ; parameter b arrives in BX
+    ADDQ  BX, AX           ; AX = a + b
+    MOVQ  AX, 0(SP)
+    ADDQ  $0x8, SP
+    POPQ  BP
+    RET                    ; returned in AX
+```
+
+So `a` arrives in `AX` (RAX), `b` in `BX` (RBX), and the result goes back in `AX`. That is quite different from System V in C, where the first parameter is in RDI and the second in RSI. Go 1.17 and later use their own register order: `RAX, RBX, RCX, RDI, RSI, R8, R9, R10, R11`.
+
+A stripped Go binary is easier than a stripped C one because pclntab is a function name table embedded for the purpose of printing stack traces, and `-s -w` does not remove it. A stripped C binary loses all its names. To get the names back, use GoReSym or an IDA or Ghidra plugin that reads pclntab, and they rename thousands of functions automatically. That is the subject of Lesson 8.2.
+
+</details>
 
 ## Key takeaways
 Go binaries are big because of static linking plus the bundled runtime and GC, so don't read the `runtime.*` forest and focus on `main.*`. pclntab is an embedded function name table that survives strip, so Go is almost never truly stripped, and tools recover names from it (Lesson 8.2). The pclntab magic tells you the Go version: `f1 ff ff ff` is Go 1.20+.

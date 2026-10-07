@@ -1,5 +1,8 @@
 ---
 title: "Reading list: the books behind these notes"
+image:
+  path: /assets/img/covers/re-resources-reading-list-windows-internals-books.webp
+  alt: "Reading list: the books behind these notes"
 date: 2023-07-29 10:20:00 +0700
 categories: ["Technique Reverse", "Resources"]
 tags: [reverse-engineering, resources, windows-internals]

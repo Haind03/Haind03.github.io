@@ -1,5 +1,8 @@
 ---
 title: "Lesson 7.4: When Python turns into an .exe, how to open it back up"
+image:
+  path: /assets/img/covers/re-7-4-when-python-turns-into-exe-open.webp
+  alt: "Lesson 7.4: When Python turns into an .exe, how to open it back up"
 date: 2022-11-12 09:21:00 +0700
 categories: ["Technique Reverse", "Part 07 · Python"]
 tags: [reverse-engineering, python]
@@ -93,7 +96,132 @@ Start with triage: `strings`/DIE showing `_MEIPASS`, `pyi`, `python3xx` means Py
 
 ## Lab
 
-The folder `labs/7.4/` has instructions for building a PyInstaller exe from a small script and then extracting it back yourself, including how to handle the magic header. The whole workflow in this lesson was actually run on PyInstaller 6.20 / Python 3.11, and the output in `solution.md` is real.
+The task is to package a Python script into an exe yourself and then extract it back, to see that the logic is still intact in bytecode form. You need Python 3 and PyInstaller (`pip install pyinstaller`), plus pyinstxtractor or pyinstxtractor-ng. For the first, download the single file with `curl -LO https://raw.githubusercontent.com/extremecoders-re/pyinstxtractor/master/pyinstxtractor.py`, and for the ng version run `pip install pyinstxtractor-ng` and use the `pyinstxtractor-ng` command. You also need a .pyc decompiler, either pycdc from Lesson 7.2 or a version-matched decompiler from Lesson 7.3. The sample file is `secretapp.py`, a simple license key checker.
+
+First, package it into an exe:
+
+```
+pyinstaller --onefile secretapp.py
+```
+
+The result lands in `dist/secretapp` (Linux/macOS) or `dist\secretapp.exe` (Windows). Next triage the new file by running `strings dist/secretapp | grep -iE "_MEIPASS|pyi|python3"` and confirm the PyInstaller signs. Then extract it back:
+
+```
+python3 pyinstxtractor.py dist/secretapp
+```
+
+Read the output: which Python version does the tool report, and which file is the Possible entry point? Go into the `secretapp_extracted/` folder. Among the forest of `.pyc` files, which one is the original script and which are PyInstaller's support files (hint: names starting with `pyi`)? Check the magic header of `secretapp.pyc` (the first 16 bytes). Does it have a complete header? If it is missing, copy the header from a standard module such as `struct.pyc` in the same folder. Finally decompile `secretapp.pyc` and find the license key, and see whether anything hides it.
+
+Two questions to think about. Why does packaging into an exe barely protect secrets in the code? And if the author really wanted to hide the license key, what would they have to use (hint: Lesson 7.5)? Do it yourself before opening the solution.
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 7.4</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/7.4/src/secretapp.py" download><i class="fa-solid fa-file-code"></i>src/secretapp.py</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+All the output below is real, from Python 3.11.9 and PyInstaller 6.20.0 (on Linux, so the exe is an ELF; on Windows the steps are identical apart from the .exe extension).
+
+### 1. Packaging
+
+```
+pyinstaller --onefile secretapp.py
+```
+
+This produces `dist/secretapp`, about 16 MB because the Python interpreter is bundled inside.
+
+### 2. Triage
+
+```
+$ strings -n 5 dist/secretapp | grep -iE "_MEIPASS|pyi|python3" | sort -u
+_MEIPASS
+_pyinstaller_pyz
+libpython3.11.so.1.0
+pyi-contents-directory
+pyimod01_archive
+PYZ-00.pyz
+```
+
+`_MEIPASS` and `pyi` confirm PyInstaller, and `libpython3.11` tells you it is Python 3.11.
+
+### 3. Extracting
+
+```
+$ python3 pyinstxtractor.py dist/secretapp
+[+] Processing dist/secretapp
+[+] Pyinstaller version: 2.1+
+[+] Python version: 3.11
+[+] Length of package: 16432443 bytes
+[+] Found 54 files in CArchive
+[+] Beginning extraction...please standby
+[+] Possible entry point: pyiboot01_bootstrap.pyc
+[+] Possible entry point: pyi_rth_inspect.pyc
+[+] Possible entry point: secretapp.pyc
+[+] Found 99 files in PYZ archive
+[+] Successfully extracted pyinstaller archive: dist/secretapp
+```
+
+The Python version is 3.11. The real entry point is `secretapp.pyc`, while the two `pyiboot` and `pyi_rth` files belong to PyInstaller.
+
+### 4. Filtering the files
+
+In `secretapp_extracted/`:
+
+```
+pyi_rth_inspect.pyc     <- PyInstaller's, skip
+pyiboot01_bootstrap.pyc <- PyInstaller's, skip
+pyimod01_archive.pyc    <- PyInstaller's, skip
+pyimod02_importers.pyc  <- PyInstaller's, skip
+pyimod03_ctypes.pyc     <- PyInstaller's, skip
+secretapp.pyc           <- THIS ONE, the original script
+struct.pyc              <- a standard module (to borrow a header from if needed)
+```
+
+### 5. The magic header
+
+```
+$ xxd secretapp.pyc | head -1
+00000000: a70d 0d0a 0000 0000 0000 0000 0000 0000
+$ xxd struct.pyc | head -1
+00000000: a70d 0d0a 0000 0000 0000 0000 0000 0000
+```
+
+With PyInstaller 6.x the header is kept intact (`a70d0d0a` is the Python 3.11 magic), so there is nothing to patch. If you meet an older binary where `secretapp.pyc` lacks the header, copy the first 16 bytes of `struct.pyc` and paste them at the start of `secretapp.pyc`.
+
+### 6. Getting the secret
+
+You don't even need a full decompiler. Just marshal-load the file and walk the constants:
+
+```python
+import marshal
+with open("secretapp.pyc","rb") as f:
+    f.read(16)                 # skip the header
+    code = marshal.load(f)
+# walk co_consts recursively...
+```
+
+The real result:
+
+```
+ [function] check
+  const: 'PyInst@ller_2024'
+ [function] main
+  const: 'License key: '
+  const: 'Licensed!'
+  const: 'Wrong key.'
+```
+
+The license key is `PyInst@ller_2024`, sitting in plain sight in the constants of the `check` function. Using pycdc would rebuild both `check` and `main` almost verbatim.
+
+### Answers to the questions
+
+Packaging only gathers the files together and does not encrypt the bytecode. Every string constant, function name and piece of logic is still in the `.pyc`, so once extracted it can all be read. To really hide something, the bytecode must stop being in the standard form: PyArmor (encrypting and wrapping the bytecode), or Nuitka and Cython (compiling to C and then native, at which point you reverse it like C). See Lesson 7.5.
+
+</details>
 
 ## Key takeaways
 PyInstaller packs the interpreter and compressed `.pyc` files into the exe, so the logic is still Python bytecode, and you recognize it by `_MEIPASS`, `pyi`, `python3xx` in the strings. `pyinstxtractor(-ng)` extracts it, and you read the Python version and Possible entry point lines. Skip the `.pyc` files named `pyi*` and take the file named after the original script. The extracted `.pyc` may be missing the magic header, so copy one from a healthy `.pyc` onto the start to patch it. py2exe/cx_Freeze usually keep `.pyc` files in `library.zip`, so unzip then decompile. Packaging isn't encryption, and secrets in the code are fully exposed.

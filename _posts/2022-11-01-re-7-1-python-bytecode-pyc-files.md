@@ -1,5 +1,8 @@
 ---
 title: "Lesson 7.1: Python bytecode and .pyc files"
+image:
+  path: /assets/img/covers/re-7-1-python-bytecode-pyc-files.webp
+  alt: "Lesson 7.1: Python bytecode and .pyc files"
 date: 2022-11-01 16:42:00 +0700
 categories: ["Technique Reverse", "Part 07 · Python"]
 tags: [reverse-engineering, python]
@@ -108,7 +111,95 @@ This lesson is the foundation: knowing what a `.pyc` contains and being able to 
 
 ## Lab
 
-See `labs/7.1/`: you'll write a function yourself, use `dis` to see the bytecode, compile to `.pyc` and read the header by hand. Use the `python3` on your own machine.
+In this lab you see for yourself what the lesson describes, using the `python3` on your own machine. All you need is Python 3 (`python3 --version`). The lab was checked on Python 3.11.9. On another version the magic number and a few opcodes will differ, which is exactly what you are meant to observe.
+
+The program is `checker.py`, a tiny crackme whose `check` function adds up the ASCII codes of the characters and compares the sum with `0x29A`. In the folder that holds it, run the following to disassemble `check` and read the bytecode, and find which instruction carries the secret constant `0x29A`.
+
+```
+python3 -c "import dis, checker; dis.dis(checker.check)"
+```
+
+Then compile the file to a `.pyc`, which creates `__pycache__/checker.cpython-XY.pyc`.
+
+```
+python3 -c "import py_compile; print(py_compile.compile('checker.py'))"
+```
+
+Read the first 16 bytes of that `.pyc`, and point out the magic, the bit field, the timestamp and the source size.
+
+```
+python3 - <<'PY'
+import glob, binascii
+p = glob.glob('__pycache__/*.pyc')[0]
+print(binascii.hexlify(open(p,'rb').read(16)).decode())
+PY
+```
+
+Compare the first 4 bytes (the magic) with the table in the lesson to confirm your Python version. For an extra step, use `marshal` to load the code object from the `.pyc` (skipping the 16-byte header) and print `co_consts` and `co_varnames`. Do you see the secret `666` in `co_consts`?
+
+Two questions to think about. Why is reading `co_consts` enough to give away this crackme's secret, before you even understand the bytecode? And if you switched to Python 3.8, which bytes in the header would change?
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 7.1</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/7.1/src/checker.py" download><i class="fa-solid fa-file-code"></i>src/checker.py</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+This was checked on Python 3.11.9. The bytecode of `check` from `dis.dis(checker.check)` looks like this (shortened).
+
+```
+  2   LOAD_CONST   1 (0)          # total = 0
+      STORE_FAST   1 (total)
+  3   LOAD_FAST    0 (name)
+      GET_ITER
+  >>  FOR_ITER     20 (to 52)     # for c in name
+      STORE_FAST   2 (c)
+  4   LOAD_FAST    1 (total)
+      LOAD_GLOBAL  1 (NULL + ord)
+      LOAD_FAST    2 (c)
+      PRECALL      1
+      CALL         1              # ord(c)
+      BINARY_OP    13 (+=)        # total += ord(c)
+      STORE_FAST   1 (total)
+      JUMP_BACKWARD 21 (to 10)
+  5 >> LOAD_FAST    1 (total)
+      LOAD_CONST   2 (666)        # compare with 0x29A = 666
+      COMPARE_OP   2 (==)
+      RETURN_VALUE
+```
+
+The secret constant `0x29A` appears at `LOAD_CONST 2 (666)`, right before the comparison.
+
+`py_compile.compile('checker.py')` creates `__pycache__/checker.cpython-311.pyc`. The real first 16 bytes are these.
+
+```
+a7 0d 0d 0a  00 00 00 00  dc b4 c4 6a  05 01 00 00
+```
+
+Splitting them up, `a7 0d 0d 0a` is the magic number (Python 3.11). `00 00 00 00` is the bit field, which is 0, meaning the next 8 bytes use a timestamp rather than a hash. `dc b4 c4 6a` is the compile timestamp (little-endian), and `05 01 00 00` is the source size, 0x105 = 261 bytes for the original `.py` file. Of the four magic bytes, the first two, `a7 0d`, match Python 3.11 in the lesson's table, which agrees with `python3 --version` reporting 3.11.9.
+
+To read `co_consts` through marshal:
+
+```python
+import marshal
+with open('__pycache__/checker.cpython-311.pyc','rb') as f:
+    f.read(16)                 # skip the header
+    code = marshal.load(f)     # the module's code object
+# code.co_consts holds the code object of check; open it up:
+for c in code.co_consts:
+    if hasattr(c, 'co_consts'):
+        print(c.co_name, c.co_consts)
+```
+
+It prints `check (0, 666)`, so the secret `666` sits right in `co_consts`.
+
+Reading `co_consts` is enough because Python does not encrypt constants. They sit intact in the code object, and without understanding any bytecode you can already infer that the condition is "the sum of the ASCII codes equals 666". Switching to Python 3.8 changes the 4 magic bytes to `55 0d 0d 0a`. The timestamp and size stay in the same positions but have different values. The bytecode inside also changes its opcodes (`CALL_FUNCTION` instead of `PRECALL` and `CALL`).
+
+</details>
 
 ## Key takeaways
 Python compiles source to bytecode and then runs it on the CPython VM (stack-based). A `.pyc` is a 16-byte header (magic, bit field, timestamp/hash, size) plus a marshaled code object. The magic number (first 4 bytes) tells the Python version, so read it before picking a decompiler.

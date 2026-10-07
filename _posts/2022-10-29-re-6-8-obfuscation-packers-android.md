@@ -1,5 +1,8 @@
 ---
 title: "Lesson 6.8: Obfuscation and packers on Android"
+image:
+  path: /assets/img/covers/re-6-8-obfuscation-packers-android.webp
+  alt: "Lesson 6.8: Obfuscation and packers on Android"
 date: 2022-10-29 23:05:00 +0700
 categories: ["Technique Reverse", "Part 06 · Java, Kotlin and Android"]
 tags: [reverse-engineering, android, java]
@@ -56,7 +59,65 @@ Open JADX first and check whether you see business logic. If you do but it's onl
 
 ## Lab
 
-See `labs/6.8/`: identify whether an APK is obfuscated or packed purely from the signs, and if there's a packer, dump the DEX with frida-dexdump and reopen it in JADX. The file `solution.md` has the writeup.
+The task is to look at an APK and classify the level of protection it has, and if it is packed, to get the real DEX out. You need JADX-GUI. For the dump part, optionally have a rooted Android device or an emulator with `frida-server` running on it, and `frida` and `frida-dexdump` on the host (`pip install frida-tools frida-dexdump`). It helps to have a few APKs to compare: a debug build of your own app (not obfuscated), a release app from the Play Store (usually R8), and, if you can get one, an app that uses a packer. Only practice on your own apps or apps you are allowed to analyze.
+
+Start with a quick classification. Open several APKs in JADX one after another and, for each one, answer whether the class and method names are meaningful or have become `a/b/c`, and whether you can read the business logic. From that, place it as not obfuscated, R8/ProGuard, a heavy obfuscator, or packed. For an app you suspect is packed, open `AndroidManifest.xml` in JADX and look at the `android:name` attribute of the `<application>` tag. Which class does it point to, and does the name match a known packer (StubApp, SecShell, qihoo, legu and so on)? Then list the files in `assets/` and `lib/` and ask which are large and hard to understand. Check them with an entropy tool (or DIE): an entropy close to 8.0 means the data is compressed or encrypted, a sign it holds the real DEX.
+
+If there is a packer, dump the DEX:
+
+```
+frida-dexdump -U -f <package_name>
+```
+
+Use the app for a few actions so the code gets fully loaded, then let the tool dump. Drag the resulting `.dex` files into JADX and confirm you now see the real logic. Finally put the two side by side, the JADX view of the packed app (nearly empty) and the dumped DEX (full code), and note the differences.
+
+Two questions to think about. Why does a packer, however strong, have to let the real DEX appear in memory at least once? And if the packer decrypts the DEX piece by piece when needed (lazy loading), is one dump enough, and how do you get everything? Try it before opening the solution.
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+Try it yourself before reading.
+
+### Quick classification
+
+This table of signs lets you place each APK:
+
+| What you see in JADX | Conclusion |
+|---|---|
+| Meaningful class, method and variable names, code reads like source | Not obfuscated (usually a debug build) |
+| Names turned into `a`, `b`, `c`, packages like `a.a.a`, but the logic is still continuous and readable | R8/ProGuard (minify + rename) |
+| Strings turned into `decrypt(...)` calls or byte arrays, tangled flow, lots of reflection | Heavy obfuscator (DexGuard and similar) |
+| JADX almost empty, only an odd Application class and a few loaders | Packed |
+
+The key to not mixing them up is that R8 still lets you read the logic, just with ugly names, while a packer takes the logic away entirely.
+
+### The loader in the manifest
+
+In `<application android:name="...">`, the class it points to runs before any Activity. In a clean app this is usually the app's own Application class (or absent, using the default). In a packed app it is the packer's loader. Some common names are `com.stub.StubApp` (Jiagu / Qihoo 360), `com.secshell.shellwrapper.SecShellApplication` (Bangcle), `com.tencent.StubShell...` (Tencent Legu), and `s.h.e.l.l...` or random-looking names. Seeing one of these means the app is almost certainly packed. This loader class is the thing that decrypts and loads the real DEX.
+
+### Assets and lib
+
+A packer stashes the real DEX somewhere and encrypts it. Common places are a large file in `assets/` with a name like `ijiami.dat` or `libjiagu.so`, an unidentifiable blob, and a `.so` in `lib/<abi>/` doing the decryption (the decryption code is native to make it harder to read). Check the entropy (DIE, `ent`, or a small Python script): a value close to 8.0 bits/byte means the data is compressed or encrypted. A normal unencrypted DEX file has lower entropy and starts with the magic `dex\n035`, while a packer's blob does not.
+
+### Dumping the DEX
+
+```
+frida-dexdump -U -f com.example.packed
+```
+
+`-U` uses the USB device and `-f` spawns the app by package name. The tool scans the process memory for the DEX magic and writes out `*.dex` files in the current directory. To attach to an already running app, use `-n <process name>` or `-p <pid>`. Drag the resulting `.dex` files into JADX and you now see the full classes and real logic, quite unlike the empty shell at the start. If the dump produces several DEX files, load them all into JADX (open multiple files at once), because the real code is scattered across them.
+
+### Comparing
+
+Side by side, the packed version in JADX has only the loader and no business code, while the dump has full classes and only now can you reverse the real logic. It is a visual illustration of the difference between what you see on disk and what really runs.
+
+### Answers to the questions
+
+The real code has to appear in memory because the CPU and ART can only execute valid DEX bytecode. A packer can encrypt it on disk, but at run time it must decode it into a DEX form the runtime understands and load it. That moment is the chance to dump, and there is no way to run code without unpacking it. With lazy loading, where the packer only decrypts a part when it is called, a single dump at startup will be incomplete. The fix is to use the app through many screens and functions to force the parts to load and then dump, or to hook the DEX load point (for example `DexFile` or `InMemoryDexClassLoader`) with Frida and grab each piece as it is loaded, instead of scanning once.
+
+To sum up, classify before choosing your weapon: for obfuscation you read and hook, for a packer you have to dump. The manifest `application` name and high-entropy assets are the two clearest packer signs. The golden rule of unpacking, on Android as on PE, is to let the program decrypt itself and then take the result from memory.
+
+</details>
 
 ## Key takeaways
 Tell obfuscation (code still there, just hard to read) from packing (code hidden, only expanded at runtime), because they're handled differently. R8/ProGuard is mostly renaming, the logic is still readable, and mapping.txt belongs to whoever built it. DexGuard and commercial obfuscators add string encryption, control flow, and anti-debug, so use dynamic analysis to decrypt strings.

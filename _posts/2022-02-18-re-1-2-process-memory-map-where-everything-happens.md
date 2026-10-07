@@ -1,5 +1,8 @@
 ---
 title: "Lesson 1.2: Process memory, the map of where everything happens"
+image:
+  path: /assets/img/covers/re-1-2-process-memory-map-where-everything-happens.webp
+  alt: "Lesson 1.2: Process memory, the map of where everything happens"
 date: 2022-02-18 21:03:00 +0700
 categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]

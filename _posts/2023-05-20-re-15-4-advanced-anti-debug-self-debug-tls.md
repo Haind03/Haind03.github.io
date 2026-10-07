@@ -1,5 +1,8 @@
 ---
 title: "Lesson 15.4: Advanced anti-debug, self-debug and TLS callbacks"
+image:
+  path: /assets/img/covers/re-15-4-advanced-anti-debug-self-debug-tls.webp
+  alt: "Lesson 15.4: Advanced anti-debug, self-debug and TLS callbacks"
 date: 2023-05-20 20:16:00 +0700
 categories: ["Technique Reverse", "Part 15 · Anti-Reversing and Bypasses"]
 tags: [reverse-engineering, anti-debug]
@@ -89,7 +92,51 @@ You can read it right away: this callback checks `BeingDebugged`, and if it sees
 
 ## Lab
 
-See `labs/15.4/`. You build a program that puts its anti-debug in a TLS callback, run it in x64dbg the first time (without the TLS breakpoint on) to see it exit mysteriously, then turn on the option to stop at TLS callbacks and catch the exact check, and finally patch it to get past.
+The goal is to see for yourself why a check placed in a TLS callback runs before `main`, and how to catch it with x64dbg. You need Windows (or a Windows VM, see Lesson 0.3), x64dbg, PE-bear or CFF Explorer, and a compiler: MSVC (`cl`) or MinGW-w64 (`gcc`). The program is `tls_antidebug.c`, and you build it with one of these:
+
+```
+cl /GS- tls_antidebug.c                         :: MSVC
+gcc tls_antidebug.c -o tls_antidebug.exe        :: MinGW
+```
+
+First run `tls_antidebug.exe` directly, with no debugger, and observe that it prints `main: running normally`. Then open it in PE-bear, find the TLS Directory and write down the RVA of the callback, which is where the check lives. Next open it in x64dbg with the default options and press Run. Watch whether the program detects the debugger (a MessageBox and then exit) or stops somewhere, and notice whether you ever see `main` run.
+
+Now go to Options > Preferences > Events and turn on TLS Callbacks, then restart the debug session. This time the debugger stops just as the TLS callback is about to run, before the entry point. Work your way to the code that reads `gs:[0x60]` and checks the `BeingDebugged` byte, and set a breakpoint there. Get past it in one of three ways: set `BeingDebugged` to 0 in memory while stopped, patch the jump so it always goes on to `main`, or use the ScyllaHide plugin (Lesson 15.9). Confirm that after getting past it, the program runs to `main` and prints its message normally.
+
+Three questions to reflect on. Why is enabling the TLS Callbacks breakpoint more important than just setting a breakpoint at main? If the program has several TLS callbacks, in what order are they called? And why might fixing `BeingDebugged` just once not be enough if the callback runs again?
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 15.4</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/15.4/src/tls_antidebug.c" download><i class="fa-solid fa-file-code"></i>src/tls_antidebug.c</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+The x64dbg steps below are the standard procedure for this tool and need a Windows machine. The source `tls_antidebug.c` follows how MSVC and MinGW register a TLS callback in the `.CRT$XLB` section.
+
+Run directly, the TLS callback checks `BeingDebugged`, sees 0 and does nothing, so the program enters `main` and prints `main: running normally`.
+
+To find the TLS Directory, look in PE-bear's Data Directories, where the TLS entry points to the `IMAGE_TLS_DIRECTORY`. Its `AddressOfCallBacks` field points to a null-terminated array of function pointers, and each element is a TLS callback. Note the RVA so you can set a breakpoint in x64dbg.
+
+With the default configuration, x64dbg stops at the system breakpoint and then at the entry breakpoint. But the TLS callback runs before the entry point, so if you just press Run from the system breakpoint, the callback runs and detects the debugger (a MessageBox saying "Debugger detected in TLS callback", then `ExitProcess`). You never see `main`. This is exactly the "it dies when I run it in a debugger" phenomenon.
+
+After ticking **TLS Callbacks** under Options > Preferences > Events and restarting, x64dbg stops right before the callback runs. You are standing in the callback, before even the entry point. Inside it, look for:
+
+```asm
+mov   rax, gs:[60h]        ; get the PEB
+movzx eax, byte ptr [rax+2] ; BeingDebugged
+test  eax, eax
+jne   <exit branch>
+```
+
+Set a breakpoint on the `test` or `jne` instruction. There are three ways past it. You can edit the variable: when stopped at `test eax, eax`, set `eax = 0` (or edit the PEB+2 byte in the dump to 0 directly), and the exit branch won't run. You can patch the branch: change `jne` to `nop` (or to a `jmp` toward the surviving path) and save the patch (Ctrl+P > Patch file). Or you can use ScyllaHide: enable the plugin and it hides `BeingDebugged` for good, so the callback sees 0 naturally. That is the cleanest and most durable way, see Lesson 15.9. After getting past, keep running and the program reaches `main` and prints `main: running normally`.
+
+On the questions: the TLS breakpoint matters more than one at main because the callback runs before main. A breakpoint at main is already too late, since the check has had time to kill the program before that. With several TLS callbacks, the PE loader calls them in the order they appear in the `AddressOfCallBacks` array, from top to bottom, until it meets a null pointer. And fixing it once may not be enough because if the callback runs again (for example with `DLL_THREAD_ATTACH` when a new thread is created) or several callbacks perform the same check, you have to handle every occurrence. ScyllaHide handles it more thoroughly because it hides the flag at the source instead of patching each point.
+
+</details>
 
 ## Common pitfalls
 

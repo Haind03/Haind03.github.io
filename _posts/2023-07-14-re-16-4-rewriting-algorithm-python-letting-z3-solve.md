@@ -1,5 +1,8 @@
 ---
 title: "Lesson 16.4: Rewriting the algorithm in Python, and letting Z3 solve it"
+image:
+  path: /assets/img/covers/re-16-4-rewriting-algorithm-python-letting-z3-solve.webp
+  alt: "Lesson 16.4: Rewriting the algorithm in Python, and letting Z3 solve it"
 date: 2023-07-14 11:28:00 +0700
 categories: ["Technique Reverse", "Part 16 · Crypto and Algorithms"]
 tags: [reverse-engineering, crypto]
@@ -72,21 +75,76 @@ A few tips matter here. Use the right width: a byte is `BitVec(name, 8)`, and wh
 
 ## Lab: a crackme solved entirely with Z3
 
-The lab at `labs/16.4/` is a crackme that deliberately ties 12 input bytes together: a chain of equations `A[i]*f[i] + f[i+1] == C[i]`, two cross xor constraints, and a sum constraint. No operation compares the input to the flag directly, so you can't pull the flag out of memory or strings. You read the constraint system in the binary, copy it into Z3, and hit solve.
+The lab is a crackme that deliberately ties 12 input bytes together: a chain of equations `A[i]*f[i] + f[i+1] == C[i]`, two cross xor constraints, and a sum constraint. No operation compares the input to the flag directly, so you can't pull the flag out of memory or strings. You read the constraint system in the binary, copy it into Z3, and hit solve.
 
-The reference solution `solve_z3.py` builds exactly that system and spits out the flag in a blink. Results actually checked in this environment (gcc 11.4, Python 3.11, z3 5.1.0):
+Build it and get started:
+
+```bash
+pip install z3-solver
+gcc -O0 -o crackme crackme.c
+```
+
+Run `./crackme`, try a few 12-character strings, and see it only ever reports Correct or Nope without leaking the flag. Open `crackme.c` (or disassemble the binary in Ghidra or IDA if you want the reading practice) and list out every constraint inside `check`: the allowed range for each byte (printable, 0x20 to 0x7e), the chain of equations `A[i]*f[i] + f[i+1] == C[i]` (watch the 8-bit wraparound), the two cross xor constraints, and the 32-bit sum constraint. Rebuild that system in a Z3 script, using `BitVec(..., 8)` for each byte and `ZeroExt(24, c)` when you accumulate the sum so it doesn't wrap unintentionally. Solve it, take the flag, and feed it into `./crackme` to confirm. As one more check, block the solution you just found and run `check()` again, and confirm it comes back `unsat`, proving the flag is unique.
+
+Two questions to think about. Why can't you pull the flag out of this binary with `strings`? And if one constraint were instead `sha256(f) == <a fixed hash>`, could Z3 still solve it, and why or why not?
+
+Do it yourself first. The reference solution is `solve_z3.py`, and the full write-up with real run results is below.
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 16.4</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/16.4/solve_z3.py" download><i class="fa-solid fa-file-code"></i>solve_z3.py</a>
+<a class="lab-file" href="/assets/labs/16.4/src/crackme.c" download><i class="fa-solid fa-file-code"></i>src/crackme.c</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+Reading the constraint system in `check`. The flag is 12 bytes long. `check` doesn't compare the input to the flag, it checks four groups of constraints. First, the range: each `f[i]` must sit between `0x20` and `0x7e` (a printable character). Second, a chain of equations, for `i` from 0 to 10:
+
+```
+(unsigned char)(A[i]*f[i] + f[i+1]) == C[i]
+A = [3,5,7,3,5,7,3,5,7,3,5]
+C = [65,94,235,107,181,39,12,158,235,59,122]
+```
+
+The cast to `unsigned char` means the arithmetic wraps within 8 bits, so in Z3 you need an 8-bit BitVec (which wraps automatically) or an explicit `& 0xff`. Third, two cross xor constraints:
+
+```
+f[0] ^ f[11] == 0x7b
+f[2] ^ f[5]  == 0x33
+```
+
+Fourth, a 32-bit sum constraint:
+
+```
+f[0] + f[1] + ... + f[11] == 988
+```
+
+Modeling it in Z3. See `solve_z3.py`. Each `f[i]` is a `BitVec(..., 8)`. The chain of equations translates directly, and the sum uses `ZeroExt(24, c)` to widen each byte to 32 bits before adding, avoiding an unwanted wrap.
+
+Results from an actual run. Environment: gcc 11.4.0, Python 3.11.9, z3-solver 5.1.0.
 
 ```text
+$ gcc -O0 -o crackme crackme.c
 $ python3 solve_z3.py
 FLAG: Z3_Rul3s_RE!
 
 $ python3 solve_z3.py | sed -n 's/FLAG: //p' | ./crackme
 Enter flag: Correct! Valid flag.
+
+$ printf 'Z3_Rul3s_REX\n' | ./crackme
+Enter flag: Nope.
 ```
 
-Z3 found `Z3_Rul3s_RE!` purely from the constraint constants, and the crackme itself confirms it's valid. I also checked that it's the unique solution, so there's no second flag.
+Z3 found the flag `Z3_Rul3s_RE!` purely from the constraint constants, and the crackme confirms it's valid.
 
-Step-by-step details are in `labs/16.4/solution.md`, including how to match each C line to a Z3 constraint.
+Checking uniqueness. After getting a solution, adding `s.add(Or([c != m[c] for c in f]))` and calling `s.check()` again returns `unsat`. So the flag is unique, there's no second answer. This check is worth doing every time: in a CTF context, multiple solutions usually mean you're missing a constraint or misread one.
+
+Answering the questions. You can't pull the flag out with `strings` because the binary only contains the constraint constants (A, C, 0x7b, 0x33, 988), the flag doesn't exist in the binary in any form, it only exists as the solution to the system. If one constraint were `sha256(f) == <hash>` instead, Z3 would basically give up: SHA-256 is a one-way function with no algebraic structure for the solver to propagate through, so it would just run forever. At that point you'd need a different attack, brute force if the space is small enough, a dictionary, or some other weakness, not Z3.
+
+</details>
 
 ## When Z3 is not the answer
 

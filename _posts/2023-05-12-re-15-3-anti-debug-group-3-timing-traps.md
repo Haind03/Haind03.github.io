@@ -1,5 +1,8 @@
 ---
 title: "Lesson 15.3: Anti-debug group 3, timing and traps"
+image:
+  path: /assets/img/covers/re-15-3-anti-debug-group-3-timing-traps.webp
+  alt: "Lesson 15.3: Anti-debug group 3, timing and traps"
 date: 2023-05-12 11:29:00 +0700
 categories: ["Technique Reverse", "Part 15 · Anti-Reversing and Bypasses"]
 tags: [reverse-engineering, anti-debug]
@@ -93,7 +96,66 @@ The general rule for the whole of group 3: don't try to fight each individual me
 
 ## Lab
 
-The source is in `labs/15.3/`. Task: build `timing_check.c`, run it freely and see it report "no debugger", run it under x64dbg and single-step through the measured part to see it switch to "debugger detected", then get past it two ways (run straight through without stepping, and patch the jump). Instructions are in `labs/15.3/README.md`, the solution is in `labs/15.3/solution.md`.
+The goal is to see with your own eyes a timing check (RDTSC) and a trap check (INT 3) detect a debugger, and then get past both. The program is `timing_check.c`. It is harmless, and only prints a verdict on whether it sees a debugger. Use it for learning.
+
+On Windows both checks run. Build with MinGW or MSVC.
+
+```
+gcc -O0 timing_check.c -o timing_check.exe
+cl /Od timing_check.c
+```
+
+On Linux only the RDTSC part is built, because the INT 3 check uses SEH and is left out when the target is not Windows.
+
+```
+gcc -O0 timing_check.c -o timing_check
+```
+
+First run it freely (double-click or from a terminal). You should see a small RDTSC delta, a few hundred cycles, and the verdict that no debugger was found. Then open it in x64dbg, set a breakpoint at `main`, and single-step (F7 or F8) through the part between the two `rdtsc` instructions. Continue and watch the delta jump into the millions and the program report "debugger detected".
+
+Now get past it without stepping. Put a breakpoint right after the second `rdtsc` and press F9 to run straight to it. The measured section runs at full speed, the delta is small again, and the check does not fire. You can also get past it by patching: find the conditional jump after the `cmp` of the timing check and invert or nop it. For the INT 3 check, go to Options > Exceptions in x64dbg and configure it to pass the exception breakpoint (0x80000003) on to the program, then watch the program's `__except` handler catch it just as it did when running freely.
+
+Some questions to think about. Why does running straight through with F9 not trigger the timing check while single-stepping does? In the INT 3 check, why does "my own handler ran" mean you are NOT being debugged? And if you patch the jump, do you still need to care about the delta value? Try it yourself before opening the solution.
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 15.3</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/15.3/src/timing_check.c" download><i class="fa-solid fa-file-code"></i>src/timing_check.c</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+I verified it on Linux, built with `gcc -O0 timing_check.c -o timing_check`. That covers only the RDTSC part, since the INT 3 part is Windows SEH and is dropped on other systems. Running it freely gives this.
+
+```
+[timing] delta = 374 cycles
+=> Verdict: no debugger found, running normally
+```
+
+The delta of 374 cycles when running freely is far below the threshold of 100000. This is a real number from the build machine. On Windows under x64dbg, when you single-step through the measured section, the delta jumps into the millions and the check fires.
+
+The free run is the baseline: a small delta of a few hundred cycles, and the verdict that there is no debugger.
+
+Single-stepping gives the check away. In x64dbg, if you press F7 or F8 one instruction at a time through the `for` loop between the two `rdtsc` instructions, every pause in the debugger costs a lot of real cycles, so `t2 - t1` balloons. Then `cmp rax, 100000` and `ja` branch into the "detected" path.
+
+The way past it without touching the code is to run straight through. Put a breakpoint right after the second `rdtsc` (or right before the `cmp`), then press F9 from before the first `rdtsc`. The CPU runs the middle part at full speed with no debugger interrupting each instruction, so the delta stays small. This is the simplest way past a timing check: never single-step the part between two measurement points.
+
+The patch approach looks for this pair.
+
+```asm
+cmp rax, 100000h   ; or some other threshold value
+ja  detected
+```
+
+There are two ways. Change `ja` into a `jmp` that goes over to the safe path, or nop the `ja` instruction (fill it with 0x90) so execution always falls through to the "no debugger" path. After the patch the delta value no longer matters, because the flow never branches into the alarm path.
+
+For the INT 3 trap, the code uses `__debugbreak()` (which emits `int 3`) inside a `__try` block. With no debugger, nobody swallows the exception, so it falls into the program's own `__except`, `handled = 1`, and the function returns 0 (not being debugged). With a debugger that swallows the `int 3`, the `__except` block does not run, `handled` stays 0, and the function returns 1 (being debugged). To get past it, go to Options > Exceptions in x64dbg and add `0x80000003` (STATUS_BREAKPOINT) to the list so the debugger passes it on to the program instead of handling it itself. Then `__except` catches it as it does in a free run, and the check does not fire. Another way is to nop the `int 3` instruction and the checking branch.
+
+On the questions, first, F9 lets the CPU run the measured section continuously at hardware speed, and the debugger does not step in between instructions, so it adds no time. Single-stepping makes the debugger stop after every instruction, and each stop costs a lot of real cycles that add up and inflate the delta. Second, the program places the `int 3` itself and installs its own handler for it. With no debugger, the program's handler catches its own breakpoint. With a debugger, the debugger takes the `int 3` first and (in the default configuration) swallows it, so the program's handler does not run, and that is the sign of being debugged. Third, no: once the jump has been neutralized, the flow always takes the "no debugger" path whatever the delta is. This is why patching the branch is the most durable approach against every group 3 anti-debug technique.
+
+</details>
 
 ## Key takeaways
 Group 3 doesn't ask the OS, it works things out from time and exceptions, so it's harder to hook than the API group. Two `rdtsc` a short distance apart followed by `sub` + `cmp` + jump is a timing check, and GetTickCount/QueryPerformanceCounter give the equivalent. To get past timing, don't step through the measured part (run straight to after timestamp 2), or patch the jump, or fake the value.

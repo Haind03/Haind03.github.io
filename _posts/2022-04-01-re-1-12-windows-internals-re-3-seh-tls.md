@@ -1,5 +1,8 @@
 ---
 title: "Lesson 1.12: Windows internals for RE (3), SEH, TLS callbacks and the syscall layer"
+image:
+  path: /assets/img/covers/re-1-12-windows-internals-re-3-seh-tls.webp
+  alt: "Lesson 1.12: Windows internals for RE (3), SEH, TLS callbacks and the syscall layer"
 date: 2022-04-01 16:44:00 +0700
 categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
@@ -83,6 +86,70 @@ Second, direct syscalls are how malware dodges hooks. Many EDRs and monitoring t
 To be clear, here we learn the mechanism so we can detect and analyze it, not so we can write it. When reversing, the tell is a `syscall` instruction in the code of the module you're analyzing (not in ntdll), or a snippet that loads a number into `eax` and then does `syscall` without going through an import. Then you know the program is trying to avoid the usual monitoring layer, and you have to move to observing at a lower level (kernel callbacks, ETW, or a hardware breakpoint on the syscall instruction itself).
 
 Practical consequence: if you only hook or set breakpoints at the kernel32 level, a program that calls ntdll directly slips through. To be safe, set breakpoints at the `Nt*` layer in ntdll. And if even that misses, it's likely using direct syscalls.
+
+## Lab
+
+In this lab you see for yourself that a TLS callback runs before the entry point, locate it inside the PE, and watch how a system call travels down to the `Nt*` layer of ntdll. Everything here uses a binary you build or a clean system file, so it is safe to run on a normal machine, and there is no malware involved. You need x64dbg (x32dbg for a 32-bit build), PE-bear or CFF Explorer, and a compiler, either MSVC (`cl.exe`) or MinGW (`gcc`), to build the demo `tls_demo.c`.
+
+Build it with one of these and run it directly:
+
+```
+cl /nologo tls_demo.c
+gcc tls_demo.c -o tls_demo.exe
+```
+
+Watch the order of the printed lines. The one from the TLS callback shows up before the one from `main`, and that is the proof that the callback runs before the entry point. Then open the file in PE-bear, go to Directories, find the TLS Directory, and note down `AddressOfCallBacks` and the address of the callback it points to.
+
+Next, catch the callback in x64dbg. Open the file without running it, go to Options, Preferences, Events tab, and enable System Breakpoint, TLS Callbacks and Entry Breakpoint. Press Run. The debugger should stop first at the TLS callback, before the entry point, and the address where it stops should match the callback address you read in PE-bear. Press Run again and this time it stops at the entry point, which makes it clear the callback ran earlier.
+
+Finally, follow a call down into ntdll. In x64dbg, with any process (the demo file works), set a breakpoint on a Win32 function by typing `bp CreateFileW` in the command box. When it hits, keep pressing Step Into (F7) and you will see it call `NtCreateFile` in ntdll. Once you reach the `NtCreateFile` stub, look for the pattern `mov r10, rcx`, then `mov eax, <number>`, then `syscall`, and write down the syscall number on your machine. That is the Native API layer right next to the kernel.
+
+Two questions are worth thinking about. If a program puts its debugger check in a TLS callback, why is a breakpoint on `main` too late? And if you only break on `CreateFileW` (kernel32) but the malware calls `NtCreateFile` directly or uses a direct syscall, will your breakpoint hit, and why?
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 1.12</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/1.12/src/tls_demo.c" download><i class="fa-solid fa-file-code"></i>src/tls_demo.c</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+Task 1, TLS callback before main. After building and running `tls_demo.exe`, the output should be:
+
+```
+[TLS] callback ran (before main)
+[main] started
+[main] if you saw the [TLS] line above, the callback ran first
+```
+
+The `[TLS]` line comes first even though `main` is the main function in the source. The reason is that the Windows loader calls every TLS callback while initializing the process, before handing control to the entry point, which is where the CRT startup code then calls `main`.
+
+In PE-bear, open the file and look in the Directories tab, or in the tree on the left, for TLS. `AddressOfCallBacks` is an address pointing to an array of callback pointers. Following it, the first element is the address of `tls_callback` and the next element is null, which ends the array. Write down the callback address, for example `0x140001070` (the exact number depends on the machine and compiler).
+
+Task 2, catching it in x64dbg. After enabling System Breakpoint, TLS Callbacks and Entry Breakpoint in Options and pressing Run, the first stop leaves the instruction pointer at the TLS callback address, which equals the one you read in Task 1. The x64dbg log window usually says "TLS Callback 1" explicitly. The next Run stops at the Entry Point. That stop order, TLS callback first and entry point second, is the visual proof. If a program hides a debugger check here, you must stop at this first break to be in time to read it.
+
+Task 3, going down to ntdll. Set `bp CreateFileW` and Step Into several times once it hits. The path you observe looks like this:
+
+```
+CreateFileW        (kernel32.dll)   ; Win32 layer, normalizes parameters
+  -> NtCreateFile  (ntdll.dll)      ; Native API
+       mov r10, rcx
+       mov eax, 0x55                ; syscall number, AN EXAMPLE, yours may differ
+       syscall                      ; switch down to the kernel
+       ret
+```
+
+The number after `mov eax,` is the system service number. It differs between Windows versions, so the one you see is almost certainly not `0x55`. That is the thing to remember: don't memorize the numbers.
+
+Why is a breakpoint on main too late for a TLS callback? Because the TLS callback runs before the entry point, and `main` runs even after the entry point (via the CRT startup). By the time a breakpoint on `main` hits, the callback finished long ago. If it probed for a debugger and already reacted (exited, took a fake branch, corrupted data), all you get to see is the aftermath. You have to stop at the TLS callback level.
+
+Will a breakpoint on `CreateFileW` hit when the malware calls `NtCreateFile` directly or uses a direct syscall? No. `bp CreateFileW` only stops when kernel32's `CreateFileW` is called. If the malware calls `NtCreateFile` in ntdll directly, it skips kernel32 and your breakpoint never fires. Worse, if it uses a direct syscall (placing `mov eax, <number>; syscall` into its own code), even a breakpoint on `NtCreateFile` in ntdll misses, because it never calls any ntdll function at all.
+
+The lesson is that the lower you put the breakpoint, the harder it is to dodge. The reliability order goes up as kernel32 < ntdll (`Nt*`) < the `syscall` instruction itself. When you suspect direct syscalls, the safe way is to find the `syscall` instructions and put hardware breakpoints on them, or to observe at the kernel callback and ETW level, which user-mode code can't reach.
+
+</details>
 
 ## Key takeaways
 SEH/VEH let code jump to a handler that the straight-line flow doesn't show, and malware throws exceptions on purpose to hide logic or probe for debuggers, so put a breakpoint at the handler and let the debugger pass the exception to the program. x86 keeps the SEH chain on the stack at `fs:[0]`, while x64 uses a static table in `.pdata`.

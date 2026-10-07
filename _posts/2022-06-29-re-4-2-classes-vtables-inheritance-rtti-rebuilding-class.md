@@ -1,5 +1,8 @@
 ---
 title: "Lesson 4.2: Classes, vtables, inheritance and RTTI, rebuilding the class tree"
+image:
+  path: /assets/img/covers/re-4-2-classes-vtables-inheritance-rtti-rebuilding-class.webp
+  alt: "Lesson 4.2: Classes, vtables, inheritance and RTTI, rebuilding the class tree"
 date: 2022-06-29 21:45:00 +0700
 categories: ["Technique Reverse", "Part 04 · C++"]
 tags: [reverse-engineering, cpp]
@@ -84,6 +87,124 @@ RTTI (Run-Time Type Information) is data C++ generates to support `dynamic_cast`
 This is gold for a reverser. In a binary with RTTI, you'll see strings like `.?AVCircle@@` (MSVC) or `6Circle` (g++'s Itanium ABI) in strings, so the class name is exposed in the open. IDA (with plugins like Class Informer) and Ghidra read RTTI themselves to name vtables and classes by their original names, and `sub_xxx::vftable` suddenly becomes `Circle::vftable`. RTTI also describes inheritance relationships (the base class array), so often you can rebuild the whole tree without guessing.
 
 On the other hand, a binary compiled with `-fno-rtti` won't have these strings. The vtables are still there but you have to name the classes yourself. So one of the first things to do when you meet C++ is check whether RTTI is present: if yes, relief, if not, roll up your sleeves and build it by hand.
+
+## Lab
+
+The goal is to find a vtable yourself in a C++ binary, recognize the vptr at the start of an object, and rebuild the inheritance relationships between classes. The source is `shapes.cpp`, with a base class `Shape` (which has virtual functions) and two derived classes, `Circle` and `Rectangle`. Build it in one of these ways. On Linux, easiest to read:
+
+```sh
+g++ -O0 -g -fno-inline -o shapes shapes.cpp
+```
+
+On Linux, a build without RTTI for comparison:
+
+```sh
+g++ -O0 -fno-rtti -o shapes_nortti shapes.cpp
+```
+
+With MinGW on Windows:
+
+```sh
+g++ -O0 -g -o shapes.exe shapes.cpp
+```
+
+With MSVC in a Developer Command Prompt:
+
+```
+cl /EHsc /Od /Zi shapes.cpp
+```
+
+Open the binary in IDA or Ghidra and run auto-analysis. Start by finding the vtables. Look in `.rdata` (Windows) or `.rodata` (Linux) for arrays of function pointers. IDA or Ghidra may already have named them something like `vtable for Circle`, so list the vtables you see. Then read the contents of one vtable: each slot points to a function, so follow each pointer and guess which virtual function it is (`area`, `name`, the destructor).
+
+Next recognize the vptr in an object. Find the `report` function and spot the asm that loads the vptr from offset 0 of the object and then calls indirectly. This is the "two dereferences then `call [reg]`" pattern. In the same function find where `s->id` is read. At which offset in the object is it, and why isn't it offset 0? After that, find the constructors, the functions that write a vtable address into offset 0 of a new object. Which vtable does the constructor of `Circle` write, and which does that of `Rectangle`? Using the vtables and constructors, draw the relationships: which class is the parent and which are the children.
+
+Finally compare builds with and without RTTI. Open both `shapes` and `shapes_nortti`. In the RTTI build, look for the class name strings (`Circle`, `Rectangle`) in the strings. Does the `-fno-rtti` build still have them, and does it still have the vtables? Two questions to think about: if you change `Shape*` to a pointer to a concrete derived class and call the function, is the call still indirect through the vtable, and why can the compiler call directly (devirtualization)? And why is the destructor usually in the vtable?
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 4.2</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/4.2/src/shapes.cpp" download><i class="fa-solid fa-file-code"></i>src/shapes.cpp</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+The figures below come from a real compile with `g++ 11.4` on x86-64 Linux (`g++ -O0 -g -fno-inline`). The names are mangled following the Itanium ABI. MSVC uses different names but the same idea.
+
+Running `nm -C shapes | grep vtable` gives three vtables: `vtable for Shape`, `vtable for Circle` and `vtable for Rectangle`. Every polymorphic class has exactly one vtable, placed in a read-only region (`.data.rel.ro` or `.rodata` on Linux, `.rdata` on Windows).
+
+Each slot of a vtable is a function pointer, in the order the virtuals were declared. For `Circle`:
+
+```
+vtable Circle:
+  [0] Circle::area      (double area())
+  [1] Circle::name      (const char* name())
+  [2] Circle::~Circle   (destructor, normal version)
+  [3] Circle::~Circle   (deleting destructor)
+```
+
+The vtable of `Rectangle` has the same layout but its slots point to `Rectangle::area` and `Rectangle::name`. Because the structures coincide, one call site calls different functions depending on the object.
+
+The real asm of `report` (function `_Z6reportP5Shape`) shows the vptr:
+
+```asm
+mov  QWORD PTR [rbp-0x18], rdi   ; s = parameter
+mov  rax, QWORD PTR [rbp-0x18]   ; rax = s
+mov  rax, QWORD PTR [rax]        ; rax = *s = vptr   <-- reads the vtable at offset 0
+mov  rdx, QWORD PTR [rax]        ; rdx = vtable[0]   (area)
+mov  rdi, QWORD PTR [rbp-0x18]   ; rdi = s = this
+call rdx                         ; call the virtual
+```
+
+That is the "two dereferences then `call [reg]`" pattern: `mov rax,[s]` takes the vptr (because it sits at offset 0), `mov rdx,[rax]` takes the vtable slot, and `call rdx` calls it. The second call, `name()`, is identical except for an `add rax, 0x8` to get `vtable[1]`.
+
+Near the end of the function the ordinary field is read:
+
+```asm
+mov  eax, DWORD PTR [rax+0x8]    ; s->id
+```
+
+`id` is at offset 8, not 0, because offset 0 is already taken by the vptr (8 bytes on x64). That is why every field of a polymorphic class is shifted by 8 bytes compared to what you would expect. The object layouts (checked with `sizeof` and `offsetof`) are:
+
+```
+Shape : vptr(0), id(8)              sizeof = 16
+Circle: vptr(0), id(8), radius(16)  sizeof = 24  (offset 12 is padding)
+```
+
+The constructor `Circle::Circle` contains an instruction that writes a vtable address to the start of the object:
+
+```asm
+lea  rax, [rip + vtable_Circle + 16]   ; points to the first function slot of the vtable
+mov  QWORD PTR [rcx], rax              ; write the vptr at offset 0 of the object
+```
+
+g++ points the vptr at the first function slot, which is vtable + 16 because the first two slots are the offset-to-top and the typeinfo pointer. When you see a function that begins by writing a vtable address into `[this]`, that is a constructor, and it binds the object to the matching class. `Circle` writes the Circle vtable and `Rectangle` writes the Rectangle vtable. From the vtables and constructors the class tree is:
+
+```
+        Shape  (abstract, pure virtual area())
+        /    \
+   Circle   Rectangle
+```
+
+The signs of inheritance are that `Circle` and `Rectangle` both begin with the same object prefix as `Shape` (vptr + id), their constructors call `Shape::Shape` before setting their own vptr, and the RTTI (below) declares `Shape` as the base.
+
+A normal build has RTTI, and `nm -C` shows `typeinfo for Shape / Circle / Rectangle` and `typeinfo name for Shape / Circle / Rectangle`. The strings also contain Itanium style RTTI names: `5Shape`, `6Circle`, `9Rectangle` (the number is the length of the name). This is what IDA (Class Informer) and Ghidra read to name classes automatically. With `-fno-rtti` no typeinfo symbols remain and the RTTI name strings are gone, but the vtables are still there (`vtable for Circle` still exists). So without RTTI you can still rebuild the hierarchy through the vtables and constructors, you just lose the free gift of class names.
+
+One important caution: in this lab the strings "Circle", "Rectangle" and "Shape" still appear in both builds, but those are string literals returned by the `name()` function, not RTTI. Don't confuse the two sources. The real signs of RTTI are the mangled strings `6Circle` and `9Rectangle` and the `typeinfo` symbols.
+
+On the reflection questions: if you call through a pointer of a concrete type (`Circle* c; c->area()`), the compiler knows the type for certain and calls `Circle::area` directly, without going through the vtable. That is devirtualization, and a virtual call only appears when the static type is the base class and the real type is known only at run time. The destructor is in the vtable because `delete base_ptr` has to call the destructor of the actual derived class, a decision made at run time, so it needs to be virtual too.
+
+To confirm, build and run it:
+
+```
+[1] Circle area=12.57
+[2] Rectangle area=12.00
+```
+
+The same `report(shapes[i])` line prints a different name and area for the two objects, which proves that virtual dispatch through the vtable works exactly as analyzed.
+
+</details>
 
 ## Key takeaways
 Virtual functions lead to vtables: one vtable per class (an array of function pointers in .rdata/.rodata), and every object has a vptr at offset 0 pointing to its own vtable. A virtual call in asm is two dereferences then `call [reg]` or `call [reg+offset]`, where the offset picks the function by declaration order.

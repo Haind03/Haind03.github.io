@@ -1,5 +1,8 @@
 ---
 title: "Lesson 4.1: C++ through a reverser's eyes, name mangling and the this pointer"
+image:
+  path: /assets/img/covers/re-4-1-c-through-reversers-eyes-name-mangling.webp
+  alt: "Lesson 4.1: C++ through a reverser's eyes, name mangling and the this pointer"
 date: 2022-06-21 10:01:00 +0700
 categories: ["Technique Reverse", "Part 04 · C++"]
 tags: [reverse-engineering, cpp]
@@ -80,7 +83,86 @@ When you see all three, drop the "standalone C function" thinking and start thin
 
 ## Lab
 
-The folder `labs/4.1/`. You'll build a small class, look at the mangled names in the binary, demangle them, and point out the this pointer in rdi/rcx in a method call. When you're done compare with `solution.md`.
+The goal is to see with your own eyes how C++ mangles function names and where the this pointer gets passed. You'll build a small class from `counter.cpp`, look at the mangled names in the binary, demangle them, and point out the this pointer in rdi/rcx in a method call. Build it with one of these:
+
+```
+g++ -O0 -g counter.cpp -o counter          # Linux
+g++ -O0 counter.cpp -o counter.exe         # Windows MinGW
+cl /EHsc /Od counter.cpp                   # Windows MSVC
+```
+
+First look at the mangled names. On Linux run `nm counter | grep -i counter` and write down the symbol names of the two `add` functions and of the constructor. Where do they differ? Then pipe the output through `c++filt` with `nm counter | grep -i counter | c++filt`, and compare with the original names in the source. Why do the two `add` functions need different names?
+
+Then find the this pointer. Open the binary in IDA or Ghidra (or use `objdump -d -M intel counter`), find `main` and look at the code that calls `c.add(5)`. Which argument is loaded into rdi (Linux) or rcx (Windows) just before the `call`, and what is that value? In the call `c.add(1, 2)`, three things are loaded before the call: this and the two numbers. Which registers do they go into, and in what order?
+
+If you have MSVC, build with it too and compare its `?...@@` style of mangled names with the `_ZN...` style of GCC, using `undname` to demangle. Two more questions to think about. If the binary is stripped of symbols, can you still demangle, and how would you tell which class a function is a method of? And if a function's pseudocode is full of `a1->field`, what is `a1` most likely to be?
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 4.1</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/4.1/src/counter.cpp" download><i class="fa-solid fa-file-code"></i>src/counter.cpp</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+The results below come from a real build with g++ (-O0) on Linux x86-64. `nm counter | grep -i counter` prints:
+
+```
+_ZN7Counter3addEi      W
+_ZN7Counter3addEii     W
+_ZN7CounterC1Ei        W
+_ZN7CounterC2Ei        W
+_ZNK7Counter3getEv     W
+```
+
+Through `c++filt`:
+
+```
+_ZN7Counter3addEi    ->  Counter::add(int)
+_ZN7Counter3addEii   ->  Counter::add(int, int)
+_ZN7CounterC1Ei      ->  Counter::Counter(int)
+_ZN7CounterC2Ei      ->  Counter::Counter(int)
+_ZNK7Counter3getEv   ->  Counter::get() const
+```
+
+Decoding the Itanium rules (GCC/Clang): `_ZN` opens a name that has a namespace or class, `7Counter` is a name 7 characters long, `Counter`, and `3add` is a method 3 characters long, `add`. `E` closes the list of nested names, and what follows are the parameter types: `i` is int, `ii` is (int, int), `v` is void. `_ZNK` (with a `K`) means a const method, so `get() const`. The constructor appears twice, as `C1` and `C2` (complete object versus base object constructor), and both demangle to `Counter::Counter(int)`.
+
+The two `add` functions need different names because the linker only sees symbols, and `add(int)` and `add(int, int)` sharing the name `add` would collide. Mangling puts the parameter types into the name (`Ei` versus `Eii`), so they become two separate symbols. That is how overloading works at the link level.
+
+For the this pointer, the part of `main` that calls `c.add(5)`, where the object `c` is a local variable at `[rbp-0xc]`, looks like this:
+
+```asm
+lea    rax, [rbp-0xc]      ; rax = &c
+mov    esi, 0x5            ; n = 5  -> rsi (second argument)
+mov    rdi, rax            ; this = &c -> rdi (first, hidden argument)
+call   _ZN7Counter3addEi
+```
+
+this (`&c`) is in rdi, and the real argument `n=5` is pushed down to rsi. At the binary level `add` is a function of two arguments: `add(this, n)`. The call `c.add(1, 2)` looks like:
+
+```asm
+lea    rax, [rbp-0xc]
+mov    edx, 0x2           ; m = 2 -> rdx (third argument)
+mov    esi, 0x1           ; n = 1 -> rsi (second argument)
+mov    rdi, rax           ; this -> rdi (first argument)
+call   _ZN7Counter3addEii
+```
+
+The SysV register order is rdi (this), rsi (n), rdx (m). On Windows x64 it would be rcx (this), rdx (n), r8 (m).
+
+MSVC mangles the same method into this form:
+
+```
+?add@Counter@@QEAAXH@Z     ->  public: void __cdecl Counter::add(int)
+```
+
+You decode it with `undname "?add@Counter@@QEAAXH@Z"`. The syntax is different but it carries the same information: class, method and parameter types. The this pointer on Win64 goes in rcx.
+
+On the reflection questions, a stripped binary often still keeps the mangled names of exported functions or dynamic symbols, but internal static functions lose their names. Then you infer the class from structure: functions that receive a pointer in rdi/rcx and then access the same set of offsets are working on one class, and grouping them lets you rebuild the class. If the pseudocode is full of `a1->field`, then `a1` is almost certainly this. Rename it to `this` and assign the class type so IDA or Ghidra shows field names instead of offsets. As a final check, the program prints `18` (10 + 5 + 1 + 2 = 18), which matches the `Counter` logic.
+
+</details>
 
 ## Key takeaways
 C++ at the binary level is C plus a few conventions, not a new world. Name mangling stuffs class, method and parameter types into the symbol name to support overloading, with GCC/Clang using `_ZN...` and MSVC using `?...@@`. Don't decode it by hand: use c++filt, undname, or let IDA/Ghidra demangle automatically. C++ symbols are a gift because they give class, method and parameter names, more than C does.

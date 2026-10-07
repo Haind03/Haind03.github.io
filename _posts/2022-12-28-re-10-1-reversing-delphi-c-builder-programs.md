@@ -1,5 +1,8 @@
 ---
 title: "Lesson 10.1: Reversing Delphi and C++Builder programs"
+image:
+  path: /assets/img/covers/re-10-1-reversing-delphi-c-builder-programs.webp
+  alt: "Lesson 10.1: Reversing Delphi and C++Builder programs"
 date: 2022-12-28 10:34:00 +0700
 categories: ["Technique Reverse", "Part 10 · Legacy: Delphi, VB6, AutoIt, AHK"]
 tags: [reverse-engineering, legacy]
@@ -43,4 +46,61 @@ Delphi/C++Builder is native x86/x64, but it drags in a forest of VCL functions a
 Identify with DIE, then use IDR to recover VCL names and rebuild forms and event handlers. Start from event handlers such as Button1Click rather than from main, because main is just the message loop.
 
 ## Lab
-See `labs/10.1/`: identify a Delphi exe with DIE, use IDR to rebuild the forms and event handlers, then trace to the function that handles the OK button.
+
+In this lab you recognize a Delphi binary yourself, use IDR to rebuild its forms and event handlers, and then trace to the check function behind the OK button. You need Detect It Easy (DIE), IDR (Interactive Delphi Reconstructor, from the author's official site), and IDA Free or Ghidra to look at the code once IDR has supplied the symbols. You also need a Delphi exe to practice on. A good option is to compile a small VCL app yourself with the free Delphi Community Edition, with one form, one input box and an OK button that checks a password, or to use a Delphi crackme from crackmes.one (filtered by the Delphi language).
+
+Drag the exe into DIE and note whether the compiler is Borland or Embarcadero Delphi, which version, and whether it is 32 or 64-bit. Open Strings and look for VCL traces (unit names such as `SysUtils`, `Classes`, `Vcl.Forms`) and the app's own message strings. Then run IDR on the exe, let it finish analyzing, and look at the list of forms and event handlers it rebuilt, noting the handler names (for example `Button1Click` or `btnOKClick`).
+
+Export the support file from IDR (map or idc) and load it into IDA, and watch how the number of named functions grows compared with before. Jump to the event handler of the OK or Login button and read the check logic. Keep in mind that the compared strings are Delphi strings with a length prefix, and that parameters are passed in EAX, EDX and ECX. Finally find the password or the condition for success.
+
+Some questions to think about. Why is starting from an event handler so much faster than reading from the entry point? How does a Delphi string differ from a C string, and how does that affect your searching in IDA? And if you did not have IDR, how long would it take you to work out by yourself which functions are VCL and which are the author's code? Try it yourself before opening the solution.
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+This writeup describes the standard workflow on a typical Delphi app. The steps and the shape of the results below follow the way IDR and IDA work with Delphi binaries, so the exact output on your sample will differ.
+
+For triage with DIE, a typical Delphi exe is reported like this.
+
+```
+Compiler: Embarcadero Delphi (or Borland Delphi 7)
+Linker: Turbo Linker
+```
+
+That is the first confirmation. When you see "Delphi", you know immediately that you need IDR, and you should not waste time reading raw assembly in IDA.
+
+In Strings, some strings reveal the VCL and the Borland runtime.
+
+```
+System
+SysUtils
+Classes
+Vcl.Forms
+TButton
+TForm
+Borland
+```
+
+Mixed in among them are the app's own strings (for example messages such as "Wrong password" or "Registration successful"). Note that each Delphi string has a few bytes of length and refcount in front of the text.
+
+Running IDR, it analyzes the exe, recognizes a lot of VCL and RTL functions and gives them their standard names (`TStringList.Add`, `ShowMessage`, `UpperCase` and so on). More importantly, it reads the DFM from the resources and lists the forms with their event handlers, for example this.
+
+```
+TfrmMain
+  btnOK: TButton      OnClick -> btnOKClick  @ 0x00451A20
+  edtSerial: TEdit
+  lblStatus: TLabel
+```
+
+Now you know the exact address of the function that runs when the user presses OK.
+
+When importing into IDA, load the map or idc file exported by IDR. Before that, IDA may have had a few thousand `sub_` functions. After the import most of them carry VCL names, and what remains is a handful of unnamed functions, which are the author's code. That is where the real reversing begins, on a small number of functions instead of a whole sea.
+
+Next, read `btnOKClick`. Inside you typically see the text being fetched from `edtSerial` through a VCL getter (`TControl.GetText` or similar), then a comparison with the expected value using `System.@LStrCmp` or a loop, and then a call to `ShowMessage` with the success string if it matches and the failure string if not. Remember the register calling convention: the first parameter is in EAX, the second in EDX and the third in ECX. When you see `@LStrCmp` comparing, the two strings are in EAX and EDX.
+
+To find the valid condition, read up to the compare instruction and you see the expected value (or the transformation algorithm, if the crackme was built more carefully). With a simple Delphi crackme the correct serial is usually exposed directly in the operand of `@LStrCmp`.
+
+On the questions: starting from an event handler is faster because the `main` of a VCL app is only a message loop (`Application.Run`) and contains no logic, while the handler is where the real action happens. Delphi strings carry a length prefix and a refcount and are not null-terminated, so when searching in IDA you look for the text part, and when reading the length you look at the few bytes before the pointer. Without IDR you would have to guess which functions are VCL through FLIRT or experience, which takes hours and is easy to get wrong, especially when you do not know the event handler names that would locate the logic.
+
+</details>
+

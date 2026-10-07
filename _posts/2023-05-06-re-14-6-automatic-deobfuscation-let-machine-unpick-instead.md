@@ -1,5 +1,8 @@
 ---
 title: "Lesson 14.6: Automatic deobfuscation, let the machine unpick it instead of grinding by hand"
+image:
+  path: /assets/img/covers/re-14-6-automatic-deobfuscation-let-machine-unpick-instead.webp
+  alt: "Lesson 14.6: Automatic deobfuscation, let the machine unpick it instead of grinding by hand"
 date: 2023-05-06 20:49:00 +0700
 categories: ["Technique Reverse", "Part 14 · Packers and Obfuscation"]
 tags: [reverse-engineering, packer, obfuscation]
@@ -63,7 +66,49 @@ A tip that's often forgotten: a lot of the time you don't need to undo any obfus
 
 ## Lab
 
-See `labs/14.6/`. You'll take a function with MBA or opaque predicates, use D-810 or Miasm to simplify it, and compare the pseudocode before and after. If you can't install the tools yet, the lab has a sample MBA expression for you to reduce by hand, enough to see with your own eyes a monstrous expression collapse into a single XOR.
+The goal is to see a tool (or yourself) turn an obfuscated expression back into a readable original form. Ideally you have IDA Pro with Hex-Rays and the [D-810](https://gitlab.com/eshard/d810) plugin, or [Miasm](https://github.com/cea-sec/miasm). Without them you can still do the MBA reduction by hand with pen and paper or Python.
+
+Start with a hand reduction, no tool needed. Here is an MBA expression built to be equivalent to a simple operation:
+
+```
+f(a, b) = (a ^ b) + 2 * (a & b)
+```
+
+Prove it equals a familiar operation. A hint: think about how `a + b` splits into an "add without carry" part and a "carry" part. Check it in Python:
+
+```python
+import random
+for _ in range(10000):
+    a = random.randint(0, 2**32-1)
+    b = random.randint(0, 2**32-1)
+    assert ((a ^ b) + 2*(a & b)) & 0xFFFFFFFF == (a + b) & 0xFFFFFFFF
+print("f(a,b) == a + b")
+```
+
+Then try a harder one, `g(a, b) = (a | b) - (a & b)`. Reduce it and check it in Python the same way. The hint is that the result is a single bitwise operator.
+
+If you have the tools, use them. With D-810, open a binary that contains MBA (build one with tigress or OLLVM, or take an MBA crackme), turn on the MBA rules, press F5, and compare the pseudocode before and after enabling the plugin. With Miasm, lift a small function, run symbolic execution, print the output expression and call the simplifier, comparing the raw expression with the reduced one.
+
+Finally, think about when you don't need to unpick anything. Consider a heavily flattened function `check(serial)`. Instead of undoing the flow, you could emulate it or use symbolic execution to find a valid serial without understanding the dispatcher. Write a paragraph describing how you would do it (tool details are in Part 18).
+
+Two questions to think about. Why is simplifying MBA on an IR easier than on raw assembly? And D-810 works by rules, so what happens when it meets an MBA variant that no rule knows, and how does symbolic execution differ?
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+Try it yourself before reading.
+
+For the first expression, `f(a, b) = (a ^ b) + 2 * (a & b)` equals `a + b`. Binary addition splits into two parts. `a ^ b` is the per-bit sum that ignores carries (add without carry). `a & b` marks the positions that generate a carry, and the carry is added into the next column, meaning a left shift by 1 bit, so `2 * (a & b)` is exactly `(a & b) << 1`. Adding the two parts gives the full addition `a + b`. This is the classic MBA identity that obfuscators like to use to hide a plain `+`. I checked 100000 random 32-bit pairs, and `((a^b)+2*(a&b)) & 0xFFFFFFFF == (a+b) & 0xFFFFFFFF` held for all of them.
+
+For the second, `g(a, b) = (a | b) - (a & b)` equals `a ^ b`. `a | b` contains every bit set in at least one operand. It splits into two disjoint groups: bits set on only one side (`a ^ b`) and bits set on both (`a & b`). Because the two groups don't overlap, `a | b = (a ^ b) + (a & b)`. Subtracting `a & b` leaves `a ^ b`. Again I checked 100000 random 32-bit pairs, and `((a|b)-(a&b)) & 0xFFFFFFFF == (a^b) & 0xFFFFFFFF` held for all of them. Together these show the nature of MBA: an expression that looks complicated but is always equal to a single simple operation. Tools like D-810 or Miasm's simplifier know a library of such identities and apply them automatically.
+
+For the tools, the typical workflow (described here, the concrete result depends on the sample you use) goes like this. With D-810, before enabling the plugin, the Hex-Rays pseudocode of the MBA function shows a long chain of `^`, `&`, `|`, `+` and `<<` operations. After turning on the MBA rules and pressing F5 again, the same function reduces to `return a + b;` or similar, because the plugin rewrites at the microcode level so the decompiler prints the cleaned version. With Miasm, after lifting and running symbolic execution the raw output expression looks like `((a ^ b) + ((a & b) << 1))`, and calling `expr.simplify()` (or Miasm's simplifier) reduces it to `a + b`.
+
+For when you don't need to unpick anything, take a heavily flattened `check(serial)`. Instead of recovering the flow, you can emulate it with Unicorn or Qiling: load the function, try many serials and see which make it return true. That works well when the serial space is small or structured. Or you can use symbolic execution with angr or Triton: make the serial a symbolic variable and ask the solver for a value that makes the function return true, without reading a single line of the dispatcher. Both answer "which serial is valid" while ignoring the tangled flow entirely. Details are in Lessons 18.2 (emulation) and 18.3 (symbolic execution).
+
+On the questions: simplifying on an IR is easier because an IR is regular, with one effect per instruction, no implicitly changing status flags and no multiple ways of writing the same operation. That lets you apply algebraic rules without handling a pile of x86 special cases. D-810 matches patterns by rule, so when it meets an MBA with no rule it cannot reduce it and you have to add a rule yourself. Symbolic execution doesn't rely on patterns. It computes the symbolic expression and lets a solver prove equivalence, so it can unpick variants it has never seen, at the cost of running slower and heavier.
+
+</details>
 
 ## Key takeaways
 All automatic deobfuscation follows one formula: lift to IR, simplify, lower back down. D-810 unpicks right inside Hex-Rays microcode and is strong on MBA, opaque predicates and flattening, though it is rule-based. HexRaysDeob is the predecessor, and Rolf Rolles' series is the one to read to understand microcode. Miasm is a full Python framework (IR, emulation, symbolic, simplify) where you program the workflow yourself, and symbolic execution (Triton, angr) is the general weapon for both MBA and flattening, with details in Part 18. Weigh the scale: do a small spot by hand and only build a tool for bulk work, and sometimes you just emulate to get the answer with no unpicking needed.

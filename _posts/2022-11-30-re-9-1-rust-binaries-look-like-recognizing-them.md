@@ -1,5 +1,8 @@
 ---
 title: "Lesson 9.1: What Rust binaries look like, recognizing them before reading"
+image:
+  path: /assets/img/covers/re-9-1-rust-binaries-look-like-recognizing-them.webp
+  alt: "Lesson 9.1: What Rust binaries look like, recognizing them before reading"
 date: 2022-11-30 16:18:00 +0700
 categories: ["Technique Reverse", "Part 09 · Rust"]
 tags: [reverse-engineering, rust]
@@ -50,7 +53,72 @@ Put together as a working rhythm: triage with DIE, confirm it's Rust, and note t
 
 ## Lab
 
-See `labs/9.1/`. If your machine has `rustc`, build a small program in both debug and release modes, observe the mangling and panic strings, then demangle with rustfilt.
+The task is to see for yourself the traits of a Rust binary that this lesson describes: name mangling, panic strings, and the effect of the optimization level. You need `rustc`, and optionally `rustfilt` (install it with `cargo install rustfilt`). Check with `rustc --version`. If your machine has no Rust toolchain, read the solution to see the described results and you can still follow the lesson.
+
+Build three variants from `main.rs`. The debug build is `rustc main.rs -o rust_demo_dbg`, the release build is `rustc -O main.rs -o rust_demo_rel`, and the v0 mangling build is `rustc -O -C symbol-mangling-version=v0 main.rs -o rust_demo_v0`. Compare the sizes of the three files and think about why they are all large even though the program is tiny. Then look for panic strings:
+
+```
+strings rust_demo_rel | grep -iE "\.rs|unwrap|panic"
+```
+
+Which string leaks the source file name, and why is that information valuable when reversing? Next demangle the symbols:
+
+```
+nm rust_demo_dbg | rustfilt | head -40
+nm rust_demo_v0 | grep '_R' | rustfilt | head -40
+```
+
+Compare the legacy mangled names (`_ZN...`) with v0 (`_R...`), and work out what the `h...` hash at the end of a legacy name is. Finally compare debug and release in Ghidra or IDA by opening the function `transform`. In release, does the iterator chain `.bytes().enumerate().map().fold()` keep its function boundaries, or has it been inlined into one flat loop?
+
+Two questions to think about. If the binary is stripped of all symbols, what anchors do you still have to locate the author's functions? And why does experience reading C++ (Part 4) carry over to Rust while Go experience (Part 8) carries over less?
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 9.1</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/9.1/src/main.rs" download><i class="fa-solid fa-file-code"></i>src/main.rs</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+The results below describe the standard behavior of the Rust toolchain. When you run it yourself, the specific sizes and hashes will differ, but the qualitative signs hold.
+
+### Tasks 1 and 2: sizes
+
+All three variants are unusually large for a program that prints a few lines, typically a few hundred KB up to over 1 MB. There are two reasons. Rust's standard library is statically linked into the binary, and monomorphization makes every generic (here the iterator adapters) emit its own code for the concrete type. Release (`-O`) is usually slightly smaller than debug and has fewer symbols, but is still large because of the static linking.
+
+### Task 3: panic strings
+
+`check(...).unwrap()` in `main` can panic if it returns `Err`, so the compiler inserts panic machinery with a location. In `strings` you will see lines like:
+
+```
+main.rs
+src/main.rs
+called `Result::unwrap()` on an `Err` value
+```
+
+along with std's own panic strings such as `index out of bounds` and `attempt to ... with overflow`. It is valuable because the string `main.rs` is referenced right next to the code that calls `unwrap`. Following that string backward (xref) takes you straight to the author's `main` or `check` function, skipping the sea of `core` and `std` code. In a heavily optimized release Rust binary, this is usually the most reliable anchor.
+
+### Task 4: mangling
+
+A debug build (legacy by default) has symbols like:
+
+```
+_ZN9rust_demo9transform17h3a9f...E
+```
+
+which `rustfilt` turns into `rust_demo::transform`. The part `17h3a9f...` is a length plus a hash that distinguishes the monomorphized copies, carries no semantic meaning, and can be ignored when reading. A v0 build has symbols starting with `_R`, for example `_RNvCs..._9rust_demo9transform`, which `rustfilt` also turns into `rust_demo::transform` but which encodes generics fully and so is longer. Without rustfilt, recent IDA and Ghidra can read both by themselves once the demangler is enabled.
+
+### Task 5: debug vs release
+
+In debug, `transform` stays fairly close to the source and you can see the separate calls to the iterator adapters. In release, the whole chain `.bytes().enumerate().map(...).fold(...)` is inlined and merged into one flat loop that walks each byte, multiplies by the index, and accumulates into an accumulator initialized to `0x1337`. There are no separate `map` or `fold` functions left to hold onto. This is exactly why release Rust is hard to read: you have to read by the logic of the loop, not by the original function structure.
+
+### Answers to the questions
+
+With a fully stripped binary, the panic strings are still there, because they are data and not symbols, so you can still walk backward from a location string to the author's code. That is why panic strings get the emphasis. As for why it is closer to C++ than to Go, Rust has no GC runtime or goroutine scheduler, and its object layout and parameter passing are close to C++. Go has the pclntab and a distinctive runtime, so the techniques differ (see Part 8).
+
+</details>
 
 ## Key takeaways
 Rust is hard to read because of monomorphization, heavy inlining and static linking, though structurally it's closer to C++ than Go (no GC runtime). Recognize Rust by `src/*.rs` paths, `rustc` strings, `core::`/`alloc::`/`std::` symbols and panic strings.

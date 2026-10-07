@@ -1,5 +1,8 @@
 ---
 title: "Lesson 17.3: Hooking on Windows, IAT hooks and inline hooks"
+image:
+  path: /assets/img/covers/re-17-3-hooking-windows-iat-hooks-inline-hooks.webp
+  alt: "Lesson 17.3: Hooking on Windows, IAT hooks and inline hooks"
 date: 2023-07-29 22:22:00 +0700
 categories: ["Technique Reverse", "Part 17 · Patching, Hooking, Injection"]
 tags: [reverse-engineering, frida, hooking]
@@ -68,7 +71,53 @@ If you see an IAT slot pointing to a region that doesn't belong to the original 
 
 ## Lab
 
-See `labs/17.3/`: observe an inline hook in memory, recognize the `jmp` at the start of a function, and compare prologues to tell a hooked function from a clean one.
+The goal is to recognize a function that has been inline hooked, by reading its prologue in memory and comparing it with the original bytes on disk. It applies this lesson and connects back to [Lesson 15.7](/posts/re-15-7-anti-attach-anti-dump-anti-hook/). This lab is about observation and recognition, and you don't have to write a hook yourself. You need Windows and x64dbg, and any running process (notepad is enough), or a machine with an EDR or antivirus installed so you can see a real hook in ntdll.
+
+Open x64dbg and attach to a process. Go to the Symbols tab, pick the `ntdll.dll` module and find the function `NtAllocateVirtualMemory`. Jump to the start of that function (double click) and read the first few prologue bytes. The standard prologue of an `Nt*` function on Win64 usually begins with `mov r10, rcx` (`4C 8B D1`) followed by `mov eax, <syscall number>`. If the machine has an EDR, the start of the function may instead be a `jmp` (`E9 ...` or `FF 25 ...`) in place of the standard prologue. That is an inline hook, so follow the jmp to see where it leads (usually a module of the EDR).
+
+Then compare. Open the actual file `C:\Windows\System32\ntdll.dll` in another x64dbg window or in PE-bear, find the same function and read the original bytes on disk. Bytes in memory that differ from the bytes on disk at the prologue are the evidence of a hook. To finish, think about why an inline hook catches more calls than an IAT hook, and where malware that wants to dodge an EDR hook would restore the original bytes from.
+
+If you have no EDR to observe, you can still practice the pattern recognition: remember that a clean function opens with a valid prologue (building a stack frame, or for `Nt*` functions `mov r10, rcx`), while a hooked function opens with a jump instruction. In every later debugging session, glancing at the prologue of the sensitive APIs becomes a reflex. A hint on the opcodes: `E9` is `jmp rel32` (5 bytes), `FF 25` is `jmp [rip+disp]` (6 bytes, an indirect jump through a 64-bit pointer), and `68 ... C3` is `push addr; ret`. All three are common ways of redirecting at the start of a hooked function. Try it yourself before opening the solution.
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+An unhooked `Nt*` function in ntdll on Win64 typically opens like this:
+
+```
+4C 8B D1              mov r10, rcx
+B8 18 00 00 00        mov eax, 18h        ; syscall number (changes with the Windows version)
+F6 04 25 ...          test byte ...       ; flag check
+0F 05                 syscall
+C3                    ret
+```
+
+The tell is `mov r10, rcx` (`4C 8B D1`) followed by `mov eax, <number>`, which is the mold of every syscall stub in ntdll. Seeing exactly this mold means the function hasn't been tampered with.
+
+On a machine with an EDR, the same function may become:
+
+```
+E9 2B 00 1A 00        jmp <address in the EDR module>
+```
+
+or
+
+```
+FF 25 00 00 00 00     jmp qword [rip]
+XX XX XX XX XX XX XX XX   ; 64-bit pointer to the monitoring function
+```
+
+The first byte is no longer `4C 8B D1`. Following the jmp (press Enter on the jmp instruction in x64dbg) lands in a region belonging to the security product's DLL. That monitoring function logs the call and then usually continues to the real syscall through a trampoline.
+
+To compare disk with memory, open `ntdll.dll` on disk in PE-bear, or in an x64dbg instance that loads the file statically. Compute the function's RVA and read the bytes there: on disk it is always the clean prologue (`4C 8B D1 ...`), while in the memory of a process hooked by an EDR it is a `jmp`. That difference is the evidence of an inline hook. This is exactly how PE-sieve and anti-malware tools scan for hooks: they diff the .text in RAM against the .text on disk.
+
+Why does an inline hook catch more than an IAT hook? An IAT hook only changes a pointer in one module's import table, so it only intercepts calls that go through that table. Calls that get the address with `GetProcAddress`, make the syscall directly, or come from another module that doesn't use that IAT slip through. An inline hook modifies the function body itself, so every path that finally reaches the function has to run through the hook's jmp. In exchange, an inline hook is more complex (copying whole instructions, fixing relocations).
+
+Where does malware restore the original bytes from? It rereads a clean `ntdll.dll` from disk (or maps a fresh copy from `\KnownDlls`, or keeps a pre-hook copy at hand), then overwrites the prologue in memory with the original bytes to erase the EDR's hook before making its call. This technique is called unhooking. Knowing it exists helps you understand why an EDR sometimes doesn't see behavior even though it placed a hook.
+
+One caveat: the prologue bytes and syscall number above are the standard ntdll Win64 mold, and the specific syscall number differs between Windows versions. The x64dbg procedure is described the standard way, and the details differ from machine to machine.
+
+</details>
 
 ## Key takeaways
 A hook wedges into a function call, and it's the foundation of EDRs, Frida, compatibility tools, and analysis. An IAT hook changes a pointer in the Import Address Table, so it only catches calls through the IAT: clean but not comprehensive. An inline hook overwrites the start of a function with `jmp`, and a trampoline keeps the original bytes to call the real function, so it catches every call.

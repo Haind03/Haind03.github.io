@@ -1,5 +1,8 @@
 ---
 title: "Lesson 18.3: Symbolic execution, making the computer solve the crackme for you"
+image:
+  path: /assets/img/covers/re-18-3-symbolic-execution-making-computer-solve-crackme.webp
+  alt: "Lesson 18.3: Symbolic execution, making the computer solve the crackme for you"
 date: 2023-09-04 11:00:00 +0700
 categories: ["Technique Reverse", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
@@ -62,7 +65,56 @@ Pragmatic rule: try angr first because it's cheap, if it hangs or explodes narro
 
 ## Lab
 
-The folder `labs/18.3/`. `src/crackme.c` checks an 8-character serial through a chain of constraints on the bytes. The task is to build it, then let `solve_angr.py` find the serial by itself, without reading the `check` function. Compare the result with the hand-read approach. The solution and the correct serial are in `solution.md` (this serial was actually found by angr, see the writeup).
+The goal is to let symbolic execution find the serial by itself, without reading the `check` function by hand. `crackme.c` checks an 8-character serial through a chain of constraints on the bytes. Install angr and build the crackme:
+
+```bash
+pip install angr
+gcc -O0 -no-pie -fno-stack-protector -o crackme crackme.c
+```
+
+Run `./crackme ABCDEFGH` first to see it print `Nope.`. Do NOT open `crackme.c` or decompile it. All you know is that it takes an 8-character serial through `argv[1]` and prints `Correct!` if it is right. Use `solve_angr.py` to have angr find the serial:
+
+```bash
+python3 solve_angr.py ./crackme
+```
+
+Feed the serial angr found into `./crackme <serial>` and confirm you get `Correct!`. Only now open `crackme.c`, read the `check` function, solve it by hand and compare with angr's result.
+
+Three questions to think about. Why does angr find the serial without you copying a single constraint? If `check` hashed the serial with SHA-256 and compared it to a constant, could angr still solve it, and why? And `find` and `avoid` here match on stdout, so what other way is there to point angr at a target? Try it yourself first.
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 18.3</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/18.3/solve_angr.py" download><i class="fa-solid fa-file-code"></i>solve_angr.py</a>
+<a class="lab-file" href="/assets/labs/18.3/src/crackme.c" download><i class="fa-solid fa-file-code"></i>src/crackme.c</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+The correct serial is `AorrnsqT`. I verified it end to end on Linux. I built with `gcc -O0 -no-pie -fno-stack-protector -o crackme crackme.c`, then `python3 solve_angr.py ./crackme` (angr 9.2.213) printed `Serial: AorrnsqT`. Feeding it back, `./crackme AorrnsqT` prints `Correct! Access granted.` (exit 0), while `./crackme WRONGXXX` prints `Nope.` (exit 1). angr found this serial without us reading the `check` function.
+
+Here is what angr did. It loaded the binary, created 8 symbolic bytes `c0..c7`, joined them into `serial`, and passed it through `argv[1]`. It added a soft constraint that each byte is printable (0x20 to 0x7e) for a tidy result. Then `explore(find=..., avoid=...)` pushed all states forward, keeping the states whose stdout contains `Correct` and dropping those containing `Nope`. On the state it found, `solver.eval(serial)` derives bytes satisfying every constraint accumulated along the way.
+
+To compare with solving by hand, open `crackme.c`: the `check` function applies 8 constraints.
+
+| Byte | Constraint | Result |
+|---|---|---|
+| s[0] | `s[0] ^ 0x41 == 0` | `0x41` = 'A' |
+| s[1] | `s[1] == 0x6F` | `0x6F` = 'o' |
+| s[2] | `s[1] + s[2] == 0xE1` | `0xE1 - 0x6F = 0x72` = 'r' |
+| s[3] | `s[3] ^ s[0] == 0x33` | `0x41 ^ 0x33 = 0x72` = 'r' |
+| s[4] | `s[4] * 2 == 0xDC` | `0x6E` = 'n' |
+| s[5] | `s[5] - s[1] == 0x04` | `0x6F + 4 = 0x73` = 's' |
+| s[6] | `s[6] ^ 0x5A == 0x2B` | `0x2B ^ 0x5A = 0x71` = 'q' |
+| s[7] | `(s[7] + s[6]) & 0xFF == 0xC5` | `0xC5 - 0x71 = 0x54` = 'T' |
+
+Putting them together, `A o r r n s q T` is `AorrnsqT`, which matches angr's result.
+
+On the questions: you don't need to copy constraints because angr executes the binary with symbolic variables and collects the constraints at each branch itself. We only point at the goal (stdout containing "Correct") and what to avoid, and the job of translating logic into constraints belongs to angr, not to us. If `check` hashed with SHA-256 and compared to a constant, angr would nearly give up. A hash function creates enormous constraints and is essentially one-way, so an SMT solver can't invert it in finite time. Then you would have to brute-force the feasible space, or look for some other weakness (which connects to lesson 16.4). As for other ways to point at the goal, use specific addresses: `find=0x...` (the address of the instruction that prints Correct, or of the return-1 branch) and `avoid=0x...`, taking the addresses from IDA, Ghidra or objdump. Matching on stdout is more convenient when you don't want to look up addresses.
+
+</details>
 
 ## Key takeaways
 Symbolic execution replaces the input with symbolic variables, splits branches to explore, then uses an SMT solver to find the input that reaches the goal. With angr you set up a Project, a State (symbolic input via `claripy.BVS`), a simulation manager, and `explore(find=, avoid=)`, and `find`/`avoid` can match on stdout so you don't need hand-picked addresses. The weak spots are path explosion and heavy crypto/hashes, and then you narrow the scope or go back to hand-written Z3. Try angr first because it's cheap, and if it fails read by hand.

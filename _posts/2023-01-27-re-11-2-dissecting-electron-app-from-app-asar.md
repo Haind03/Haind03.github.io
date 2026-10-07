@@ -1,5 +1,8 @@
 ---
 title: "Lesson 11.2: Dissecting an Electron app, from app.asar to V8 bytecode"
+image:
+  path: /assets/img/covers/re-11-2-dissecting-electron-app-from-app-asar.webp
+  alt: "Lesson 11.2: Dissecting an Electron app, from app.asar to V8 bytecode"
 date: 2023-01-27 15:53:00 +0700
 categories: ["Technique Reverse", "Part 11 · JavaScript, Electron, WebAssembly"]
 tags: [reverse-engineering, javascript, wasm]
@@ -69,4 +72,85 @@ An Electron app is Chromium + Node.js + packaged JavaScript code, not compiled t
 On `.jsc` (bytenode, V8 bytecode), try strings first. Dumping from runtime is the winning way and disassembly is the last resort.
 
 ## Lab
-See `labs/11.2/`: find and extract the `app.asar` of an Electron app, read the code, try modifying it and repacking.
+
+The task is to recover and modify the JavaScript code of an Electron application. You need Node.js (to use `npx asar`) or 7-Zip with an asar plugin, and any Electron app you have the right to analyze: a small app you download to learn from, or a minimal Electron app you create yourself. Don't use this to get around the license of commercial software. A good way to make a practice target is to run `npm init`, install `electron`, write a `main.js` that prints a message, package it with `electron-packager` or `electron-builder`, and then reverse the result yourself.
+
+Begin by confirming the app is Electron: look for `resources/app.asar`, `*.pak` files, Chromium libraries, and a large size. List the archive contents with `asar list app.asar` and extract it with `asar extract app.asar out/`. Read `package.json`, find the `main` field, and open that entry-point file. If the code is minified, run Prettier or js-beautify and read it again. Then pick a message string from the UI and trace backward through the code to where it is produced. Finally change one line (for example a displayed string), repack with `asar pack out/ app.asar` (back up the original first), run the app and confirm the change.
+
+As an extension, if you meet `.jsc` files, the app uses bytenode. Run `strings` on the file to see what it leaks, then try loading it with the exact Node version of the app and intercepting at the `vm` or `Module._compile` layer to get the source back.
+
+Two questions to think about. Why is modifying an Electron app usually much easier than modifying a native C++ app? And bytenode "hides" the code rather than "encrypting" it, so what does that mean for dumping it from the runtime? Do it yourself before opening the solution.
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+This writeup describes the standard procedure on an Electron app. The paths and file names are the typical forms you will meet, and they differ from app to app.
+
+### Identifying and extracting
+
+The Electron signs in the install folder:
+
+```
+MyApp/
+  MyApp.exe
+  resources/app.asar        <- the code is here
+  resources.pak, *.pak       <- Chromium resources
+  ffmpeg.dll, libEGL.dll     <- Chromium libraries
+  (total size in the hundreds of MB)
+```
+
+List and then extract:
+
+```bash
+asar list resources/app.asar
+asar extract resources/app.asar out/
+```
+
+Without Node, open `app.asar` with 7-Zip and the asar plugin, or read the JSON header at the start of the file (asar stores a JSON describing the offset and size of each file at the beginning).
+
+### Finding the entry point
+
+`out/package.json`:
+
+```json
+{ "name": "myapp", "main": "dist/main.js", "version": "1.2.3" }
+```
+
+The `main` field points to the first file the main process runs. Open `dist/main.js`. If it is one extremely long line with variable names like `a,b,c`, the code is minified. Prettify it:
+
+```bash
+npx prettier --write out/dist/main.js
+# or
+npx js-beautify out/dist/main.js -o out/dist/main.pretty.js
+```
+
+### Going from a string to the code
+
+If the UI shows "License invalid", grep the extracted source:
+
+```bash
+grep -rn "License invalid" out/
+```
+
+The place that matches is usually the license check function. Read around it to understand the valid condition. This is the familiar go-from-the-string technique, like with native code, except here it is directly readable source.
+
+### Modifying and repacking
+
+```bash
+cp resources/app.asar resources/app.asar.bak    # back up
+# edit out/dist/main.js with an editor
+asar pack out/ resources/app.asar
+```
+
+Run the app again and the change takes effect. With a practice app you made yourself, you will see the string you edited straight away.
+
+### When it is .jsc (bytenode)
+
+If `main` points to a `.jsc`, or the code contains `require('bytenode')`, the code has become V8 bytecode. `strings out/dist/main.jsc` often leaks function names, string literals and endpoints, and sometimes that is enough to understand the logic. A runtime dump is the winning approach: load the file with the exact Node version of the app and intercept at `Module._compile` or `vm.Script` to get the source back before V8 runs it. Bytenode only hides and does not encrypt strongly, so if the code has to run, you must be able to get it back. The last resort is `node --print-bytecode` to disassemble the V8 bytecode and read opcodes by hand, which is very laborious.
+
+### Answers to the questions
+
+Modifying Electron is easier than native C++ because the code is JavaScript that is not compiled to machine code, only wrapped in an unencrypted asar. There is no assembly to read and no structs or vtables to recover, you just extract and read the source. Bytenode "hiding" means turning JS into bytecode that is hard to read directly, but it is not locked with a secret key. Since V8 still has to execute the code, you can always step in at load time to get it back, so a runtime dump almost always succeeds.
+
+</details>
+

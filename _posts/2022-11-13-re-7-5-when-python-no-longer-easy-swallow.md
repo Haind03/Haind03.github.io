@@ -1,5 +1,8 @@
 ---
 title: "Lesson 7.5: When Python is no longer an easy-to-swallow .pyc"
+image:
+  path: /assets/img/covers/re-7-5-when-python-no-longer-easy-swallow.webp
+  alt: "Lesson 7.5: When Python is no longer an easy-to-swallow .pyc"
 date: 2022-11-13 14:45:00 +0700
 categories: ["Technique Reverse", "Part 07 · Python"]
 tags: [reverse-engineering, python]
@@ -48,6 +51,42 @@ A common mix-up is thinking a Nuitka binary is PyInstaller and then fumbling aro
 ## Why this is a turning point
 
 All of Part 7 so far taught you one narrow skill: reading and decompiling Python bytecode. Nuitka and Cython wipe that skill out and force you back to the native foundation of Parts 1 to 4. That's exactly why the curriculum puts assembly and C/C++ first: when the high-level language shell is stripped away, you always fall back to native, and anyone solid on native has no dead end. PyArmor teaches a different lesson: when the code only exists in memory at runtime, the answer lies in dynamic analysis, not static.
+
+## Lab
+
+Before you pick a tool, you have to know which kind of packaged Python you are holding. This lab trains the triage reflex and choosing the right approach. You need Detect It Easy, `strings` (Linux) or FLOSS, IDA Free or Ghidra for the native part, and a few Python executables to practice on. If you have no samples, make your own. A plain PyInstaller build is `pip install pyinstaller && pyinstaller -F hello.py`. For Nuitka use `pip install nuitka && python -m nuitka --onefile hello.py`, for Cython `pip install cython && cythonize -i module.pyx`, and for PyArmor `pip install pyarmor && pyarmor gen hello.py`.
+
+Start with a blind triage. Take a Python exe (yours or a sample), run DIE and `strings | sort | uniq`, and without reading the file name, guess from the signs alone whether it is PyInstaller, Nuitka, Cython or PyArmor. Then look for the fingerprint strings of each sample. PyInstaller shows `MEI`, `PyInstaller`, `pyi-`, a PYZ archive at the end of the file and `pythonXY.dll`. Nuitka is dense with `Py_`, `PyObject_` and `PyImport_` and has a module name table but no PYZ. Cython has `__pyx_`, `__Pyx_` and function names like `__pyx_pf_...` inside a `.pyd` or `.so`. PyArmor has `pytransform`, `pyarmor_runtime` and an encrypted data blob.
+
+After that, choose a direction. Fill in a table: for the kind you just identified, which tools work, which are useless, and what the first step is. Finally, try one native step. With a Nuitka or Cython sample, open it in Ghidra, find a CPython API call (for example `PyObject_RichCompare` or `PyUnicode_...`), and explain what it is doing to which Python object.
+
+Two questions to think about. Why is pycdc useless against all three kinds, but for three different reasons? And with PyArmor, why is static analysis stuck while dynamic analysis has a way in? Try it yourself before opening the solution.
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+Here is the quick identification table:
+
+| Sign in DIE/strings | Kind | Does pycdc work? | First step |
+|---|---|---|---|
+| `MEI`, `PyInstaller`, PYZ archive at the end, `pythonXY.dll` | Plain PyInstaller | Yes (after extraction) | pyinstxtractor, then pycdc (Lesson 7.4) |
+| Many `Py_`/`PyObject_`/`PyImport_`, a module name table, NO PYZ | Nuitka | No | Open IDA/Ghidra, reverse it like C, follow the CPython API |
+| `__pyx_`, `__Pyx_`, `__pyx_pf_...`, inside a `.pyd`/`.so` | Cython | No | Open the `.pyd`/`.so` in Ghidra, follow `__pyx_` and the CPython API |
+| `pytransform`, `pyarmor_runtime`, an encrypted blob | PyArmor | No (directly) | Dump the code objects from memory at runtime |
+
+pycdc is useless for three different reasons. With Nuitka there is no Python bytecode left at all, it has become machine code, and pycdc only understands .pyc, so it has nothing to chew on. Cython is similar: the code lives in a C extension compiled to native. PyArmor is still Python bytecode, but encrypted. On disk pycdc only sees garbage, and the real code doesn't exist until the runtime decrypts it in RAM. What they share is that static analysis on disk fails. What differs is that with Nuitka and Cython the code has left the Python world for good, while with PyArmor it is still Python, just temporarily locked.
+
+For Nuitka, treat it as a C/C++ binary. In Ghidra or IDA, follow the CPython API calls to understand the semantics: `PyObject_RichCompare` is a comparison, `PyUnicode_FromString` creates a string, and `PyObject_Call` calls a Python function. Nuitka embeds a string table that exposes the original Python module and function names, which you can use as anchors for naming. For example, if you see user input loaded, then `PyObject_RichCompare` against a constant string, then a branch, that is the familiar password check, just written in CPython API calls.
+
+Cython is like Nuitka but is usually a `.pyd`/`.so` module imported from a thin Python script. The wrapper script is sometimes still a readable .pyc, so read it first to learn what functions the native module provides. Then open the native module and follow the `__pyx_pf_<module>_<func>` symbols to find the right function, and read it like C.
+
+For PyArmor, let it decrypt itself and take the result from memory. On old versions (5/6), look for a community unpack script matching the version and hook `pytransform` to intercept the code objects after decryption. On new versions (7/8+), hook the CPython execution layer (for example intercept `PyEval_EvalFrame`/`PyEval_EvalCodeEx`, or run under a patched CPython that dumps every evaluated code object), collect the code objects and `marshal.dump` them to .pyc so pycdc/uncompyle6 can decompile them. Run the sample in an isolated VM if the source is suspicious (Lesson 0.3).
+
+Static analysis is stuck on PyArmor because it only sees encrypted bytecode and has no key. But to run at all, PyArmor has to decrypt the code object and hand it to CPython for execution, and at that moment the real code sits bare in memory. Dynamic analysis stands at exactly that spot to catch it, so there is always a way in, the only question is how much effort it takes.
+
+Two common traps. One is confusing Nuitka with PyInstaller and then looking for a PYZ that isn't there: PyInstaller has an archive attached at the end of the file and a bootloader that leaves characteristic strings, while Nuitka has no archive. The other is assuming that any Python exe can be solved with pycdc. Always triage first.
+
+</details>
 
 ## Key takeaways
 Nuitka and Cython compile Python to native, so there's no more bytecode and you have to use IDA/Ghidra like with C. The traces to hold onto are the CPython API (`Py_`, `PyObject_`) with Nuitka and `__pyx_`/`__Pyx_` with Cython. PyArmor is still Python but encrypts the bytecode and decrypts it in RAM at runtime, so the approach is dumping code objects from memory. Always triage with DIE and strings first to know which kind you're facing, and don't look for a PYZ on a Nuitka binary. When the language shell is stripped, you always fall back to native, and the foundation of Parts 1 to 4 is the lifesaver.

@@ -1,5 +1,8 @@
 ---
 title: "Lesson 7.3: When pycdc gives up, who else is there"
+image:
+  path: /assets/img/covers/re-7-3-when-pycdc-gives-up-who-else.webp
+  alt: "Lesson 7.3: When pycdc gives up, who else is there"
 date: 2022-11-05 22:22:00 +0700
 categories: ["Technique Reverse", "Part 07 · Python"]
 tags: [reverse-engineering, python]
@@ -128,7 +131,107 @@ This table will go stale, since new tools keep coming out. The principle doesn't
 
 ## Lab
 
-See `labs/7.3/`. You'll take a `.pyc` file, try several decompilers in turn, see with your own eyes which one refuses which version, then read the bytecode yourself with `dis`/`marshal` to get the answer when tools give up.
+In this lab you see why you need several decompilers at hand, and you practice the last resort, which is reading the bytecode directly with `dis` and `marshal`. You take a `.pyc` file, try several decompilers in turn, watch which one refuses which version, and then read the bytecode yourself to get the answer when the tools give up.
+
+You need Python 3 (the lab was checked on 3.11.9) and, optionally, the extra tools from `pip install uncompyle6 decompyle3 xdis`. The sample program is `secret.py`, and you can also use any other `.pyc` files you have lying around. First create a `.pyc` to experiment on by compiling `secret.py`.
+
+```
+python3 -c "import py_compile; py_compile.compile('secret.py', cfile='secret.pyc')"
+```
+
+Next determine the version by reading the 4 magic bytes at the start of the file (see [Lesson 7.1](/posts/re-7-1-python-bytecode-pyc-files/)) and write down the Python version. Then try `uncompyle6 secret.pyc`. If the file was produced by Python 3.9 or newer, it will most likely refuse with a line saying `Unsupported Python version`, so read carefully the header it still prints (bytecode version, compile time, source name). After that, try pycdc, which you built in Lesson 7.2, on the same file and compare with the uncompyle6 result.
+
+When the tools give up, read the bytecode manually.
+
+```python
+import marshal, dis
+with open('secret.pyc','rb') as f:
+    f.read(16)
+    code = marshal.load(f)
+print(code.co_consts)
+for c in code.co_consts:
+    if hasattr(c,'co_code'):
+        dis.dis(c)
+```
+
+Look in `co_consts` for suspicious constants, and in the bytecode for `COMPARE_OP` instructions. Then work out the rule that the `check` function enforces using the bytecode alone, without looking at the source. What conditions must a valid password satisfy?
+
+Two questions to think about. Why does uncompyle6 refuse outright rather than try and produce something wrong? And if you only had the bytecode and no decompiler worked, could you still solve the task, and why? Try it yourself before opening the solution.
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 7.3</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/7.3/src/secret.py" download><i class="fa-solid fa-file-code"></i>src/secret.py</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+All the output below is real, produced on Python 3.11.9.
+
+To create the `.pyc` and identify the version:
+
+```
+python3 -c "import py_compile; py_compile.compile('secret.py', cfile='secret.pyc')"
+xxd secret.pyc | head -1
+```
+
+The first 4 magic bytes (for example `a7 0d 0d 0a`) correspond to Python 3.11. The full magic table is in [Lesson 7.1](/posts/re-7-1-python-bytecode-pyc-files/).
+
+Now uncompyle6 refuses.
+
+```
+pip install uncompyle6
+uncompyle6 secret.pyc
+```
+
+The real result is this.
+
+```
+# Unsupported bytecode in file secret.pyc
+# Unsupported Python version, 3.11, for decompilation
+# Can't uncompile secret.pyc
+# uncompyle6 version 3.9.3
+# Python bytecode version base 3.11 (3495)
+# Embedded file name: secret.py
+# Compiled at: 2026-10-06 15:44:48
+# Size of source mod 2**32: 185 bytes
+```
+
+uncompyle6 (the latest version, 3.9.3) does not support 3.11 bytecode, so it refuses outright. But notice the header: it still reports the bytecode version, the source file name `secret.py`, the compile time and the source size. That is free triage even when decompilation fails.
+
+With the same file, pycdc (which is independent of the runtime) has a better chance than uncompyle6 on 3.11, although its 3.11 support is still not perfect. If pycdc also gives an incomplete result, move on to PyLingual or read the bytecode.
+
+When the tools give up, `marshal` plus `dis` never betrays you, using the snippet from the task. The module's `co_consts` immediately reveals the `check` code object. Disassembling `check` gives this (excerpt).
+
+```
+  2   LOAD_CONST  1 ('r3v3rs3')   STORE_FAST 1 (key)
+  3   LOAD_GLOBAL (len) ... LOAD_CONST 2 (10)  COMPARE_OP 3 (!=)
+  4   LOAD_CONST  3 (False)  RETURN_VALUE
+  5   LOAD_CONST  4 (0)  STORE_FAST 2 (total)
+  6   FOR_ITER ...  (loop)
+  7   LOAD_GLOBAL (ord) ... BINARY_OP 13 (+=)  STORE_FAST 2 (total)
+  8   LOAD_CONST  5 (1000)  COMPARE_OP 2 (==)
+      ... startswith(key[:3]) ...
+```
+
+Just looking at `co_consts` gives you three clues: the string `'r3v3rs3'`, the number `10` and the number `1000`. Combined with the `COMPARE_OP` instructions, the rule `check` enforces has three parts. The length must be exactly 10 characters (`COMPARE_OP != 10`, and if it is wrong the function returns False). The sum of the ASCII codes of all characters must equal 1000 (the `FOR_ITER` loop adds `ord(c)`, then `COMPARE_OP == 1000`). And the password must start with `key[:3]`, the first three characters of `'r3v3rs3'`, which is `"r3v"`.
+
+There is no single valid password. Any 10-character string that starts with `r3v` and whose ASCII sum is 1000 passes. One example, verified by actually running it, is below.
+
+```
+python3 secret.py r3versekz9
+Correct!
+python3 secret.py wrongpass1
+Nope.
+```
+
+`r3versekz9` starts with `r3v`, is 10 characters long and has an ASCII sum of 1000, so it is valid.
+
+The lessons are these. A decompiler refusing does not mean you are stuck, because bytecode can always be read. `co_consts` often contains the answer directly (comparison constants, target strings). And when the task asks for a property (an ASCII sum) rather than a fixed string, there are countless correct answers, just like the keygen in Lesson 3.6.
+
+</details>
 
 ## Key takeaways
 No decompiler wins on every version, because Python bytecode keeps changing. uncompyle6 is strong on Python 2.x through 3.8 and decompyle3 patches 3.7 through 3.9 further, but both flatly refuse bytecode that's too new (we saw it drop the 3.11 file). pycdc is runtime-independent, and PyLingual (web, ML) fits newer Python.

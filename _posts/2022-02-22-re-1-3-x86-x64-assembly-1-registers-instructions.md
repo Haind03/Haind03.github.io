@@ -1,5 +1,8 @@
 ---
 title: "Lesson 1.3: x86/x64 Assembly (1), registers and the instructions you see every day"
+image:
+  path: /assets/img/covers/re-1-3-x86-x64-assembly-1-registers-instructions.webp
+  alt: "Lesson 1.3: x86/x64 Assembly (1), registers and the instructions you see every day"
 date: 2022-02-22 09:00:00 +0700
 categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]

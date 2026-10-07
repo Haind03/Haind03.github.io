@@ -1,5 +1,8 @@
 ---
 title: "Lesson 3.3: Structs in assembly and the art of recovering them"
+image:
+  path: /assets/img/covers/re-3-3-structs-assembly-art-recovering-them.webp
+  alt: "Lesson 3.3: Structs in assembly and the art of recovering them"
 date: 2022-06-05 14:55:00 +0700
 categories: ["Technique Reverse", "Part 03 · C"]
 tags: [reverse-engineering, c]
@@ -108,7 +111,88 @@ The same code, but the second you can read and understand in two seconds. Multip
 
 ## Lab
 
-Source code and instructions are at `labs/3.3/`. In short: build a C program that uses a struct with several field types, open it in IDA or Ghidra, read the raw pseudocode, then rebuild the struct and compare before/after. The file `solution.md` has the struct layout and each field's offset for you to check against, but build it yourself before opening it.
+The goal here is to recognize a struct in a binary and rebuild it in IDA or Ghidra, watching the pseudocode change from `*(a1 + N)` to `player->field`. Build `inventory.c` unoptimized so it stays readable, with one of these commands:
+
+```
+# Linux
+gcc -O0 -g -o inventory inventory.c
+
+# Windows, MSVC (Developer Command Prompt)
+cl /Od /Zi inventory.c
+
+# Windows, MinGW
+gcc -O0 -g -o inventory.exe inventory.c
+```
+
+Open the binary in your tool and run auto-analysis. Find the two functions `update_player` and `print_player`. If the binary is stripped, start from the format string in `print_player` (the one containing `id=`, `score=` and so on) and follow the xref back. Read the pseudocode of `update_player` before assigning any struct and write down every offset accessed on the first pointer parameter. Then rebuild `struct Player` in the tool, inferring each field's type from how it is used: a 4-byte read is an int, a 1-byte access is a char, and use with a double instruction means a double. Assign `Player *` to the parameter of both `update_player` and `print_player` and read the pseudocode again. Finally, check `sizeof` and the offsets against your layout, paying attention to the padding.
+
+Some questions to think about. Why does `score` sit at offset 8 and not 5, even though `rank` takes only 1 byte? Why is `sizeof(struct Player)` 48 and not the sum of the fields (4+1+4+16+8+4 = 37)? And which field gets the most padding in front of it, and why?
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 3.3</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/3.3/src/inventory.c" download><i class="fa-solid fa-file-code"></i>src/inventory.c</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+Build the struct yourself before reading this. The real layout of `struct Player`, checked with `offsetof` and `sizeof` (gcc x86-64, and the same result with MSVC x64 since the alignment rules are the same), is:
+
+| Field | Type | Offset | Size |
+|---|---|---|---|
+| id | int | 0 | 4 |
+| rank | char | 4 | 1 |
+| (padding) | | 5 | 3 |
+| score | int | 8 | 4 |
+| name | char[16] | 12 | 16 |
+| (padding) | | 28 | 4 |
+| balance | double | 32 | 8 |
+| level | int | 40 | 4 |
+| (trailing padding) | | 44 | 4 |
+
+`sizeof(struct Player)` is 48.
+
+On the padding: `rank` at offset 4 takes only 1 byte (up to offset 5). But `score` is an `int` and needs an address divisible by 4, so the compiler inserts 3 padding bytes (offsets 5, 6, 7) to push `score` to offset 8. That is why you see the accesses jump from `+4` to `+8`. `name[16]` ends at offset 28. `balance` is a `double` and needs 8-byte alignment, so 4 padding bytes (offsets 28 to 31) put `balance` at offset 32. The whole struct must have a size divisible by the largest alignment inside it (8, because of the `double`), so after `level` (which ends at offset 44) another 4 bytes bring the total to 48. The fields actually in use add up to 37 bytes, but with padding the struct takes 48, which is something newcomers often miscount when rebuilding a struct. The most padding in front of a field is at `score` (3 bytes) and `balance` (4 bytes), and `balance` gets the largest gap.
+
+The `update_player` pseudocode before assigning the struct (as IDA might show it, with variable names that can differ) is:
+
+```c
+void update_player(__int64 a1, int a2)
+{
+    *(_DWORD *)(a1 + 8) += a2;                         // score += gained
+    if ( *(_DWORD *)(a1 + 8) > 100 && *(_BYTE *)(a1 + 12) )  // score > 100 && name[0]
+    {
+        ++*(_DWORD *)(a1 + 40);                        // level++
+        *(_BYTE *)(a1 + 4) = 'A';                      // rank = 'A'
+    }
+    *(double *)(a1 + 32) = *(double *)(a1 + 32) + (double)a2 * 1.5;  // balance
+}
+```
+
+Notice the offsets that appear: 8 (score), 12 (name), 40 (level), 4 (rank), 32 (balance). From them you infer the types. `+8` and `+40` are read as 4 bytes (DWORD), so they are int. `+12` is read as 1 byte (BYTE), so it is a char or the start of a char array. `+4` is written as a 1-byte char. `+32` is used in a double operation, so it is a double.
+
+After building `struct Player` and assigning `Player *p`:
+
+```c
+void update_player(Player *p, int gained)
+{
+    p->score += gained;
+    if ( p->score > 100 && p->name[0] )
+    {
+        ++p->level;
+        p->rank = 'A';
+    }
+    p->balance = p->balance + (double)gained * 1.5;
+}
+```
+
+It nearly matches the original source, and that is the value of recovering the struct.
+
+When you have no source, you recognize each field's type like this. An offset read or written with 4 bytes (`_DWORD`, an `eXX` register) is most likely an `int`. An offset read or written with 1 byte (`_BYTE`, an `Xl` register) is a `char`, or the first element of a char array if a loop later walks through it. An offset used in a floating point instruction (`movsd`, `addsd`, or a `double` type in the pseudocode) is a `double`. A continuous range of offsets accessed with a running index is an array. Here `name` starts at offset 12 and `strcpy` and `printf %s` walk through it, so it is a `char[16]`. If you assign types and the offsets of the later fields come out shifted, you usually guessed the size of an earlier field wrong (for example declaring `short` instead of `int`). Fix that field and everything lines up again.
+
+</details>
 
 ## Key takeaways
 A struct in assembly is a base address plus a constant offset, and each offset is a field. Arrays use `[base + index*scale]` with a changing index, while structs use `[base + constant]` with different types. Padding/alignment makes offsets non-contiguous, which is normal and not an error. In IDA you use Local Types/Structures, type the C declaration, and assign the type with `Y`, and in Ghidra you use the Data Type Manager, Auto Create Structure, and retype with Ctrl+L. Building structs is one of the highest-return things when reading C/C++ code.

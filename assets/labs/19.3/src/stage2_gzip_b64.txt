@@ -1,0 +1,6 @@
+HARMLESS stage-two practice sample for Lesson 19.3.
+This is the "base64 wrapped around gzip" pattern that multi-stage loaders often use.
+Decoding: base64 decode then gzip decompress gives a command that only prints text.
+
+payload (base64 of gzip):
+H4sIACi+xGoC/wsvyixJ1fXILy5RUA8uSUxPVTBSKEpNTM5ITdFRKC7JzMlRSErNy0zPUwcAecI0BioAAAA=

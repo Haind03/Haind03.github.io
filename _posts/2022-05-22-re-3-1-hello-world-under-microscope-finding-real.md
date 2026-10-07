@@ -1,5 +1,8 @@
 ---
 title: "Lesson 3.1: Hello world under the microscope, finding the real main"
+image:
+  path: /assets/img/covers/re-3-1-hello-world-under-microscope-finding-real.webp
+  alt: "Lesson 3.1: Hello world under the microscope, finding the real main"
 date: 2022-05-22 09:13:00 +0700
 categories: ["Technique Reverse", "Part 03 · C"]
 tags: [reverse-engineering, c]
@@ -83,11 +86,65 @@ IDA Pro has FLIRT signature libraries that recognize CRT and standard library fu
 
 ## Lab
 
-Source code and instructions: `labs/3.1/`.
+The task is to build the same `hello.c` with `gcc` on Linux and with MSVC on Windows, open the results in Ghidra or IDA Free, and start from the entry point. From there you trace to the real `main` yourself, in two different ways, on both Linux and Windows binaries. Finally you compare how much CRT code sits before `main` in each build.
 
-The task is to build the same `hello.c` with `gcc` (Linux) and MSVC (Windows), then open it in Ghidra or IDA and start from the entry point. Trace to the real `main` yourself in two ways, following `__libc_start_main` or the 3-parameter function, and working backwards from the string. Finally, compare the amount of CRT code before main between the two compilers.
+On Linux, build a normal dynamic binary and a static one, where the static one pulls the whole CRT in and makes the difference easy to see.
 
-The detailed solution is in `labs/3.1/solution.md`, but do it yourself first.
+```
+gcc -O0 -o hello_gcc hello.c
+gcc -O0 -static -o hello_gcc_static hello.c
+```
+
+On Windows with MSVC, run this in an "x64 Native Tools Command Prompt".
+
+```
+cl /Od hello.c /Fe:hello_msvc.exe
+```
+
+With MinGW you can use this instead.
+
+```
+x86_64-w64-mingw32-gcc -O0 -o hello_mingw.exe hello.c
+```
+
+Open `hello_gcc` in Ghidra, find the entry point (`_start`), find the call to `__libc_start_main`, and work out which function is loaded into `rdi` just before it. Check that it really is `main` by opening it, where you should see a call to `printf` or `puts`. Then repeat with `hello_msvc.exe`, but this time without using function names. Go through the Strings window, find "Hello, world", look at its xrefs and jump to the function that uses it. Is that `main`?
+
+Next, still in the MSVC binary, find `main` the second way: follow the CRT wrapper functions down to the last function that is called with three arguments (`rcx`, `rdx` and `r8` holding `argc`, `argv` and `envp`). Do the two approaches land on the same function? After that, compare the number of functions (or the amount of code before `main`) between `hello_gcc` and `hello_gcc_static`, and see how much static linking adds. Open the Strings view of all three files and decide which one exposes the most CRT strings, and why.
+
+Two questions are worth thinking about afterwards. If the binary is stripped, which of these methods still work and which break? And why is starting from a string faster than reading sequentially from the entry point? Try it yourself before opening the solution.
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 3.1</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/3.1/src/hello.c" download><i class="fa-solid fa-file-code"></i>src/hello.c</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+On Linux, follow `__libc_start_main`. Open `hello_gcc` and go to `_start`. The end of `_start` looks like this (Intel syntax, x64).
+
+```asm
+lea  rdi, [main]          ; pointer to main loaded into rdi
+call __libc_start_main
+```
+
+On Linux x64 the first argument is passed in `rdi`, so the value loaded into `rdi` right before `call __libc_start_main` is the address of `main`. If Ghidra has already named it you will see `main` directly. If not (or if the file is stripped), jump to that address. Inside you will find a call to `puts` or `printf` with the string "Hello, world" as its argument, which confirms it is `main`. For a simple hello world gcc usually replaces `printf("...\n")` with `puts("...")` as an optimization, so do not be surprised to see `puts` instead of `printf`.
+
+On Windows, start from the string. In `hello_msvc.exe`, open Strings and look for "Hello, world". Click it and check the xrefs (the X key in IDA, Ctrl+Shift+F in Ghidra). Only one place uses it: a small function that calls `printf` and then returns 0 (`xor eax, eax`). That is `main`. This method does not need any function names, so it works even when the file is stripped, which is why starting from a string is the number one reflex.
+
+The other way on Windows is to find the three-parameter function. From the entry `mainCRTStartup`, go into `__scrt_common_main_seh`. Near the end of this wrapper there is a call to a function that receives three arguments (`rcx` = `argc`, `rdx` = `argv`, `r8` = `envp`), and its return value is then passed on to `exit`. The function being called is `main`. The result matches the string approach: the same function. When two different routes meet at the same place, that is a sign you identified it correctly.
+
+For dynamic versus static linking, `hello_gcc` (dynamic) has only a handful of functions: `_start`, `main` and a few PLT stubs for `puts` and `__libc_start_main`. The libc code lives outside, in `libc.so`. `hello_gcc_static` stuffs all of libc into the file, so the function count jumps from a few to hundreds or even thousands, and the file size grows from tens of KB to around a megabyte. Even so, `main` is found exactly as before, by following `__libc_start_main` or by starting from the string. A larger function count does not make finding `main` harder, it only makes the file bigger.
+
+As for CRT strings, the static binary and the MSVC binary expose more of them (runtime error messages, internal function names, format strings). The dynamic gcc binary has little besides your own strings, because the rest sits in `libc.so`. A lot of CRT strings is noise, and you should learn to skip past it.
+
+On the stripped question, starting from a string and following the arguments of `__libc_start_main` still work, because they rely on structure and data rather than on function names. What breaks is expecting Ghidra or IDA to have a ready-made `main` label. In a stripped file that label is missing and you have to find it yourself.
+
+Starting from a string is faster because the entry point is separated from `main` by several layers of CRT, so reading sequentially takes a long time and is easy to get lost in. A string is data that only the user's own code touches, so the xref from the string jumps straight into the region you care about and skips the whole CRT.
+
+</details>
 
 ## Key takeaways
 The entry point in the header points to CRT startup, not your `main`. The CRT sets up the environment, gets argc/argv/envp, runs global constructors, and only then calls `main`. On Linux, find `call __libc_start_main` and `main` is the parameter in **rdi**. On Windows there's no nicely named function, so start from strings (xref) or find the function taking 3 parameters argc/argv/envp.

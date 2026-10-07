@@ -1,5 +1,8 @@
 ---
 title: "Lesson 15.1: Anti-debug via Windows APIs, the group you meet most"
+image:
+  path: /assets/img/covers/re-15-1-anti-debug-via-windows-apis-group.webp
+  alt: "Lesson 15.1: Anti-debug via Windows APIs, the group you meet most"
 date: 2023-05-07 09:13:00 +0700
 categories: ["Technique Reverse", "Part 15 · Anti-Reversing and Bypasses"]
 tags: [reverse-engineering, anti-debug]
@@ -67,9 +70,63 @@ You recognize it by `CloseHandle` with an odd handle value (like 0x1234) inside 
 
 ## Lab
 
-The folder `labs/15.1/` has `antidebug.c` bundling a few of the checks above into a program that prints "clean" or "debugger detected". Build and run it normally and see it report clean. Then run it under x64dbg and see which check it reports detected on. Bypass each check by changing the return value, then try again with ScyllaHide to be quicker.
+The goal is to train your eye to recognize Windows API based anti-debug checks in a binary and to get past them while analyzing it. This is a defensive and analytical skill, meant for your own binaries or for learning samples inside an isolated lab (see Lesson 0.3).
 
-Instructions and the solution are in `labs/15.1/README.md` and `solution.md`.
+There's no bundled binary for this one, so pick one of two ways to get a target. The closest to real practice is to grab a crackme with anti-debug from crackmes.one, filtered by the "anti-debug" tag, picking something at level 1 or 2. Alternatively, build a minimal target yourself: a small Windows program that calls `IsDebuggerPresent` and prints the result, just a few lines around that call, enough to have a spot to set a breakpoint and watch the return value. The point is a single observable check, not building a whole anti-analysis suite.
+
+Start by triaging it. Open the binary in Detect It Easy, then look at the Imports table in IDA or Ghidra for suspicious APIs: `IsDebuggerPresent`, `CheckRemoteDebuggerPresent`, `NtQueryInformationProcess`, `NtSetInformationThread`, `OutputDebugStringA/W`. Their presence is the first sign. For each one, use cross-reference (the X key in IDA) to jump to where it's called, and read the code right after the call for a `test`/`cmp` plus a jump that decides "debugged or not".
+
+Then observe it under a debugger. Open the binary in x64dbg and set a breakpoint on each API (`bp IsDebuggerPresent`, `bp NtQueryInformationProcess`, and so on). Run it, and once it stops, use "Execute till return" (Ctrl+F9) to get to where the API returns and look at the value in rax or in the result buffer.
+
+Bypass each check using one of three approaches. You can change the return value right at the breakpoint, patch the branch (turning `jne` into `jmp`, or nopping it out), or enable the ScyllaHide plugin and run again to let it handle everything automatically. Afterward, compare the effort: how long it took to handle each check by hand versus flipping on ScyllaHide once, and work out when each approach makes sense.
+
+Two questions to think about. Why does patching the BeingDebugged byte in the PEB defeat `IsDebuggerPresent` but not `NtQueryInformationProcess` with ProcessDebugPort? And if a program calls the same check from five different places, which bypass approach is the least tedious?
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+Try it yourself before reading this.
+
+The x64dbg and ScyllaHide steps below describe the standard procedure, and the details differ from binary to binary. The identification part, through Imports and cross-references, applies on any disassembler regardless.
+
+Identifying and scoping the checks. In the Imports table, the presence of these APIs is telling:
+
+| API | Usually used for |
+|---|---|
+| IsDebuggerPresent | reading the BeingDebugged flag in the PEB |
+| CheckRemoteDebuggerPresent | asking about debugging through a process handle |
+| NtQueryInformationProcess | asking the kernel directly: DebugPort / DebugFlags / DebugObjectHandle |
+| NtSetInformationThread | ThreadHideFromDebugger (hiding) |
+| OutputDebugStringA/W | an old trick based on GetLastError |
+
+Cross-referencing to each call, the code right after it usually looks like this:
+
+```asm
+call    IsDebuggerPresent
+test    eax, eax
+jnz     bad          ; jump if being debugged
+```
+
+The `jnz`/`jne` leading to the "detected" branch is exactly what needs handling.
+
+Observing under the debugger. In x64dbg's Command box:
+
+```
+bp IsDebuggerPresent
+bp NtQueryInformationProcess
+```
+
+Run it (F9). Once it stops at the API, press Ctrl+F9 to run to the `ret`, then look at the result: for `IsDebuggerPresent`, the value in `eax` (1 means detected), and for `NtQueryInformationProcess`, the buffer at the third argument (on Win64, pointed to by r8), reading the DebugPort or DebugObjectHandle value after it returns.
+
+Bypassing each check. Three approaches, picked based on the situation. You can fix the result in place: after the API returns, set `eax = 0` for IsDebuggerPresent, or write 0 into the DebugPort/DebugObjectHandle buffer, or write 1 into DebugFlags, so the program thinks there's no debugger. You can patch the branch instead: at `jnz bad`, change it to a nop (or a jump to the good branch), which is the right choice when you want the fix to be permanent on the file (Ctrl+P saves the patch). Or you can use ScyllaHide: install the plugin, enable the matching options (hooking IsDebuggerPresent, NtQueryInformationProcess, and so on), and it answers all of these APIs with a lie automatically, so you don't have to handle each one by hand.
+
+Comparing the effort: handling each check by hand makes sense when there are only one or two spots and you want to understand them well. When a binary scatters checks everywhere, ScyllaHide saves a clear amount of time.
+
+Why does patching the PEB defeat IsDebuggerPresent but not NtQueryInformationProcess? `IsDebuggerPresent` only reads the BeingDebugged byte in the process's PEB, a user-mode region, so changing that byte fools it. `NtQueryInformationProcess` with ProcessDebugPort is a syscall that asks the kernel directly for the process's real debug port, it doesn't read the PEB at all, so the PEB byte you changed has no effect on it. You have to fix the result buffer of that specific call instead, or hook at the ntdll level (ScyllaHide/TitanHide).
+
+What about a check repeated in five places? ScyllaHide (user-mode) or TitanHide (kernel-mode) is the least tedious option, because they hook at the source (the API or syscall), so every call site gets fooled at once instead of you patching five separate branches.
+
+</details>
 
 ## Key takeaways
 Every anti-debug API follows the same mold: call the API, compare the result, branch. Locate the API and you can bypass it. IsDebuggerPresent and CheckRemoteDebuggerPresent only read the PEB, so they're easy to get past (change eax or the BeingDebugged byte).

@@ -1,5 +1,8 @@
 ---
 title: "Lesson 15.2: Anti-debug reading the PEB directly, when there's no API to hook"
+image:
+  path: /assets/img/covers/re-15-2-anti-debug-reading-peb-directly-when.webp
+  alt: "Lesson 15.2: Anti-debug reading the PEB directly, when there's no API to hook"
 date: 2023-05-09 22:59:00 +0700
 categories: ["Technique Reverse", "Part 15 · Anti-Reversing and Bypasses"]
 tags: [reverse-engineering, anti-debug]
@@ -73,7 +76,79 @@ Usually ScyllaHide is the first choice because it covers almost the whole PEB gr
 
 ## Lab
 
-The folder `labs/15.2/`. It has `peb_check.c`, which reads BeingDebugged and NtGlobalFlag directly through the PEB. The task: build it, run it normally (reports not debugged), run it under x64dbg (reports debugged), then find the `gs:[0x60]` read in the disassembly and get past it by editing the flags or using ScyllaHide. Instructions are in the lab's README.
+The goal is to see with your own eyes an anti-debug check that calls no API, and to practice recognizing it in the disassembly and getting past it. The platform is Windows x64, since the file uses the PEB and so won't run on Linux. You need x64dbg, and optionally IDA or Ghidra and ScyllaHide. Build `peb_check.c` with MSVC:
+
+```
+cl /O2 peb_check.c
+```
+
+or with MinGW:
+
+```
+x86_64-w64-mingw32-gcc -O2 peb_check.c -o peb_check.exe
+```
+
+Run `peb_check.exe` normally (double-click or in cmd), write down the output and note that it reports no debugger detected. Then open `peb_check.exe` in x64dbg and run until it prints to the screen. This time it reports a debugger. Why, and which field is set? Open it in IDA or Ghidra and find the code that reads `gs:[0x60]`. Which offset does it read right after that? Compare with the lesson: what is `+2` and what is `+0xBC`?
+
+In x64dbg, before the check code runs, set `BeingDebugged` to 0 and clear the three bits of `NtGlobalFlag`, then continue and see whether it still reports a detection. After that install ScyllaHide for x64dbg, turn it on and run again from the start without editing anything by hand, and compare the result.
+
+A few questions to think about. Why is a breakpoint at `IsDebuggerPresent` useless in this lab? Is patching `BeingDebugged` alone enough, or does `NtGlobalFlag` still give you away? And if you were writing a protector, what other sensitive offsets in the PEB could you read?
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 15.2</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/15.2/src/peb_check.c" download><i class="fa-solid fa-file-code"></i>src/peb_check.c</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+This solution describes the results that follow from the Windows mechanism and from how MSVC and MinGW generate code for the PEB-reading intrinsics. The file needs the PEB of Windows x64, so run it on Windows to compare.
+
+Running normally prints:
+
+```
+BeingDebugged = 0
+NtGlobalFlag debug bits = 0
+No debugger detected.
+```
+
+With no debugger, both fields are clean. Running inside x64dbg prints:
+
+```
+BeingDebugged = 1
+NtGlobalFlag debug bits = 1
+Debugger detected (PEB).
+```
+
+x64dbg creates the process under the debugger, so the loader sets `BeingDebugged = 1` and puts the three heap debug flags in `NtGlobalFlag` (a total of `0x70`). Both checks fire.
+
+In the disassembly, `check_being_debugged` compiles to roughly:
+
+```asm
+mov   rax, gs:[0x60]          ; get the PEB
+movzx eax, byte ptr [rax+2]   ; BeingDebugged
+```
+
+and `check_nt_global_flag` to:
+
+```asm
+mov   rax, gs:[0x60]
+mov   eax, [rax+0xBC]         ; NtGlobalFlag
+and   eax, 0x70
+cmp   eax, 0x70
+```
+
+There is no API name anywhere. The anchor you recognize it by is `gs:[0x60]`, and then the offset read next tells you which check it is: `+2` is `BeingDebugged` and `+0xBC` is `NtGlobalFlag`.
+
+To fix the flags by hand in x64dbg, get the PEB address (the `peb()` command, or look in the Memory Map tab, or use `dump peb()+2`). Before the check function runs, write 0 to the byte at `PEB+0x2` (`BeingDebugged`) and write 0 (or clear the `0x70` bits) in the dword at `PEB+0xBC` (`NtGlobalFlag`). Continue and the program prints `No debugger detected.` Note that if you only fix `BeingDebugged` and forget `NtGlobalFlag`, the second check still fires, and that is the point of the task.
+
+With ScyllaHide, turn on the PEB options (BeingDebugged, NtGlobalFlag, HeapFlags) and run again from the start without editing by hand. It cleans every PEB flag automatically and the program reports it isn't being debugged. That is why ScyllaHide is the first choice: one switch covers the whole group.
+
+On the questions, a breakpoint on `IsDebuggerPresent` is useless because the program never calls that function and reads the byte in the PEB directly, so there is no call to stop at. Patching `BeingDebugged` alone isn't enough, because `NtGlobalFlag` is an independent check, set by the loader, and still gives you away, so you must handle both (and the heap flags if present). Other sensitive offsets in the PEB include `ProcessHeap` (`+0x30`) for reading the heap's Flags and ForceFlags, the `Ldr` pointer for walking the loaded modules yourself (to detect a debugger or hook DLL), and other fields depending on the version.
+
+</details>
 
 ## Key takeaways
 The PEB can be accessed without an API: `gs:[0x60]` (x64), `fs:[0x30]` (x86), and when you see it, be alert. BeingDebugged is at offset `0x2` and is 1 when debugged. NtGlobalFlag is at offset `0xBC` (x64), the three heap debug bits add up to `0x70`, and it's set by the loader and not by the code. Heap Flags/ForceFlags are nonzero when a debugger is present, though that check is picky about the Windows version.

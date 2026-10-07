@@ -1,5 +1,8 @@
 ---
 title: "Reverse Engineering technique repository (map)"
+image:
+  path: /assets/img/covers/re-resources-reverse-engineering-technique-repository-map.webp
+  alt: "Reverse Engineering technique repository (map)"
 date: 2023-12-07 23:48:00 +0700
 categories: ["Technique Reverse", "Resources"]
 tags: [reverse-engineering, resources]

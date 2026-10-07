@@ -1,5 +1,8 @@
 ---
 title: "Lesson 6.6: Frida on Android, changing app behavior while it runs"
+image:
+  path: /assets/img/covers/re-6-6-frida-android-changing-app-behavior-while.webp
+  alt: "Lesson 6.6: Frida on Android, changing app behavior while it runs"
 date: 2022-10-21 21:39:00 +0700
 categories: ["Technique Reverse", "Part 06 · Java, Kotlin and Android"]
 tags: [reverse-engineering, android, java]
@@ -118,7 +121,94 @@ The first is a version mismatch between frida-server and frida-tools, which give
 
 ## Lab
 
-See `labs/6.6/`. You'll hook a method in a practice app of your own to change the return value, and watch the app change behavior accordingly. The file `src/hook.js` is a sample script for you to edit.
+The goal is to use Frida to change the return value of a method while the app is running, and to see the app change its behavior accordingly, without patching and repackaging the APK. Only do this on your own practice app, an app you are authorized to test, or a public app meant for learning such as OWASP UnCrackable (see Lesson 0.2 on legal and ethical limits).
+
+You need a rooted Android emulator (Genymotion, or an AVD with a rooted image) or a rooted device, and `frida-tools` on the host.
+
+```
+pip install frida-tools objection
+```
+
+You also need the frida-server build for the right architecture, pushed to the device and running (see the setup section above). Check that everything is connected with `frida-ps -U`, which should list the apps. A good target is OWASP UnCrackable-Level1, downloaded from the official OWASP MASTG UnCrackable apps page (https://mas.owasp.org/crackmes/). It has a function that checks for root and then exits, and a function that verifies a secret string, which makes it ideal for practicing hooks.
+
+Open the APK in JADX-GUI and find the class and method that check for root (or the condition that makes the app quit early). Use Copy as Frida snippet to get the hook skeleton for that method, then edit `hook.js` to force the method to return the value that lets the app continue. The file is a sample script with three patterns: forcing a root check to return false, logging the arguments and real result of a verification function, and hooking an overloaded method where you must spell out the signature. Adjust the class and method names to your target. Run it with the command below and check that the app no longer exits.
+
+```
+frida -U -f <package> -l hook.js
+```
+
+For an extra step, hook the string verification function and log its argument and real return value to understand what it compares. You can also try the quick route with objection by running `objection -g <package> explore` and then `android root disable`.
+
+Think about two questions afterwards. Why is a runtime hook more convenient than patching smali while exploring, and why is a patch better when you want a permanent change? And if the app detects Frida and quits, how would you deal with it? Try it yourself before opening the solution.
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 6.6</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/6.6/src/hook.js" download><i class="fa-solid fa-file-code"></i>src/hook.js</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+The general idea is that instead of editing the APK, we step into the runtime. Frida loads a JS script into the app process, we grab a Java class with `Java.use`, and we overwrite the `implementation` of the method we want to change. The steps below use OWASP UnCrackable-Level1.
+
+First, find the blocker. Open the APK in JADX. The main Activity has a section that checks for root or a debugger and then calls `System.exit(0)` through a dialog. A typical class is named like `sg.vantagepoint.a.c`, with a method `a(...)` that returns a boolean saying whether the device is rooted.
+
+Second, get the snippet. Right-click that method in JADX and choose Copy as Frida snippet. JADX fills in the obfuscated class name (use that scrambled name exactly) and the signature.
+
+Third, force it to return false. In `hook.js`:
+
+```javascript
+Java.perform(function () {
+    var c = Java.use("sg.vantagepoint.a.c");
+    c.a.overload("java.lang.String").implementation = function (s) {
+        return false;   // pretend there is no root binary
+    };
+    var b = Java.use("sg.vantagepoint.a.b");
+    b.a.overload("java.lang.String").implementation = function (s) {
+        return false;   // same for the other checks
+    };
+});
+```
+
+Fourth, run it by spawning the app from the start so you catch checks that run early.
+
+```bash
+frida -U -f owasp.mstg.uncrackable1 -l hook.js
+```
+
+The app no longer shows the exit dialog and reaches the main screen.
+
+Fifth, work out the secret string. Hook the verification function, which is usually a function that takes the String the user typed, decrypts a byte array with AES and compares. Log the argument and the result.
+
+```javascript
+var verifier = Java.use("sg.vantagepoint.uncrackable1.a");
+verifier.a.implementation = function (input) {
+    console.log("[*] input = " + input);
+    var r = this.a(input);
+    console.log("[*] result = " + r);
+    return r;
+};
+```
+
+Enter a test string, read the log, then follow the decryption function (see the crypto lessons in Part 16) to recover the secret, or simply hook the comparison function to return true.
+
+For a faster route, use objection.
+
+```bash
+objection -g owasp.mstg.uncrackable1 explore
+# inside the shell:
+android root disable
+```
+
+objection ships ready-made hooks for many root detection mechanisms, so you do not have to find each class yourself.
+
+On the questions: a runtime hook is fast, needs no repacking or re-signing, and can change many places in one session, which is ideal while exploring. But a hook only lives while Frida is attached. For a permanent change that does not depend on Frida, patch the smali and rebuild (Lesson 6.4). If the app detects Frida, you can run a renamed frida-server on a different port than the default 27042, or embed frida-gadget in a repacked APK, or hook the Frida detection function itself so that it sees nothing.
+
+One caveat: the class names and structure of UnCrackable-Level1 above follow the familiar public version of that app. After obfuscation the method names may differ slightly depending on the build you download, so use exactly what JADX shows.
+
+</details>
 
 ## Key takeaways
 Frida has frida-server on the device and frida/objection on the host, and the versions on both sides must match. The core pattern is `Java.perform` then `Java.use("class").method.implementation = function(){...}`. Call `this.method(...)` to run the original, which you use when you only want to log without changing behavior, and overloaded methods must be specified with `.overload(...)`.

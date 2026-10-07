@@ -1,5 +1,8 @@
 ---
 title: "Lesson 0.1: What is reverse engineering, and why it's not as scary as you think"
+image:
+  path: /assets/img/covers/re-0-1-reverse-engineering-why-its-not-as.webp
+  alt: "Lesson 0.1: What is reverse engineering, and why it's not as scary as you think"
 date: 2022-01-11 22:43:00 +0700
 categories: ["Technique Reverse", "Part 00 · Getting Started"]
 tags: [reverse-engineering, basics]

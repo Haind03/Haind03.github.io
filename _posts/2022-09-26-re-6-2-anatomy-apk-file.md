@@ -1,5 +1,8 @@
 ---
 title: "Lesson 6.2: Anatomy of an APK file"
+image:
+  path: /assets/img/covers/re-6-2-anatomy-apk-file.webp
+  alt: "Lesson 6.2: Anatomy of an APK file"
 date: 2022-09-26 15:03:00 +0700
 categories: ["Technique Reverse", "Part 06 · Java, Kotlin and Android"]
 tags: [reverse-engineering, android, java]
@@ -67,7 +70,75 @@ Reversers care because sensitive logic (license checks, encryption, anti-cheat, 
 
 ## Lab
 
-Practice is in `labs/6.2/`. Summary of the task: take any APK (a free app you download, or an APK you build yourself), unzip it as a ZIP file, identify each component, open AndroidManifest with JADX or apktool to find the launcher activity and the permission list, then list the native libs in `lib/`. The goal is to get familiar with the layout before diving into reading code.
+The task is to dissect the structure of an APK, so you get comfortable with the APK layout and can read AndroidManifest to find entry points before diving into reading code. You need any APK, either a free app downloaded from a legitimate source or one you build yourself in Android Studio, and it doesn't have to be a complex app. For tools, JADX or apktool and a ZIP extractor such as 7-Zip will do, and optionally `aapt`/`aapt2` from the Android SDK to read the manifest quickly from the command line.
+
+First view the APK as a ZIP. Copy the file and change the `.apk` extension to `.zip` (or open it straight in 7-Zip), list the top-level entries, and compare them with the diagram in the lesson: find AndroidManifest.xml, classes.dex, resources.arsc, res/, lib/, assets/ and META-INF/. Count the dex files too, and note whether the app uses multidex (is there a classes2.dex, classes3.dex and so on?).
+
+Then read AndroidManifest. Drag the APK into JADX, open the Resources section and find AndroidManifest.xml (JADX decodes the binary XML itself), or run `apktool d app.apk` and open the decoded manifest. Find the launcher activity, the activity whose intent-filter has `action.MAIN` plus `category.LAUNCHER`, and write down the full class name. Check whether there is a custom application class (the `android:name` attribute on the `<application>` tag). List the permissions (`uses-permission`) and guess from them what kind of app it is. Next go into the `lib/` folder: which ABIs are there, and is any `.so` file notably large? If so, note its name so you can load it into IDA or Ghidra later. Finally look through `assets/` for anything that resembles a secondary dex or so, an encrypted file, or a suspicious config.
+
+Some questions to think about. Why does reading the manifest first save more time than opening classes.dex directly? What does it suggest when an app has very little Java code but one very large `.so` file? And why can't you open AndroidManifest.xml directly in Notepad? When you are done, compare with the solution.
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+This solution describes the typical result. The specific numbers (class names, dex count) depend on the APK you chose, but the structure and the way of reading are the same.
+
+### Task 1: an APK is a ZIP
+
+Rename it to `.zip` and extract it, or open it with 7-Zip. You see the familiar entries:
+
+```
+AndroidManifest.xml    binary XML, can't be read directly
+classes.dex            main code
+resources.arsc         compiled resource table
+res/                   layouts, drawables, values
+lib/                   native .so per ABI (if the app has a native part)
+assets/                raw files (may be empty)
+META-INF/              signatures (MANIFEST.MF, *.SF, *.RSA, or a v2 block)
+```
+
+The key takeaway is that you need no special tool to see the layout, just the understanding that an APK is a ZIP.
+
+### Task 2: multidex
+
+A small app usually has only `classes.dex`. A large app (many libraries) also has `classes2.dex`, `classes3.dex` and so on. If you use apktool manually, remember the code is spread across these files. JADX merges everything automatically, so with JADX you rarely have to worry about it.
+
+### Task 3: AndroidManifest
+
+Open it with JADX (the Resources section) or `apktool d`. A launcher activity looks like this:
+
+```xml
+<activity android:name="com.example.app.MainActivity">
+    <intent-filter>
+        <action android:name="android.intent.action.MAIN"/>
+        <category android:name="android.intent.category.LAUNCHER"/>
+    </intent-filter>
+</activity>
+```
+
+`com.example.app.MainActivity` is where you start following the flow when reversing. If the `<application>` tag has `android:name=".App"` or some specific class, that is the Application class, which runs even before the first activity. Many apps put library initialization, string decryption and anti-analysis checks in this class's `attachBaseContext` or `onCreate`, so always glance at it. Example permissions:
+
+```
+android.permission.INTERNET
+android.permission.ACCESS_NETWORK_STATE
+android.permission.READ_EXTERNAL_STORAGE
+```
+
+INTERNET means the app talks to a server, so pay attention to the networking part. SMS, CONTACTS or ACCESSIBILITY permissions in an app whose function is unclear are a suspicious sign.
+
+### Task 4: native libs
+
+The ABIs you commonly see in `lib/` are `arm64-v8a`, the current 64-bit phones and the one you usually reverse, `armeabi-v7a`, older 32-bit devices, and `x86_64`, the emulator. A large `.so` named like `libnative-lib.so`, `libcore.so` or `libil2cpp.so` is where important logic may live. Take the `arm64-v8a` build into IDA or Ghidra.
+
+### Task 5: assets
+
+`assets/` is mostly benign resources. But a file with an odd name, a large size, high entropy (looks encrypted), or a `.dex` or `.so` sitting in there is a sign that the app loads code dynamically at runtime, commonly seen with packers (Lesson 6.8).
+
+### Answers to the questions
+
+Reading the manifest first saves time because it points straight at the entry points (launcher activity, application class) and gives a map of functionality through the permissions. Opening classes.dex directly leaves you with no idea which of thousands of classes to start with. Little Java but a large `.so` suggests the main logic is written natively (C/C++ through JNI), perhaps for performance or to resist reversing, and you have to shift to native analysis. You can't open the manifest in Notepad because it is binary XML (AXML), encoded in binary so machines can read it fast, not text, and it takes JADX, apktool or aapt to decode it to a readable form.
+
+</details>
 
 ## Key takeaways
 An APK is a ZIP file, so you can extract it and see all the components. Read AndroidManifest first to find the launcher activity, application class, and permissions, and remember it's binary XML, so open it with JADX/apktool and not a text editor. classes.dex holds the code as register-based DEX bytecode (unlike stack-based JVM), and large apps use multidex. lib/ holds native `.so` files by ABI, where sensitive logic often hides, so switch to IDA/Ghidra for those. Every APK must be signed, so after modifying it you have to re-sign before it will install.

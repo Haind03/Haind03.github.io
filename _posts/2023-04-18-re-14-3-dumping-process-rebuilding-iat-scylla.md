@@ -1,5 +1,8 @@
 ---
 title: "Lesson 14.3: Dumping a process and rebuilding the IAT with Scylla"
+image:
+  path: /assets/img/covers/re-14-3-dumping-process-rebuilding-iat-scylla.webp
+  alt: "Lesson 14.3: Dumping a process and rebuilding the IAT with Scylla"
 date: 2023-04-18 23:54:00 +0700
 categories: ["Technique Reverse", "Part 14 · Packers and Obfuscation"]
 tags: [reverse-engineering, packer, obfuscation]
@@ -71,4 +74,32 @@ A raw dump doesn't run because it has the IAT values but lost the import directo
 If Autosearch is wrong, find the IAT by hand from a `call [address]` in the unpacked code. Always dump at the correct OEP, because a wrong OEP ruins the whole file.
 
 ## Lab
-See `labs/14.3/`. Continuing from the file you unpacked by hand in lab 14.2, use Scylla to dump it and fix the IAT into a standalone runnable file.
+
+This continues from Lab 14.2, where you manually unpacked a UPX file with a modified header all the way to the OEP in x64dbg. The task now is to turn that live memory state into a standalone runnable file. You need the file stopped at the OEP in x64dbg from that previous lab, and Scylla (the x64 build for a 64-bit file), either standalone or the Scylla plugin that ships inside x64dbg under Plugins > Scylla.
+
+With x64dbg stopped exactly at the OEP, open Scylla without letting the process run any further. Confirm the OEP field shows the correct address; if you're using the plugin inside x64dbg, it usually fills in the current EIP/RIP automatically, so just double check it. Click IAT Autosearch, then Get Imports. Look through the import tree and mark and cut (cut thunk) any entry that's red, not found, or redirected. Click Dump to save the dumped file, then click Fix Dump and select that dump file, which makes Scylla produce a `*_SCY.exe`. Run the fixed file, and it should behave exactly like the original unpacked program.
+
+Two questions worth thinking through. If you skip Fix Dump and run the raw Dump file directly, what happens and why? If IAT Autosearch reports too many pointers, how do you find the real boundaries of the IAT? And why do some entries point into the packer's own region instead of into kernel32 or user32?
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+Try it yourself before reading this.
+
+The full workflow. Starting from the OEP: from Lab 14.2, after the ESP trick and the tail jump, x64dbg stops right at the first instruction of the original code. Don't press F9 again, since Scylla needs the process alive and standing still here. Open Scylla and select the process: a standalone Scylla needs you to pick it from the dropdown at the top, while the plugin inside x64dbg is already attached to the process being debugged. Set the OEP field to the current RIP/EIP address, copying it from the current line in x64dbg, since this becomes the entry point of the new file.
+
+Run IAT Autosearch. Scylla scans and reports a starting address (VA) and an estimated IAT size, and Advanced IAT Autosearch scans more broadly if the normal pass misses something. Get Imports then shows the DLL and function tree, where each green line is a valid import that resolved correctly and each red line is a pointer that didn't resolve.
+
+Cleaning up. Right-click the red entries and choose "Cut thunk(s)" to remove them. For redirected imports, try "Trace redirected imports" (or the equivalent option) before cutting, since Scylla might be able to see through the stub.
+
+Dump the whole module to `file_dump.exe`, then run Fix Dump and select that file. Scylla adds a `.scy` section holding a new import directory, patches the header (entry point set to the OEP, the Import Directory RVA pointing at the new section), and writes out `file_dump_SCY.exe`. Running `file_dump_SCY.exe` should work exactly like the original.
+
+On running the raw dump without Fix Dump: the dump has an IAT filled with the real addresses from that one run, but no import directory for the loader to resolve against. On the next run, ASLR places the DLLs at different base addresses, so the old addresses become garbage, the program calls into the wrong region, and it crashes almost immediately. Fix Dump is exactly the step that rebuilds the import table so the loader can resolve it properly.
+
+On finding the real IAT boundaries when Autosearch grabs too much: go into the unpacked code in x64dbg and find an API call of the form `call [address]` or `jmp [address]`. That `address` is one IAT slot. Follow it in the dump, scroll up until the run of pointers into DLLs ends (you hit a zero or non-pointer data), which marks the upper boundary, and scroll down the same way for the lower boundary. Enter the exact start and size into Scylla.
+
+On entries pointing into the packer's own region instead of kernel32 or user32: that's a redirected import, a form of IAT obfuscation. The protector doesn't let the IAT point straight at the real API function, instead pointing at its own stub, which then jumps to the real function. The purpose is to hide the API list from an analyst. Scylla sees the pointer sitting inside the packer's region and doesn't know what function it is. You have to trace through the stub (Scylla has an option for this), or in tricky cases, recover each thunk manually.
+
+The Scylla workflow above follows the tool's standard steps. In practice on Windows, the exact OEP and IAT boundaries will depend on the file you're working with.
+
+</details>

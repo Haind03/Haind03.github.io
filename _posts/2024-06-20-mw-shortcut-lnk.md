@@ -1,5 +1,8 @@
 ---
 title: "Analysing a malicious LNK shortcut"
+image:
+  path: /assets/img/covers/mw-shortcut-lnk.webp
+  alt: "Analysing a malicious LNK shortcut"
 date: 2024-06-20 13:09:00 +0700
 categories: ["Malware Analysis"]
 tags: [malware, lnk, powershell]

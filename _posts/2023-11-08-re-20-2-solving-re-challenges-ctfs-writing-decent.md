@@ -1,5 +1,8 @@
 ---
 title: "Lesson 20.2: Solving RE challenges in CTFs and writing a decent write-up"
+image:
+  path: /assets/img/covers/re-20-2-solving-re-challenges-ctfs-writing-decent.webp
+  alt: "Lesson 20.2: Solving RE challenges in CTFs and writing a decent write-up"
 date: 2023-11-08 22:17:00 +0700
 categories: ["Technique Reverse", "Part 20 · Real-World Practice"]
 tags: [reverse-engineering, ctf]
@@ -48,7 +51,61 @@ Flare-On challenge number 1 each season is usually solved in ten minutes. Challe
 And don't hesitate to read other people's write-ups after you've struggled enough on your own. Seeing how a strong person approached the same challenge you just solved painfully is one of the fastest ways to learn in this trade.
 
 ## Lab
-The folder is `labs/20.2/`. The task is to pick an old Flare-On challenge (or a picoCTF challenge in the Reverse Engineering category), solve it yourself, then write a write-up following the template in `labs/20.2/solution.md`. Compare with the official solution after you've finished on your own.
+
+The goal is to practice the rhythm of working a real reverse engineering challenge and to learn to write a write-up that keeps the knowledge. Pick a source, preferably one with an official solution so you can compare after doing it yourself. You can take an old Flare-On season (download the challenge from the official Flare-On site, flare-on.com, where earlier seasons have published PDF solutions), picoCTF in the Reverse Engineering category (choose by points, from low to high), or crackmes.one (filter difficulty 1 to 2 if you're just starting). Only use binaries provided by the competition or author for learning, and don't download commercial software to crack.
+
+Choose a reasonable reverse engineering challenge, starting from the easiest one you haven't done. Apply the process from Lesson 20.2: read the prompt, triage with DIE, identify the language and platform, go from the win/lose strings, and pick a technique. Solve until you get the flag, and write down every direction you tried, including the failed ones. Then write a write-up following the template in the solution below (the "write-up template" part). Only after you've solved it yourself, open the official solution (if there is one) and compare approaches.
+
+Some questions to reflect on. Did the triage step help you rule out wrong directions early? Which direction did you try that failed, and what sign should have told you sooner? If you meet this kind of challenge again, what will you do differently? And a few hints. If you're stuck on static reading, switch to running it dynamically and set a breakpoint at the final comparison. If there are many constraints on the input, think of Z3 or angr before solving by hand. And always check the flag you found by entering it back into the program.
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+This is not an answer to one specific challenge (the one you pick will be different). It is a sample write-up so you can see the structure and voice it should have. The content is based on a self-made crackme called `checkme` for illustration. Do your own challenge first, and only then read this sample to compare how it is presented.
+
+## Write-up: checkme (a hypothetical crackme, level 2)
+
+The file is `checkme` (ELF 64-bit, Linux). The tools are Detect It Easy, Ghidra and Python 3. The prompt says: "Enter the right key to get the flag. Format: `flag{...}`".
+
+For triage, I dragged it into DIE: ELF x86-64, compiler GCC, not packed, normal entropy. `strings` shows two notable strings, `Correct! Here is your flag:` and `Wrong key.`. There is no plaintext key, so this isn't a straight string comparison. The triage conclusion is a native C binary with no protection, with the check logic in the code, so static reading is needed.
+
+My first direction failed. I grepped for the string `Correct`, followed the xref to `main`, and saw it call `check_key(input)` and then branch. I assumed reading `check_key` would be all it took. Opening it, I found a loop that transforms each character and compares it with a constant array, but I misread the operation as XOR, so I tried decoding with XOR and got garbage. That cost about twenty minutes.
+
+The moment of realization came when I reread the assembly of the loop carefully instead of trusting the pseudocode. The real operation is `(c + i) ^ 0x3C`, not a plain XOR. The sign that should have told me sooner was an instruction in the decompiler that adds the index `i`, which I skipped over because I only skimmed.
+
+For the solution, the expected constant array is in `.rodata`, 12 bytes. Since the transformation is reversible, I inverted it: `c = ((expected[i]) ^ 0x3C) - i`.
+
+```python
+expected = [0x6e, 0x08, 0x44, 0x5e, 0x6d, 0x5a, 0x45, 0x47, 0x51, 0x47, 0x07, 0x01]
+key = "".join(chr(((b ^ 0x3C) - i) & 0xFF) for i, b in enumerate(expected))
+print(key)   # R3v_Master12
+```
+
+It gives the key `R3v_Master12`, and entering it into `checkme` makes the program print `Correct! Here is your flag: flag{...}`. Confirmed.
+
+Three lessons came out of it. Don't blindly trust pseudocode in the arithmetic part, and drop down to assembly when the decode result is garbage. An index-adding instruction `i` inside a loop is a sign of a position-dependent transformation, not a plain XOR. And always enter the key you found back into the program to confirm it, rather than trusting only your script.
+
+## A write-up template to reuse
+
+```
+## Prompt and environment
+File, hash, tools, goal.
+
+## Triage
+What you recognized in the first step, which direction you chose, and why.
+
+## Process
+The directions you tried, INCLUDING the failed ones and why they failed.
+The "aha" moment that made everything clear.
+
+## Solution
+Reproducible code/script. The flag.
+
+## Lessons learned
+One or two sentences: what you would do differently next time with this kind of challenge.
+```
+
+</details>
 
 ## Key takeaways
 Every rev challenge asks the same question: which input gets accepted. Always triage first to know which language/technique direction to use, since this is where the whole series converges. Going from the win/lose string back to the check function is the fastest way into a challenge.

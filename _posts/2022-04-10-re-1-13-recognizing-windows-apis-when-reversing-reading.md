@@ -1,5 +1,8 @@
 ---
 title: "Lesson 1.13: Recognizing Windows APIs when reversing, reading parameters like a sentence"
+image:
+  path: /assets/img/covers/re-1-13-recognizing-windows-apis-when-reversing-reading.webp
+  alt: "Lesson 1.13: Recognizing Windows APIs when reversing, reading parameters like a sentence"
 date: 2022-04-10 15:08:00 +0700
 categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
@@ -99,7 +102,71 @@ You don't need to master the API-hiding tricks right now. Just notice "wait, thi
 
 ## Lab
 
-The exercise is at `labs/1.13/`: build a small C program that calls `CreateFileW` and `RegOpenKeyExW`, then use x64dbg to set breakpoints at those two APIs and read all the parameters in the right register order, and compare with the API Monitor output. The solution is in `solution.md`, but read the parameters yourself first.
+The target is a small C program, `apitarget.c`, that deliberately does two clear things: it opens (or creates) a file with `CreateFileW`, writes a line and closes it, then it opens a registry key with `RegOpenKeyExW`. The goal is to practice reading the parameters of an API call in the right Win64 register order, both by hand in x64dbg and with an automatic tool (API Monitor), and then compare the two. The program is harmless and fine to run on a normal machine.
+
+Build a 64-bit version so it matches the Win64 register order from the lesson. With MSVC, from a Developer Command Prompt:
+
+```
+cl /Zi apitarget.c
+```
+
+Or with MinGW:
+
+```
+x86_64-w64-mingw32-gcc -g apitarget.c -o apitarget.exe -ladvapi32
+```
+
+If you build 32-bit instead, the parameters live on the stack under stdcall, so go back to lesson 1.4.
+
+Open `apitarget.exe` in x64dbg and run to the entry point. In the Command box type `bp CreateFileW` and then `bp RegOpenKeyExW`, and press Run (F9). When it stops at `CreateFileW`, read the parameters. `rcx` points to the file name: right-click it, choose Follow in Dump, and read the Unicode string. `rdx` is the desired access, so look the value up on MSDN and work out what GENERIC_WRITE is. `r8` is the share mode. The fifth parameter, `dwCreationDisposition`, is at `[rsp+0x20]`, so read it and look up its meaning. Then keep running to `RegOpenKeyExW` and read `rcx` (the root HKEY, to compare against HKEY_CURRENT_USER) and `rdx` (a pointer to the subkey name, again via Follow in Dump). Finally, run the program under API Monitor (filtering on the advapi32 and kernel32 modules) and compare its automatic output with what you read by hand.
+
+Along the way, answer these questions. What is the full name of the file the program opens? Does it open it for reading or writing, and which parameter tells you? Which registry key is opened, under which root HKEY? And where does the return value (`rax`) land after each call, and what does it mean? Answer them all before opening the solution.
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 1.13</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/1.13/src/apitarget.c" download><i class="fa-solid fa-file-code"></i>src/apitarget.c</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+When x64dbg stops at the start of `CreateFileW`, the registers carry exactly the Win64 prototype:
+
+| Register / location | Parameter | Value in the lab | Meaning |
+|---|---|---|---|
+| `rcx` | lpFileName | pointer to `L"lab1_13_output.txt"` | the file to open; Follow in Dump to read the Unicode string (characters interleaved with 00 bytes) |
+| `rdx` | dwDesiredAccess | `0x40000000` | GENERIC_WRITE, opened for writing |
+| `r8` | dwShareMode | `1` | FILE_SHARE_READ |
+| `r9` | lpSecurityAttributes | `0` | NULL |
+| `[rsp+0x20]` | dwCreationDisposition | `2` | CREATE_ALWAYS, always create a new file (overwrite if it exists) |
+| `[rsp+0x28]` | dwFlagsAndAttributes | `0x80` | FILE_ATTRIBUTE_NORMAL |
+| `[rsp+0x30]` | hTemplateFile | `0` | NULL |
+
+After the function finishes (step over with F8, or Ctrl+F9 to run to the ret), `rax` holds the file HANDLE. If `rax` is `0xFFFFFFFFFFFFFFFF` (INVALID_HANDLE_VALUE), the open failed. To read the Unicode string at rcx, right-click rcx, Follow in Dump, then in the Dump window right-click, Text, and choose UTF-16. You will see `lab1_13_output.txt`. From the parameters alone you can conclude that the program creates (overwriting) the file `lab1_13_output.txt` for writing.
+
+For `RegOpenKeyExW` the prototype is:
+
+```c
+LSTATUS RegOpenKeyExW(HKEY hKey, LPCWSTR lpSubKey, DWORD ulOptions, REGSAM samDesired, PHKEY phkResult);
+```
+
+| Register / location | Parameter | Value in the lab | Meaning |
+|---|---|---|---|
+| `rcx` | hKey | `0x80000001` | HKEY_CURRENT_USER (a constant identifying the root) |
+| `rdx` | lpSubKey | pointer to `L"Software\Microsoft\Windows"` | the subkey to open, via Follow in Dump |
+| `r8` | ulOptions | `0` | no special flags |
+| `r9` | samDesired | `0x20019` | KEY_READ |
+| `[rsp+0x20]` | phkResult | pointer to an output variable | where the resulting HKEY is stored |
+
+`rax` after the call is an LSTATUS return code, where `0` (ERROR_SUCCESS) means success. A handy trick for recognizing the root HKEY by value: `0x80000000` is HKEY_CLASSES_ROOT, `0x80000001` is HKEY_CURRENT_USER, `0x80000002` is HKEY_LOCAL_MACHINE and `0x80000003` is HKEY_USERS. So the program opens the key `HKEY_CURRENT_USER\Software\Microsoft\Windows` with read access.
+
+API Monitor already shows the function name, each parameter decoded (including constant names like CREATE_ALWAYS and KEY_READ) and the return value, so its output should match the tables above. The only difference is that you do not have to look up the constants yourself. The value of reading by hand is that when you meet an unfamiliar API, or cannot use API Monitor (for example against a sample that detects the tool), you can still read it.
+
+Three things to take away. The Win64 order is fixed: `rcx rdx r8 r9`, then `[rsp+0x20]` and upward. Values like `0x80000001`, `0x40000000` and `0x20019` are Windows constants that you look up on MSDN or learn to recognize over time. And reading the parameters right at the start of the function, just after the breakpoint, is the most accurate, because no instruction has had the chance to overwrite the registers yet.
+
+</details>
 
 ## Key takeaways
 Always look up the prototype on MSDN first, to know the number and types of parameters. On Win64, parameters 1 to 4 are in `rcx rdx r8 r9`, parameter 5 onwards is at `[rsp+0x20]` going up, and the return is in `rax`. Read backwards from the `call` instruction to gather the prepared parameters.

@@ -1,5 +1,8 @@
 ---
 title: "Lesson 2.3: Ghidra basics, the free knife that's worth a lot"
+image:
+  path: /assets/img/covers/re-2-3-ghidra-basics-free-knife-thats-worth.webp
+  alt: "Lesson 2.3: Ghidra basics, the free knife that's worth a lot"
 date: 2022-04-13 09:56:00 +0700
 categories: ["Technique Reverse", "Part 02 · The Toolkit"]
 tags: [reverse-engineering, tools]
@@ -59,7 +62,59 @@ On power: IDA's decompiler (Hex-Rays) usually produces slightly smoother code, e
 
 ## Lab
 
-The hands-on exercise and writeup are at `labs/2.3/`. You'll import the same small crackme into Ghidra, run auto-analysis, go from Defined Strings to the check function, rename and retype so the pseudocode is readable, then compare the feel with IDA in [Lesson 2.2](/posts/re-2-2-ida-beginners-master-tool-before-binary/). Doing both tools on the same binary is the fastest way to see where they're alike and different.
+The goal is to go through a full round in Ghidra, from import to finding the password, and compare the experience with IDA from [Lesson 2.2](/posts/re-2-2-ida-beginners-master-tool-before-binary/). The binary reuses the idea of the lesson 2.2 lab (a crackme that compares a password), so you can reuse the file you built there or build `crackme01.c` on its own. Pick the build command for your system:
+
+```
+Linux/macOS:  gcc -O0 -no-pie -o crackme01 crackme01.c
+MinGW (Win):  x86_64-w64-mingw32-gcc -O0 -o crackme01.exe crackme01.c
+MSVC (Win):   cl /Od crackme01.c
+```
+
+I use `-O0` so the decompiler output stays close to the source, which suits a first time. Don't open `crackme01.c` to peek at the answer before you've tried it yourself.
+
+Create a Non-Shared Project in Ghidra, import `crackme01`, answer Yes when asked to analyze, and let auto-analysis finish. Open Window > Defined Strings and find the two result messages. Ask yourself which one hints that this is where the right/wrong decision is made. Double-click the success string to jump to the Listing, then press Ctrl+Shift+F (Find References To) to find the function that references it, and check whether it is `main` or some other function that calls into it. Open the check function in the Decompiler, rename it (L) to `check_password`, and rename the parameter to `input` for readability. Then read the pseudocode: what does the function compare `input` against? Find the correct password, run the binary, type it in, and confirm you get "Access granted". Finally, if you did the lesson 2.2 lab, open the same binary in IDA and compare. Which job was faster, which keys differed, and which decompiler reads better to you?
+
+A few hints. If Defined Strings doesn't show the string you expect, check that auto-analysis has actually finished (the bar at the bottom). The password sits right in the pseudocode as a string constant being compared, so there's no need to debug, reading is enough. And if the decompiler shows variables of type `undefined`, try retyping them (Ctrl+L) to `char *` or `int` to make them clearer.
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 2.3</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/2.3/src/crackme01.c" download><i class="fa-solid fa-file-code"></i>src/crackme01.c</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+The password is `Gh1dra_R0cks`. Typing it gives "Access granted. Congratulations!".
+
+After creating the project and importing `crackme01`, answer Yes to "Analyze now?" and leave the analyzers at their defaults. For a small binary like this, auto-analysis finishes in a few seconds, and you're done when the status bar at the bottom stops running.
+
+Window > Defined Strings shows, among others, `Enter password: `, `Access granted. Congratulations!`, `Wrong password. Try again.` and `Gh1dra_R0cks`, which is the password itself, sitting in `.rodata`. The `Access granted` string marks the success branch. Notice that even `Gh1dra_R0cks` shows up here: plenty of easy crackmes leak the password in the strings table before you ever open a function.
+
+For the xref step, double-click `Access granted...` to get to the Listing, put the cursor on it and press Ctrl+Shift+F. The reference leads back to `main`, since the result string is printed there. But if you xref the string `Gh1dra_R0cks` instead, it leads straight into the `check_password` function (named `FUN_...` at first in the Listing), because that is where the real comparison happens. In the Decompiler, put the cursor on the name of the `FUN_...` function that holds the comparison, press L and rename it to `check_password`, then rename the parameter to `input`. The pseudocode becomes noticeably easier to read right away.
+
+After the cleanup, the decompiler gives roughly this:
+
+```c
+int check_password(char *input)
+{
+    char *secret = "Gh1dra_R0cks";
+    if (strlen(input) != strlen(secret))
+        return 0;
+    for (i = 0; i < strlen(secret); i++) {
+        if (input[i] != secret[i])
+            return 0;
+    }
+    return 1;
+}
+```
+
+The function compares the input character by character against the string constant `Gh1dra_R0cks`. That is the password. Ghidra may render the loop a little differently (with an internal index variable, calling `strlen` repeatedly), but the logic is the same: match the length, then match each character. To confirm, run the binary, type `Gh1dra_R0cks`, and the success message appears.
+
+On the comparison with IDA, going from a string to a function takes about the same number of steps in both: IDA uses Shift+F12 to open Strings and X for xrefs, while Ghidra uses Defined Strings and then Ctrl+Shift+F. As decompilers, both read the password out easily on `-O0` code. Hex-Rays (IDA) tends to fold `strlen` a bit more neatly, while Ghidra spells it out more. Renaming is N in IDA and L in Ghidra: different key, same effect. In practice the two tools are on par for something this size. The big differences only show up on complex binaries and when you need scripting, where each tool has its own strengths.
+
+</details>
 
 ## Key takeaways
 Ghidra makes you create a project first, then import, then Analyze (auto-analysis) before it's usable. The four main windows are Listing (asm), Decompiler (pseudocode), Symbol Tree (functions), and Data Type Manager (types). To get to work fast, use Window > Defined Strings, double-click a string, and press Ctrl+Shift+F to xref to the function that uses it. Rename with L, retype with Ctrl+L, comment with the semicolon, and name things as soon as you understand them. Compared to IDA the concepts are the same but the keys differ, and the decompiler is always showing, so no F5 is needed.

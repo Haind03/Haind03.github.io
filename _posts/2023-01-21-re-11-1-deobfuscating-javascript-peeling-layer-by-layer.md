@@ -1,5 +1,8 @@
 ---
 title: "Lesson 11.1: Deobfuscating JavaScript, peeling layer by layer until it reads"
+image:
+  path: /assets/img/covers/re-11-1-deobfuscating-javascript-peeling-layer-by-layer.webp
+  alt: "Lesson 11.1: Deobfuscating JavaScript, peeling layer by layer until it reads"
 date: 2023-01-21 16:43:00 +0700
 categories: ["Technique Reverse", "Part 11 · JavaScript, Electron, WebAssembly"]
 tags: [reverse-engineering, javascript, wasm]
@@ -40,7 +43,7 @@ Two main tools, try them in this order:
 
 webcrack is the strongest right now for obfuscator.io and also webpack bundles: `npx webcrack obf.js -o out`. It resolves the string array, unflattens control flow, inlines, and splits modules. synchrony (the `deobfuscator` package) is specialized for obfuscator.io: `npx deobfuscator file.js` removes the string array and simplifies expressions.
 
-In practice a single tool doesn't always clean it 100%. webcrack runs code in a sandbox to resolve the string array, so sometimes it trips on the environment (isolated-vm on some machines, for example). synchrony may only do part of it: convert hex constants to decimal, simplify, but still leave the control flow flattening. That's fine. **You don't need the tool to clean it completely, you only need it to clean enough that you can read the logic.**
+In practice a single tool doesn't always clean it 100%. webcrack runs code in a sandbox to resolve the string array, so on some machines that layer (isolated-vm, for example) can fail to load or run. synchrony may only do part of it: convert hex constants to decimal, simplify, but still leave the control flow flattening. That's fine. **You don't need the tool to clean it completely, you only need it to clean enough that you can read the logic.**
 
 Even when a messy `switch`-case is still there, you read each case and the original logic comes out. In this lesson's lab, after running synchrony the check function still had flattening, but the cases were clear: one case `split('-')`, one case checking the number of parts, one case summing `charCodeAt`, one case `return`ing a comparison of the sum against a constant. Put together, you understand all of it.
 
@@ -91,4 +94,78 @@ Obfuscation only hides the logic, it doesn't encrypt it, so code that runs means
 webcrack is the strongest and synchrony is plan B, and you don't need a full cleanup, just readable logic. When the tools give up, write your own Babel/AST transform, which is also how the tools work inside. For payloads in `eval`/`Function`, print them with `console.log` and don't run them.
 
 ## Lab
-See `labs/11.1/`. It has a license checker ready, a minified version, a version obfuscated with the real obfuscator.io, and the result after beautifying and running synchrony. The task: peel it back to the original logic and find a valid license key.
+
+The task is to peel a JavaScript license checker from its obfuscated form back to readable logic, and then find a valid license key. There are five versions of the checker. `original.js` is the original, which you should only open to check your work after solving it yourself. `minified.js` has only been minified (level 1). `obfuscated.js` was obfuscated with `javascript-obfuscator` (obfuscator.io) using a string array and control flow flattening. `obfuscated.beautified.js` is the previous file after `js-beautify`, so you can see the structure of the string array and the rotate function. `after-synchrony.js` is the result of running `npx deobfuscator`, with hex converted to decimal and partly simplified.
+
+Start by beautifying `minified.js` and reading the logic, and work out what a valid license key looks like. Then open `obfuscated.js` and identify the string array, the rotate function and the control flow flattening, and which signs tell you this is obfuscator.io. Run `npx js-beautify obfuscated.js` and then `npx deobfuscator obfuscated.js`, and compare the result with `after-synchrony.js`.
+
+After deobfuscation there is still a messy `switch`-case. Read each case and put the original logic back together. Using the recovered logic, build a valid license key and run it with `node` to confirm.
+
+Two hints. The sum of the `charCodeAt` values of the first part must equal one specific constant, so work out what that sum is for the sample key `ABCD-...`. The middle part and the length of the last part are checked as well. Try it yourself before opening the solution.
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 11.1</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/11.1/src/after-synchrony.js" download><i class="fa-solid fa-file-code"></i>src/after-synchrony.js</a>
+<a class="lab-file" href="/assets/labs/11.1/src/minified.js" download><i class="fa-solid fa-file-code"></i>src/minified.js</a>
+<a class="lab-file" href="/assets/labs/11.1/src/obfuscated.beautified.js" download><i class="fa-solid fa-file-code"></i>src/obfuscated.beautified.js</a>
+<a class="lab-file" href="/assets/labs/11.1/src/obfuscated.js" download><i class="fa-solid fa-file-code"></i>src/obfuscated.js</a>
+<a class="lab-file" href="/assets/labs/11.1/src/original.js" download><i class="fa-solid fa-file-code"></i>src/original.js</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+All the files were really produced and tested with Node v20.20.2. `obfuscated.js` was generated with `javascript-obfuscator original.js --control-flow-flattening true --string-array true --string-array-threshold 1`, and running `node obfuscated.js` prints `true` (the sample key is valid), which confirms the obfuscation did not change the logic. `obfuscated.beautified.js` is `npx js-beautify obfuscated.js`, and `after-synchrony.js` is `npx deobfuscator obfuscated.js` (the synchrony package).
+
+If `webcrack` fails on your machine in its isolated-vm sandbox layer while resolving the string array, that is an environment problem, not a weakness of the tool, and on a working setup it usually cleans up better than synchrony. The task is still fully solvable with synchrony plus reading by hand, in the spirit of "you do not need a tool that cleans everything".
+
+Reading the minified version first, `minified.js` after beautifying is just `original.js`. The logic is this.
+
+```js
+function checkLicense(key) {
+  var parts = key.split("-");
+  if (parts.length !== 3) return false;      // must be exactly 3 parts A-B-C
+  var sum = 0;
+  for (var i = 0; i < parts[0].length; i++)
+    sum += parts[0].charCodeAt(i);           // sum of the ASCII codes of the first part
+  return sum === 266                          // sum = 266
+      && parts[1] === "PRO"                   // middle part = "PRO"
+      && parts[2].length === 4;               // last part is 4 characters long
+}
+```
+
+To recognize obfuscator.io, look at `obfuscated.beautified.js`. The function `a0_0x2c73(_0x4ae3eb, _0x7c52ba) { ... var _0x4017e2 = a0_0x4017(); return _0x4017e2[_0x4ae3eb]; }` is the string array accessor, and every string has been replaced by `a0_0x2c73(0x...)`. `a0_0x4017` is the function that returns the string array. The IIFE `(function(_0x3bbb98, _0x3bab1d){ ... while(!![]){ try{ ...parseInt... push(shift()) ... } } }(a0_0x4017, 0x6c32f))` is the rotate function, which rotates the array until a checksum matches `0x6c32f`. The variable names are in `_0x` hex style, and you will see control flow flattening inside `checkLicense`. These four signs confirm obfuscator.io.
+
+After synchrony (`after-synchrony.js`), the hex constants have become decimal and the code is tidier, but `checkLicense` is still flattened.
+
+```js
+var _0x3ce6eb = _0x47e645(197).split('|');   // order of the cases, e.g. "4|2|3|0|1"
+while (true) {
+  switch (_0x3ce6eb[_0x29a5da++]) {
+    case '4': var _0xb24b61 = _0x963ecc.split('-'); continue;   // split '-'
+    case '2': if (_0xb24b61.length !== 3) return false; continue;
+    case '0': var _0x3f6997 = 0; continue;
+    case '3': for (...) _0x3f6997 += _0xb24b61[0].charCodeAt(_0x32ce62); continue;  // add charCodes
+    case '1': return eq(_0x3f6997, 266) && eq(_0xb24b61[1], "PRO") && _0xb24b61[2].length === 4;
+  }
+  break;
+}
+```
+
+Reading the cases in the order given by the `split('|')` string gives back the original logic: split on `-`, check there are 3 parts, add the charCodes of the first part, compare with 266, the middle part is `"PRO"`, and the last part is 4 long. Control flow flattening only shuffles the order of the blocks and does not change the meaning.
+
+To build a valid key you need the charCode sum of the first part to be 266, the middle part `"PRO"` and the last part 4 characters long. `"ABCD"` gives 65+66+67+68 = 266, which works, so a valid key is `ABCD-PRO-2024` (the last part `2024` is 4 characters long). Checking it:
+
+```
+$ node original.js
+true
+$ node obfuscated.js
+true
+```
+
+Both the original and the obfuscated versions accept `ABCD-PRO-2024`, which confirms the logic was recovered correctly. Any other first part whose charCodes sum to 266 is valid too, but the sum must be exactly 266 (for example `"BBCD"` = 66+66+67+68 = 267 does not work). This is where a keygen is handy: enumerate the combinations whose sum is 266.
+
+</details>
+

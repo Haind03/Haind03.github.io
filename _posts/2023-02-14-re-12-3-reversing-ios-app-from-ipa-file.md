@@ -1,5 +1,8 @@
 ---
 title: "Lesson 12.3: Reversing an iOS app, from the IPA file to runtime hooks"
+image:
+  path: /assets/img/covers/re-12-3-reversing-ios-app-from-ipa-file.webp
+  alt: "Lesson 12.3: Reversing an iOS app, from the IPA file to runtime hooks"
 date: 2023-02-14 10:47:00 +0700
 categories: ["Technique Reverse", "Part 12 · Swift and Objective-C"]
 tags: [reverse-engineering, ios, swift]
@@ -88,7 +91,66 @@ A common mistake is forgetting that App Store apps are still FairPlay encrypted,
 
 ## Lab
 
-See `labs/12.3/`. You need a jailbroken iOS device and an app you made yourself (or have permission for). The task: dump the decrypted binary, confirm `cryptid` goes to 0, analyze the Mach-O, then hook a method with objection. The file `src/hook.js` has a sample iOS Frida script.
+The task is to dump, analyze and hook an iOS app. You need a jailbroken iOS device (or an equivalent virtual device), because that is required to dump the decrypted binary and hook the runtime. On the device `frida-server` must be running, along with OpenSSH. On the host you need Python, `frida`, `frida-tools`, `objection` and `frida-ios-dump`. Use an app you made yourself or one you have permission to test, never someone else's app. Set up the host with:
+
+```
+pip install frida-tools objection
+git clone https://github.com/AloneMonkey/frida-ios-dump
+```
+
+Start with the IPA structure. If you already have an IPA, rename it to `.zip` and unzip it. Find `Payload/*.app/` and read `Info.plist` to get the bundle identifier, the version and the permissions. Then check the FairPlay encryption. On the Mach-O binary inside the app, run the following on macOS and look at `cryptid`. A value of 1 means it is still encrypted and 0 means it is decrypted.
+
+```
+otool -l AppName | grep -A5 LC_ENCRYPTION_INFO
+```
+
+For an App Store app that is still encrypted, run frida-ios-dump to get a decrypted IPA, and afterwards check that `cryptid` has gone to 0.
+
+```
+python3 dump.py com.example.myapp
+```
+
+For static analysis, open the decrypted binary in Ghidra or IDA (arm64). If it is ObjC, run class-dump to get the headers and read by selector (Lesson 12.1). If it is Swift, demangle the symbols (Lesson 12.2). For runtime hooking, use objection, pick a method to follow and watch its arguments:
+
+```
+objection -g com.example.myapp explore
+ios hooking list classes
+ios hooking watch class <ClassName>
+```
+
+Last, hook with a Frida script. Use `hook.js` (change the class and method names to match your app) to hook a method and change its return value:
+
+```
+frida -U -f com.example.myapp -l hook.js
+```
+
+A few questions to think about. Why can't you skip the dump step and analyze the App Store binary directly? What is `args[1]` in an ObjC hook, and why do the real parameters start at `args[2]`? And if you don't have a jailbroken device, what other ways are there to learn iOS RE?
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 12.3</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/12.3/src/hook.js" download><i class="fa-solid fa-file-code"></i>src/hook.js</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+Try it before reading. This lab needs a jailbroken iOS device, so what follows is the standard procedure with notes on how to interpret the output.
+
+Unzipping the IPA gives `Payload/AppName.app/`. In `Info.plist` the important keys are `CFBundleIdentifier`, the bundle id used in every Frida and objection command (`-g <id>`), then `CFBundleShortVersionString` and `MinimumOSVersion`, the `NS*UsageDescription` keys that list the permissions the app asks for (camera, location and so on), and `CFBundleURLTypes`, the URL schemes, which are often an attack entry point.
+
+For the FairPlay check, the output of `otool -l AppName | grep -A5 LC_ENCRYPTION_INFO` containing `cryptid 1` means `__TEXT` is still encrypted and only garbage shows up if you drag it into IDA. `cryptid 0` means it is decrypted and can be analyzed.
+
+For the dump, `python3 dump.py com.example.myapp` makes frida-ios-dump run the app, read the `__TEXT` region that iOS has already decrypted in RAM, write it over the binary, set `cryptid` to 0 and pack it into a new IPA. Checking again with `otool -l` and seeing `cryptid 0` means success. An app you built through Xcode is already `cryptid 0`, so you can skip this step.
+
+For static analysis, open the decrypted binary in Ghidra (pick the right arm64 slice if it is a fat binary). For ObjC, run `class-dump AppName > headers.h` to get every @interface, then in Ghidra read by `objc_msgSend` plus selector (Lesson 12.1). For Swift, demangle the `$s...` symbols with `swift demangle` (Lesson 12.2).
+
+With objection, `ios hooking watch class LoginViewController` prints every time a method of that class is called, together with its arguments. It is the fastest way to learn the execution flow without writing a script. With the Frida script, `frida -U -f com.example.myapp -l hook.js` hooks `- checkPassword:`, logs the first argument (`args[2]`) and forces a return of true (`retval.replace(ptr(1))`).
+
+On the questions, you can't analyze the App Store binary directly because the `__TEXT` part is encrypted by FairPlay, and the code is only garbage until iOS decrypts it in RAM at run time, so you have to dump the decrypted version to read it. `args[1]` is the selector because in ObjC every method is really a C function of the form `method(self, SEL, ...)`: `args[0]` is self and `args[1]` is the selector (SEL), so the parameters the developer declared start at `args[2]`. Without a jailbroken device you can learn with an app you build and install through Xcode (it isn't subject to FairPlay, and you can debug and hook freely on the simulator or a dev device), or practice on crackmes and deliberately vulnerable apps such as DVIA-v2 and iGoat.
+
+</details>
 
 ## Key takeaways
 An IPA is a ZIP, and the important binary is the Mach-O with the same name as the app, so read Info.plist first. App Store binaries have `__TEXT` encrypted by FairPlay (check for `cryptid` = 1), so you have to dump the decrypted copy from memory with frida-ios-dump or bagbak, which needs a jailbroken device. Apps you build yourself aren't encrypted.

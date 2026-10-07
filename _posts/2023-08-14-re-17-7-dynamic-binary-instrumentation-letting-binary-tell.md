@@ -1,5 +1,8 @@
 ---
 title: "Lesson 17.7: Dynamic Binary Instrumentation, letting the binary tell you where it ran"
+image:
+  path: /assets/img/covers/re-17-7-dynamic-binary-instrumentation-letting-binary-tell.webp
+  alt: "Lesson 17.7: Dynamic Binary Instrumentation, letting the binary tell you where it ran"
 date: 2023-08-14 14:53:00 +0700
 categories: ["Technique Reverse", "Part 17 · Patching, Hooking, Injection"]
 tags: [reverse-engineering, frida, hooking]
@@ -53,7 +56,50 @@ Use it when your question is "global and quantitative": coverage, counting, wide
 
 ## Lab
 
-See `labs/17.7/`: use a DBI tool to collect the coverage of a program with a right input and a wrong input, then compare them to mark out the check function yourself.
+The task is to use a DBI tool to collect the code coverage of a program with two different inputs, then compare them to narrow down the code that runs when you get deeper into the check logic. You don't have to understand the program beforehand, because the program points the way itself. You need one DBI tool: DynamoRIO (which ships `drcov`), Intel Pin, or QBDI. This lab is described with DynamoRIO because `drcov` already collects coverage. You also need a practice target, a crackme that takes an input and prints right or wrong (for example the crackme from Lesson 3.5 or Lesson 2.5), and a tool to view and compare coverage, either Lighthouse (an IDA/Binary Ninja plugin) or your own diff script.
+
+First run the target with an input that is certainly WRONG and collect the coverage:
+
+```
+drrun -t drcov -- ./target wrongwrong
+```
+
+The result is a `drcov.*.log` file recording the basic blocks that ran. Run it again with a "better" input (the right length, the right prefix, or an input you guess gets further into the check function) and collect a second coverage. Compare the two sets of blocks: the blocks that appear ONLY in the second run are code newly triggered by going deeper. Load both coverage files into Lighthouse in IDA or Binary Ninja, color them, and see which function the new blocks fall in. That is very likely the check function (or branch). Finally open that function and read it statically to confirm it is the serial or password check logic.
+
+Some questions to think about. Why does coverage diffing find the check function faster than reading statically from the start? If the right and wrong inputs give identical coverage all the way to the end, what does that suggest about how the check works (for example a comparison that does not branch early)? And DBI runs many times slower than a normal run, so when is that cost worth paying and when should you go back to a debugger?
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+Try it yourself before reading.
+
+### The coverage diffing procedure with DynamoRIO
+
+First collect the coverage for a wrong input:
+
+```
+drrun -t drcov -- ./target AAAAAAAA
+```
+
+This produces `drcov.target.<pid>.0000.proc.log`, which you rename to `cov_wrong.log`. Then collect the coverage with a better input. Suppose triage shows the correct serial is 10 characters long and starts with "RE", so try:
+
+```
+drrun -t drcov -- ./target RE00000000
+```
+
+and rename it to `cov_better.log`. To compare, the quickest way is to load both into Lighthouse (IDA: File > Load file > Code coverage file). Lighthouse colors the blocks that ran. Open the two coverages and use the diff (composition) feature to get `cov_better - cov_wrong`. The extra blocks lit up in the "better" run concentrate in one function, usually the per-character comparison or the serial transform function, and that is the target. Open that function statically (F5 in IDA) to read the logic and recover the correct serial.
+
+### Why this is fast
+
+Instead of reading from `main` down through the CRT and dozens of helper functions, you let the program filter for you: only the code that reacts to the better input shows up in the diff. For a large or obfuscated binary, this is the cheapest way to narrow things down.
+
+### Answers to the questions
+
+Coverage diffing is faster because it removes all code unrelated to the difference between right and wrong, leaving only the logic branch you care about, while static reading has you filter by eye. If coverage is identical to the end, the check function most likely compares without branching early (for example accumulating a `diff |= a[i]^b[i]` variable and checking once at the end, or a constant-time memcmp). Then coverage is useless and you have to switch to a memory trace or static reading. The slowness cost of DBI is worth it when the question is global (coverage, wide tracing, taint). When you only need to inspect one function whose address you already know, a debugger is much faster and more direct.
+
+The `drrun -t drcov` procedure and the way of loading into Lighthouse follow the DynamoRIO and Lighthouse documentation. You need DynamoRIO or Pin installed, and Lighthouse needs the IDA or Binary Ninja GUI, so run it on your own machine to get real numbers.
+
+</details>
 
 ## Key takeaways
 DBI inserts observation code into each instruction/block at runtime, with no source needed and no disk file modified. The tools are Pin (C++, powerful), DynamoRIO (open source, drcov built in), QBDI (embeddable, nice API), and TinyInst (light, for coverage/fuzzing). The strongest trick is coverage diffing between wrong and right input to find the check function.

@@ -1,5 +1,8 @@
 ---
 title: "Lesson 1.8: ELF and Mach-O, the two formats outside Windows"
+image:
+  path: /assets/img/covers/re-1-8-elf-mach-o-two-formats-outside.webp
+  alt: "Lesson 1.8: ELF and Mach-O, the two formats outside Windows"
 date: 2022-03-21 22:18:00 +0700
 categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
@@ -96,7 +99,132 @@ Looking at this table you can see all three tell the same story, just with diffe
 
 ## Lab
 
-The lab is at `labs/1.8/`. You'll use `readelf`, `objdump`, `nm` yourself to dissect an ELF binary, find the entry point, list the segments, and observe PLT/GOT. There's a hello world file to build and a sample writeup to compare against. If you don't have a Linux machine, running in WSL or a light VM is enough.
+In this lab you dissect an ELF binary by hand with `readelf`, `objdump`, `nm` and `file`: you identify the file, find the entry point, list the segments and look at the PLT/GOT, then compare a stripped and a non-stripped build. You need a Linux environment. On Windows, WSL (`wsl --install`) or a light Linux VM is enough.
+
+The sample program is `hello.c`. It calls a couple of library functions (`printf` and `strlen`) so you can see the PLT/GOT at work, and it has one internal function so the stripped and non-stripped builds differ in something visible. Build a normal copy and a stripped copy. If you cannot build, a system binary such as `/bin/ls` answers most of the questions.
+
+```
+gcc -O0 -o hello hello.c            # normal build, symbols kept
+gcc -O0 -o hello_stripped hello.c
+strip hello_stripped                # stripped build
+```
+
+Begin with identification. Run `file hello` and read off the bit width, whether it is dynamically or statically linked, and whether it is stripped, then repeat with `hello_stripped` and compare. Next read the header with `readelf -h hello`: note the four magic bytes, the entry point (`e_entry`), and whether the type is `ET_EXEC` or `ET_DYN`. Modern gcc builds PIE by default, so it is usually `ET_DYN`.
+
+Then compare segments and sections. `readelf -l hello` shows the program headers (segments) and, at the bottom, the "Section to Segment mapping". Find which loadable segment holds `.text` and what permissions it has (R E). `readelf -S hello` shows the section headers, where you should locate `.text`, `.rodata`, `.data`, `.bss`, `.plt` and `.got`. The string "Hello, ELF!" will sit in one of them, which you can check with `readelf -p .rodata hello`.
+
+For the PLT/GOT, use `objdump -d -j .plt hello` to see the PLT stubs. Then run `objdump -d hello | grep -A3 '<main>:'` and look for the calls to `printf@plt` and `strlen@plt`, and notice that `main` does not call libc directly but goes through `@plt`. `readelf -r hello` prints the relocation table, which is exactly the list of GOT slots that get filled with real addresses at run time.
+
+For symbols, run `nm hello` and find `main` and `secret_len`. Then see what `nm hello_stripped` reports now, whether `secret_len` is still visible, and what happens to `printf` (try `nm -D hello_stripped` to see the dynamic symbols). Finally, go back to the PE lesson (Lesson 1.7) and match things up: which PE field corresponds to the ELF entry point, and which PE mechanism corresponds to the PLT/GOT? Answer everything yourself before opening the solution.
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 1.8</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/1.8/src/hello.c" download><i class="fa-solid fa-file-code"></i>src/hello.c</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+The output below comes from a gcc build on x86-64 Linux. Your addresses will differ, but the meaning is the same.
+
+For identification, the two files look like this.
+
+```
+$ file hello
+hello: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV),
+       dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2,
+       ... not stripped
+
+$ file hello_stripped
+hello_stripped: ELF 64-bit LSB pie executable, x86-64, ... stripped
+```
+
+It is a 64-bit, little-endian (LSB) ELF, built as PIE (hence "pie executable"), dynamically linked to libc through the `ld-linux` interpreter. One copy is "not stripped" and the other is "stripped", and the only difference between the two files is the symbol table.
+
+The header looks like this.
+
+```
+$ readelf -h hello
+  Magic:   7f 45 4c 46 02 01 01 00 ...
+  Class:                             ELF64
+  Data:                              2's complement, little endian
+  Type:                              DYN (Position-Independent Executable file)
+  Machine:                           Advanced Micro Devices X86-64
+  Entry point address:               0x1060
+```
+
+The magic is `7f 45 4c 46`, that is `0x7F` followed by "ELF". The entry point `0x1060` is not `main` but `_start` from the C runtime, which does its initialization and only then calls `main`, much like the CRT code that runs before `main` in a PE. The type is `DYN` rather than `EXEC` because it is a PIE. A PIE can run at a random base (ASLR), so the addresses in the file are offsets from the base rather than absolute addresses.
+
+For segments versus sections:
+
+```
+$ readelf -l hello
+Program Headers:
+  Type           Offset   VirtAddr           Flags  Align
+  LOAD           0x001000 0x0000000000001000 R E    0x1000
+  LOAD           0x002000 0x0000000000002000 R      0x1000
+  LOAD           0x002xxx 0x0000000000003xxx RW     0x1000
+  ...
+ Section to Segment mapping:
+  Segment ... .text ...        <- inside the LOAD with flags R E
+  Segment ... .rodata ...      <- LOAD with flags R
+  Segment ... .data .bss ...   <- LOAD with flags RW
+```
+
+The key point is that `.text` lives in a loadable segment with flags R E (read and execute, not write), while `.data` and `.bss` live in an RW segment. A segment groups several sections with the same permissions so the loader can map them in one go. As the lesson said, segments are for running and sections are for analysis.
+
+```
+$ readelf -p .rodata hello
+  [     8]  Hello, ELF!
+  [    14]  string length is %d
+```
+
+As expected, the constant strings are in `.rodata`.
+
+For the PLT/GOT:
+
+```
+$ objdump -d hello | grep -A12 '<main>:'
+0000000000001169 <main>:
+    ... lea    rax,[rip+0xe8c]        # load the address of the "Hello, ELF!" string
+    ... call   1050 <puts@plt>        # printf("%s\n", msg) optimized into puts
+    ... call   1060 ...               # or strlen@plt depending on the build
+```
+
+`main` does not call libc directly. It calls `puts@plt` or `strlen@plt`, which are stubs in the PLT. gcc often replaces `printf("%s\n", x)` with `puts(x)` when optimizing, so do not be surprised to see `puts`.
+
+```
+$ readelf -r hello
+Relocation section '.rela.plt' ...
+  Offset          Info           Type           Sym. Name
+  0000000000003fc8 ...           R_X86_64_JUMP_SLOT   puts@GLIBC
+  0000000000003fd0 ...           R_X86_64_JUMP_SLOT   strlen@GLIBC
+```
+
+Each `JUMP_SLOT` line is a GOT slot (at offsets `0x3fc8`, `0x3fd0` and so on) that the dynamic linker fills with the real address of `puts` or `strlen` the first time they are called (lazy binding). Before the first call the GOT slot points back at the resolver, and afterwards it points straight at the function in libc.
+
+For symbols:
+
+```
+$ nm hello | grep -E 'main|secret_len'
+0000000000001169 T main
+0000000000001145 t secret_len     <- lowercase 't': local symbol
+
+$ nm hello_stripped
+nm: hello_stripped: no symbols
+
+$ nm -D hello_stripped
+                 U puts@GLIBC_2.2.5
+                 U strlen@GLIBC_2.2.5
+```
+
+After stripping, `nm` normally sees nothing because `.symtab` has been cut, so `secret_len` and `main` lose their names. But `nm -D` (dynamic symbols, read from `.dynsym`) still lists `puts` and `strlen`, because the imported functions need their names at run time for the linker to resolve them and cannot be stripped. That is exactly what the lesson said: strip kills internal function names, not the names of imported library functions.
+
+Finally, the comparison with PE. The ELF `e_entry` corresponds to the PE `AddressOfEntryPoint`. The PLT/GOT corresponds to the IAT (Import Address Table). `.rodata` corresponds to `.rdata`. A LOAD segment corresponds to a section mapped according to its characteristics, and the `ld-linux` interpreter corresponds to the Windows loader plus ntdll. It is the same skeleton with different names, so moving from Windows reversing to Linux, or the other way round, is mostly a matter of translating vocabulary.
+
+</details>
 
 ## Key takeaways
 The ELF magic is `7F 'E' 'L' 'F'`, Mach-O is `FEEDFACE/FACF`, and a fat binary is `CAFEBABE`. ELF has two tables: the program header (segments, for the loader to run) and the section header (sections, for analysis). Segments are for running, sections are for reading.

@@ -1,5 +1,8 @@
 ---
 title: "Lesson 1.10: Windows internals (1), Win32 API and DLLs, reading intent from the function list"
+image:
+  path: /assets/img/covers/re-1-10-windows-internals-1-win32-api-dlls.webp
+  alt: "Lesson 1.10: Windows internals (1), Win32 API and DLLs, reading intent from the function list"
 date: 2022-03-26 21:45:00 +0700
 categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
@@ -86,7 +89,55 @@ A few quick ways to look at imports. DIE has an Import tab that lists DLLs and f
 
 ## Lab
 
-The exercise is at `labs/1.10/`: open the imports of a few different exes and practice guessing their functionality from the API list alone, and put each function into the right purpose group. A sample writeup is in `solution.md`.
+This lab trains the reflex of looking at an import list and guessing what the program intends to do before reading any code. You need Detect It Easy (DIE), or PE-bear or CFF Explorer if you prefer. You don't need source code and you don't run anything.
+
+Start by picking three or four exes of different nature on your Windows machine, for example `notepad.exe` for text editing and file I/O, `calc.exe` or some small GUI app for the interface, a network utility such as `curl.exe` if you have it, and any installer, which usually touches files, the registry and processes. Drag each one into DIE and open the Import tab, then write down the DLLs it imports and a few notable functions. Before looking anything up, guess whether the program touches files, the registry or the network, and whether it creates child processes, then compare the guess with what you already know about the program.
+
+Next, sort each of the following functions into the right group: File, Registry, Process-Thread, Memory, Network, Crypto or Service.
+
+```
+CreateFileW        RegSetValueExW     VirtualAllocEx
+CreateRemoteThread InternetOpenA      BCryptEncrypt
+FindFirstFileW     OpenProcess        HttpSendRequestW
+WriteProcessMemory CreateServiceW     RegQueryValueExW
+CryptAcquireContextW  ReadFile        connect
+```
+
+Then try to infer a profile. Suppose a sample imports exactly these functions and nothing else:
+
+```
+FindFirstFileW, FindNextFileW, CreateFileW, ReadFile, WriteFile,
+CryptAcquireContextW, CryptEncrypt, RegSetValueExW, DeleteFileW
+```
+
+Without running it and without reading code, write one sentence saying what this program most likely does.
+
+As an advanced extra, open a packed sample, or a tiny program whose imports are only a few functions such as `LoadLibraryA`, `GetProcAddress` and `VirtualAlloc`. Explain why such a short import list is suspicious and what the program might be hiding.
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+Inspecting imports. The real results depend on your Windows version, but the general pattern is stable. `notepad.exe` imports `kernel32.dll` (CreateFileW, ReadFile and WriteFile for reading and writing text files), `user32.dll` for windows and menus, and `comdlg32.dll` for the Open/Save dialogs. So the guess is right: it touches files, it has a GUI and it has no network. A small GUI app leans heavily on `user32.dll` and `gdi32.dll` for drawing and windows, with few or no file or network functions. `curl.exe` shows `ws2_32.dll` (sockets) or `wininet`/`libcurl`, plus file functions to write the output, so it is obviously a network tool. An installer usually has all of file (CreateFile), registry (RegSetValueEx) and process (CreateProcess to launch the next install step) functions. Many installers are packed, so their imports may look poor, see the last task. The takeaway is that even before running anything, the shape of the imports gives away the nature of the program.
+
+Grouping the functions:
+
+| Function | Group |
+|---|---|
+| CreateFileW, FindFirstFileW, ReadFile | File |
+| RegSetValueExW, RegQueryValueExW | Registry |
+| OpenProcess, CreateRemoteThread | Process/Thread (and injection) |
+| VirtualAllocEx, WriteProcessMemory | Memory (writing into another process, injection) |
+| InternetOpenA, HttpSendRequestW, connect | Network |
+| BCryptEncrypt, CryptAcquireContextW | Crypto |
+| CreateServiceW | Service |
+
+Note that `OpenProcess` + `VirtualAllocEx` + `WriteProcessMemory` + `CreateRemoteThread` appearing together is the classic recipe for DLL or shellcode injection (see Part 17).
+
+Inferring the profile. The functions enumerate files (`FindFirstFileW`/`FindNextFileW`), open and read/write them (`CreateFileW`, `ReadFile`, `WriteFile`), encrypt (`CryptAcquireContextW`, `CryptEncrypt`), write to the registry (`RegSetValueExW`) and delete files (`DeleteFileW`). My conclusion is that the program sweeps through files, reads their contents, encrypts them and writes the result over the original or as a new encrypted copy, deletes the original, and leaves a trace in the registry. That is the profile of ransomware. You can't be 100% sure from imports alone, but it is enough to put the sample in the dangerous bucket and analyze it in an isolated VM.
+
+When the imports are too clean. A real PE almost always imports dozens of functions. When the list shrinks to `LoadLibraryA`, `GetProcAddress`, `VirtualAlloc` and a few odds and ends, it means the program resolves its APIs at runtime: `GetProcAddress` fetches the real function addresses by name, so the static list looks harmless. `VirtualAlloc`, often with execute permission, allocates a region where decrypted code is written, which is typical of packers and shellcode loaders. In other words, a tiny import list doesn't mean a simple program. It usually means the program is packed or is trying to hide its behavior. The next step is dynamic analysis: set breakpoints on `GetProcAddress` and `VirtualAlloc` to catch the real APIs as they appear at runtime, or unpack first (Part 14) and read the real imports afterwards.
+
+</details>
 
 ## Key takeaways
 The Win32 API lives in DLLs (kernel32, user32, advapi32, ntdll...), and the exe calls into them to ask Windows to do things. kernel32 usually calls down into ntdll and then syscalls into the kernel, so calling Nt*/syscall directly is suspicious. The suffix A means ANSI and W means Unicode UTF-16 (with interleaved 00 bytes in memory).

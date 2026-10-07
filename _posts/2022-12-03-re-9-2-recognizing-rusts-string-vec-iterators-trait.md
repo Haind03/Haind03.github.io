@@ -1,5 +1,8 @@
 ---
 title: "Lesson 9.2: Recognizing Rust's String, Vec, iterators and trait objects"
+image:
+  path: /assets/img/covers/re-9-2-recognizing-rusts-string-vec-iterators-trait.webp
+  alt: "Lesson 9.2: Recognizing Rust's String, Vec, iterators and trait objects"
 date: 2022-12-03 09:21:00 +0700
 categories: ["Technique Reverse", "Part 09 · Rust"]
 tags: [reverse-engineering, rust]
@@ -75,7 +78,72 @@ In real Rust reversing, this is the least discouraging way to work. Demangle and
 
 ## Lab
 
-See `labs/9.2/`. You build a small Rust program using `String`, `Vec` and an iterator chain, then observe it in Ghidra to see with your own eyes the glued strings, the three-field structure of `Vec`, and the iterator inlined into a flat loop.
+In this lab you see how Rust represents familiar structures in a binary, and why iterator chains disappear. You build a small Rust program that uses `String`, `Vec`, an iterator chain and a trait object, then observe it in Ghidra or IDA to see the glued-together strings, the three-field structure of `Vec`, and the iterator inlined into a flat loop. Install Rust through rustup (https://rustup.rs) and check it with `rustc --version`. The program is `main.rs`. Build an optimized copy and a plain copy, and compare the two to see the effect of optimization.
+
+```
+rustc -O main.rs -o rust_demo            # optimized build
+rustc main.rs -o rust_demo_debug         # plain build, easier to read
+```
+
+Open `rust_demo` in Ghidra and run auto-analysis. In Defined Strings, look for `"ReverseEngineer"`, `"Xin chao"` and `"Hello"`, and notice whether they are stuck to other strings and whether there is a terminating `0` byte. Find where `"ReverseEngineer"` is used and locate the length constant `15` being loaded nearby. Then find the function `sum_even_doubled`. In the `-O` build, confirm that `filter`, `map` and `sum` are not three separate functions but one flat loop, and point out which part of the loop does the even filtering, which does the doubling and which does the accumulation.
+
+Next find the place where `greet()` is called through the trait object. Identify the data and vtable pointer pair and the `call [reg+offset]` instruction. Compare `rust_demo` with `rust_demo_debug` and decide in which one the iterators are easier to recognize. If there is a panic path string, find it to see the source path leaking.
+
+Two questions to think about. Why can you not find a single string ending in a `0` byte for the literals above? And if a large program used the `serde` crate, where would you look for its traces? Try it yourself before opening the solution.
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 9.2</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/9.2/src/main.rs" download><i class="fa-solid fa-file-code"></i>src/main.rs</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+The figures below follow the standard behavior of the Rust compiler (rustc and LLVM). When you build it yourself, the addresses will differ but the patterns are as described.
+
+In Defined Strings, the three literals `"ReverseEngineer"`, `"Xin chao"` and `"Hello"` (along with format strings such as `"Name: "` and `", length: "`) live in a read-only section (`.rodata` on ELF, `.rdata` on PE). They are usually glued together into one block with no `0` byte separating them, because Rust stores a string as a pointer plus a length and does not need a terminator.
+
+The boundary of `"ReverseEngineer"` (15 characters) is established in the code, not in the data. Where the `String` is created you will see this.
+
+```asm
+lea  rax, [rip + OFFSET_to_string]   ; pointer
+mov  edx, 15                         ; length, which is the string length
+```
+
+The constant `15` is the clue. Without it you would not know where the string stops.
+
+In the `-O` build, `sum_even_doubled` does not contain calls to `filter`, `map` or `sum`. Everything is a single loop, roughly like this.
+
+```
+acc = 0
+for i in 0..len:
+    x = data[i]            ; iter()
+    if (x & 1) != 0:       ; filter: skip odd numbers
+        continue
+    acc += x * 2           ; map (double) and sum (accumulate) merged
+return acc
+```
+
+The three original iterator layers merge into three operations inside the same loop body: the parity check (`filter`), the doubling (`map`) and the addition to `acc` (`sum`). This is the zero-cost abstraction at work: a nice abstraction in the source, zero cost in the binary, and no trace left for the reverser either. The correct result for the array `[1..8]` is that the even numbers 2, 4, 6, 8 double to 4, 8, 12, 16 and the sum is 40.
+
+Trait objects are fat pointers. `Vec<Box<dyn Greeter>>` holds fat pointers, each element being two pointers: one to the object data and one to the vtable of the corresponding impl (`Vietnamese` or `English`). The call `g.greet()` becomes this.
+
+```asm
+mov  rdi, [data_ptr]       ; self
+call [vtable_ptr + OFFSET] ; dynamic dispatch through the greet slot in the vtable
+```
+
+The difference from C++ is that the vtable pointer does not live inside the object but travels next to the data pointer as a pair.
+
+The `rust_demo_debug` build (no `-O`) keeps more iterator functions as separate calls and inlines less, so the shape of `map` and `filter` is easier to spot. The `-O` build is much faster but flat and harder to read. When you have both, read the debug build to understand the logic and then compare with the optimized one.
+
+If the program has a panic branch (for example an out-of-bounds array access), you will see a string like `src/main.rs` with a line number. For external crates, the path even reveals the crate name and version under `.cargo/registry/...`.
+
+On the questions: there is no string ending in `0` because Rust uses an explicit length rather than a null terminator like C. And traces of `serde` live in the mangled symbols (`_ZN5serde...` if the binary is not stripped) and in panic or registry paths if present.
+
+</details>
 
 ## Key takeaways
 String/str and Vec are all pointer plus length (Vec/String add capacity) and not null-terminated. Strings are glued together, and the boundaries are in the length constants in the code. An iterator chain (map/filter/sum) is inlined into a flat loop with no separate functions, so read by behavior and don't look for function names.

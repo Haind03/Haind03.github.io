@@ -1,5 +1,8 @@
 ---
 title: "Lesson 1.7: The PE format, anatomy of a Windows .exe"
+image:
+  path: /assets/img/covers/re-1-7-pe-format-anatomy-windows-exe.webp
+  alt: "Lesson 1.7: The PE format, anatomy of a Windows .exe"
 date: 2022-03-16 14:18:00 +0700
 categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
@@ -104,7 +107,64 @@ That's enough theory. Open PE-bear (or CFF Explorer), drag an exe in, and you'll
 
 ## Lab
 
-See `labs/1.7/`. The tasks include finding the entry point by hand, listing the sections, reading the IAT of an exe on your machine, and an exercise converting RVA to file offset using the formula above. A sample solution is in `solution.md`, but do it before you open it.
+This lab turns the theory above into a reflex. You open a real PE file, find the important fields yourself, and then do one RVA to file offset conversion by hand. You need PE-bear or CFF Explorer, Detect It Easy, and a small unpacked exe to dissect. `C:\Windows\System32\notepad.exe` works well, or you can build your own tiny one.
+
+Start with a quick triage in DIE. Drag the file in and write down the architecture (x86 or x64), the compiler and linker if DIE recognizes them, and the overall entropy. Decide whether the file is packed and say what you based that on.
+
+Next, open the file in PE-bear and read the headers. Confirm the first two bytes are `4D 5A`. Read the `e_lfanew` field at offset `0x3C` and work out where it points. In the Optional header, note `AddressOfEntryPoint`, `ImageBase`, `SectionAlignment` and `FileAlignment`, then compute the entry point's virtual address with `VA = ImageBase + AddressOfEntryPoint`.
+
+Then go through the section table and list every section with its name, `VirtualAddress`, `VirtualSize`, `PointerToRawData`, `SizeOfRawData` and permissions (R/W/X). Say which section holds the code and which permission tells you so. After that, open the Import table, list the imported DLLs, and pick three API functions from which you can guess what the program does, explaining why.
+
+The last part is the one that matters most. Take the `AddressOfEntryPoint` you noted (an RVA) and, with the section that contains it (usually `.text`), compute the file offset:
+
+```
+file_offset = RVA - section.VirtualAddress + section.PointerToRawData
+```
+
+Open the file in a hex editor, jump to that offset, and compare with the byte PE-bear shows at the entry point. If your hand calculation lands on exactly the right byte on disk, you have really understood RVA versus file offset.
+
+If you have a compiler and want something smaller and easier to read than a system file, build a tiny exe and dissect that instead:
+
+```c
+// hello.c
+#include <stdio.h>
+int main(void) {
+    printf("Hello PE\n");
+    return 0;
+}
+```
+
+Build it with `cl hello.c` (MSVC) or `gcc hello.c -o hello.exe` (MinGW). Try it yourself before opening the solution.
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+The numbers below come from one concrete example to show the reasoning. Your file will give different values, but the method is identical.
+
+For the DIE triage, the architecture is on the first line: "PE32+" means x64 and "PE32" means x86. DIE usually names the compiler and linker too, for example "Microsoft Visual C/C++" or "MinGW", with the linker version. To judge packing, look at the entropy. An overall entropy around 6.x or lower together with the standard section names (`.text`, `.rdata`, `.data`) is normal and means not packed. An entropy close to 7.8 to 8.0 with strange section names points to packing. Notepad and a self-built exe will not be packed.
+
+For the headers, the first two bytes are always `4D 5A`, and if they are not, the file is not a PE. To read `e_lfanew`, take the 4 little-endian bytes at offset 0x3C. If you see `F8 00 00 00`, then `e_lfanew = 0xF8`, and jumping to offset 0xF8 you find `50 45 00 00` ("PE\0\0"), which confirms that the NT headers start there. As an example for the entry point, an x64 exe might have `ImageBase = 0x140000000` and `AddressOfEntryPoint = 0x1200`, so the entry point VA is `0x140000000 + 0x1200 = 0x140001200`. A classic 32-bit exe has `ImageBase = 0x400000`.
+
+PE-bear shows the full section table. For instance, `.text` might have `VirtualAddress = 0x1000`, `VirtualSize = 0x5000`, `PointerToRawData = 0x400` and `SizeOfRawData = 0x5000`. The code section is the one with the `MEM_EXECUTE` flag (shown as "X" or "executable" in PE-bear), almost always `.text`, and the entry point RVA must fall inside its virtual address range.
+
+For imports, notepad pulls from many DLLs such as `kernel32.dll`, `user32.dll`, `gdi32.dll`, `comdlg32.dll` and `advapi32.dll`. Three examples of reasoning from API names: `CreateFileW` (kernel32) means the program reads and writes files, which makes sense since notepad opens files. `GetOpenFileNameW` (comdlg32) shows a file picker dialog. `RegGetValueW` or `RegOpenKeyExW` (advapi32) reads the registry, here for notepad's settings and font. The rule of thumb is that an API name sums up its function: kernel32 is file, process and memory, user32 is the UI, advapi32 is registry, services and crypto, and ws2_32 is networking.
+
+The RVA to file offset conversion is the most important part. Suppose `AddressOfEntryPoint = 0x1200` (an RVA) and the section containing it is `.text` with `VirtualAddress = 0x1000` and `PointerToRawData = 0x400`. Applying the formula:
+
+```
+file_offset = RVA - VirtualAddress + PointerToRawData
+            = 0x1200 - 0x1000 + 0x400
+            = 0x200 + 0x400
+            = 0x600
+```
+
+So the first byte of the entry point code sits at file offset `0x600` on disk. To verify, open the file in a hex editor and jump to offset `0x600`. The bytes there must match what PE-bear shows at the entry point (PE-bear has a disassembly pane at the entry point). If they match, your calculation is right and you have grasped how RVA relates to file offset.
+
+The reason the two differ (`0x1000` in memory but `0x400` on disk) is that `SectionAlignment` (0x1000) differs from `FileAlignment` (0x200). In memory sections are aligned to 0x1000 pages, while on disk they are aligned to 0x200 to keep the file compact. That gap is exactly what produces the formula.
+
+A few common mistakes. Forgetting that file offset and RVA are two different coordinate systems, so grepping the RVA directly on disk finds nothing. Picking the wrong section for the conversion: you must use the section the RVA falls into, which is not always `.text`. Forgetting little-endian when reading `e_lfanew` by hand: `F8 00 00 00` is `0xF8`, not `0xF8000000`. And confusing VA with RVA: a VA already includes ImageBase, an RVA does not.
+
+</details>
 
 ## Key takeaways
 A PE file starts with "MZ" (`4D 5A`), and `e_lfanew` at offset 0x3C points to the NT headers, which start with "PE\0\0". Machine tells x86 (0x14C) from x64 (0x8664), AddressOfEntryPoint is where code starts, and ImageBase is the preferred base.

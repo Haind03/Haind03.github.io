@@ -1,5 +1,8 @@
 ---
 title: "Lesson 18.8: AI-assisted reverse engineering, twice as fast when used in the right place"
+image:
+  path: /assets/img/covers/re-18-8-ai-assisted-reverse-engineering-twice-as.webp
+  alt: "Lesson 18.8: AI-assisted reverse engineering, twice as fast when used in the right place"
 date: 2023-10-14 15:46:00 +0700
 categories: ["Technique Reverse", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
@@ -81,6 +84,56 @@ Worth using: batch renaming, quickly summarizing an unfamiliar function, explain
 Don't rely on it for: the final conclusion about a crypto algorithm, security logic that has to be exactly right, or any claim you'll put in a report without checking it yourself. Those are still your job.
 
 AI makes reversing faster, not easier. You still need to understand everything in the earlier parts of the series to know when the AI is talking nonsense.
+
+## Lab
+
+The task is to build an MCP server for IDA or Ghidra, connect it to an LLM client, ask it to explain a function, and then check the result yourself. The point is not to trust the AI but to learn the habit of verifying its output. You need IDA Pro (with Hex-Rays) or Ghidra, an LLM client that supports MCP (a desktop chat client, Cline in VS Code, or Cursor), and a matching MCP server: `ida-pro-mcp` (by mrexodia) for IDA, or `GhidraMCP` (by LaurieWired) for Ghidra. You also need a binary to try it on. Reuse any crackme from the earlier labs, for example the three-layer C crackme from Lesson 3.5 or the TEA one from Lesson 16.3. On safety, if you try it on a real malware sample, do everything in an isolated VM (see Lesson 0.3) and don't let the agent run the sample.
+
+Start by installing the MCP server by following the README of the server you chose. It usually means installing a plugin into IDA or Ghidra (which opens an endpoint) and then declaring the server in the client's MCP configuration file. Confirm the connection by asking the agent a simple question such as "list the functions in the open binary". If it returns a real list of functions, the connection works. Then open the password-checking function of the crackme and tell the agent to "explain what this function does and suggest names for the variables", and write down the answer.
+
+Now verify by hand. Read that same function yourself and ask whether the AI is right and whether the algorithm it describes matches the code. If it says "string comparison" when the code is actually "XOR then compare against a constant array", it was wrong. Next have the agent rename the main `sub_*` functions in bulk, then go back over every name, keeping the right ones and fixing the wrong ones, and count what percentage of its suggestions were usable. Finally try to break it: give the agent a function with a plain XOR loop but ask the loaded question "is this AES?" and see whether it goes along with you (a hallucination) or pushes back. That is a lesson in not steering the AI with a biased question.
+
+Some questions to think about. With the crackme you tried, how much time did the AI save and where was it wrong? Why shouldn't AI output go straight into the final report? And when analyzing malware, which permissions of the agent must you block? Compare with the solution after you have done it yourself.
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+This lab has no single fixed numeric answer, because the result depends on the server and the LLM you use. Below are what to observe and the conclusions to draw.
+
+### Installing and connecting
+
+A sample MCP configuration in a client (a JSON config file of the desktop chat client, for example):
+
+```json
+{
+  "mcpServers": {
+    "ghidra": {
+      "command": "python",
+      "args": ["/path/to/GhidraMCP/bridge_mcp_ghidra.py"]
+    }
+  }
+}
+```
+
+With ida-pro-mcp you usually run the plugin inside IDA (it opens a port), and the client connects through the matching configuration. Read the README of the exact server, since the way to start it differs between projects. The sign that the connection works is that asking "list the functions" returns the real function list of the open binary, not a generic answer.
+
+### Explaining and verifying
+
+With the three-layer crackme from Lesson 3.5 (length 10, XOR 0x5A compared against a constant array, a checksum), a good agent will describe it roughly right: "the function checks the length, transforms each character and compares it with a hard-coded array, and checks a sum". That is a correct hypothesis. But it can be wrong in the details: misstating the XOR constant, missing the checksum layer, or calling the XOR "encryption" too grandly. The way to check is to look at the opcodes themselves. Seeing `xor ... 5Ah` in the loop confirms the XOR and the key value, and seeing an accumulating add followed by a `cmp` against a constant confirms the checksum. The AI's hypothesis only has value after you cross-check it like this.
+
+### Bulk renaming, then reviewing
+
+The typical result is that most suggested names are usable for functions with clear logic (for example `check_length`, `transform_input`), while wrapper functions or library functions get skewed names. The usable rate is usually high but never 100%. The lesson is that accepting the whole batch and reviewing each name is faster than naming from scratch, but you must not accept it blindly.
+
+### Breaking it with a biased question
+
+If you ask "is this AES?" about an XOR loop, a weak LLM will go along and invent reasons, because the question already hints at the answer. A good LLM will push back with "no, this is just a single-byte XOR, AES has an S-box and multiple rounds". The double lesson is not to ask leading questions, and to stay skeptical whenever the AI agrees too easily with your assumption.
+
+### Answers to the questions
+
+AI is best at naming and the initial summary (a clear saving) and wrong most often on algorithm details and specific values, exactly the things that must be precise. AI output shouldn't go straight into the report because it is an unchecked hypothesis that may contain hallucinations, and an RE report has to rest on evidence from the code, not on a model's guess. When analyzing malware, block the agent from executing the sample, from writing outside the VM, and from reaching the real network. Keep the agent at reading and static analysis, or monitor it closely when running dynamically in an isolated sandbox.
+
+</details>
 
 ## Key takeaways
 There are two kinds of AI integration: one-way LLM plugins (Gepetto, GhidrAssist) and MCP servers so an agent drives the decompiler itself (ida-pro-mcp, GhidraMCP, r2mcp, frida-mcp). MCP is declared in the client config, and then you give commands in natural language. AI output is a hypothesis, so always verify by hand or by running dynamically before trusting it. Hallucination and spreading wrong names are the biggest risks.

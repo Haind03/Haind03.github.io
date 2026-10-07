@@ -1,5 +1,8 @@
 ---
 title: "Lesson 5.4: Editing a .NET assembly and saving it, where dnSpy shines"
+image:
+  path: /assets/img/covers/re-5-4-editing-net-assembly-saving-where-dnspy.webp
+  alt: "Lesson 5.4: Editing a .NET assembly and saving it, where dnSpy shines"
 date: 2022-08-17 15:56:00 +0700
 categories: ["Technique Reverse", "Part 05 · C# and .NET"]
 tags: [reverse-engineering, dotnet]
@@ -63,7 +66,91 @@ An example idea with dnlib: load the module, walk to the check method, insert `l
 
 ## Lab
 
-The exercise is at `labs/5.4/`: patch a .NET crackme so it always reports success, do it both ways (Edit Method C# and Edit IL), then save the module and run it again. The full solution with the specific IL is at `labs/5.4/solution.md`, do it yourself before opening it.
+The goal is to make the crackme always print `Correct!` whatever you type, by editing the .NET assembly rather than by finding the password. You need dnSpy and a build of `Program.cs`. With the .NET SDK, run `dotnet new console -o crackme54`, copy `Program.cs` into that folder, then build and run it:
+
+```
+dotnet build -c Release
+dotnet crackme54.dll
+```
+
+With the .NET Framework instead, `csc Program.cs` produces `Program.exe`.
+
+Open the assembly in dnSpy and find the method `CheckPassword`. Work out where the right/wrong decision is made: the bool return value, and the `brtrue`/`brfalse` branch in `Main`. For the first approach, right-click `CheckPassword`, choose Edit Method (C#), change the body to `return true;`, Compile, Save Module and run again. For the second approach, undo that (or start from the original), right-click `CheckPassword`, choose Edit IL Instructions, insert `ldc.i4.1` followed by `ret` at the start of the method, save the module and run again. Then try a third way: patch `Main` itself and flip the `brfalse`/`brtrue` at the branch so the "Correct!" path always runs. Compare the three, and decide which one touches the least and which one is the safest.
+
+Two questions to think about afterwards. If the assembly has a strong name, what error do you get after Save Module and how do you handle it? And why doesn't patching IL break the other methods even though you added instructions?
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 5.4</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/5.4/src/Program.cs" download><i class="fa-solid fa-file-code"></i>src/Program.cs</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+The real password is `dotnet_42` (the string `"dotnet_" + (2*21)`), but this exercise doesn't ask you to find it, it asks you to patch the check away.
+
+The target function. In dnSpy, `CheckPassword` decompiles to roughly this:
+
+```csharp
+static bool CheckPassword(string input)
+{
+    string expected = "dotnet_" + (2 * 21).ToString();
+    return input == expected;
+}
+```
+
+Its IL (abridged) ends with a comparison and a `ret`:
+
+```
+ldarg.0
+ldstr      "dotnet_"
+...                     // builds the expected string
+call       string System.String::Concat(...)
+call       bool System.String::op_Equality(string, string)
+ret
+```
+
+Approach A, Edit Method (C#). Right-click `CheckPassword` and choose Edit Method (C#). Change the body to:
+
+```csharp
+static bool CheckPassword(string input)
+{
+    return true;
+}
+```
+
+Compile, then File > Save Module. Run it again and whatever you type gives `Correct!`. It is the fastest way, but it only works when the C# recompiles successfully.
+
+Approach B, Edit IL Instructions. Use this when you want certainty and independence from the decompiler. Right-click `CheckPassword`, choose Edit IL Instructions, and insert two instructions at the top of the list:
+
+```
+ldc.i4.1
+ret
+```
+
+The old instructions after them are never reached, so the method always returns `true`. Save Module and run again. The explanation is that `ldc.i4.1` pushes the constant 1 (true) onto the evaluation stack and `ret` immediately returns the value on top of the stack. Since the method is declared to return `bool`, 1 is exactly `true`.
+
+Approach C, patching the branch in Main. In `Main`, the IL around the branch looks roughly like this:
+
+```
+call   bool Program::CheckPassword(string)
+brfalse.s  IL_wrong      // if false, jump to the branch printing "Wrong"
+ldstr  "Correct!"
+call   void Console::WriteLine(string)
+...
+```
+
+Change `brfalse.s` to `brtrue.s` (or remove the jump) so the "Correct!" path always runs regardless of the result. This is the classic inverted-branch patch and it edits a single instruction.
+
+Comparing them: A (Edit C#) touches the whole method, is quick, and suits cases where the C# recompiles. B (insert `ldc.i4.1; ret`) touches the first two instructions of the method and always works when the target is a bool function. C (flip the branch in the caller) touches one instruction and is the one to use when you don't want to, or can't, modify the check function itself.
+
+On the strong name question: if the assembly is signed, running it after Save Module may report a signature verification error rather than a logic error. To handle it, remove the strong name when saving (an option in dnSpy's writer), or re-sign with your own key, or in a test environment use `sn -Vr`. Your logic patch was right, the signature is the culprit.
+
+As for why other methods don't break: .NET methods are referenced through metadata tokens, not fixed offsets. When you Save Module, dnSpy rewrites the whole metadata and the method bodies and recomputes every offset, so adding instructions to one method doesn't shift any other method.
+
+</details>
 
 ## Key takeaways
 Patching .NET is cleaner than native because methods are located through metadata tokens, and dnSpy recomputes offsets when you Save Module. Edit Method (C#) is fastest, but you get stuck when the decompiler translated it wrong. Edit IL always works, so remember a few instructions: `ldc.i4.0/1`, `ret`, `brtrue/brfalse`, `nop`.

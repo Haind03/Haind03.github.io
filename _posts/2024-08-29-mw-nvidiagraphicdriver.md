@@ -1,5 +1,8 @@
 ---
 title: "Hunting NvidiaGraphicDriver.exe"
+image:
+  path: /assets/img/covers/mw-nvidiagraphicdriver.webp
+  alt: "Hunting NvidiaGraphicDriver.exe"
 date: 2024-08-29 01:41:00 +0700
 categories: ["Malware Analysis"]
 tags: [malware, threat-hunting, forensics]

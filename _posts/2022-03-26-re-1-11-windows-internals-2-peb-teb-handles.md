@@ -1,5 +1,8 @@
 ---
 title: "Lesson 1.11: Windows internals (2), PEB, TEB, handles and tokens"
+image:
+  path: /assets/img/covers/re-1-11-windows-internals-2-peb-teb-handles.webp
+  alt: "Lesson 1.11: Windows internals (2), PEB, TEB, handles and tokens"
 date: 2022-03-26 20:50:00 +0700
 categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
@@ -68,7 +71,46 @@ Every process carries an access token describing identity and rights: which user
 
 ## Lab
 
-Details in `labs/1.11/`. In short, open any process in x64dbg, use a command to jump to the PEB, find the `BeingDebugged` byte and confirm it equals 1 (because it's being debugged). Then open Process Hacker or System Informer, look at the Handles tab of a process, and find the mutexes and files it's holding. Finally, check the offsets you see against the offset table in `solution.md`.
+This lab needs no code. You just watch a running process with x64dbg and Process Hacker (or System Informer), and the goal is to turn the abstract offsets from this lesson into things you found with your own hands. You need the 64-bit build of x64dbg, Process Hacker or System Informer, and any process to look at. `notepad.exe` is a safe choice, or any 64-bit program you wrote yourself.
+
+Start by finding `BeingDebugged` in the PEB. Open `notepad.exe` in x64dbg (File > Open) and let it stop at the entry point. You might be tempted to type `mov rax, gs:[0x60]` in the Command box, but don't execute it. Instead type the following, which makes the Dump window jump to the PEB, because x64dbg understands `peb()` as the address of the PEB of the process being debugged.
+
+```
+dump peb()
+```
+
+In the Dump window, count two bytes from the start of the PEB (offset +0x2). That is `BeingDebugged`, and since you are debugging it must be `01`. Try editing it to `00` (right-click > Binary > Edit, or just type over it). That is exactly the manual bypass for `IsDebuggerPresent`.
+
+Next look at `NtGlobalFlag`, which sits at offset +0xBC on x64. In the Dump window jump to `peb()+0xBC`. While being debugged the value is usually `0x70` (three heap debug bits on), and when the program runs normally it is 0. Write down the number you see.
+
+Finally look at handles and mutexes. Open Process Hacker and pick a process, ideally an app that has a lot of files open or an offline game. Double-click it and go to the Handles tab, then filter by type. `File` shows the files it has open, `Mutant` is the mutex (note the names, because in malware analysis these names are IOCs), and `Key` shows the registry keys it holds. Ask yourself whether you can guess what the process is doing just from this list, before reading a single line of code.
+
+When you are done you should have four things written down: the PEB address of the process you inspected, the value of `BeingDebugged` before and after the edit, the value of `NtGlobalFlag` while debugging, and any one mutex name you found.
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+Try it yourself first. These are the PEB offsets you will use most often on x64.
+
+| Offset | Field | Meaning |
+|---|---|---|
+| +0x002 | BeingDebugged | 1 byte, equals 1 when being debugged |
+| +0x018 | Ldr | pointer to PEB_LDR_DATA, the module list |
+| +0x020 | ProcessParameters | command line, paths |
+| +0x0BC | NtGlobalFlag | flags, equals 0x70 when debugged (heap debug bits) |
+| +0x0F0 | HeapSegmentReserve | related to heap flags |
+
+On x86 the offsets differ: BeingDebugged is +0x2, NtGlobalFlag is +0x68 and Ldr is +0x0C.
+
+For the first task, after `dump peb()` the Dump window points at the start of the PEB. The third byte (offset +2) is `BeingDebugged`, and because you are debugging it reads `01`. After you set it to `00`, any call to `IsDebuggerPresent` reads exactly this byte and returns 0, meaning "no debugger". That is the essence of every anti-anti-debug plugin such as ScyllaHide: they keep this byte at 0 automatically and also patch `NtGlobalFlag` and a pile of other checks. Lesson 15.9 covers it in detail.
+
+For the second task, `NtGlobalFlag` is at `peb()+0xBC`. The value `0x70` is made of three bits: `FLG_HEAP_ENABLE_TAIL_CHECK` (0x10), `FLG_HEAP_ENABLE_FREE_CHECK` (0x20) and `FLG_HEAP_VALIDATE_PARAMETERS` (0x40). Outside a debugger all three are off, so the value is 0. Malware compares `NtGlobalFlag & 0x70` against 0 and guesses a debugger when it is not zero, and the bypass is to force the field back to 0.
+
+For the third task, in the Handles tab of Process Hacker the `File` type shows which files the process has open, so you can infer where it reads and writes. A `Mutant` (mutex) with a strange fixed name, such as a GUID or a meaningless string, is worth writing down when analyzing malware, since many well known families are recognized by their mutex name alone. The `Key` type shows registry keys, which are often where persistence gets installed.
+
+The takeaway is that before you open a disassembler, the handle table alone already tells you about half of what a process does. It is a very fast piece of dynamic triage.
+
+</details>
 
 ## Key takeaways
 The TEB (per thread) and PEB (per process) sit right in process memory, reachable via `gs:[0x60]` (x64) or `fs:[0x30]` (x86) with no API needed. Seeing those in code means it's touching the PEB, usually for anti-debug or sneaky API resolution. BeingDebugged (+2) is the guts of `IsDebuggerPresent`, and Ldr holds the list of loaded modules.

@@ -1,5 +1,8 @@
 ---
 title: "Lesson 5.5: .NET obfuscators and how to strip them"
+image:
+  path: /assets/img/covers/re-5-5-net-obfuscators-strip-them.webp
+  alt: "Lesson 5.5: .NET obfuscators and how to strip them"
 date: 2022-08-21 15:13:00 +0700
 categories: ["Technique Reverse", "Part 05 · C# and .NET"]
 tags: [reverse-engineering, dotnet]
@@ -65,7 +68,65 @@ Don't expect to get beautiful source back as if it had never been obfuscated. Th
 
 ## Lab
 
-Practice at `labs/5.5/`: obfuscate a small assembly yourself with ConfuserEx then use de4dot to strip it and compare, or if you can't install it, follow the string decryption tracing workflow in dnSpy on an obfuscated sample.
+The goal is to see with your own eyes how obfuscation deforms code, then use de4dot to bring it back to a readable form, and when strings are still encrypted, to pull them out with the dnSpy debugger. This lab runs on Windows. You need the dotnet SDK (or .NET Framework plus `csc`) to build, ConfuserEx (a release build from GitHub), de4dot or de4dot-cex for newer ConfuserEx, and dnSpy.
+
+First build the original assembly from `LicenseCheck.cs`:
+
+```
+dotnet build
+csc /out:LicenseCheck.exe LicenseCheck.cs
+```
+
+The first line is for a project setup and the second for a quick compile. Run it: a wrong key prints "Wrong key" and the correct one (`REVERSE-2024`) prints "Valid key". Open it in ILSpy or dnSpy and confirm that the code reads like the source: the name `CheckKey` is visible, and the strings "REVERSE-2024" and "Valid key" sit there in plain sight. This is the baseline for comparison.
+
+Then obfuscate it with ConfuserEx. Open ConfuserEx, add `LicenseCheck.exe`, enable the rename, control flow and constants (string encryption) presets, and press Protect. It writes the result into a `Confused/` folder. Open the obfuscated build in dnSpy and observe that class and method names have turned into strange characters, that the string "REVERSE-2024" has disappeared and been replaced by a call to a decryption routine, and that the flow of `CheckKey` has been bent into a hard-to-read state machine.
+
+Next strip it with de4dot by running `de4dot.exe LicenseCheck.exe` on the obfuscated file. If it is a newer ConfuserEx that the original de4dot doesn't recognize, try de4dot-cex. Open `LicenseCheck-cleaned.exe` in dnSpy and compare with the previous step: the strings are back, the control flow is straighter, and the names, while not restored, are at least clean (`Class0.method_1`).
+
+If you still have a sample where de4dot can't decrypt the strings, find the function `Decrypt(int)` that returns a string, set a breakpoint at its `return`, run with F5, and read the returned value in Locals for each call. Write down a table of token to string.
+
+Two questions to finish. Why, despite obfuscation, must strings still appear in clear form in memory at runtime? And de4dot renames things to `Class0` and `method_1` instead of restoring `CheckKey`, so why can't it recover the original names?
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 5.5</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/5.5/src/LicenseCheck.cs" download><i class="fa-solid fa-file-code"></i>src/LicenseCheck.cs</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+The baseline before obfuscating. Build `LicenseCheck.cs` and open it in ILSpy or dnSpy. You see exactly what the source says:
+
+```csharp
+private static bool CheckKey(string key)
+{
+    if (key == null || key.Length != 12)
+        return false;
+    return key == "REVERSE-2024";
+}
+```
+
+The names `CheckKey` and `Main` are intact. The strings `"REVERSE-2024"`, `"Valid key"` and `"Wrong key"` are right there in the Strings view. If all you want is the key, you read it in ten seconds. That is exactly why people obfuscate.
+
+After obfuscating with ConfuserEx. With the rename, control flow and constants presets, the obfuscated build in dnSpy shows several things. `CheckKey` becomes a name like `a` or a run of odd Unicode characters, and the type tree is nearly meaningless. The string `"REVERSE-2024"` is gone, replaced by a call like `<Module>.a(1234)` that returns a string, which is string encryption. The body of `CheckKey` is bent into a `switch` inside a `while(true)` with a state variable, which is control flow flattening, and the decompiler produces a lot of `goto`. At this point reading it directly is almost hopeless.
+
+Stripping with de4dot:
+
+```
+de4dot.exe <obfuscated-file>.exe
+```
+
+This produces `...-cleaned.exe`. Opening the cleaned build in dnSpy and comparing with the previous step, the strings are back: `"REVERSE-2024"` and `"Valid key"`, since de4dot ran static string decryption. The control flow is flattened back to something nearly linear, so you can read the logic `if (key.Length != 12) ... return key == "REVERSE-2024"`. The names don't go back to the originals but become `Class0`, `method_0`, `method_1`, enough to read, though not as pretty as the source. If the original de4dot says it doesn't recognize the protector (a newer ConfuserEx), switch to de4dot-cex or a ConfuserEx unpacker matching the version. For .NET Reactor, use .NET Reactor Slayer. The correct key is **`REVERSE-2024`** (12 characters, which satisfies both the length check and the string comparison).
+
+Tracing string decryption when the tool gives up. Say you meet a sample where de4dot removed the renaming but couldn't decrypt the strings. In dnSpy, first look for a static method of the form `string Xxx(int)` that is called everywhere, which is the decryption function. Set a breakpoint at its `return` and press F5. Each time it stops, Locals shows the real string and the input parameter. Build a `token -> string` table, for example `Xxx(1234)` returns `"REVERSE-2024"`. This works because by the time the key is compared, the program must have the clear string in memory.
+
+Why must the string appear in clear at runtime? Because the CLR has to compare the key you typed with the original string, and to compare, the original has to exist as a `System.String` in memory at that moment. Encryption only postpones this, it can't remove the need. This is a general principle: whatever the program needs to use, it has to decrypt, and the place where it decrypts is the place we lie in wait.
+
+Why doesn't de4dot give back the original name `CheckKey`? Because renaming is a one-way transformation that loses information. ConfuserEx throws the original name away entirely and writes the new one into the metadata, and the old name is stored nowhere. de4dot can only generate new consistent, more readable names (`Class0`, `method_1`), and has no way of knowing what the original name was. Unlike string encryption, which can be reversed because the algorithm and key sit inside the assembly, an original name that is lost is lost for good.
+
+</details>
 
 ## Key takeaways
 Obfuscation doesn't encrypt the program, it only makes the decompiled code hard to read, and it still has to run. The four common layers are renaming, string encryption, control flow, and anti-tamper/anti-debug. Always identify the protector first (DIE/dnSpy) and then choose the tool.

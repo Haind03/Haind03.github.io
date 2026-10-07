@@ -1,5 +1,8 @@
 ---
 title: "Lesson 20.3: Final project, fully reverse a program and write the report"
+image:
+  path: /assets/img/covers/re-20-3-final-project-fully-reverse-program-write.webp
+  alt: "Lesson 20.3: Final project, fully reverse a program and write the report"
 date: 2023-11-20 22:22:00 +0700
 categories: ["Technique Reverse", "Part 20 · Real-World Practice"]
 tags: [reverse-engineering, ctf]
@@ -57,7 +60,141 @@ After that comes the program architecture, the overall map of the components and
 
 The golden rule is that every claim needs evidence. "The program encrypts with RC4" is just an empty sentence until you point out which address the KSA function is at. Don't guess and then write it as if proven.
 
-The full template to fill in is at `labs/20.3/bao-cao-mau.md`.
+The full template to fill in is in the "Show sample report" block at the end.
+
+## Lab
+
+This is the capstone test of the whole series. You reverse a program end to end and write a complete report. There is no ready answer, because everyone picks a different target and the value is in the process. Choose a legal target (see the target-picking part above), reverse it to answer questions you set yourself, and then write the report following the sample report below.
+
+For a suggested target by level, an easy one is a C/C++ program you write yourself (a few hundred lines, with a license check and file saving), built in release mode and then reversed, comparing against the source to grade yourself. A medium one is a crackme from crackmes.one at level 4 or higher, or an offline Unity Mono game of your own. A hard one is a challenge from an older Flare-On season (challenge 7 onward), or a public malware sample in an isolated lab, but only if you are solid on Part 19 and have set up the lab properly following Lesson 0.3.
+
+What you hand in is the report following the template, with all seven sections, plus your raw notes file (or the IDA/Ghidra database with renames and comments) to prove the process. Add any scripts you wrote (a keygen, config extractor, solve script and so on), and if the target is malware, the IOCs and a YARA rule. To grade yourself, check these points. The scope should have a concrete question and not try to take on everything. Triage should identify the file type, language and protection correctly. For depth, you should be able to answer the questions you set, with specific pseudocode and addresses. On evidence, every claim should come with reproducible proof, and on reproducibility, someone else reading the report should be able to redo it. The report should read coherently with an executive summary that is easy to understand, and on ethics the target must be legal and you must not distribute cracks or samples.
+
+A few tips. Spend the first session only on triage and mapping, and don't dig deep too early. Keep notes continuously and name functions as soon as you understand them. When you are stuck on a function, switch to dynamic analysis to see real values instead of reading statically forever. Write the executive summary last, once you understand the whole picture.
+
+<details class="lab-solution" markdown="1">
+<summary>Show sample report</summary>
+
+This is a pre-filled template for the final project. Delete the bracketed lines and replace them with your own content, and keep every claim paired with evidence.
+
+### Reverse Engineering Report: [Target name]
+
+Analyst: [name]. Date: [YYYY-MM-DD]. Report version: 1.0.
+
+---
+
+#### 1. Executive summary
+
+[Two to four paragraphs for a non-technical reader. What this is, the most important thing you found, and its severity or meaning. Write this section last.]
+
+Key findings: [finding 1], [finding 2], [finding 3].
+
+---
+
+#### 2. Methodology and tools
+
+The analysis goal is [the question you set]. The environment is [VM/host, OS, whether the network was isolated]. The tools used are [DIE, IDA/Ghidra, x64dbg, dnSpy, Frida, Python/Z3...]. The scope covers [which parts were analyzed, which were skipped and why].
+
+---
+
+#### 3. Sample information
+
+| Attribute | Value |
+|---|---|
+| File name | [...] |
+| Size | [... bytes] |
+| MD5 | [...] |
+| SHA-256 | [...] |
+| File type | [PE/ELF/Mach-O/APK/.NET/...] |
+| Architecture | [x86 / x64 / ARM64 / ...] |
+| Compiler/Language | [MSVC / GCC / Go / Rust / .NET / ...] |
+| Packer/Protector | [none / UPX / VMProtect / ...] |
+
+---
+
+#### 4. Program architecture
+
+[Describe the overall components and how they connect. A block diagram helps.]
+
+```
+[Block diagram: main flow, modules, entry point, where network/crypto/protection calls happen]
+```
+
+| Component | Address/Module | Role |
+|---|---|---|
+| [Entry/main] | [0x...] | [...] |
+| [License check] | [0x...] | [...] |
+| [Data handling] | [0x...] | [...] |
+| [Network/C2] | [0x...] | [...] |
+
+---
+
+#### 5. Detailed findings
+
+Each finding gets its own subsection. Always attach evidence: addresses, pseudocode, assembly, or runtime values.
+
+##### 5.1 [Finding name, for example: the serial check algorithm]
+
+Description: [...]
+
+Evidence: the function at `[0x...]`, and [a screenshot of the pseudocode or a code excerpt].
+
+```c
+// pseudocode taken from the decompiler
+```
+
+Analysis: [explain the logic and the conclusion drawn]
+
+Reproduction (if you have a script):
+
+```python
+# keygen / solver / decoder
+```
+
+##### 5.2 [Next finding]
+
+[...]
+
+---
+
+#### 6. IOCs (only for malware)
+
+| Type | Value |
+|---|---|
+| SHA-256 | [...] |
+| C2 domain | [...] |
+| C2 IP | [...] |
+| Mutex | [...] |
+| Registry key | [...] |
+| File dropped | [...] |
+
+YARA rule:
+
+```
+rule [Rule_Name] {
+    meta:
+        description = "[...]"
+        author = "[...]"
+    strings:
+        $a = "[...]"
+    condition:
+        $a
+}
+```
+
+---
+
+#### 7. Conclusion and recommendations
+
+Answers to the original questions: [question 1 -> answer], [question 2 -> answer]. Open points: [parts not fully analyzed]. Recommendations: [patching, blocking the IOCs, directions for further analysis, or lessons learned].
+
+---
+
+#### Appendix
+
+[List of function addresses you named] and [links to scripts, the IDA/Ghidra database, and raw notes].
+
+</details>
 
 ## Key takeaways
 Pick a right-sized and legal target, not too easy and not too hard. Start with concrete questions and don't take on "reverse everything". Triage, map, and only then dig deep in the right place, repeating static and dynamic.

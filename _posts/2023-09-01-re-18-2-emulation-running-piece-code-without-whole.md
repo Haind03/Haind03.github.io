@@ -1,5 +1,8 @@
 ---
 title: "Lesson 18.2: Emulation, running a piece of code without the whole program"
+image:
+  path: /assets/img/covers/re-18-2-emulation-running-piece-code-without-whole.webp
+  alt: "Lesson 18.2: Emulation, running a piece of code without the whole program"
 date: 2023-09-01 15:06:00 +0700
 categories: ["Technique Reverse", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
@@ -66,7 +69,59 @@ Emulation doesn't fit when the code is so tied to the OS/API/hardware that fakin
 
 ## Lab
 
-See `labs/18.2/`: run `emu_xor.py` to use Unicorn yourself to decrypt a string without rewriting the algorithm, then try changing the key and length. The solution and how to extend it to functions with multiple parameters are in `solution.md`.
+The goal is to use Unicorn Engine to run the actual bytes of a decryption routine, rather than sitting down and translating the algorithm by hand. This is exactly the skill for quickly solving the string-deobfuscation functions that show up constantly in malware and crackmes. Install Unicorn with `pip install unicorn`. The reference environment this was checked against is unicorn 2.1.2 with Python 3.11.
+
+Read `emu_xor.py` and work out where the code sits, where the encrypted data sits, and which registers hold the parameters. Run `python3 emu_xor.py` and watch the encrypted string go in and the decrypted string come out. Change the key from `0x5A` to a different value, in both the part that builds `enc` and in the byte code itself (`80 37 XX`), run it again, and confirm it still matches. Explain why a return address has to be written onto the stack before running, and why `emu_start` stops exactly at `BASE + len(CODE)`. As an extension, replace the XOR loop with a simple addition function (`add byte [rdi], 7`) and emulate that instead.
+
+Two questions worth thinking through. If the code snippet had a `call printf` in the middle, what happens when you emulate it, and how would you handle that? And why does emulation get past anti-debug checks that trip up a real debugger?
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 18.2</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/18.2/src/emu_xor.py" download><i class="fa-solid fa-file-code"></i>src/emu_xor.py</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+Results from an actual run. Running `python3 emu_xor.py` in the reference environment (unicorn 2.1.2, Python 3.11) gives:
+
+```
+Input (encrypted): 3f372f363b2e333534052d3334297b
+Output (decrypted): emulation_wins!
+```
+
+Unicorn executed the actual XOR loop over virtual memory and reversed the string, with no need to rewrite the algorithm in Python.
+
+Walking through the pieces. The byte code `80 37 5A 48 ff c7 48 ff ce 75 f5 c3` is:
+
+```
+80 37 5A      xor byte ptr [rdi], 0x5A   ; decrypt one byte
+48 ff c7      inc rdi                     ; move to the next byte
+48 ff ce      dec rsi                     ; decrement the counter
+75 f5         jnz -11                     ; loop while bytes remain
+c3            ret                         ; done
+```
+
+Following the System V calling convention, the input registers are `rdi`, the buffer pointer, and `rsi`, the length. We load the encrypted buffer into the `DATA` region, point `rdi` at it, set `rsi` to its length, and run. After running, reading the `DATA` region back gives the original string.
+
+On the return address and the stop point: a `ret` instruction takes 8 bytes off the top of the stack as the address to jump to. If the stack holds garbage, the emulated CPU jumps into unmapped memory and throws `UC_ERR_FETCH_UNMAPPED`. So we write `BASE + len(CODE)` onto the top of the stack ahead of time, and tell `emu_start` to stop exactly at that address. When `ret` runs, it jumps to that stop point, Unicorn sees it has reached the target, and it finishes cleanly. This is the standard trick for emulating a function that ends in `ret`.
+
+On switching to an addition function, `CODE` becomes:
+
+```python
+# add byte [rdi],7 ; inc rdi ; dec rsi ; jnz loop ; ret
+CODE = bytes.fromhex("80070748ffc748ffce75f5c3")
+```
+
+and the data is built with `bytes((c - 7) & 0xFF for c in b"...")`. The rest of the emulation logic stays the same.
+
+On a call leading outside the snippet: if there's a `call printf` in the middle, Unicorn jumps to printf's address, which isn't mapped, and the emulation breaks. There are two ways to handle it. One is to only emulate the portion without the call, narrowing the target down. The other is to set a `UC_HOOK_CODE` hook, or a hook on that specific address range, to simulate printf yourself (logging the arguments, then resuming execution by setting `rip` past the call). When you need to simulate many APIs, it's worth switching to Qiling instead, since it already has that layer built in.
+
+On getting past anti-debug: anti-debug checks rely on detecting that a real debugger is attached (IsDebuggerPresent, PEB.BeingDebugged, RDTSC timing, INT3 traps). Inside Unicorn there's no real process, no standard PEB, and no debugger attached at all, so these checks either have nothing to read or read back a clean value. We run exactly the piece of logic we need and skip the entire defensive layer, because we're not playing by the program's rules, we're building our own playground instead.
+
+</details>
 
 ## Key takeaways
 Emulation means building a virtual CPU, loading byte code, setting registers and memory, running, and reading the result. Unicorn is pure CPU emulation with no OS, so it fits self-contained computation functions, and its model is always the same four steps: create the machine, map and write memory, set registers, run and read. The traps are that `ret` needs a return address, calls out will break, and you have to map enough memory.

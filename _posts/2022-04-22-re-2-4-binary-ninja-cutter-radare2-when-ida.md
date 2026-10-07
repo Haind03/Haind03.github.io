@@ -1,5 +1,8 @@
 ---
 title: "Lesson 2.4: Binary Ninja, Cutter and radare2, when IDA and Ghidra aren't the only options"
+image:
+  path: /assets/img/covers/re-2-4-binary-ninja-cutter-radare2-when-ida.webp
+  alt: "Lesson 2.4: Binary Ninja, Cutter and radare2, when IDA and Ghidra aren't the only options"
 date: 2022-04-22 22:33:00 +0700
 categories: ["Technique Reverse", "Part 02 · The Toolkit"]
 tags: [reverse-engineering, tools]
@@ -57,7 +60,90 @@ More important than which tool you choose: don't keep jumping between tools whil
 
 ## Lab
 
-See `labs/2.4/`. You'll take apart the same small binary with command-line radare2 using the command chain `aaa`, `afl`, `pdf`, then reopen it in Cutter to see the same data as a GUI, and if you can, try the Binary Ninja cloud version. The goal is to see three tools look at the same file in three different ways.
+The goal is to take apart one binary with command-line radare2, then reopen it in Cutter, to see how the same data appears differently in a CLI and a GUI. If you can, also try the Binary Ninja cloud version. Build the sample binary `crackme_r2.c` first:
+
+```
+gcc -O0 -no-pie -o crackme_r2 crackme_r2.c      # Linux
+# or on Windows with MinGW:
+# gcc -O0 -o crackme_r2.exe crackme_r2.c
+```
+
+You also need radare2 (or rizin) and Cutter. For radare2, run `git clone https://github.com/radareorg/radare2 && radare2/sys/install.sh`, or use your distro's package. Rizin can be downloaded from rizin.re, and Cutter as an AppImage or exe from cutter.re.
+
+Open the binary in radare2 with `r2 crackme_r2`. At the prompt, run `aaa` and then `afl` and write down the output: how many functions are there, and what are they called? Then run `s main` and `pdf` to read the disassembly of `main` and find where the password is compared, and `VV` to see the graph view of `main` (move with the arrow keys, `q` to quit). Next, look for strings in the file with `iz` (strings in the data section) and `izz` (the whole file), and decide which one hints at the password. From the message string you find, use `axt <string address>` to see what references it (a cross-reference), and check whether it leads to the check function.
+
+Then open the very same binary in Cutter. Find `main` in the Functions panel, look at the graph, and click the Decompiler tab (jsdec) to read the pseudocode. Compare that with what you read by eye in radare2: which was faster for you? Optionally, if you have a Binary Ninja cloud account, upload the binary and look at the HLIL of `main`, then compare the three views: r2 disassembly, Cutter pseudocode and Binary Ninja HLIL.
+
+Two questions to reflect on. What is the correct password, and which tool found it fastest? And which tool do you personally find more comfortable for this exercise, and why? Do all of it before opening the solution.
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 2.4</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/2.4/src/crackme_r2.c" download><i class="fa-solid fa-file-code"></i>src/crackme_r2.c</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+The correct password is `r2_rocks_2024`. Here is the path to it with all three tools.
+
+A sample radare2 session:
+
+```
+$ r2 crackme_r2
+ -- Welcome to radare2
+[0x00001060]> aaa
+[x] Analyze all flags starting with sym. and entry0 (aa)
+[x] Analyze function calls (aac)
+...
+[0x00001060]> afl
+0x00001060    1  42  entry0
+0x00001149    4  94  sym.check_password
+0x000011a7    5  120 main
+...
+```
+
+`aaa` analyzes the whole file and `afl` lists the functions. Notice right away that there is a `sym.check_password`, with its name intact because the binary isn't stripped. That is the function to look at.
+
+```
+[0x00001060]> s sym.check_password
+[0x00001149]> pdf
+```
+
+In the disassembly of `check_password` you see a pointer to a string being loaded (a `lea` pointing at `str.r2_rocks_2024`), then a call to `strlen` to compare lengths, then `strcmp` to compare contents. radare2 annotates the string name next to the instruction, so the password is exposed right here.
+
+An even faster route skips reading the function altogether:
+
+```
+[0x00001149]> izz~rocks
+0  0x00002008 0x00002008 13 13 .rodata ascii r2_rocks_2024
+```
+
+`izz` lists the strings of the whole file, and `~rocks` is r2's built-in grep, filtering lines that contain "rocks". The string `r2_rocks_2024` sits in `.rodata`, and it is the password. To see who uses that string:
+
+```
+[0x00001149]> axt 0x00002008
+sym.check_password 0x1157 [DATA:r--] lea rax, str.r2_rocks_2024
+```
+
+`axt` shows that only `check_password` references the string, which confirms it is the check function.
+
+In Cutter, open the binary and the Functions panel on the left lists `check_password` and `main` just like `afl`. Double-click `check_password` and switch to the Decompiler tab (jsdec) to get pseudocode like this:
+
+```c
+int check_password(char *input) {
+    if (strlen(input) != strlen("r2_rocks_2024"))
+        return 0;
+    return strcmp(input, "r2_rocks_2024") == 0;
+}
+```
+
+For someone used to a GUI, this pseudocode reads faster than the raw disassembly in r2. In Binary Ninja (cloud), upload the binary, open `check_password` and switch to HLIL. The result is close to Cutter's: two `strlen` calls to compare lengths, then `strcmp`. The nice thing about BN is that you can toggle between LLIL, MLIL and HLIL to see the same function at three levels of detail.
+
+All three tools lead to the same answer. The fastest for this exercise is the `izz~` trick that finds the string directly, because the password is compared in plaintext. When the password is encrypted or generated at runtime, the string trick is no longer enough and you have to read the function carefully (or move on to the dynamic analysis of later lessons). The lesson about tools is to pick the one you read fastest. There is no prize for using the harder tool.
+
+</details>
 
 ## Key takeaways
 Binary Ninja has a modern UI, a multi-level IL (LLIL/MLIL/HLIL), a nice Python API, and a free cloud version to try. radare2/rizin is command line, free, and strong at automation, with five core commands: `aaa`, `afl`, `s`, `pdf`, `VV`. Its command names follow a pattern (group plus narrowing), and understanding the pattern saves memorizing.

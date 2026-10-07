@@ -1,5 +1,8 @@
 ---
 title: "Lesson 16.2: XOR, RC4 and custom Base64, the three you'll meet most"
+image:
+  path: /assets/img/covers/re-16-2-xor-rc4-custom-base64-three-youll.webp
+  alt: "Lesson 16.2: XOR, RC4 and custom Base64, the three you'll meet most"
 date: 2023-07-03 21:27:00 +0700
 categories: ["Technique Reverse", "Part 16 · Crypto and Algorithms"]
 tags: [reverse-engineering, crypto]
@@ -62,7 +65,65 @@ For all three of the above, the fastest approach isn't to debug byte by byte in 
 
 ## Lab
 
-In `labs/16.2/` there's `src/make_data.py`, which generates three encrypted strings (multi-byte XOR, RC4, custom Base64), and `src/solve.py`, which solves all three. Task: look at the three ciphertexts, recognize each type, then write the Python decoder yourself before opening the solution. Everything was actually run with Python 3.11, and the results are in the solution.
+Here are three ciphertexts, each produced with a different technique. Your job is to recognize which is which and then write Python to decrypt them, before you open the solution. The data comes from `make_data.py` and was actually run:
+
+```
+XOR ciphertext (hex):  34295353293d5d460d2c416b373357462b325a5120204f
+RC4 ciphertext (hex):  ff0e15f7a4b880dcaef6bffa2e815a19c83db06649fea703c7b292b03442d2
+Custom-Base64:         AncsA6gqwCM9y78uBnUaAGB9C7UhxTssBnE9uJ==
+```
+
+A few hints. All three plaintexts have the form `flag{...}`, which is known plaintext you can exploit. The third string looks like Base64 (64-character alphabet, `==` padding) but standard base64 decodes it to garbage, so look for an alphabet that has been shuffled (it is in `make_data.py`). For RC4 the key is `s3cr3t`, on the assumption that you pulled it out of the KSA part of a binary.
+
+For the XOR sample, use `flag{` as known plaintext, find the key and decrypt the whole string. For RC4, copy the algorithm into Python, pass in the key and decrypt. For the custom Base64, take the custom alphabet, map it back to the standard one and decode. You can rerun everything with:
+
+```
+python3 -I make_data.py   # regenerate the three ciphertexts
+python3 -I solve.py       # the reference solution
+```
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 16.2</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/16.2/src/make_data.py" download><i class="fa-solid fa-file-code"></i>src/make_data.py</a>
+<a class="lab-file" href="/assets/labs/16.2/src/solve.py" download><i class="fa-solid fa-file-code"></i>src/solve.py</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+Everything was actually run with Python 3.11.9, and the full script is `solve.py`.
+
+For the multi-byte XOR, the ciphertext begins with `34 29 53 53 29` and the plaintext is known to begin with `flag{` (`66 6c 61 67 7b`). XORing the two together gives:
+
+```
+0x34^0x66=0x52='R'  0x29^0x6c=0x45='E'  0x53^0x61=0x32='2'  0x53^0x67=0x34='4'  0x29^0x7b=0x52='R'
+```
+
+The key characters that appear are `R E 2 4 R ...`, repeating after 4 characters, so the real key is `RE24` (length 4). Decrypting the whole string:
+
+```
+[XOR] key = b'RE24' -> plaintext = flag{xor_is_everywhere}
+```
+
+For RC4, the key `s3cr3t` comes from the KSA code. Copy the KSA and PRGA exactly into Python and XOR the keystream with the ciphertext:
+
+```
+[RC4] plaintext = flag{rc4_has_no_magic_constant}
+```
+
+Note that there is no constant for findcrypt to catch. You only recognize RC4 by the 256-entry array initialized to 0..255 and the two swapping loops with `& 0xFF`.
+
+For the custom Base64, the alphabet is `ZYXWVUTSRQPONMLKJIHGFEDCBAzyxwvutsrqponmlkjihgfedcba9876543210+/`, which reverses the letter and digit parts relative to the standard one. Map the custom alphabet back to the standard one and then call `base64.b64decode`:
+
+```
+[B64] plaintext = flag{custom_base64_alphabet}
+```
+
+The lessons are that known plaintext is the strongest weapon against XOR, since you only need to guess the first few bytes right, that RC4 is recognized by structure and not by constants, and that a Base64 that "decodes to garbage" is usually a shuffled alphabet and not something other than Base64.
+
+</details>
 
 ## Key takeaways
 A loop that XORs a buffer with a constant or key array is a string encryption routine, and known-plaintext gets you the key. RC4 has no magic constant: you recognize it by the 256 array initialized 0..255 and then the two permutation loops with mod 256, and finding the key is enough to decrypt because it's symmetric.

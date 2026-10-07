@@ -1,5 +1,8 @@
 ---
 title: "Lesson 13.3: Reversing Unreal Engine games"
+image:
+  path: /assets/img/covers/re-13-3-reversing-unreal-engine-games.webp
+  alt: "Lesson 13.3: Reversing Unreal Engine games"
 date: 2023-03-29 22:36:00 +0700
 categories: ["Technique Reverse", "Part 13 · Games: Unity, Unreal, Lua"]
 tags: [reverse-engineering, game-hacking]
@@ -71,7 +74,45 @@ The key point to remember: Unreal is harder than Unity because there's no "open 
 
 ## Lab
 
-See `labs/13.3/`. The task: with an offline Unreal game of yours, browse the `.pak` with FModel (get the AES key if it's encrypted), then inject UE4SS to dump the SDK and find a class in the live viewer.
+The goal is to get familiar with the three fronts of Unreal reversing (assets, SDK, runtime) on an offline game of your own. Pick a single-player or offline game made with Unreal Engine that you own. Don't use an online multiplayer game, since anti-cheat and terms of service are outside what is being learned here. The tools are FModel (browsing paks), UE4SS (runtime injection and SDK dumping), and optionally IDA or Ghidra for the native part.
+
+First confirm it is Unreal and find the version. Look for an executable named like `*-Win64-Shipping.exe` in `Binaries/Win64/` and the `Content/Paks/` folder. Write down the engine version (UE4.x or UE5.x), because the tools are tied closely to the version. Then browse the `.pak` with FModel. Point FModel at the `Content/Paks/` folder. If the index is encrypted, FModel says it needs an AES key, and when it isn't encrypted you can browse the asset tree. Find a DataTable and look at its contents (they often hold item stats, recipes and prices), and try exporting a texture or a model.
+
+If the `.pak` is encrypted, get the AES key. Use an AES key finder for Unreal to scan the exe, or dump it from memory at run time. Load the key into FModel and browse again. Next dump the SDK with UE4SS. Install UE4SS for the game, run the game, and use the dump feature to generate C++ SDK headers. Open the dump, find a familiar class (for example the player character class) and note a few of its fields and offsets. Then open the UE4SS live viewer, browse the tree of live UObjects, find the player object and try viewing (and, if you like, editing) a property such as health or position.
+
+As an advanced step, go native. Take the address of a UFunction from the SDK dump, open the exe in IDA or Ghidra at that address and read the C++ logic (applying Part 4).
+
+Three questions to think about. Why is Unreal reversing so different from Unity Mono, even though both are game engines? The engine's reflection is both a feature for developers and a weakness for reversers, so explain this paradox. And how does logic in Blueprint differ from logic in C++ in how hard it is to analyze?
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+This writeup describes the standard procedure on a real Unreal game. Since no specific game is attached to the lab, the offsets and class names will differ with each game and engine version, so what follows gives the method and the shape of the results, not figures from a particular title.
+
+The sure signs of Unreal are `GameName/Binaries/Win64/GameName-Win64-Shipping.exe`, `GameName/Content/Paks/*.pak` (UE4) or additionally `*.utoc` and `*.ucas` (UE5 IoStore), and `strings exe | grep -iE "/Game/|/Engine/|UnrealEngine|\+UE"` returning plenty of results. For the version, look at the strings in the exe or the `*.version` file in the game folder. Record it exactly (UE4.27, UE5.1 and so on), because FModel and UE4SS need the right one selected.
+
+In FModel, open Settings and point Game Directory at `Content/Paks/`, choose the right UE version and load. If nothing is encrypted, the asset tree appears by `/Game/...` path. DataTables usually live under `/Game/Data/...`, and opening one gives a JSON-like table with one row per item or unit and columns of stats. That is the place to grab game data quickly without touching the exe. To export a texture, right-click the asset and choose Export.
+
+When the `.pak` is AES encrypted, FModel says "encrypted" and needs an AES key of the form `0x` plus 64 hex digits (32 bytes). You can get it by using an AES key finder for Unreal, which scans the exe for data matching the key pattern, or by attaching a debugger, setting a breakpoint at the pak decryption function (the one that receives the index buffer) and reading the key from the parameters or memory. Paste the key into the AES section of FModel and reload, and now you can browse.
+
+To dump the SDK, install UE4SS into the game folder following the instructions for your version. Run the game and UE4SS loads. Use the dump command or hotkey to generate the SDK: a set of C++ headers describing classes, enums and structs with field offsets and function RVAs. Open the headers and find the player character class (usually inheriting from `ACharacter` or `APawn`). The result looks like:
+
+```cpp
+class ABP_PlayerCharacter_C : public ACharacter {
+    float Health;        // offset 0x0abc
+    int32 Gold;          // offset 0x0ad0
+    ...
+    void TakeDamage(float Amount);  // RVA 0x1234560
+};
+```
+
+Write down the offsets of `Health` and `Gold` and the RVA of a function you care about. In the live property viewer of UE4SS, browse the UObject tree and find the player instance (filter by the class name from the previous step). Select it and the property table shows the running values. Editing `Health` here shows the effect in the game at once, which is the fastest way to confirm you found the right field.
+
+For the native step, take the RVA of a UFunction from the SDK dump, open the exe in IDA or Ghidra and jump to the address (ImageBase + RVA). Read the pseudocode as an ordinary C++ function: `this` is in rcx (Win64), and the fields accessed through `[this+offset]` match the offsets in the SDK. From here you apply the Part 4 skills (C++, vtables).
+
+On the questions, Unity Mono keeps its code in Assembly-CSharp.dll as .NET and dnSpy reads it almost like source, while Unreal compiles C++ to native with no managed DLL, so you have to read assembly. Unity's IL2CPP resembles Unreal in this respect. The reflection paradox is that the engine needs to describe every class and function in memory to serialize, to let Blueprint call C++ and to make the editor work, and that same description lets an SDK dumper rebuild the entire structure, turning the framework's strength into an entry point for the reverser. As for Blueprint versus C++, Blueprint is a bytecode VM stored in assets, which you can pull from the pak but the tools that read the bytecode are still limited, while C++ is native code in the exe, harder to read but with an SDK dump and decompilers to help. Many games mix both, so you have to know which layer the logic you are looking for lives in.
+
+</details>
 
 ## Key takeaways
 Unreal is native C++, so the logic is in the big exe and you open it in IDA/Ghidra like a C++ program (Part 4). You identify it by `-Shipping.exe`, `Content/Paks/*.pak`, `/Game/` strings, and U/A/F classes. Assets in .pak are browsed with FModel/UModel, and you need the AES key if the index is encrypted.

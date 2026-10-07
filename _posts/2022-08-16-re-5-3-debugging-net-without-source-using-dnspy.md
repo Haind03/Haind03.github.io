@@ -1,5 +1,8 @@
 ---
 title: "Lesson 5.3: Debugging .NET without source using dnSpy"
+image:
+  path: /assets/img/covers/re-5-3-debugging-net-without-source-using-dnspy.webp
+  alt: "Lesson 5.3: Debugging .NET without source using dnSpy"
 date: 2022-08-16 09:08:00 +0700
 categories: ["Technique Reverse", "Part 05 · C# and .NET"]
 tags: [reverse-engineering, dotnet]
@@ -13,7 +16,7 @@ Recall [Lesson 5.1](/posts/re-5-1-net-internals-why-decompiling-gives-back/): a 
 
 Compared with native: in x64dbg you look at `[rbp-4]` and have to guess what variable that is. In dnSpy you see `int attempts = 3` directly. The gap is exactly the gap between reading hex and reading words.
 
-dnSpy is already in this repo, in the parent folder `dnSpy-net-win64` (run `dnSpy.exe`), no extra installation needed.
+dnSpy is a portable download (run `dnSpy.exe`), no installation needed.
 
 ## Two ways to start: Start and Attach
 
@@ -53,7 +56,75 @@ Most entry-level .NET crackmes fall to exactly these steps. Samples that have be
 
 ## Lab
 
-The exercise is in `labs/5.3/`: debug a small .NET crackme with dnSpy, set a breakpoint at the comparison, read the variables to get the answer, then try editing the condition variable to get past the check without knowing the password. There's a build guide (needs the dotnet SDK) and a step-by-step writeup in `solution.md`.
+In this lab you debug a small .NET crackme with dnSpy, without any source code. You set a breakpoint at the comparison, read the variables while the program runs, and then edit the condition variable to get past the check without knowing the serial. The crackme is `Program.cs`. You need dnSpy (run `dnSpy.exe`) and the dotnet SDK to build it.
+
+Create a console project, replace its default `Program.cs` with the provided one, and build in Debug configuration, which lets dnSpy map lines more accurately.
+
+```
+dotnet new console -o crackme53
+copy Program.cs crackme53/Program.cs   (replace the default file)
+cd crackme53
+dotnet build -c Debug
+```
+
+The output is `crackme53/bin/Debug/netX.0/crackme53.dll`, which you run with `dotnet crackme53.dll`, or an `.exe` on Windows. If you have no dotnet SDK you can still practice the dnSpy operations on any .NET assembly, such as `ILSpy.dll`, though you will not have the serial check to modify.
+
+Open the crackme assembly in dnSpy and find the `CheckSerial` function, either with search (Ctrl+Shift+K) or by starting from the "Wrong" or "Correct" strings and using Analyze. Put a breakpoint on the line `bool isValid = ...` inside `CheckSerial`, start the program with F5, and enter any username with a wrong serial. When the breakpoint hits, open the Locals window and read the variable `expected`. That is the correct serial for the username you just typed. Run again with that username and the serial you read, and confirm you get "Correct!".
+
+There is a second way that does not require knowing the serial. Put a breakpoint on `return isValid`, enter a wrong serial, and when execution stops change `isValid` from `false` to `true` in Locals, then press F5. The program now reports success. As a last step, try a conditional breakpoint inside the loop of `MakeSerial`, for example one that stops when the last character is being processed, so you can watch `acc` change.
+
+Two questions to think about. Why does the correct serial differ for every username? And between reading `expected` and editing `isValid`, which one is suitable if you want to write a keygen, and which only gets you through a single run? Try it yourself before opening the solution.
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 5.3</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/5.3/src/Program.cs" download><i class="fa-solid fa-file-code"></i>src/Program.cs</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+In dnSpy, start from the string "Correct!" or "Wrong serial." and use Analyze to reach `Program.Main`, where you can see it calls `CheckSerial(user, serial)`. Decompiled, `CheckSerial` looks like this.
+
+```csharp
+static bool CheckSerial(string user, string serial)
+{
+    string expected = MakeSerial(user);
+    bool isValid = string.Equals(serial, expected, StringComparison.Ordinal);
+    return isValid;
+}
+```
+
+The correct serial is not hard-coded. It is computed from the username by `MakeSerial`.
+
+```csharp
+static string MakeSerial(string user)
+{
+    int acc = 0x1337;
+    foreach (char c in user)
+        acc = (acc * 31 + c) & 0xFFFFF;
+    return acc.ToString("X5");
+}
+```
+
+For the first method, reading `expected`, put a breakpoint on the line `bool isValid = ...` in `CheckSerial`, start, enter a username such as `alice` and a random serial such as `00000`. The breakpoint hits, and in Locals you see `expected = "7EDA9"`. Run again with `alice` and `7EDA9`, and the program prints `Correct! Welcome, alice`.
+
+A few reference serials, computed with the exact algorithm (mask `& 0xFFFFF`, formatted as 5 uppercase hex digits) and checked with a Python simulation, are below.
+
+| Username | Correct serial |
+|---|---|
+| alice | 7EDA9 |
+| bob | D8B1E |
+| RE_Learner | DFA3C |
+
+The second method is editing `isValid` at run time. You do not need to know the serial. Put a breakpoint on `return isValid`, enter a wrong serial, and when it stops double-click the value of `isValid` in Locals (currently `false`), change it to `true`, and press F5. The program prints `Correct!`. The difference is that this only gets you through that one run, and does not give you a serial you can reuse or turn into a keygen. The first method gives you a real serial, and if you understand `MakeSerial` you can write a keygen for any username (see the keygen mindset from Lesson 3.6).
+
+The correct serial differs per username because it is a hash of the username itself, with `acc` rolling through each character. This is an algorithmic check, not a comparison against a fixed serial. To write a keygen you have to use the first method, understanding and reproducing the algorithm. Editing `isValid` is only a one-off runtime patch.
+
+One caveat on verification: the serials in the table come from a Python simulation that follows `MakeSerial` step by step (start at `0x1337`, multiply by 31 and add the character code, mask with `0xFFFFF`, print 5 uppercase hex digits). When you build the crackme with the dotnet SDK, the `expected` value you see in dnSpy should match this table exactly.
+
+</details>
 
 ## Key takeaways
 dnSpy maps decompiled C# lines back to the exact IL, so you can set breakpoints directly on code with no source. Use Start to run from the beginning and Attach to hook into a running process. Locals is where the right value often shows up, so look there before sitting down to read the algorithm.

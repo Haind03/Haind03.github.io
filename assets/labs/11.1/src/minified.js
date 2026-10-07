@@ -1,0 +1,1 @@
+function checkLicense(k){var p=k.split("-");if(p.length!==3)return false;var s=0;for(var i=0;i<p[0].length;i++){s+=p[0].charCodeAt(i);}return s===266&&p[1]==="PRO"&&p[2].length===4;}console.log(checkLicense("ABCD-PRO-2024"));

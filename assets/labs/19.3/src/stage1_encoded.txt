@@ -1,0 +1,6 @@
+HARMLESS practice sample for Lesson 19.3.
+This is a string mimicking the argument of "powershell -EncodedCommand <string>".
+Decoding it correctly (base64, then decode UTF-16LE) gives a command that only prints text, nothing else.
+
+-enc payload (base64, UTF-16LE):
+VwByAGkAdABlAC0ASABvAHMAdAAgACcASABlAGwAbABvACAAZgByAG8AbQAgAGEAIABiAGUAbgBpAGcAbgAgAGQAZQBjAG8AZABlAGQAIABwAGEAeQBsAG8AYQBkACcA

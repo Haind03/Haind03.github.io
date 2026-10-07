@@ -1,5 +1,8 @@
 ---
 title: "Lesson 2.7: Hex editors and templates, when you need to see every byte"
+image:
+  path: /assets/img/covers/re-2-7-hex-editors-templates-when-you-need.webp
+  alt: "Lesson 2.7: Hex editors and templates, when you need to see every byte"
 date: 2022-05-19 09:48:00 +0700
 categories: ["Technique Reverse", "Part 02 · The Toolkit"]
 tags: [reverse-engineering, tools]
@@ -78,7 +81,77 @@ Short advice: install HxD for quick patches, install ImHex as your main tool. Yo
 
 ## Lab
 
-The exercises and writeup are at `labs/2.7/`. You'll use ImHex (or 010) to parse a PE file header with a pattern, patch a byte in a small file and observe the change, and write a pattern yourself for a simple file format.
+This lab gets you used to working at the byte level, parsing a file structure with a pattern, and patching one byte on purpose. The tool is ImHex (preferred, free) or 010 Editor, and HxD works for the byte patching task. You need any PE file to look at, for example a small exe you already have, or one you build yourself from `target.c`. The second task also needs a file called `mini.bin`, which you create yourself. To build the target with MinGW on Windows:
+
+```
+x86_64-w64-mingw32-gcc target.c -o target.exe
+```
+
+or with MSVC:
+
+```
+cl target.c
+```
+
+For the first task, parse a PE header with a pattern. Open a `.exe` in ImHex and look at the first 16 bytes. Confirm the first two bytes are `4D 5A` ("MZ"). Go to offset `0x3C` and read the little-endian `u32` there. That is `e_lfanew`, the offset to the NT headers. Jump to that offset and confirm the four bytes `50 45 00 00` ("PE\0\0"). Then open the ImHex pattern editor, paste the pattern from `pe_header.hexpat`, run it, and compare the fields (`machine`, `numberOfSections`) with what you read by hand. Is your file x86 (machine `0x14C`) or x64 (`0x8664`), and how many sections does it have?
+
+For the second task, patch a byte and watch the effect. Create `mini.bin` containing exactly the text `PASS=0`: open the hex editor, type in the ASCII bytes of the string (`50 41 53 53 3D 30`) and save. Open it again, find the last byte `30` ('0'), change it to `31` ('1') and save. Open the file in a plain text viewer such as Notepad and confirm it now reads `PASS=1`. This is a miniature version of byte patching: find the right offset, change the right value, save.
+
+For the third task, write a pattern for a homemade format. Suppose a score file has this layout:
+
+```
+offset 0: u32 magic = 0x53434F52  ("SCOR" as a number)
+offset 4: u16 version
+offset 6: u16 count
+offset 8: an array of count elements, each consisting of:
+             char name[8]
+             u32 score
+```
+
+Write an ImHex pattern that describes it, using `pe_header.hexpat` as a reference for the `struct` and `@` syntax. Then create a sample file with exactly this layout and run the pattern to check that it splits the file correctly.
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 2.7</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/2.7/pe_header.hexpat" download><i class="fa-solid fa-file-code"></i>pe_header.hexpat</a>
+<a class="lab-file" href="/assets/labs/2.7/target.c" download><i class="fa-solid fa-file-code"></i>target.c</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+Do everything before reading this. For the first task, these are the fixed bytes you should see. At offset `0x00`, `4D 5A` is "MZ", the magic of the DOS header, and every PE starts like this. At offset `0x3C` there is a little-endian `u32` that is `e_lfanew`. If you read `C0 00 00 00` the value is `0x000000C0`, remembering to reverse the bytes because of little-endian (see [Lesson 1.1](/posts/re-1-1-reading-hexdump-like-text/)). Jump to offset `0xC0` and the four bytes `50 45 00 00` are "PE\0\0", the signature of the NT headers. Right after the signature comes `machine` (u16): `4C 01` read backwards is `0x014C` (x86), and `64 86` read backwards is `0x8664` (x64). The next two bytes are `numberOfSections`.
+
+When you run `pe_header.hexpat`, ImHex shows these fields already decoded, and you only compare them with the numbers you read by hand. If they match, you understand both the manual reading and what the pattern does for you. A sample answer for a typical x64 exe is machine = `0x8664`, so x64, and `numberOfSections` is usually 5 to 7 depending on the compiler. The nice point to take away is that `e_lfanew` is a pointer inside the file. The pattern uses `NtHeaders nt @ dos.e_lfanew;` to place the struct at exactly that offset, which is why a pattern is stronger than staring at raw hex.
+
+For the second task, `PASS=0` in hex is `50 41 53 53 3D 30`. The last byte `30` is the character '0' (in the ASCII table of [Lesson 1.1](/posts/re-1-1-reading-hexdump-like-text/), '0' = 0x30). Change `30` to `31`, save, and Notepad shows `PASS=1`. Changing exactly one byte at the right offset is enough to change behavior. When you patch a jump in a real exe the principle is identical, except that you change an opcode (for example `75` to `74` to turn `jne` into `je`) instead of an ASCII character.
+
+For the third task the pattern is:
+
+```c
+#pragma endian little
+
+struct Entry {
+    char name[8];
+    u32  score;
+};
+
+struct ScoreFile {
+    u32  magic;     // expected 0x53434F52
+    u16  version;
+    u16  count;
+    Entry entries[count];   // array length comes from the count read above
+};
+
+ScoreFile file @ 0x00;
+```
+
+The key point is that `Entry entries[count];` uses the `count` field it just read to know how long the array is. That is the real power of a pattern language: it handles structures of dynamic length, something that is almost impossible to separate by eye in raw hex. To make the sample file, write `52 4F 43 53` (which is 0x53434F52 with its bytes reversed) at the start, then the version, the count, and `count` entries. Run the pattern and ImHex lists each entry with its name and score decoded.
+
+Two pitfalls come up often. One is forgetting endianness: the magic `0x53434F52` written to a little-endian file lies as `52 4F 43 53`, and getting the order wrong means the magic won't match. The other is miscounting the length of `name`, since being off by one byte shifts the whole array that follows.
+
+</details>
 
 ## Key takeaways
 A hex editor is for when you need to see and edit down to the byte: patching bytes, fixing magic/headers, reading unfamiliar formats. You can quickly recognize a file from its start: `4D 5A` is PE, `7F 45 4C 46` is ELF, `50 4B` is ZIP.

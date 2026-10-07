@@ -1,5 +1,8 @@
 ---
 title: "Lesson 1.4: x86/x64 assembly (2), stack frames and calling conventions"
+image:
+  path: /assets/img/covers/re-1-4-x86-x64-assembly-2-stack-frames.webp
+  alt: "Lesson 1.4: x86/x64 assembly (2), stack frames and calling conventions"
 date: 2022-02-26 21:21:00 +0700
 categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
@@ -118,7 +121,99 @@ You just did two things: recognized three parameters from rcx/rdx/r8 (so you kno
 
 ## Lab
 
-The folder `labs/1.4/` has a C file with a few functions taking different numbers of parameters. The task: build with `-O0` on both Windows (or picture Win64) and Linux, then open it in IDA/Ghidra/objdump and confirm yourself which registers the parameters are in on each system, where the shadow space is, and which are the locals. The answer is in `solution.md`, but try comparing on your own first.
+The file `params.c` has three functions that deliberately differ in the number and type of their parameters. `sum3(a, b, c)` takes three parameters, which fit in registers under both conventions. `sum6(a..f)` takes six, enough to show Win64 spilling parameters 5 and 6 onto the stack. `mix(char, int, long, int*)` mixes types so you can see whether the compiler picks 32-bit or 64-bit registers. The goal is to confirm with your own eyes what this lesson says, instead of just trusting it, by building the same C file on both systems and comparing how parameters are passed.
+
+Build without optimization so the stack frame stays readable. With optimization on, the compiler inlines everything and there is nothing left to look at. If `sum3` and `sum6` still get inlined at `-O0`, add `__attribute__((noinline))` (GCC) or move them into a separate file.
+
+```
+# Linux / macOS (System V AMD64)
+gcc -O0 -g -o params params.c
+
+# Windows, MSVC (Win64) in a Developer Command Prompt
+cl /Od /Zi params.c
+
+# Windows, MinGW
+gcc -O0 -g -o params.exe params.c
+```
+
+Ideally you build on both systems and compare directly. With only one machine you can still do that system's half and check the other against the solution below. Open the binary in IDA or Ghidra, or go quick with the command line:
+
+```
+objdump -d -M intel params        # Linux
+gdb -batch -ex "disassemble sum6" ./params
+dumpbin /disasm params.exe        # Windows MSVC
+```
+
+For `sum3`, find which registers the parameters a, b and c are loaded from, comparing the Win64 list (`rcx, rdx, r8`) with System V (`rdi, rsi, rdx`), and where the local `total` sits relative to `rbp`. For `sum6`, find the registers of the first four parameters and where parameters 5 and 6 are read from on the stack, with the exact offsets. For `mix`, check whether `char x` goes through an 8-bit register or gets extended, and which 64-bit register holds the pointer `int *p`. In the Win64 build, look for the `sub rsp, 0x??` at the start of `main` before the run of calls, and identify the 0x20 part of it as the shadow space. Finally, after each `call` in `main`, note which register the return value is read from before it goes to `printf`. Don't be alarmed on Win64 when you see stack space reserved but apparently unused, because that is exactly the shadow space the lesson describes. Compare on your own first, then open the solution.
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 1.4</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/1.4/src/params.c" download><i class="fa-solid fa-file-code"></i>src/params.c</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+Compare on your own first. What follows is the expected result for a `-O0` build. The exact offsets can drift a little with the compiler and its version, but the registers used for parameters are fixed by the convention.
+
+### sum3(a, b, c)
+
+On Win64 (MSVC/MinGW) the parameters arrive in `ecx` (a), `edx` (b) and `r8d` (c). Since they are 32-bit `int`s, the 32-bit names `ecx/edx/r8d` appear rather than `rcx/rdx/r8`. The prologue copies them into stack variables:
+
+```asm
+mov [rbp+10h], ecx     ; a  (MSVC often uses [rbp+x] for the saved parameters)
+mov [rbp+18h], edx     ; b
+mov [rbp+20h], r8d     ; c
+```
+
+On System V (gcc on Linux) the parameters arrive in `edi` (a), `esi` (b) and `edx` (c):
+
+```asm
+mov [rbp-14h], edi     ; a
+mov [rbp-18h], esi     ; b
+mov [rbp-1Ch], edx     ; c
+```
+
+The local `total` is its own `[rbp-x]` slot, where the three values are summed before being copied to `eax` for the return. The point to take away is that the first parameter a sits in rcx on Windows but in rdi on Linux. That is the most important difference in this lab.
+
+### sum6(a, b, c, d, e, f)
+
+Win64 has only 4 parameter registers, so a, b, c and d go into `ecx, edx, r8d, r9d`, while e (parameter 5) and f (parameter 6) are read from the caller's stack. Inside `sum6` you see them read through positive offsets from rbp, like `[rbp+30h]` and `[rbp+38h]`, which sit above the return address and the shadow space.
+
+System V has 6 parameter registers, so all six fit in `edi, esi, edx, ecx, r8d, r9d` and nothing goes on the stack. The same six-parameter function makes Win64 spill two parameters to the stack while System V does not, which is why you have to know which system you are on before reading the code.
+
+### mix(char x, int y, long z, int *p)
+
+The parameter order by convention is x->rcx, y->rdx, z->r8, p->r9 on Win64, and x->rdi, y->rsi, z->rdx, p->rcx on System V. As for types, `char x` is usually widened with `movzx`/`movsx` from 8 bits (cl/dil) to 32 or 64 bits before the arithmetic, because x is added to a `long`. You will see something like `movsx eax, byte ptr [rbp-x]`. The `long z` is 64-bit and uses the full register name `r8`/`rdx`. The pointer `int *p` is 64-bit too and uses `r9`/`rcx` in full. Inside the function a `test`/`cmp` checks `p != NULL` before dereferencing, matching `if (p) r += *p;`, and the dereference itself is a `mov eax, [r??]` reading the value the pointer points to. So pointers and longs use full 64-bit registers while int and char use the 32-bit and 8-bit names, and the register name alone lets you guess the size of the type.
+
+### Shadow space in main (Win64 only)
+
+At the start of `main`, before the calls, you see an instruction like this:
+
+```asm
+sub rsp, 0x38      ; (example) shadow space 0x20 + room for spilled parameters + 16-byte alignment
+```
+
+The 0x20 (32 bytes) in that number is the shadow space, a mandatory gap left for the callee even when the called function takes fewer than 4 parameters. `sum6` needs extra room for parameters 5 and 6, so the caller reserves more. System V has no line dedicated to shadow space.
+
+### Return value
+
+After each `call sum3` / `call sum6` / `call mix`, the result is in `eax` (for the functions returning `int`) or `rax` (for `mix`, which returns `long`). You see it moved straight into a parameter for `printf`:
+
+```asm
+call sum3
+mov  edx, eax      ; result -> 2nd parameter of printf (Win64: rdx)
+lea  rcx, [format] ; format string -> 1st parameter
+call printf
+```
+
+That closes the loop: parameters go in through rcx/rdx and so on, the result comes out through rax, and rax then becomes a parameter of the next call. Once you can read that flow, you can read how functions connect to each other.
+
+In short, parameter 1 is in rcx on Win64 and rdi on System V, so remember which system you are on before reading. Win64 has only 4 parameter registers and spills parameter 5 onward to the stack, while System V has 6. The register name (ecx vs rcx) reveals the size of the data type. The 0x20 shadow space is a Win64 specialty and should not be mistaken for a local variable. The return value is always in rax/eax.
+
+</details>
 
 ## Key takeaways
 `call` pushes the return address on the stack then jumps, and `ret` pops it and goes back. The prologue `push rbp; mov rbp, rsp` marks the start of a function and `leave; ret` marks the end. On Win64, parameters 1-4 are in `rcx, rdx, r8, r9` with 32 bytes of shadow space and the return in `rax`. On System V (Linux/macOS), parameters 1-6 are in `rdi, rsi, rdx, rcx, r8, r9` and the return is in `rax`.

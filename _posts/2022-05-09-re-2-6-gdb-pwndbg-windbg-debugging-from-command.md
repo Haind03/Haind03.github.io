@@ -1,5 +1,8 @@
 ---
 title: "Lesson 2.6: GDB, pwndbg and WinDbg, debugging from the command line"
+image:
+  path: /assets/img/covers/re-2-6-gdb-pwndbg-windbg-debugging-from-command.webp
+  alt: "Lesson 2.6: GDB, pwndbg and WinDbg, debugging from the command line"
 date: 2022-05-09 20:51:00 +0700
 categories: ["Technique Reverse", "Part 02 · The Toolkit"]
 tags: [reverse-engineering, tools]
@@ -118,7 +121,123 @@ People who've been at it a long time use all three and aren't loyal to any. Tool
 
 ## Lab
 
-The source and instructions are at `labs/2.6/`. In short: compile a small C program that has a password check function, load it into GDB + pwndbg, set a breakpoint at the compare function, read the arguments with `info registers` and `x`, then modify a register value to force the program to accept a wrong password. When you finish you'll see the static-then-dynamic rhythm of [Lesson 0.4](/posts/re-0-4-reverse-engineering-workflow-not-get-lost/) right in the command line. The full writeup is in `solution.md`, do it yourself before opening it.
+The file `login.c` is a small, harmless C program with a password check function, and it runs fine on an ordinary Linux machine. The goal is to get used to the rhythm of setting breakpoints, reading arguments through registers, and changing state at runtime to alter the flow, all from the command line. You need Linux (or WSL), gcc, gdb, and ideally pwndbg installed.
+
+Build it and try one run to see the behavior:
+
+```
+gcc -g -O0 -no-pie -o login login.c
+./login
+Enter password: abc
+Wrong password.
+```
+
+The rules are simple: don't open `login.c`, and don't guess the password by eye. Use only GDB. Load the program into GDB and set the Intel syntax with `set disassembly-flavor intel`. Set a breakpoint at the function `check_password`, run, type any password, and let the program stop at the start of the function. The function receives the string you typed, so work out which register holds the first parameter on Linux x86-64 and read it with the `x` command. Inside the function there is a call to `strcmp`. Set a breakpoint there, run to it, and read both arguments of `strcmp`. One of them is the correct password, laid bare, so write it down. Then quit and run again, this time typing a wrong password, but use GDB to change the return value of `check_password` (which register holds it?) so the program still prints "Correct!". For an extra challenge, rebuild without `-no-pie`, watch the addresses change on each run (ASLR), and use `vmmap` to see the real base.
+
+Some hints. For the first parameter on System V x86-64, see [Lesson 1.4](/posts/re-1-4-x86-x64-assembly-2-stack-frames/). To read a string at the address in a register, use `x/s $reg`. The return value is in `rax`, and to change it at the right moment, break where the function is about to `ret`, or use `finish` and then `set $rax=1` before `main` checks it. Try it yourself before opening the solution.
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 2.6</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/2.6/src/login.c" download><i class="fa-solid fa-file-code"></i>src/login.c</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+Try it yourself before reading. The correct password is `r3v3rs3_m3`, but what matters is how to find it without opening the source. Start with:
+
+```
+gcc -g -O0 -no-pie -o login login.c
+gdb ./login
+(gdb) set disassembly-flavor intel
+```
+
+### Tasks 2 and 3: breakpoint at check_password, reading the parameter
+
+```
+(gdb) b check_password
+Breakpoint 1 at 0x401156
+(gdb) r
+Enter password: hello
+Breakpoint 1, check_password (input=...) at login.c:...
+```
+
+On System V x86-64 the first parameter is in `rdi`. Read the string it points to:
+
+```
+(gdb) x/s $rdi
+0x7fffffffe3a0: "hello"
+```
+
+That is exactly the string we just typed, so `check_password` receives the string pointer in `rdi`.
+
+### Task 4: reading both arguments of strcmp
+
+The call is `strcmp(input, secret)`. When `strcmp` is called, the first argument is in `rdi` and the second in `rsi`.
+
+```
+(gdb) b strcmp
+(gdb) c
+Breakpoint 2, __strcmp_avx2 ()
+(gdb) x/s $rdi
+0x7fffffffe3a0: "hello"          <- what we typed
+(gdb) x/s $rsi
+0x402004:       "r3v3rs3_m3"     <- the correct password, exposed
+```
+
+The correct password is `r3v3rs3_m3`. There is no need to read the source, you only look at the second argument of `strcmp`. This is the classic trick: a comparison function almost always has the secret value right next to the user's input. If GDB stops inside libc's optimized strcmp (`__strcmp_avx2`) and it looks confusing, just read `rdi` and `rsi` as above, since the two strings are still there.
+
+Another way is to read the secret variable directly. Because the build has `-g`, you can print it:
+
+```
+(gdb) b check_password
+(gdb) r
+(gdb) p secret
+$1 = 0x402004 "r3v3rs3_m3"
+```
+
+The `strcmp` argument trick still works on a stripped binary with no symbols, which makes it more valuable in the long run.
+
+### Task 5: forcing a correct return despite a wrong input
+
+Type a wrong password, then force `check_password` to return 1. The return value is in `rax`. Run to the end of the function body and change it before it returns to `main`:
+
+```
+(gdb) delete
+(gdb) b check_password
+(gdb) r
+Enter password: totally_wrong
+Breakpoint 1, check_password ...
+(gdb) finish                 # run to the end of the function, stop right after return
+Run till exit from ...
+0x... in main ()
+Value returned is $1 = 0
+(gdb) set $rax = 1           # overwrite the return value
+(gdb) c
+Correct! Welcome.
+```
+
+The program prints "Correct!" even though we typed the wrong password, because `main` only looks at `rax`. That is the essence of runtime patching: you don't change the password, you change the result of the check.
+
+### Task 6: ASLR
+
+Rebuild without `-no-pie`:
+
+```
+gcc -g -O0 -o login_pie login.c
+gdb ./login_pie
+(gdb) b check_password
+(gdb) r
+(gdb) vmmap           # (pwndbg) see the real module base, it changes on each run
+```
+
+Run `r` several times and the real breakpoint address differs because of ASLR. The offset relative to the module base stays fixed, as [Lesson 1.2](/posts/re-1-2-process-memory-map-where-everything-happens/) said. GDB rebases breakpoints by function name on its own, so you rarely have to compute by hand, which is an advantage of setting breakpoints by name rather than by hard-coded address.
+
+To sum up, arguments are read in System V register order, `rdi, rsi, rdx, rcx, r8, r9`. The return value is in `rax` and can be changed at runtime to alter the flow. Comparison functions often leak the secret in the neighboring argument, and this trick needs no symbols. Breakpoints by function name make it easier to live with ASLR than hard-coded addresses.
+
+</details>
 
 ## Key takeaways
 In GDB, remember `set disassembly-flavor intel` right at the start for readability. The core command set is `b`, `r`, `c`, `si`/`ni`, `finish`, `info registers`, `x/`, and `set`. The formula is `x/<count><format><size>`, so `x/16xg $rsp` is 16 8-byte hex values at the stack.

@@ -1,5 +1,8 @@
 ---
 title: "Lesson 8.3: Go's string, slice, interface and goroutine in assembly"
+image:
+  path: /assets/img/covers/re-8-3-gos-string-slice-interface-goroutine-assembly.webp
+  alt: "Lesson 8.3: Go's string, slice, interface and goroutine in assembly"
 date: 2022-11-19 11:53:00 +0700
 categories: ["Technique Reverse", "Part 08 · Go"]
 tags: [reverse-engineering, golang]
@@ -111,7 +114,101 @@ What all of the above has in common: Go hands a lot of work to the runtime, and 
 
 ## Lab
 
-Source code and instructions in `labs/8.3/`. You'll build this lesson's Go program, look at the stuck-together string blob, and trace how the code loads strings with pointer plus length.
+The goal is to see for yourself that Go strings are glued together in the binary, and to follow how the code loads a string with a pointer plus a length. You need a Go toolchain (`go version`), and the lab was checked with Go 1.22 on Linux x64. The program is `main.go`, and you build it with:
+
+```
+go build -o demo83 main.go
+```
+
+Look at the size: a program of a few lines comes out near 2 MB, because Go embeds the whole runtime and the garbage collector.
+
+First see the string blob. Run this to find the run of glued strings:
+
+```
+strings demo83 | grep "secret length"
+```
+
+Notice that `secret length:` runs straight into other strings with nothing separating them. That is the evidence that a Go string doesn't end with a 0 byte. Next measure the secret string. How many characters does `"GopherReverse"` have? Disassemble `main.main` and look for that constant in hex:
+
+```
+go tool objdump -s "main.main$" demo83 | grep -iE "LEAQ|MOVL"
+```
+
+Find a `MOVL $0x..., AX` whose value equals the string length exactly. The string pointer is loaded with a `LEAQ` right nearby.
+
+Then spot the slice literal. In the same objdump output, look for the run of `MOVQ $0x..., 0x..(SP)` instructions that load the values 3, 8, 15, 16, 23, 42 (hex 0x3, 0x8, 0xf, 0x10, 0x17, 0x2a) into stack slots 8 bytes apart. That is `[]int{...}` being built. Finally find the goroutine. List the symbols and look for the goroutine body:
+
+```
+go tool nm demo83 | grep -iE "func1|newproc|gowrap|deferwrap"
+```
+
+The function `main.main.func1` is the body of `go func(...)`, and `runtime.newproc` is where the goroutine gets created.
+
+Two questions to think about. Why does letting IDA auto-detect C-style strings on a Go binary give wrong results? And if the binary is stripped, what still lets you find `main.main` (hint: look back at Lesson 8.2)?
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 8.3</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/8.3/src/main.go" download><i class="fa-solid fa-file-code"></i>src/main.go</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+All the output below is real, built with Go 1.22.0 on Linux x64. For the string blob:
+
+```
+$ strings demo83 | grep "secret length"
+secret length:1907348632812595367431640625unexpected EOFunsafe...
+```
+
+The string `"secret length:"` is glued to `"1907348..."` and then to `"unexpected EOF"`, with no 0 byte separating them. Another example from the same binary:
+
+```
+sum:true3125-Inf+Inffileboolint8uintchanfunccall...
+```
+
+This is the nature of a Go string: the compiler merges every string literal (including those of the runtime) into one shared blob, and each use site keeps only a pointer and a length.
+
+For the length, `"GopherReverse"` has 13 characters. In the disassembly:
+
+```asm
+LEAQ 0x78bd(IP), CX        ; CX = pointer to the string data in the blob
+MOVQ CX, 0x98(SP)
+MOVL $0xd, AX              ; 0xd = 13 = length of "GopherReverse"
+```
+
+`0xd` is 13, matching the length exactly. This is the common pattern: `LEAQ` loads the pointer and a small constant loads the length. Taking the pointer plus the length cuts the string cleanly out of the blob.
+
+For the slice literal:
+
+```asm
+MOVQ $0x3,  0x30(SP)       ; 3
+MOVQ $0x8,  0x38(SP)       ; 8
+MOVQ $0xf,  0x40(SP)       ; 15
+MOVQ $0x10, 0x48(SP)       ; 16
+MOVQ $0x17, 0x50(SP)       ; 23
+MOVQ $0x2a, 0x58(SP)       ; 42
+```
+
+Six int elements exactly 8 bytes apart on the stack. That is `[]int{3, 8, 15, 16, 23, 42}` being built on the stack before the slice header (data, len, cap) pointing at it is created.
+
+For the goroutine:
+
+```
+$ go tool nm demo83 | grep -iE "func1|newproc|gowrap|deferwrap"
+  480e60 T main.main.func1
+  480e00 T main.main.gowrap1
+  480f40 T main.main.func1.deferwrap1
+  43f4a0 T runtime.newproc
+```
+
+`main.main.func1` is the real body of `go func(id int){...}`, `runtime.newproc` is where the goroutine is created (the compiler turns `go f()` into this call), and `deferwrap1` is the wrapper for `defer wg.Done()` inside the goroutine. One more thing to note is that `sumSlice` doesn't appear in `nm` because the compiler inlined it into `main`. Inlining like this is normal in Go and is one more reason the function tree in the binary doesn't match the source one to one.
+
+On the questions, IDA's C-style string detection goes wrong because it looks for a 0 terminator byte and Go strings don't have one. It will merge the whole blob into one enormous string or cut in the wrong places, so you have to rely on the pointer plus length pair where the code loads the string. A stripped binary still lets you find `main.main` thanks to pclntab (see Lesson 8.2), the table that keeps the mapping from addresses to function names and that GoReSym can read.
+
+</details>
 
 ## Key takeaways
 A Go string is (pointer, length) and is NOT terminated by a 0 byte, so string literals merge into one stuck-together blob. To cut a string correctly, follow the code that loads it: a `LEAQ` pointer next to a small constant, which is the length. A slice is (data, len, cap), 24 bytes, and a slice literal is a series of MOVQ into consecutive stack slots.

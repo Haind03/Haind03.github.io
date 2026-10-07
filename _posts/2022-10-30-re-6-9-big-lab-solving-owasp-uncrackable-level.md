@@ -1,5 +1,8 @@
 ---
 title: "Lesson 6.9: Big lab, solving OWASP UnCrackable Level 1 to 3"
+image:
+  path: /assets/img/covers/re-6-9-big-lab-solving-owasp-uncrackable-level.webp
+  alt: "Lesson 6.9: Big lab, solving OWASP UnCrackable Level 1 to 3"
 date: 2022-10-30 21:23:00 +0700
 categories: ["Technique Reverse", "Part 06 · Java, Kotlin and Android"]
 tags: [reverse-engineering, android, java]
@@ -9,7 +12,7 @@ This lesson pulls together everything in Part 6. Instead of a crackme I cooked u
 
 Why use this set and not some app out there: it's completely legal. Open source, made for learning, and OWASP encourages you to break it. There's no copyright or terms-of-service violation like when you touch a commercial app. This is a proper practice ground.
 
-Download it officially from the MASTG repo (link in `labs/6.9/README.md`). Don't download random APKs from elsewhere, only the official build is clean and matches the challenge.
+Download it from the official OWASP MASTG UnCrackable apps page (https://mas.owasp.org/crackmes/). Don't download random APKs from elsewhere, only the official build is clean and matches the challenge.
 
 ## General rules
 
@@ -29,7 +32,7 @@ The second is the verify function. When you press the button, the app calls a fu
 The check function decrypts the secret with AES using a hardcoded key embedded in the code, then compares against the input. Since both the key and the ciphertext are in the app, you copy the algorithm out, rerun it with Python or a small piece of Java, and print the secret. Once you've read it you have the answer, no need to install the app.
 
 ### The dynamic route
-If you're too lazy to solve the AES, let the app run and hook it. But the app exits right away because of root detection, so first you have to neutralize that. Use Frida to hook the detection functions to return false, and hook `System.exit` too to be safe. Then hook the verify function to print the string it compares against, which is the secret. A sample script is in `labs/6.9/solution.md`.
+If you're too lazy to solve the AES, let the app run and hook it. But the app exits right away because of root detection, so first you have to neutralize that. Use Frida to hook the detection functions to return false, and hook `System.exit` too to be safe. Then hook the verify function to print the string it compares against, which is the secret.
 
 Takeaway from Level 1: root detection is just a paper lock on the door. It stops ordinary users, but it can't stop someone holding Frida.
 
@@ -73,7 +76,39 @@ Takeaway from Level 3: when the app fights your tools, the match turns into laye
 
 Most beginners jump straight to Frida because it feels cool. My honest advice: try reading statically first. Many times the secret is right there, five minutes in JADX is faster than half an hour wrestling with frida-server.
 
+## Lab
+
+This lab uses the official OWASP MASTG practice apps, UnCrackable Level 1 to 3. They are legal, open source and built for practicing analysis. Download them only from the official MASTG sources: the crackme page at https://mas.owasp.org/crackmes/ or the GitHub repo https://github.com/OWASP/owasp-mastg (the Crackmes folder). You need three files: `UnCrackable-Level1.apk`, `UnCrackable-Level2.apk` and `UnCrackable-Level3.apk`.
+
+For tooling you need JADX-GUI, an emulator or test device (an emulator is safer, see Lesson 0.3), Frida plus a frida-server matching the emulator architecture for the dynamic route, Ghidra for Level 2 to analyze the bundled native library, and apktool plus apksigner if you want to try the repack route.
+
+On Level 1, open the APK in JADX and read the manifest to find the launcher activity. Find the root detection code in `onCreate`, then find the function that checks the string you type. For the static route, work out how the reference value is produced and compute it by hand. For the dynamic route, write a Frida script that neutralizes the root detection and the process exit call, then observes the check function so you can see what it compares against.
+
+On Level 2, find the check function and confirm it is declared `native`. Extract `lib/arm64-v8a/libfoo.so` from the APK, open it in Ghidra (AArch64), and find the matching JNI function, either by name or through `JNI_OnLoad` plus `RegisterNatives`. For the static route, read the native function and work out the comparison value it holds. For the dynamic route, observe libc's `strcmp`/`memcmp` calls and their arguments, or observe the native function directly.
+
+On Level 3, identify the two extra defensive layers: a tamper check (comparing a signature or checksum) and a check that looks for Frida itself. Deal with the Frida-detection layer first, typically by spawning the app under Frida so your script attaches before that check runs, and by observing the detection function. Then deal with the tamper check by observing the signature-check function. Once both layers are quiet, work through the verification the same way as on Level 2.
+
+Some questions worth thinking through afterward: why does the apktool repack route fail on Level 3 while an attach-time Frida session doesn't; when is static reading faster than a dynamic hook, and when is it the other way around; and why is the final comparison call always a natural point to observe.
+
+Do the levels yourself first. The walkthrough is in the solution below.
+
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+Try it yourself before reading this. The write-up below describes the approach rather than exact bypass code, since class names and offsets shift a little between APK builds, so the method matters more than any one address. It follows OWASP's own public MASTG material and the documented structure of these three training apps. Run the steps on your own emulator and confirm each result there.
+
+On Level 1, the launcher activity is `sg.vantagepoint.uncrackable1.MainActivity`. In `onCreate` it runs three root checks (looking for test-keys in the build tags, looking for an `su` binary on PATH, looking for the Superuser package), and if any of them trips it shows a "Root detected!" message and exits. Pressing the button runs a helper class that decrypts a hardcoded, base64-encoded value with AES using a key that is also hardcoded, and compares the result against what you typed. Because both the ciphertext and the key sit in the decompiled code, you can reproduce the same AES/ECB decryption offline with a short script and read the plaintext it produces. On the dynamic route, a Frida script attached before the checks run can neutralize the exit call and the root-detection branch, and then observe the comparison itself (for example by watching calls to `String.equals`) to see the reference value the app is comparing against, without ever needing to find the key or ciphertext by hand.
+
+On Level 2, `MainActivity` loads a native library and declares a native method. The check has moved out of Java and into `libfoo.so`. After extracting the .so and opening it in Ghidra, you look for the matching JNI function, either directly by its `Java_...` name or, if the app registers natives dynamically, by reading `JNI_OnLoad` to find the `RegisterNatives` table that maps the Java method name to the real function pointer. Reading that function shows it comparing the input byte by byte against a fixed array, which you can decode by hand. On the dynamic route, hooking libc's `strcmp` (or `memcmp`, depending on the build) and printing both arguments on every call achieves the same result without reading any disassembly: typing an arbitrary string and watching the log shows the real value the app is comparing it against.
+
+Level 3 adds two more layers on top of the same underlying check. The anti-Frida layer typically scans for signs of a frida-server process, such as a listening port or a recognizable string in `/proc/self/maps`. The usual way around it is to attach before the app has a chance to run that check (spawning rather than attaching to an already-running process), and to observe or neutralize the specific detection function once you've located it. The tamper-detection layer reads the APK's own signature through the Android package manager and compares it against a hardcoded expected value baked in at build time, which is exactly why a repack-and-resign approach fails here: changing and resigning the APK produces a different signature, which this check catches immediately. Working purely in memory at runtime, the way Frida does, never touches the signature on disk, so it is not caught the same way. Once both layers are out of the way, the underlying verification is read and solved exactly as in Level 2.
+
+As for the reflection questions: repacking fails because it changes the file on disk and therefore its signature, which the tamper check is built to catch, while an attached debugger or instrumentation tool modifies only runtime behavior and leaves the on-disk file, and its signature, untouched. Static reading tends to win when the reference value or algorithm is simple and sits in reachable code, and dynamic observation tends to win once the app pushes the logic into native code, encrypts it, or otherwise makes static reading expensive relative to just watching the comparison happen. The final comparison call is such a reliable point to watch because no matter how well a value is hidden earlier in the program, by the time it's compared against your input, both sides have to exist as plain data in memory for that one instant, which makes the comparison itself the one place obfuscation can't hide the result.
+
+</details>
+
 ## Key takeaways
-UnCrackable (MASTG) is a legal Android practice set, so download it from the official repo. Level 1 has weak root detection plus a secret in Java, and reading statically or hooking is enough. Level 2 has the secret in a native .so, so analyze the .so or hook strcmp/memcmp at runtime. Level 3 adds anti-tampering and anti-Frida, and you have to remove layers from the outside in.
+UnCrackable (MASTG) is a legal Android practice set, so download it from the official OWASP MASTG UnCrackable apps page. Level 1 has weak root detection plus a secret in Java, and reading statically or hooking is enough. Level 2 has the secret in a native .so, so analyze the .so or hook strcmp/memcmp at runtime. Level 3 adds anti-tampering and anti-Frida, and you have to remove layers from the outside in.
 
 Always consider the static route first, since it's often much faster than dynamic. The final comparison is always the best ambush point, whether at the Java or native level.

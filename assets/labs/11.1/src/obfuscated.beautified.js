@@ -1,0 +1,64 @@
+function a0_0x2c73(_0x4ae3eb, _0x7c52ba) {
+    _0x4ae3eb = _0x4ae3eb - 0xc4;
+    var _0x4017e2 = a0_0x4017();
+    var _0x2c7323 = _0x4017e2[_0x4ae3eb];
+    return _0x2c7323;
+}
+var a0_0x954ea = a0_0x2c73;
+(function(_0x3bbb98, _0x3bab1d) {
+    var _0x281e59 = a0_0x2c73,
+        _0x1df53a = _0x3bbb98();
+    while (!![]) {
+        try {
+            var _0xcc9ed6 = parseInt(_0x281e59(0xd1)) / 0x1 + -parseInt(_0x281e59(0xc4)) / 0x2 * (parseInt(_0x281e59(0xd6)) / 0x3) + -parseInt(_0x281e59(0xc8)) / 0x4 + -parseInt(_0x281e59(0xcd)) / 0x5 + parseInt(_0x281e59(0xce)) / 0x6 * (parseInt(_0x281e59(0xcf)) / 0x7) + -parseInt(_0x281e59(0xc7)) / 0x8 * (-parseInt(_0x281e59(0xd0)) / 0x9) + parseInt(_0x281e59(0xd3)) / 0xa;
+            if (_0xcc9ed6 === _0x3bab1d) break;
+            else _0x1df53a['push'](_0x1df53a['shift']());
+        } catch (_0x3c0450) {
+            _0x1df53a['push'](_0x1df53a['shift']());
+        }
+    }
+}(a0_0x4017, 0x6c32f));
+
+function a0_0x4017() {
+    var _0x505121 = ['30pniYTA', '846223NeJIUs', '43020yxgsPJ', '437040nfoKmc', 'XzqDg', '630710vePehv', 'NGjDY', 'log', '318084qpuGiW', '6KcXyGg', '4|2|0|3|1', 'ABCD-PRO-2024', '592ChgSxV', '1343288cppVFW', 'charCodeAt', 'PRO', 'split', 'length', '1805935vHgjAL'];
+    a0_0x4017 = function() {
+        return _0x505121;
+    };
+    return a0_0x4017();
+}
+
+function checkLicense(_0x963ecc) {
+    var _0x47e645 = a0_0x2c73,
+        _0x276140 = {
+            'NGjDY': function(_0x24c298, _0x4e01fb) {
+                return _0x24c298 === _0x4e01fb;
+            },
+            'XzqDg': function(_0x4a6c6b, _0x31e72e) {
+                return _0x4a6c6b < _0x31e72e;
+            }
+        },
+        _0x3ce6eb = _0x47e645(0xc5)[_0x47e645(0xcb)]('|'),
+        _0x29a5da = 0x0;
+    while (!![]) {
+        switch (_0x3ce6eb[_0x29a5da++]) {
+            case '0':
+                var _0x3f6997 = 0x0;
+                continue;
+            case '1':
+                return _0x276140[_0x47e645(0xd4)](_0x3f6997, 0x10a) && _0x276140[_0x47e645(0xd4)](_0xb24b61[0x1], _0x47e645(0xca)) && _0xb24b61[0x2][_0x47e645(0xcc)] === 0x4;
+            case '2':
+                if (_0xb24b61[_0x47e645(0xcc)] !== 0x3) return ![];
+                continue;
+            case '3':
+                for (var _0x32ce62 = 0x0; _0x276140[_0x47e645(0xd2)](_0x32ce62, _0xb24b61[0x0][_0x47e645(0xcc)]); _0x32ce62++) {
+                    _0x3f6997 += _0xb24b61[0x0][_0x47e645(0xc9)](_0x32ce62);
+                }
+                continue;
+            case '4':
+                var _0xb24b61 = _0x963ecc[_0x47e645(0xcb)]('-');
+                continue;
+        }
+        break;
+    }
+}
+console[a0_0x954ea(0xd5)](checkLicense(a0_0x954ea(0xc6)));

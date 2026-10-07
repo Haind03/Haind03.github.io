@@ -1,5 +1,8 @@
 ---
 title: "Lesson 6.4: Smali and apktool, modifying an Android app and repacking it"
+image:
+  path: /assets/img/covers/re-6-4-smali-apktool-modifying-android-app-repacking.webp
+  alt: "Lesson 6.4: Smali and apktool, modifying an Android app and repacking it"
 date: 2022-10-13 22:35:00 +0700
 categories: ["Technique Reverse", "Part 06 · Java, Kotlin and Android"]
 tags: [reverse-engineering, android, java]
@@ -96,7 +99,102 @@ Frida (lesson [6.6](/posts/re-6-6-frida-android-changing-app-behavior-while/)) h
 
 ## Lab
 
-See `labs/6.4/`. You'll take an APK with a check function, use apktool to unpack it into smali, find and patch that function to always return true, rebuild, sign, then verify. The solution is in `solution.md`.
+In this lab you use apktool to unpack an APK into smali, patch a check function so it always passes, rebuild, sign and test. You need `apktool` (from the official site, needs Java), `apksigner` from the Android SDK build-tools or `uber-apk-signer`, `adb` if you want to install onto a real device or emulator, and JADX to read the Java first so the target is easier to locate. For the target, use a public Android crackme made for learning, for example OWASP UnCrackable Level 1 (Lesson 6.9 reuses it), or a debug app you built yourself. Don't use a commercial app.
+
+Open the APK in JADX and find the function that decides "right or wrong", typically named like `verify`, `check` or `isCorrect` and returning a boolean. Write down the class and method names. Then unpack the APK into smali:
+
+```
+apktool d target.apk -o target_out
+```
+
+Open the matching smali file under `target_out/smali*/...` and find that method. Patch it to always return true:
+
+```smali
+const/4 v0, 0x1
+return v0
+```
+
+Make sure the `.registers` or `.locals` declaration still covers the registers you use. Rebuild:
+
+```
+apktool b target_out -o patched.apk
+```
+
+Signing again is mandatory, otherwise the APK will not install:
+
+```
+uber-apk-signer -a patched.apk
+```
+
+or `apksigner sign --ks my.keystore patched.apk`. Then install and test:
+
+```
+adb install -r patched-aligned-debugSigned.apk
+```
+
+Enter anything and the app should report success.
+
+Questions to think about. Why not edit the Java that JADX shows directly? If the app checks its own signature, what problem does re-signing cause and how could you get past it? And compared with hooking that function using Frida, what are the pros and cons of patching smali?
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+This is the full workflow on a hypothetical check function. Your class and method names will differ, but the steps are identical.
+
+First, locate the target with JADX. Open the APK in jadx-gui, use Search (see the shortcuts in the cheatsheet) to look for a message string like "Correct" or "Wrong", and follow the xref back to the function that uses it. Suppose you find:
+
+```java
+// com.example.app.LoginActivity
+public boolean verify(String input) {
+    return input.equals(this.secret);
+}
+```
+
+Note the class `com/example/app/LoginActivity` and the method `verify`. Next, unpack to smali with `apktool d target.apk -o target_out`. The result is `target_out/smali/com/example/app/LoginActivity.smali`, though with multidex it may sit in `smali_classes2/...`, so grep to be sure:
+
+```
+grep -rl "verify" target_out/smali*
+```
+
+Open the file and find the `verify` method. It looks roughly like this:
+
+```smali
+.method public verify(Ljava/lang/String;)Z
+    .registers 3
+
+    iget-object v0, p0, Lcom/example/app/LoginActivity;->secret:Ljava/lang/String;
+    invoke-virtual {p1, v0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+    move-result v0
+    return v0
+.end method
+```
+
+Reading it: load the `secret` field into v0, compare with `input.equals(secret)`, put the result in v0 and return it. To patch it to always return true, replace the body with a return of 1:
+
+```smali
+.method public verify(Ljava/lang/String;)Z
+    .registers 3
+
+    const/4 v0, 0x1
+    return v0
+.end method
+```
+
+Keeping `.registers 3` is safe, since we use fewer than declared. Save the file. A subtler alternative, if you want to keep the logic but flip the outcome, is to insert `const/4 v0, 0x1` right before `return v0` to overwrite the equals result, or, if the caller uses `if-eqz`, change it to `if-nez` to flip the branch. For this lab, forcing true is the tidiest.
+
+Rebuild with `apktool b target_out -o patched.apk`. If it reports a resource error, try `apktool b target_out -o patched.apk --use-aapt2`. An unsigned APK can't be installed. The quickest fix is `uber-apk-signer -a patched.apk`, which produces a file like `patched-aligned-debugSigned.apk`, or you can sign it yourself:
+
+```
+apksigner sign --ks my.keystore --out patched-signed.apk patched.apk
+```
+
+Install with `adb install -r patched-aligned-debugSigned.apk`, open the app and enter any string. `verify` now always returns true and the app reports success.
+
+On the questions: you don't edit the Java because there is no reliable way to recompile Java that was decompiled back into DEX, while smali maps one to one onto DEX, which is why apktool can rebuild it. If the app checks its own signature, re-signing with your key makes the signature differ from the original, so the app detects the modification and refuses to run. To get past that, patch the signature check in smali as well, or use a Frida hook to return the value you want without touching the file (see Lesson 6.6). Patching smali gives a standalone modified build that installs and runs, but costs effort to build and sign and runs into anti-tamper. Frida needs no file changes and is flexible for experiments, but needs the Frida server at runtime.
+
+The example above uses a hypothetical function. On a real APK the commands and the smali structure are the same as above, and only the class and method names differ.
+
+</details>
 
 ## Key takeaways
 Android runs DEX (register-based), not JVM bytecode, and smali is the assembly for DEX. Edit smali, not the decompiled Java, because there's no clean path from Java back to DEX. For registers, `p0` is this (non-static method), `p1...` are parameters, and `v0...` are locals. `move-result` takes the return value of the last call, like rax in x86.

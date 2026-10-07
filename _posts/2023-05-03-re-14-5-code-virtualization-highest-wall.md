@@ -1,5 +1,8 @@
 ---
 title: "Lesson 14.5: Code virtualization, the highest wall"
+image:
+  path: /assets/img/covers/re-14-5-code-virtualization-highest-wall.webp
+  alt: "Lesson 14.5: Code virtualization, the highest wall"
 date: 2023-05-03 23:42:00 +0700
 categories: ["Technique Reverse", "Part 14 · Packers and Obfuscation"]
 tags: [reverse-engineering, packer, obfuscation]
@@ -60,6 +63,45 @@ The general principle: pick the lowest level of abstraction that's enough to rea
 Don't sit reading a virtualized function statically for hours before realizing it's a VM. The early signs are Detect It Easy reporting VMProtect, Themida, WinLicense or Code Virtualizer, and odd section names like `.vmp0`, `.vmp1`, `.themida`, `.winlice`. Others are a function that jumps into another region and disappears into a huge dispatcher loop, lots of `push`/`pop` with accesses to a "context" through fixed registers, and an IDA decompiler that gives up or produces endless meaningless pseudocode.
 
 When you see these signs, switch right away to black-box or dynamic thinking, don't try to read it statically.
+
+## Lab
+
+The goal is to recognize a binary (or a function) that has been virtualized and to observe the dispatcher loop, instead of trying to read the original logic, which no longer exists as x86. You need Detect It Easy, IDA Free or Ghidra, and x64dbg. For a sample, the ideal is a binary you build yourself and then protect with a trial version of VMProtect or Themida on your own machine. If you don't have that, use a public CTF sample labeled VMProtect (many Flare-On challenges over the years have a VM part).
+
+First triage. Open the sample in DIE and note the protector name and any odd sections (`.vmp0`, `.themida` and so on). What is the entropy of the bytecode section? Then look for the VM entry. In x64dbg, set a breakpoint at a suspicious function (for example a license check), run to it, and watch the flow jump into a different region and then disappear into a loop.
+
+Inside that loop, recognize the dispatcher by the fetch, decode, execute pattern: an instruction that reads a byte from a pointer (the VIP), advances the pointer, and then jumps indirectly through a table (`jmp [table + reg*8]`). That is the dispatcher. Look at the table of pointers the dispatcher jumps to and estimate how many handlers there are. Open a few handlers and see whether they are covered in junk or MBA.
+
+Finally choose an attack. Suppose the goal is to get past the license check. Instead of translating the entire VM, find where the function returns its result (right or wrong) and think about how to patch it or read the result. Write two sentences: what black box approach would you try, and why shouldn't you translate the whole VM?
+
+Two questions to think about. Why doesn't solving the VM of this binary help you solve another VMProtect binary? And when are you forced into real devirtualization, where the black box approach won't do?
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+This writeup describes the signs and the standard procedure you will meet on a real VMProtect or Themida sample. The mechanism follows public documentation and common VM structures.
+
+For triage, DIE often reports `VMProtect`, `Themida/WinLicense` or `Code Virtualizer` straight on the protector line. Sections you commonly see are `.vmp0` and `.vmp1` (VMProtect) and `.themida` and `.winlice` (Themida). The section holding the VM bytecode has high entropy because the data has been mixed up, though not necessarily close to 8.0 the way pure compression is. If DIE isn't sure, indirect signs are a poor import table, many executable sections and a size that is unusually large for the functionality.
+
+For the VM entry, set a breakpoint at the suspicious function and run. You see the flow not going linearly but jumping into a `.vmp` section, usually through a chain of `push` instructions that push a "handler key" followed by a `jmp` or `ret` into the VM. That is `vmenter`: it saves the real CPU context into the VM context and starts the dispatcher.
+
+The core is recognized by the fetch, decode, execute pattern:
+
+```asm
+movzx  eax, byte ptr [rsi]   ; rsi plays the VIP, reads the VM opcode
+add    rsi, 1                 ; advance the VIP
+jmp    qword ptr [rbx+rax*8]  ; jump to the handler through the table
+```
+
+The registers playing VIP, VSP and context differ per build, but the shape "read a byte, advance the pointer, jump indirectly through a table, then come back" is invariant. When you see it, you have confirmed it is a VM.
+
+The table the dispatcher jumps to holds pointers to the handlers. VMProtect usually has a few dozen to over a hundred handlers (including duplicate variants to cause noise). Open a few and you see they are short, each doing one primitive thing (push a constant, add, xor, read or write memory), and are usually covered with extra junk, redundant instructions and MBA. Because the handlers are obfuscated, mapping the opcodes takes effort.
+
+As for the attack, the black box approach to try first is this: even a virtualized license check still has to return a right or wrong value to the code that calls it (the calling code is usually not virtualized). Set a breakpoint right after the VM returns, look at the return value and patch it, or patch the `jz` or `jnz` branch on the caller's side. You get past the check without understanding a single VM opcode. You shouldn't translate the whole VM because it takes dozens of hours, the result is only good for this one binary, and it is usually unnecessary for the real goal.
+
+On the questions, the work can't be reused because every build VMProtect generates a different opcode table and different handlers (it is polymorphic), so the "dictionary" you built for binary A is useless for binary B. You are forced into real devirtualization when the goal is to understand the hidden algorithm itself (for example pulling out the key computation formula to write a keygen, or extracting a proprietary encryption algorithm) and not just to get past a right or wrong check. Then the black box isn't enough and you have to rebuild the logic through devirtualization (VTIL, Triton, dedicated lifters) or symbolic execution.
+
+</details>
 
 ## Key takeaways
 Virtualization translates the original code into bytecode for a custom VM, so there's no original x86 left to read. The heart is the fetch, decode, execute dispatcher loop with a handler table and the virtual pointers VIP/VSP. It's hardest because each build has a different VM, handlers are obfuscated, and layers stack up.

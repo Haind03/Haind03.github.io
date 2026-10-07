@@ -1,5 +1,8 @@
 ---
 title: "Lesson 14.2: Unpacking UPX, automatic and manual"
+image:
+  path: /assets/img/covers/re-14-2-unpacking-upx-automatic-manual.webp
+  alt: "Lesson 14.2: Unpacking UPX, automatic and manual"
 date: 2023-04-11 22:33:00 +0700
 categories: ["Technique Reverse", "Part 14 · Packers and Obfuscation"]
 tags: [reverse-engineering, packer, obfuscation]
@@ -104,4 +107,88 @@ Try `upx -d` first, since often it's done right away. If the header was edited (
 For the ESP trick, put a hardware breakpoint on the stack right after `pushad`, and it fires again when `popad` runs, near the tail jump. At the OEP, dump with Scylla and rebuild the IAT (Lesson 14.3). UPX is the intro exercise, and this mindset applies to every packer.
 
 ## Lab
-The folder `labs/14.2/` has a sample program, the pack command, and how to corrupt the header yourself to practice manual unpacking. The full writeup with real numbers is in `solution.md`.
+
+This lab has you take both UPX unpacking routes and understand why `upx -d` fails when the header has been edited. You need `upx` (on Linux `apt install upx-ucl`, or download the official build), `gcc` on Linux or MinGW on Windows, and for the manual part x64dbg or x32dbg with the Scylla plugin on Windows. The target is `hello.c`.
+
+For the automatic route, build it. On Linux use `gcc -O2 -static -o hello hello.c`, and on Windows `x86_64-w64-mingw32-gcc -O2 -o hello.exe hello.c`. Then pack it with `upx --best -o hello.upx hello` and write down the compression ratio UPX prints. Open both files in Detect It Easy and compare the entropy and the import table (see Lesson 14.1). Unpack with `upx -d -o hello.unp hello.upx` and try `./hello.unp UPX_s3cr3t`.
+
+Next, break the header so `upx -d` fails. Copy the packed file and change every `UPX!` magic to junk (the script is in the solution). Run `upx -d` on the broken file and watch the `NotPackedException` error, then confirm the broken file still runs because the stub is intact.
+
+For the manual route on Windows, open the packed file in x32dbg or x64dbg and stop at the entry point, the start of the stub. Step over `pushad` with F8, right-click ESP and choose Follow in Dump, select the first 4 bytes in the Dump and set a hardware access breakpoint on them, then press F9 and stop when `popad` reads that region back. Step to the tail jump (the far `jmp`) and step over it, and you are at the OEP. To finish, open Scylla, set the OEP, then IAT Autosearch, Get Imports, Dump and Fix Dump, as covered in Lesson 14.3.
+
+Three questions to think about. Why does changing the `UPX!` magic make `upx -d` fail while the file still runs? Which property of the `pushad` and `popad` pair does the ESP trick rely on? And why is dumping memory not enough, so that the IAT has to be rebuilt?
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 14.2</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/14.2/src/hello.c" download><i class="fa-solid fa-file-code"></i>src/hello.c</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+This writeup uses real numbers, run on Linux with UPX and gcc (a static ELF binary). On Windows the numbers differ but the mechanism is the same.
+
+For the automatic pack and unpack, build static so the file is big enough for UPX to compress (a file that is too small fails with `NotCompressibleException`):
+
+```
+$ gcc -O2 -static -o hello_s hello.c
+$ stat -c%s hello_s
+900368
+
+$ upx --best -o hello_s.upx hello_s
+   900368 ->    352616   39.16%   linux/amd64   hello_s.upx
+
+$ stat -c%s hello_s.upx
+352616
+```
+
+It compresses to 39.16% of the original size. Unpacking it again:
+
+```
+$ upx -d -o hello_s.unp hello_s.upx
+Unpacked 1 file.
+$ ./hello_s.unp UPX_s3cr3t
+Correct!
+```
+
+In DIE, the original is recognized as an ordinary gcc ELF with moderate entropy. The packed version has clearly higher entropy (compressed data is nearly random) and sections named like `UPX0` and `UPX1`, a clear sign of a packer.
+
+To break the header, UPX marks its blocks with the four-byte magic `UPX!`. Change all of them:
+
+```python
+d = bytearray(open('hello_s.broken', 'rb').read())
+n = 0; i = 0
+while True:
+    j = d.find(b'UPX!', i)
+    if j < 0: break
+    d[j:j+4] = b'XPU?'   # corrupt the magic
+    i = j + 4; n += 1
+open('hello_s.broken', 'wb').write(d)
+print('corrupted', n, 'UPX! markers')   # -> corrupted 4 UPX! markers
+```
+
+The real result:
+
+```
+$ upx -d -o out hello_s.broken
+upx: hello_s.broken: NotPackedException: not packed by UPX
+Unpacked 0 files.
+
+$ ./hello_s.broken UPX_s3cr3t
+Correct!
+```
+
+This is the core point of the lab. `upx -d` relies on the `UPX!` magic to recognize and parse the file structure, so without the magic it refuses. But the decompression stub does not use that magic. It simply runs through the decompression from fixed offsets, so the file still runs and prints "Correct!". The real code is still there, and `upx -d` just won't extract it for you any more, so you have to do it yourself.
+
+The manual unpack with the ESP trick is described for Windows with x64dbg, because that is where the ESP trick is most familiar. The idea is the one from the lesson. Open the packed file and stop at the entry point (the start of the stub, usually showing `pushad`), then press F8 to step over `pushad`, after which ESP has just dropped by 32 (or 64) bytes. Right-click ESP in the Registers panel and choose Follow in Dump, select the first 4 bytes in the Dump, right-click, Breakpoint, Hardware, Access (DWORD), and press F9. The debugger stops when `popad` reads that stack region back, near the end of the stub. Press F8 a few times until you meet a `jmp` to a far address (the tail jump) and step over it. You are at the OEP, where the code is now a normal function prologue or CRT startup and no longer looks like the stub. It works because `pushad` writes 8 registers onto the stack and `popad` reads back exactly that region. A hardware breakpoint watching that stack region fires precisely at `popad`, right before the stub hands control back to the original code.
+
+For the dump and IAT rebuild, at the OEP open Scylla, set the OEP, run IAT Autosearch, Get Imports, Dump, Fix Dump. The details and the reasons are in Lesson 14.3.
+
+On the questions. Changing the magic makes `upx -d` fail but the file still runs because `upx -d` uses the `UPX!` magic to recognize and read the file structure, and without it cannot parse, while the decompression stub runs from the entry point with fixed logic, never looks the magic up, and so still unpacks and runs normally. The ESP trick relies on `pushad` saving all the registers into one stack region and `popad` restoring exactly that region. Reading it back happens exactly once, at the end of the stub, so a hardware breakpoint on that region takes you straight to near the tail jump. And a raw dump isn't enough because at runtime the stub already resolved the imports and wrote the function addresses into the IAT in memory, but the raw dump has no valid Import Directory pointing at them, so when Windows loads the dumped file again the loader doesn't know how to fill in the IAT. Scylla rebuilds the Import Directory from the addresses present in memory so the dumped file can run.
+
+The ESP trick and Scylla steps describe the standard Windows workflow with x64dbg, so run them on a Windows machine. The automatic pack and unpack and the header corruption work on Linux as well.
+
+</details>
+

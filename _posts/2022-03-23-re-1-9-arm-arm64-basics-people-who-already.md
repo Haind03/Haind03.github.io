@@ -1,5 +1,8 @@
 ---
 title: "Lesson 1.9: ARM/ARM64 basics for people who already know x86"
+image:
+  path: /assets/img/covers/re-1-9-arm-arm64-basics-people-who-already.webp
+  alt: "Lesson 1.9: ARM/ARM64 basics for people who already know x86"
 date: 2022-03-23 15:20:00 +0700
 categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
@@ -132,7 +135,119 @@ On older devices and lots of firmware, you'll meet 32-bit ARM (AArch32), where t
 
 ## Lab
 
-See `labs/1.9/`. You'll cross-compile a small C file to ARM64 and compare the assembly with the source yourself, or if you can't install the toolchain, read the given ARM64 snippet and translate it back to C. The solution is in `labs/1.9/solution.md`, do it yourself before opening it.
+The goal is to see the ideas from this lesson in real assembly: parameters arriving in `x0..x7`, the result leaving in `x0`, and the `stp x29, x30` pattern in the prologue of a function that calls another function. The recommended route is to build `arm_demo.c` yourself. On Ubuntu or WSL you need an ARM64 cross-compiler, then you compile statically and disassemble:
+
+```
+sudo apt install gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu
+aarch64-linux-gnu-gcc -O0 -o arm_demo arm_demo.c -static
+aarch64-linux-gnu-objdump -d arm_demo | less
+```
+
+If you also want to run it, install `qemu-user` and start it with `qemu-aarch64 ./arm_demo 12345678`.
+
+Once you have the disassembly, find `add3` and confirm that the three parameters come in through `x0/w0`, `x1/w1` and `x2/w2` and that the final result sits in `w0`. Then find `is_eight`, locate the `cmp` against 8 and the jump after it, and decide whether it is `b.ne` or `cbz`/`cbnz`, and why the compiler picked that one. Next look at `check` and confirm it opens with `stp x29, x30, [sp, ...]` to save lr because it calls `strlen` and `is_eight`, while `add3` and `is_eight` are leaf functions and do not need to. Finally count the `ldr`/`str` instructions and ask yourself why ARM needs them when x86 folds the memory access into the arithmetic instruction.
+
+If you cannot install the toolchain, there is a second route: translate this ARM64 snippet back into C. As a hint, 0x61 is `'a'`, 0x7a is `'z'`, and 0x20 is the distance between upper and lower case in ASCII.
+
+```asm
+0000000000000730 <mystery>:
+  730:  cmp   w0, #0x61
+  734:  b.lt  744 <mystery+0x14>
+  738:  cmp   w0, #0x7a
+  73c:  b.gt  744 <mystery+0x14>
+  740:  sub   w0, w0, #0x20
+  744:  ret
+```
+
+<div class="lab-box">
+<div class="lab-head"><b>LAB 1.9</b>source files</div>
+<div class="lab-files">
+<a class="lab-file" href="/assets/labs/1.9/src/arm_demo.c" download><i class="fa-solid fa-file-code"></i>src/arm_demo.c</a>
+</div>
+</div>
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+Route 1: going through the functions one by one. The exact output changes with the gcc version, but at `-O0` you will see these patterns.
+
+`add3` is a leaf function:
+
+```asm
+<add3>:
+    sub   sp, sp, #0x10        ; reserve stack space for the parameters (-O0 spills them to the stack)
+    str   w0, [sp, #0xc]       ; a (parameter 1, arrives in w0) is saved to the stack
+    str   w1, [sp, #0x8]       ; b (parameter 2, w1)
+    str   w2, [sp, #0x4]       ; c (parameter 3, w2)
+    ldr   w1, [sp, #0xc]
+    ldr   w0, [sp, #0x8]
+    add   w1, w1, w0           ; a + b
+    ldr   w0, [sp, #0x4]
+    add   w0, w1, w0           ; (a+b) + c
+    add   sp, sp, #0x10
+    ret                        ; the result is in w0
+```
+
+The three parameters enter in `w0, w1, w2`, which are just `x0, x1, x2` seen as 32 bits, exactly the `x0..x7` convention. The final result is in `w0`, which is the return value. There is no `stp x29, x30` because this is a leaf function: it calls nothing, so it never has to save `lr`. The many `ldr`/`str` instructions come from `-O0` being lazy, pushing everything to the stack and loading it back. With `-O2` they vanish and the math happens directly in registers.
+
+`is_eight` is also a leaf function:
+
+```asm
+<is_eight>:
+    ...
+    cmp   w0, #0x8
+    b.eq  <branch returning 1>   ; or cmp + b.ne to the branch returning 0
+    mov   w0, #0x0
+    ...
+    mov   w0, #0x1
+    ret
+```
+
+There is a `cmp w0, #8`, matching `n != 8` in the source. The jump is usually `b.ne` (or `b.eq`), not `cbz`, because we compare against 8 and not against 0. `cbz`/`cbnz` can only be fused with a comparison against 0, so you would see `cbnz` mostly if the source said `if (n != 0)`. It is still a leaf, so there is no lr save.
+
+`check` is not a leaf:
+
+```asm
+<check>:
+    stp   x29, x30, [sp, #-0x20]!   ; save fp (x29) and lr (x30), since we are about to bl into other functions
+    mov   x29, sp
+    ...
+    bl    <strlen>                  ; bl overwrites lr, so saving lr beforehand was necessary
+    ...
+    bl    <is_eight>
+    ...
+    ldp   x29, x30, [sp], #0x20     ; restore fp and lr
+    ret
+```
+
+This is direct evidence for the rule in the lesson: any function that calls another (`bl`) gets its `lr` overwritten, so it must save `lr` on the stack in the prologue and restore it in the epilogue. `add3` and `is_eight` have no `stp x29, x30` line at all.
+
+As for `ldr`/`str`, ARM is RISC, so arithmetic instructions only work on registers. To add a value that lives in memory you first `ldr` it into a register, add, and `str` it back if you need to store it. x86 (CISC) lets you write `add eax, [mem]` and do it all in one instruction, which is why x86 code is shorter in instruction count.
+
+Route 2: translating `mystery`.
+
+```asm
+  cmp   w0, #0x61        ; compare w0 with 'a' (0x61)
+  b.lt  ret              ; if w0 < 'a', skip and return it unchanged
+  cmp   w0, #0x7a        ; compare with 'z' (0x7a)
+  b.gt  ret              ; if w0 > 'z', skip
+  sub   w0, w0, #0x20    ; if it is in 'a'..'z', subtract 0x20 -> uppercase
+  ret
+```
+
+In C:
+
+```c
+int mystery(int c) {
+    if (c >= 'a' && c <= 'z')   // cmp 'a' + b.lt, cmp 'z' + b.gt
+        c -= 0x20;              // sub 0x20: lower case to upper case
+    return c;
+}
+```
+
+This is a hand-written `toupper`: if the character is lower case it becomes upper case (the 0x20 difference in ASCII), otherwise it is left alone. You recognize it from three landmarks: 0x61 is `'a'`, 0x7a is `'z'`, and subtracting 0x20 is the upper/lower case flip covered in Lesson 1.1.
+
+</details>
 
 ## Key takeaways
 ARM is RISC: simple fixed-length instructions, arithmetic only on registers, and memory access has to go through `ldr`/`str`. The registers are `x0..x30` (64 bit) and `w0..w30` (low 32 bits), with parameters in `x0..x7` and the return in `x0`.

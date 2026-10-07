@@ -1,5 +1,8 @@
 ---
 title: "Lesson 18.5: Reversing firmware and IoT devices"
+image:
+  path: /assets/img/covers/re-18-5-reversing-firmware-iot-devices.webp
+  alt: "Lesson 18.5: Reversing firmware and IoT devices"
 date: 2023-09-10 11:09:00 +0700
 categories: ["Technique Reverse", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
@@ -87,6 +90,104 @@ Once it boots, you attach `gdbserver` to debug the MIPS/ARM binary dynamically j
 ## A word on legal and safety
 
 Two things not to forget. First, reversing firmware on a device that's your own to learn is fine, but distributing pre-patched firmware, cracking region locks, or attacking other people's devices is a different matter entirely, see [Lesson 0.2](/posts/re-0-2-legal-ethics-part-everyone-wants-skip/) again. Second, firmware downloaded from unfamiliar sources is also untrusted data: extract and analyze in an isolated VM ([Lesson 0.3](/posts/re-0-3-set-up-safe-lab-before-touching/)), don't chroot and run unfamiliar binaries on your main machine.
+
+## Lab
+
+The task is to get a firmware image, extract the root filesystem, pull out credentials and keys, and run a MIPS or ARM binary under QEMU. Safety first: a firmware downloaded from an unknown source is untrusted data, so work inside an isolated VM (see Lesson 0.3), and only reverse the firmware of your own devices.
+
+For setup, install the tools:
+
+```
+sudo apt install binwalk qemu-user-static
+pip install unblob        # or follow the official instructions
+```
+
+Get a real firmware for your own router or camera from the vendor's support page (for example a common router line) and name it `firmware.bin`. If you don't have one, the public sample firmware sets meant for learning (such as DVRF, IoTGoat or Damn Vulnerable Router Firmware) work too.
+
+Start with `binwalk firmware.bin` and work out the CPU architecture, how the kernel is compressed, and what kind of filesystem there is and at which offset it starts. Look at the entropy with `binwalk -E firmware.bin` and see whether the firmware is fully encrypted (a flat entropy line close to 1.0). Extract with `binwalk -eM firmware.bin`, and if the filesystem comes out unclean, try `unblob -e out/ firmware.bin` and compare the results of the two tools. Find the root filesystem (the folder with `/bin`, `/etc` and `/www`) and open `/etc/passwd` and `/etc/shadow`: is there a suspicious account or a weak root hash? Then scan for hard-coded credentials and keys:
+
+```
+grep -riIn "password\|admin\|secret\|telnet\|backdoor" rootfs/etc rootfs/www
+find rootfs -name "*.key" -o -name "*.pem"
+```
+
+Pick a service binary (for example `rootfs/bin/httpd`) and run `file` on it to learn its architecture, then try it with chroot plus QEMU:
+
+```
+sudo cp $(which qemu-mipsel-static) rootfs/usr/bin/
+sudo chroot rootfs /usr/bin/qemu-mipsel-static /bin/httpd --help
+```
+
+Replace `mipsel` with the architecture that `file` reports. Last, open that binary in Ghidra, look for calls to `system` or `popen`, and see whether any place concatenates user input into a shell command (command injection).
+
+Some questions to think about. Why is `file` on the binary a mandatory step before loading Ghidra and before choosing QEMU? When is user-mode QEMU (chroot) not enough, so that you have to move to system mode (FirmAE)? And what do the credentials in `/etc/shadow` say about the device's security posture? Do it yourself before opening the solution.
+
+<details class="lab-solution" markdown="1">
+<summary>Show solution</summary>
+
+Try it yourself before reading.
+
+### An honest note about the environment
+
+I had no specific commercial firmware to extract here, so the `binwalk` figures on a real firmware below are typical output (describing the form you will see). The carving, decompressing and credential grep part uses a simulated blob to illustrate the mechanism. One more caveat: the `binwalk` package in some distros currently has a broken `capstone` dependency (missing `CS_ARCH_ARM64`). When you hit that, install a newer version, use `unblob` instead, or carve by hand as shown below.
+
+### Identification and entropy
+
+Typical `binwalk` output on a MIPS router:
+
+```
+DECIMAL     HEXADECIMAL   DESCRIPTION
+0           0x0           uImage header, OS: Linux, CPU: MIPS
+64          0x40          LZMA compressed data (kernel)
+1310720     0x140000      Squashfs filesystem, little endian, version 4.0
+```
+
+Reading it, the CPU is MIPS, the kernel is LZMA-compressed, and the filesystem is SquashFS 4.0 at offset `0x140000`. `binwalk -E` gives the entropy plot: the kernel and squashfs regions are flat near 1.0 (compressed) and the header region is low. If **everything** is flat near 1.0 including the header, the firmware is encrypted and you have to find the key.
+
+### Extraction
+
+`binwalk -eM firmware.bin` produces `_firmware.bin.extracted/` with the decompressed kernel and the rootfs tree from the squashfs. When binwalk misses, `unblob -e out/ firmware.bin` often comes out cleaner. To illustrate carving by hand (really run on a simulated blob with gzip at offset 64):
+
+```
+$ dd if=firmware_demo.bin of=payload.gz bs=1 skip=64
+$ file payload.gz
+payload.gz: gzip compressed data, max compression
+$ gunzip -c payload.gz | grep -o 'root:[^ ]*\|backdoor'
+root:$1$abc$0123456789abcdef:0:0:root:/root:/bin/sh
+backdoor
+```
+
+This is exactly what binwalk automates: find the signature, cut from the offset, decompress.
+
+### Digging through the rootfs
+
+The classic findings in older router firmware are these. `/etc/passwd` has a line `root:...:0:0` with a weak MD5 crypt hash (`$1$`) that cracks in minutes with `john`. A second UID 0 account with an odd name (`admin`, `support`) is a backdoor. `/etc/` holds the web server's private key and connection strings to the vendor's server. And `/www/cgi-bin/` holds scripts that call `system()` with parameters from the query string. The scan commands are:
+
+```
+grep -riIn "password\|admin\|secret\|telnet\|backdoor" rootfs/etc rootfs/www
+find rootfs -name "*.key" -o -name "*.pem"
+```
+
+### Emulating a binary
+
+```
+$ file rootfs/bin/httpd
+rootfs/bin/httpd: ELF 32-bit LSB executable, MIPS, MIPS32 ... dynamically linked
+$ sudo cp $(which qemu-mipsel-static) rootfs/usr/bin/
+$ sudo chroot rootfs /usr/bin/qemu-mipsel-static /bin/httpd --help
+```
+
+`file` reports MIPS LSB, so use `qemu-mipsel` (little endian). If it says `MSB`, use `qemu-mips`. For an ARM binary, use `qemu-arm-static`. These files were already available in my test environment (`/usr/bin/qemu-mipsel-static`, `/usr/bin/qemu-arm-static`).
+
+### Finding command injection in Ghidra
+
+Open `httpd` in Ghidra, which recognizes MIPS by itself. Look for xrefs to `system`, `popen` and `execve`. The dangerous spot is where the argument of `system` is built from user data (query string, POST body) without filtering. That is the most common vulnerability pattern in IoT routers.
+
+### Answers to the questions
+
+`file` comes before Ghidra and QEMU because you must know the architecture (MIPS vs ARM) and endianness to load the right processor in Ghidra and choose the right `qemu-*-static`. With the wrong choice the decompiler gives garbage and QEMU won't run. System mode is needed when the binary depends on nvram, multiple processes, or a whole service stack (the web UI calling a backend), since user-mode chroot only runs relatively self-contained binaries well, and then you use FirmAE or firmadyne to boot the whole firmware. As for `/etc/shadow`, a weak hash (`$1$` MD5 crypt), a default password shared across the whole product line, or a hidden UID 0 account are all signs of a device with a poor security posture and quite possibly a backdoor.
+
+</details>
 
 ## Key takeaways
 You get firmware by downloading from the vendor, capturing an update, dumping UART/JTAG, or reading the flash chip directly. `binwalk` scans and extracts, entropy tells you if it's compressed/encrypted, and `unblob` helps when binwalk misses. The goal is the root filesystem, so dig through `/etc/passwd`, `/etc`, `/www`, and the binaries in `/bin` and `/sbin`. `file` tells you the architecture (MIPS/ARM) so you load Ghidra correctly and pick the right QEMU. For emulation, QEMU user-mode (chroot + qemu-*-static) runs one binary, while system-mode (FirmAE/firmadyne) boots the whole firmware. Only touch your own devices, and extract firmware in an isolated VM.
