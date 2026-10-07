@@ -1,18 +1,18 @@
 ---
-title: "Lesson 1.3: x86/x64 Assembly (1), registers and the instructions you see every day"
+title: "Lesson 1.3: x86/x64 Assembly (1), registers and common instructions"
 image:
   path: /assets/img/covers/re-1-3-x86-x64-assembly-1-registers-instructions.webp
-  alt: "Lesson 1.3: x86/x64 Assembly (1), registers and the instructions you see every day"
+  alt: "Lesson 1.3: x86/x64 Assembly (1), registers and common instructions"
 date: 2022-02-22 09:00:00 +0700
 categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
-A lot of people are scared of assembly because they think they have to memorize hundreds of instructions. The truth is much nicer: 95% of the time you're reversing, you only run into about twenty instructions over and over. Learn that group well and you can read most code. This lesson is that group.
+Many people are scared of assembly because they think they have to memorize hundreds of instructions. You don't. Most of the time you only run into about twenty of them over and over. Learn those and you can read most code. This lesson covers them.
 
-## Registers, where the CPU keeps its stuff
+## Registers
 
-The CPU doesn't compute directly on RAM. It copies data into super fast memory cells inside itself called registers, works on it there, then writes it back out. Understanding registers is understanding half of assembly.
+The CPU doesn't compute directly on RAM. It copies data into small, very fast memory cells inside itself called registers, works on it there, then writes it back. So understanding registers is half of assembly.
 
 On x64 there are 16 general purpose registers, each 64 bits:
 
@@ -21,7 +21,7 @@ rax rbx rcx rdx rsi rdi rbp rsp
 r8  r9  r10 r11 r12 r13 r14 r15
 ```
 
-Something that often confuses beginners is that the same register has several names depending on the size you want to use. Take rax as an example:
+One thing that confuses beginners: the same register has several names depending on the size you use. Take rax as an example:
 
 ```
 rax  = 64 bit (the whole thing)
@@ -30,9 +30,9 @@ ax   = low 16 bits
 al   = lowest 8 bits
 ```
 
-So when you see `eax` and `rax` in the same function, they're one register, you're just looking at a different number of bits. Same for `rbx/ebx/bx/bl`, `rcx/ecx/cx/cl`, and so on. For r8 to r15 it's `r8/r8d/r8w/r8b`.
+So if you see `eax` and `rax` in the same function, it's one register, just a different number of bits. Same for `rbx/ebx/bx/bl`, `rcx/ecx/cx/cl`, and so on. For r8 to r15 it's `r8/r8d/r8w/r8b`.
 
-A few registers have conventional roles you need to remember because they make reading code much faster:
+A few registers have conventional roles. Remember them, reading code gets a lot faster:
 
 | Register | Usual role |
 |---|---|
@@ -43,15 +43,15 @@ A few registers have conventional roles you need to remember because they make r
 | `rcx rdx r8 r9` | First 4 function parameters on Windows x64 |
 | `rdi rsi rdx rcx r8 r9` | First 6 parameters on Linux/macOS x64 |
 
-The details of parameter passing are left to lesson [1.4](/posts/re-1-4-x86-x64-assembly-2-stack-frames/). Here you only need to know: for the return value look at rax, for parameters look at the registers above.
+Parameter passing is covered in lesson [1.4](/posts/re-1-4-x86-x64-assembly-2-stack-frames/). For now just know that the return value is in rax and the parameters are in the registers above.
 
-There's also the flags register (RFLAGS). You don't read it directly but through the jump instructions. A few important flags: ZF (zero flag, set when the result is 0), SF (sign flag, negative), CF (carry), OF (overflow).
+There's also the flags register (RFLAGS). You don't read it directly, you see it through the jump instructions. The important flags are ZF (zero flag, set when the result is 0), SF (sign flag, negative), CF (carry) and OF (overflow).
 
 ## Syntax: Intel vs AT&T
 
-There are two ways to write assembly, and you can tell them apart at a glance. Intel (IDA, x64dbg, Windows) writes `mov eax, 5` to mean eax = 5, with the destination first. AT&T (GDB default, Linux) writes `mov $5, %eax`, with `%` before registers, `$` before numbers, and the destination last.
+There are two ways to write assembly and you can tell them apart quickly. Intel (IDA, x64dbg, Windows) writes `mov eax, 5` to mean eax = 5, destination first. AT&T (GDB default, Linux) writes `mov $5, %eax`, with `%` before registers, `$` before numbers, and the destination last.
 
-This series uses Intel because it's close to the Windows tools we use a lot. In GDB you type `set disassembly-flavor intel` to switch to Intel and save yourself a headache.
+This series uses Intel because it's close to the Windows tools we use a lot. In GDB, type `set disassembly-flavor intel` to switch and save yourself a headache.
 
 ## The instructions you must know
 
@@ -64,15 +64,15 @@ mov eax, [rbx]      ; eax = the value at address rbx (square brackets = memory a
 mov [rbx], eax      ; write eax to address rbx
 ```
 
-The square brackets `[...]` are the key: with brackets it's a memory access at that address, without brackets it's working with the value itself. Mixing these two up means misreading the whole function.
+The square brackets `[...]` matter. With brackets it's a memory access at that address, without brackets it's the value itself. If you mix these up you'll misread the whole function.
 
-`lea` (load effective address) often confuses beginners:
+`lea` (load effective address) also confuses beginners:
 
 ```asm
 lea rax, [rbx+rcx*4+8]   ; rax = rbx + rcx*4 + 8, does NOT access memory
 ```
 
-`lea` computes an address and puts it in a register, but doesn't read memory there. Compilers also abuse `lea` for math (multiply, add) because it's compact. When you see `lea`, don't rush to think "address", often it's just arithmetic.
+`lea` computes an address and puts it in a register, but it doesn't read memory there. Compilers also use `lea` for plain math (multiply, add) because it's compact. So when you see `lea`, don't assume it's an address, often it's just arithmetic.
 
 ### add, sub, inc, dec: arithmetic
 
@@ -94,11 +94,11 @@ shl eax, 2      ; shift left 2 = multiply by 4
 shr eax, 1      ; shift right 1 = divide by 2
 ```
 
-Remember that `xor eax, eax` means "set to 0", you'll see it constantly at the start of functions. If you don't recognize it you'll think something is being encrypted.
+`xor eax, eax` just means "set to 0". You'll see it at the start of functions all the time. If you don't recognize it, you might think something is being encrypted.
 
 ### cmp, test, and the jumps: this is if/else
 
-This is the most important group for reading logic. The CPU has no "if" instruction. It does two steps. First it compares and sets flags. `cmp a, b` tries computing a minus b, only to set the flags (the result is not stored), and if a == b then ZF is set. `test a, b` tries ANDing a with b and sets the flags, and `test eax, eax` is the way to check "is eax equal to 0". Second, it does a conditional jump based on the flags:
+This group matters most for reading logic. The CPU has no "if" instruction. It does two steps. First it compares and sets flags. `cmp a, b` computes a minus b only to set the flags (the result is not stored), so if a == b then ZF is set. `test a, b` ANDs a with b and sets the flags, and `test eax, eax` is how you check "is eax equal to 0". Second, it does a conditional jump based on the flags:
 
 ```asm
 cmp eax, 10
@@ -109,7 +109,7 @@ jl  somewhere      ; jump if eax < 10 (signed)
 ja  / jb           ; above / below (unsigned)
 ```
 
-The formula to know by heart is that a `cmp`/`test` pair plus the `j*` right after it is one `if` statement in the source. Wherever you find this pair, you've found a logic branch. In a crackme, the `cmp` before it prints "Wrong password" is usually the very place where it compares the serial.
+Remember this: a `cmp`/`test` pair plus the `j*` right after it is one `if` statement in the source. Wherever you find the pair, you've found a branch. In a crackme, the `cmp` right before "Wrong password" gets printed is usually where the serial is compared.
 
 `jmp` (unconditional) always jumps, like `goto`.
 
@@ -122,9 +122,9 @@ ret             ; return to the caller
 
 `call` pushes the return address onto the stack and then jumps to the function. `ret` pops that address and goes back. After `call`, the return value is in rax.
 
-### nop: does nothing, but very useful
+### nop: does nothing
 
-`nop` (no operation) does nothing at all. Sounds useless but it's the number one patching tool: when you want to "delete" an annoying check without shifting other addresses, you overwrite it with `nop`. Lesson [17.1](/posts/re-17-1-patching-binaries-changing-one-byte-change/) uses it a lot.
+`nop` (no operation) does nothing at all. It sounds useless, but it's the first tool for patching. When you want to "delete" an annoying check without shifting other addresses, you overwrite it with `nop`. Lesson [17.1](/posts/re-17-1-patching-binaries-changing-one-byte-change/) uses it a lot.
 
 ## Reading a real snippet
 
@@ -157,7 +157,7 @@ int check_password() {
 }
 ```
 
-This function only checks whether the input string is exactly 8 characters. You just read assembly and translated it to logic, and that is reversing. No magic, just getting used to the `cmp`/`jne` pair and knowing that rax is the return value.
+This function only checks whether the input string is exactly 8 characters. You just read assembly and turned it into logic. That's reversing. Get used to the `cmp`/`jne` pair and remember that rax is the return value, and that's most of it.
 
 ## Key takeaways
-One register has several names by size: `rax`(64)/`eax`(32)/`ax`(16)/`al`(8) are the same thing. rax is the return value and rsp is the top of the stack, with the first parameters in `rcx rdx r8 r9` on Windows and `rdi rsi rdx rcx r8 r9` on Linux. `[...]` means memory access while no brackets means the value itself, so don't mix them up, and `lea` computes an address or does arithmetic without reading memory. `xor eax, eax` means set to 0. A `cmp`/`test` pair plus `j*` is one `if` statement, and that is the key to reading logic.
+One register has several names by size: `rax`(64)/`eax`(32)/`ax`(16)/`al`(8) are the same thing. rax is the return value and rsp is the top of the stack, with the first parameters in `rcx rdx r8 r9` on Windows and `rdi rsi rdx rcx r8 r9` on Linux. `[...]` means memory access while no brackets means the value itself, and `lea` computes an address or does arithmetic without reading memory. `xor eax, eax` means set to 0. A `cmp`/`test` pair plus `j*` is one `if` statement, which is how you read logic.

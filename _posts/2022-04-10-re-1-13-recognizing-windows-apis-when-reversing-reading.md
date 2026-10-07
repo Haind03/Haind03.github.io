@@ -1,22 +1,22 @@
 ---
-title: "Lesson 1.13: Recognizing Windows APIs when reversing, reading parameters like a sentence"
+title: "Lesson 1.13: Recognizing Windows APIs when reversing"
 image:
   path: /assets/img/covers/re-1-13-recognizing-windows-apis-when-reversing-reading.webp
-  alt: "Lesson 1.13: Recognizing Windows APIs when reversing, reading parameters like a sentence"
+  alt: "Lesson 1.13: Recognizing Windows APIs when reversing"
 date: 2022-04-10 15:08:00 +0700
 categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
-In lesson [1.10](/posts/re-1-10-windows-internals-1-win32-api-dlls/) you saw that the API list is a map of what a program intends to do. In lesson [1.4](/posts/re-1-4-x86-x64-assembly-2-stack-frames/) you learned where parameters get passed. This lesson puts those two together into a daily skill: look at any API call in a disassembly or debugger, and read off which file it's opening, which registry key it's writing, where it's connecting.
+In lesson [1.10](/posts/re-1-10-windows-internals-1-win32-api-dlls/) you saw that the API list shows what a program intends to do. In lesson [1.4](/posts/re-1-4-x86-x64-assembly-2-stack-frames/) you learned where parameters get passed. This lesson combines the two: look at any API call in a disassembly or debugger and read off which file it's opening, which registry key it's writing, where it's connecting.
 
-This isn't theory anymore. It's something you'll do a few hundred times every reversing session.
+You'll do this a few hundred times every reversing session.
 
 ## Step one: know the function's prototype
 
-To read the parameters you need to know how many the function takes and what each one is. The standard source is MSDN (Microsoft Learn). Type the function name in and you get the prototype right away.
+To read the parameters you need to know how many the function takes and what each one is. The standard source is MSDN (Microsoft Learn). Type the function name in and you get the prototype.
 
-Take `CreateFileW` as an example, here's its prototype:
+Take `CreateFileW` as an example:
 
 ```c
 HANDLE CreateFileW(
@@ -30,7 +30,7 @@ HANDLE CreateFileW(
 );
 ```
 
-Seven parameters, returns a HANDLE. Remember the `W` suffix means the Unicode version (`A` is ANSI), covered in lesson 1.10. The first parameter, the file name, is the one we care about most.
+Seven parameters, returns a HANDLE. The `W` suffix means the Unicode version (`A` is ANSI), covered in lesson 1.10. The first parameter, the file name, is the one we care about most.
 
 ## Step two: where the parameters live
 
@@ -48,7 +48,7 @@ Mapped onto `CreateFileW`:
 | 6 dwFlagsAndAttributes | `[rsp+0x28]` | attributes |
 | 7 hTemplateFile | `[rsp+0x30]` | usually 0 |
 
-Now look at real asm right before the call:
+Now real asm right before the call:
 
 ```asm
 lea     r9, [rsp+0x40]        ; param 4 = lpSecurityAttributes (a pointer here, rare)
@@ -62,47 +62,47 @@ call    CreateFileW
 mov     [rbp+hFile], rax     ; save the returned HANDLE
 ```
 
-Read backwards from the call: `rcx` points to the string `aConfigIni`, so the program is opening the file `config.ini`. `edx` = 0x80000000 is `GENERIC_READ`, so it's opened for reading. `[rsp+0x20]` = 3 is `OPEN_EXISTING`, open an existing file rather than creating a new one. `rax` is then stashed away, that's the file handle.
+Read backwards from the call. `rcx` points to the string `aConfigIni`, so the program is opening the file `config.ini`. `edx` = 0x80000000 is `GENERIC_READ`, so it's opened for reading. `[rsp+0x20]` = 3 is `OPEN_EXISTING`, open an existing file rather than creating a new one. `rax` is then stored, that's the file handle.
 
-Just by reading the parameters, you know: "the program opens config.ini for reading". No need to run it, no need to guess. That's the whole game.
+From the parameters alone you know the program opens config.ini for reading. No need to run it or guess.
 
-A small convention that saves time: values like `0x80000000`, `3`, `0x80` are constants predefined in the Windows SDK (GENERIC_READ, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL). Look them up on MSDN or let IDA/Ghidra translate them (next step).
+Values like `0x80000000`, `3`, `0x80` are constants predefined in the Windows SDK (GENERIC_READ, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL). Look them up on MSDN or let IDA/Ghidra translate them (next step).
 
 ## Step three: let the tools do the boring part
 
-Luckily you don't have to look things up by hand every time. When IDA or Ghidra recognizes a call as a known API, they annotate it for you.
+You don't have to look things up by hand every time. When IDA or Ghidra recognizes a call as a known API, they annotate it for you.
 
-In IDA, enable the right type library and it shows parameter names right next to the setup instructions, like `; lpFileName`. The decompiler (F5) even merges the call into a single readable line of C: `CreateFileW(L"config.ini", 0x80000000, 1, 0, 3, 0x80, 0)`. In Ghidra, the decompiler applies the prototype from its own data, and you may have to "apply" the right signature if it doesn't recognize the function. Once applied correctly, the pseudocode shows clear parameter names. Both can translate constants into constant names (enums) if you assign the right type to that parameter, and seeing `3` turn into `OPEN_EXISTING` makes reading much faster.
+In IDA, enable the right type library and it shows parameter names next to the setup instructions, like `; lpFileName`. The decompiler (F5) even merges the call into a single line of C: `CreateFileW(L"config.ini", 0x80000000, 1, 0, 3, 0x80, 0)`. In Ghidra, the decompiler applies the prototype from its own data, and you may have to apply the right signature if it doesn't recognize the function. Once that's done, the pseudocode shows clear parameter names. Both can turn constants into names (enums) if you assign the right type to that parameter, and seeing `3` become `OPEN_EXISTING` makes reading much faster.
 
-That doesn't mean skipping the manual reading. When you hit a rare API or the tool doesn't recognize it, you still have to look up MSDN yourself and count registers. The manual skill is what saves you when the tool goes quiet.
+Don't skip the manual reading, though. When you hit a rare API or the tool doesn't recognize it, you still have to look up MSDN yourself and count registers.
 
-## Catching APIs at runtime, when static isn't enough
+## Catching APIs at runtime
 
 Sometimes a parameter only has its real value at runtime (a file name built from several strings, a registry key decrypted dynamically). Then switch to dynamic.
 
-In x64dbg, set a breakpoint right at the API function by name:
+In x64dbg, set a breakpoint on the API function by name:
 
 ```
 bp CreateFileW
 ```
 
-When the program calls it, the debugger stops at the start of the function, before it runs. At this point the parameters are sitting intact in `rcx`, `rdx`, `r8`, `r9` and on the stack. In the register window, right-click `rcx` and choose "Follow in Dump" and you see the file name string right away. This is the fastest way to find out "what is it opening right now".
+When the program calls it, the debugger stops at the start of the function, before it runs. The parameters are still intact in `rcx`, `rdx`, `r8`, `r9` and on the stack. In the register window, right-click `rcx` and choose "Follow in Dump" and you see the file name string. It's the fastest way to find out what the program is opening right now.
 
-A more specialized tool is API Monitor: it catches every API call with the parameters already decoded, laid out in a table, so you don't have to read registers manually. Very handy when you want the big picture of what a program touches. The tradeoff is that it's noisy, so you need to know how to filter.
+API Monitor is more specialized: it catches every API call with the parameters already decoded in a table, so you don't have to read registers manually. It's handy when you want the big picture of what a program touches. It's noisy though, so you need to know how to filter.
 
 ## When the API is hidden
 
-Software authors (malware especially) don't always call APIs openly through the IAT. There are two tricks you'll see often.
+Software authors (malware especially) don't always call APIs openly through the IAT. Two tricks come up often.
 
-The first is calling indirectly via GetProcAddress. Instead of importing `CreateFileW` directly, the program calls `LoadLibrary("kernel32.dll")` then `GetProcAddress(h, "CreateFileW")` to get the function address at runtime, then `call`s through the pointer. In the static IAT you won't see `CreateFileW` anywhere. The tell is `GetProcAddress` getting called many times, or a function pointer getting called with `call rax` and no clear name. To deal with it, set a breakpoint at `GetProcAddress` to see which function it's asking for, or run to the indirect call and see where `rax` points.
+The first is calling indirectly via GetProcAddress. Instead of importing `CreateFileW` directly, the program calls `LoadLibrary("kernel32.dll")` then `GetProcAddress(h, "CreateFileW")` to get the function address at runtime, then `call`s through the pointer. In the static IAT you won't see `CreateFileW` anywhere. Look for `GetProcAddress` being called many times, or a function pointer called with `call rax` and no clear name. Set a breakpoint at `GetProcAddress` to see which function it's asking for, or run to the indirect call and see where `rax` points.
 
-The second is API hashing, which is more sophisticated. The program doesn't contain the API name string at all, only a hash of the name, then walks the DLL's export table itself, hashing each name and comparing. The point is to hide the API name completely from strings and the IAT. When you see a loop walking the module list in the PEB (see lesson [1.11](/posts/re-1-11-windows-internals-2-peb-teb-handles/)) and then computing a hash, you're looking at this trick. Tools like Apiscout or hash-resolving scripts (compare the hash against a prebuilt table of API names) help recover the real names. This topic comes back in detail in the malware part.
+The second is API hashing, which is more sophisticated. The program doesn't contain the API name string at all, only a hash of the name, and it walks the DLL's export table itself, hashing each name and comparing. This hides the API name from strings and the IAT. A loop walking the module list in the PEB (see lesson [1.11](/posts/re-1-11-windows-internals-2-peb-teb-handles/)) followed by a hash computation is this trick. Tools like Apiscout or hash-resolving scripts (compare the hash against a prebuilt table of API names) help recover the real names. This comes back in detail in the malware part.
 
-You don't need to master the API-hiding tricks right now. Just notice "wait, this program touches files but the IAT has no file function", that's the signal it's hiding something, and you know to switch to dynamic.
+You don't need to master these tricks right now. If you think "this program touches files but the IAT has no file function", it's probably hiding something, and you should switch to dynamic.
 
 ## Lab
 
-The target is a small C program, `apitarget.c`, that deliberately does two clear things: it opens (or creates) a file with `CreateFileW`, writes a line and closes it, then it opens a registry key with `RegOpenKeyExW`. The goal is to practice reading the parameters of an API call in the right Win64 register order, both by hand in x64dbg and with an automatic tool (API Monitor), and then compare the two. The program is harmless and fine to run on a normal machine.
+The target is a small C program, `apitarget.c`, that does two clear things: it opens (or creates) a file with `CreateFileW`, writes a line and closes it, then it opens a registry key with `RegOpenKeyExW`. The goal is to practice reading the parameters of an API call in the right Win64 register order, both by hand in x64dbg and with an automatic tool (API Monitor), and then compare the two. The program is harmless and fine to run on a normal machine.
 
 Build a 64-bit version so it matches the Win64 register order from the lesson. With MSVC, from a Developer Command Prompt:
 
@@ -160,9 +160,9 @@ LSTATUS RegOpenKeyExW(HKEY hKey, LPCWSTR lpSubKey, DWORD ulOptions, REGSAM samDe
 | `r9` | samDesired | `0x20019` | KEY_READ |
 | `[rsp+0x20]` | phkResult | pointer to an output variable | where the resulting HKEY is stored |
 
-`rax` after the call is an LSTATUS return code, where `0` (ERROR_SUCCESS) means success. A handy trick for recognizing the root HKEY by value: `0x80000000` is HKEY_CLASSES_ROOT, `0x80000001` is HKEY_CURRENT_USER, `0x80000002` is HKEY_LOCAL_MACHINE and `0x80000003` is HKEY_USERS. So the program opens the key `HKEY_CURRENT_USER\Software\Microsoft\Windows` with read access.
+`rax` after the call is an LSTATUS return code, where `0` (ERROR_SUCCESS) means success. To recognize the root HKEY by value: `0x80000000` is HKEY_CLASSES_ROOT, `0x80000001` is HKEY_CURRENT_USER, `0x80000002` is HKEY_LOCAL_MACHINE and `0x80000003` is HKEY_USERS. So the program opens the key `HKEY_CURRENT_USER\Software\Microsoft\Windows` with read access.
 
-API Monitor already shows the function name, each parameter decoded (including constant names like CREATE_ALWAYS and KEY_READ) and the return value, so its output should match the tables above. The only difference is that you do not have to look up the constants yourself. The value of reading by hand is that when you meet an unfamiliar API, or cannot use API Monitor (for example against a sample that detects the tool), you can still read it.
+API Monitor already shows the function name, each parameter decoded (including constant names like CREATE_ALWAYS and KEY_READ) and the return value, so its output should match the tables above. The only difference is that you do not have to look up the constants yourself. Reading by hand still matters when you meet an unfamiliar API, or cannot use API Monitor (for example against a sample that detects the tool).
 
 Three things to take away. The Win64 order is fixed: `rcx rdx r8 r9`, then `[rsp+0x20]` and upward. Values like `0x80000001`, `0x40000000` and `0x20019` are Windows constants that you look up on MSDN or learn to recognize over time. And reading the parameters right at the start of the function, just after the breakpoint, is the most accurate, because no instruction has had the chance to overwrite the registers yet.
 

@@ -1,20 +1,20 @@
 ---
-title: "Lesson 14.1: How packers work, and how to spot one"
+title: "Lesson 14.1: How packers work and how to spot one"
 image:
   path: /assets/img/covers/re-14-1-packers-work-spot-one.webp
-  alt: "Lesson 14.1: How packers work, and how to spot one"
+  alt: "Lesson 14.1: How packers work and how to spot one"
 date: 2023-04-04 11:06:00 +0700
 categories: ["Technique Reverse", "Part 14 · Packers and Obfuscation"]
 tags: [reverse-engineering, packer, obfuscation]
 render_with_liquid: false
 ---
-There's a moment everyone doing RE runs into: you open a file in IDA, eager to find the logic, and you see just a few dozen instructions and then a jump into a region of pure junk bytes. No meaningful strings, an empty import table, nothing makes sense no matter how long you read. It's not that you're bad at this. The file is packed, and what you're looking at is only the shell.
+Everyone doing RE hits this sooner or later. You open a file in IDA, ready to find the logic, and you see a few dozen instructions and then a jump into a region of junk bytes. No meaningful strings, an empty import table, nothing makes sense no matter how long you read. You're not bad at this. The file is packed, and you're only looking at the shell.
 
-This lesson helps you recognize that in a minute, instead of wasting a whole evening reading code that never runs.
+This lesson helps you recognize that in a minute, instead of wasting an evening reading code that never runs.
 
 ## What a packer does to a program
 
-The idea of a packer is very simple. Take the program's original code, compress or encrypt it into a block of data, then attach a small piece of code called the stub (or unpacking stub). At runtime the stub works first: it decompresses/decrypts that data block back into the original code in memory, then jumps there so the program runs normally.
+A packer is simple in idea. Take the program's original code, compress or encrypt it into a block of data, then attach a small piece of code called the stub (or unpacking stub). At runtime the stub runs first: it decompresses/decrypts that data block back into the original code in memory, then jumps there so the program runs normally.
 
 ```
 File on disk:                 At runtime (in memory):
@@ -27,27 +27,27 @@ File on disk:                 At runtime (in memory):
 +------------------+          +------------------+
 ```
 
-The most important consequence for RE: **the real code only exists in readable form in memory at runtime, not on disk.** So static analysis (opening the file in IDA/Ghidra) only sees the stub and a pile of junk. To see the real code, you have to let it unpack itself and then grab it, which is what lessons [14.2](/posts/re-14-2-unpacking-upx-automatic-manual/) and [14.3](/posts/re-14-3-dumping-process-rebuilding-iat-scylla/) are about.
+The important consequence for RE is that the real code only exists in readable form in memory at runtime, not on disk. Static analysis (opening the file in IDA/Ghidra) only sees the stub and a pile of junk. To see the real code, you have to let it unpack itself and then grab it, which is what lessons [14.2](/posts/re-14-2-unpacking-upx-automatic-manual/) and [14.3](/posts/re-14-3-dumping-process-rebuilding-iat-scylla/) cover.
 
-## OEP: the destination of every unpack
+## OEP
 
-When the stub finishes the decompression part, it has to jump back to the program's real starting point. That point is called the OEP (Original Entry Point), which is the entry point the program would have if it weren't packed.
+When the stub finishes decompressing, it has to jump back to the program's real starting point. That point is called the OEP (Original Entry Point), the entry point the program would have if it weren't packed.
 
-The whole craft of manual unpacking boils down to one sentence: find the OEP. Reaching the OEP means the stub has finished unpacking, the original code is fully in memory, and this is the golden moment to dump. Remember this OEP, it keeps coming back throughout Part 14.
+Manual unpacking mostly comes down to finding the OEP. Reaching the OEP means the stub has finished unpacking and the original code is fully in memory, so that's when you dump. You'll see the OEP again and again in Part 14.
 
 ## Spotting a packed file in a minute
 
-You don't need to unpack to know whether a file is packed. A few obvious signs:
+You don't need to unpack to know whether a file is packed. A few signs:
 
 ### 1. High entropy
 
-Entropy measures how "random" data is, on a scale from 0 to 8. Normal code and text have entropy around 5 to 6.5. Compressed or encrypted data looks almost random, so entropy shoots up close to 8.0. If you see a section with entropy 7.8 or higher, it's almost certainly compressed or encrypted.
+Entropy measures how random data is, on a scale from 0 to 8. Normal code and text have entropy around 5 to 6.5. Compressed or encrypted data looks almost random, so entropy goes up close to 8.0. A section with entropy 7.8 or higher is almost certainly compressed or encrypted.
 
 Detect It Easy (DIE) has an Entropy button that plots entropy per region of the file. A clean file has a moderately bumpy entropy line. A packed file has a flat block right up near 8.
 
 ### 2. A suspiciously poor import table
 
-A normal Windows program calls dozens to hundreds of API functions, so its import table (IAT) is long. A packed file is different: the stub doesn't need many APIs yet, it just needs a few functions to rebuild the imports itself after unpacking, typically `LoadLibraryA` and `GetProcAddress`. So when you see a fully featured exe whose import table has only a handful of functions, including `LoadLibrary` and `GetProcAddress`, that's a very strong sign of a packer.
+A normal Windows program calls dozens to hundreds of API functions, so its import table (IAT) is long. A packed file is different: the stub doesn't need many APIs, just a few to rebuild the imports itself after unpacking, typically `LoadLibraryA` and `GetProcAddress`. A fully featured exe whose import table has only a handful of functions, including `LoadLibrary` and `GetProcAddress`, is a strong sign of a packer.
 
 ### 3. Strange section names
 
@@ -62,7 +62,7 @@ Packers often name sections after their own brand. A few familiar ones:
 | `.petite` | Petite |
 | `.enigma1` | Enigma Protector |
 
-The standard compiler sections are `.text`, `.data`, `.rdata`, `.rsrc`. A strange name should make you suspicious right away.
+The standard compiler sections are `.text`, `.data`, `.rdata`, `.rsrc`. A strange name should make you suspicious.
 
 ### 4. A section that's both writable and executable
 
@@ -70,19 +70,19 @@ Normal code lives in a read-and-execute only section (R-X). But the stub has to 
 
 ### 5. Very few meaningful strings
 
-The strings in the original code (messages, URLs, paths) are compressed/encrypted and so vanish from the `strings` output. What remains is usually just the stub's strings. A big exe where `strings` comes out nearly empty is suspicious.
+The strings in the original code (messages, URLs, paths) are compressed/encrypted and vanish from the `strings` output. What remains is usually just the stub's strings. A big exe where `strings` comes out nearly empty is suspicious.
 
-## Packer vs protector: same family, different purpose
+## Packer vs protector
 
-These two words get mixed up a lot, so let's separate them clearly. A packer is mainly for compression (reducing size) or hiding code at a basic level. UPX is the classic example, originally made to compress exes, and a plain packer is relatively easy to remove. A protector aims at anti-analysis. Besides compressing/encrypting, it adds anti-debug, anti-VM, anti-dump, integrity checks, and the heaviest of all, virtualization (turning code into the bytecode of a private VM). Themida, VMProtect and Enigma belong to this group, and removing a protector is many levels harder.
+These two words get mixed up a lot. A packer is mainly for compression (reducing size) or hiding code at a basic level. UPX is the classic example, originally made to compress exes, and a plain packer is relatively easy to remove. A protector aims at anti-analysis. Besides compressing/encrypting, it adds anti-debug, anti-VM, anti-dump, integrity checks, and the heaviest of all, virtualization (turning code into the bytecode of a private VM). Themida, VMProtect and Enigma belong to this group, and removing a protector is many levels harder.
 
-The line isn't absolute (many modern packers come with some protection), but knowing which kind you're up against decides whether you spend an hour or a week. Anti-debug and anti-VM are the content of Part 15, virtualization is [Lesson 14.5](/technique-reverse/).
+The line isn't absolute (many modern packers come with some protection), but knowing which kind you're up against decides whether you spend an hour or a week. Anti-debug and anti-VM are in Part 15, virtualization is [Lesson 14.5](/technique-reverse/).
 
 ## Packer triage workflow
 
-Turn this into a habit, whenever you suspect a file is packed. Drag the file into DIE and see whether it recognizes a packer (DIE has signatures for most common packers). Click the Entropy button and look for a flat block near 8.0. Check the import table, whether it's abnormally poor with only `LoadLibrary`/`GetProcAddress`, and check the section names for strange ones. Then conclude: packed or not, and if so what kind, packer or protector.
+Make this a habit whenever you suspect a file is packed. Drag the file into DIE and see whether it recognizes a packer (DIE has signatures for most common packers). Click the Entropy button and look for a flat block near 8.0. Check the import table, whether it's abnormally poor with only `LoadLibrary`/`GetProcAddress`, and check the section names for strange ones. Then conclude: packed or not, and if so what kind, packer or protector.
 
-After this step you know what you're holding and can choose a tactic: for UPX, a single `upx -d` (lesson 14.2), for a custom packer, unpack manually to find the OEP, for a strong protector, weigh whether it's worth it.
+After this you know what you're holding and can choose a tactic: for UPX, a single `upx -d` (lesson 14.2), for a custom packer, unpack manually to find the OEP, for a strong protector, decide whether it's worth it.
 
 ## Lab
 
@@ -110,21 +110,21 @@ Entropy of the clean file. The entropy curve is jagged, with the `.text` code se
 
 A packed file in DIE. With UPX, DIE recognizes it immediately and reports "UPX" with a version. With other packers, DIE shows the matching name if it has a signature. With a custom or self-encrypting packer, DIE might only report high entropy without naming anything, which is itself a clue (see the second question).
 
-Entropy of the packed file. A flat, horizontal block appears right near the 8.0 level, which is exactly the region holding the compressed original code. This is the clearest difference from the clean file. The stub (the code that decompresses things) has lower entropy because it's real, runnable code.
+Entropy of the packed file. A flat, horizontal block appears right near the 8.0 level, which is the region holding the compressed original code. This is the clearest difference from the clean file. The stub (the code that decompresses things) has lower entropy because it's real, runnable code.
 
 Comparing sections. The clean file has `.text`, `.rdata`, `.data`, `.rsrc` and so on with standard permissions (`.text` is R-X, `.data` is RW-). The UPX file has sections renamed to `UPX0` and `UPX1` (with `.rsrc` kept). `UPX0` usually has zero size on disk, since it only reserves memory space to hold the decompressed code, while `UPX1` holds the compressed data and the stub. The section that ends up holding the decompressed code is both WRITE and EXECUTE, which is a red flag.
 
 The import table. The clean file has dozens to hundreds of functions from several DLLs (kernel32, user32, gdi32 and so on). The packed file has very few, often just kernel32 with `LoadLibraryA` and `GetProcAddress` plus a handful more. The reason is explained below.
 
-On why compressed data has high entropy: compression removes redundancy and repetition, leaving a byte sequence that's distributed almost uniformly and randomly. Entropy measures exactly that randomness, so it climbs close to the maximum of 8 bits per byte. Ordinary code has a lot of repeated patterns (commonly used opcodes, strings, alignment zero bytes), which keeps its entropy lower.
+On why compressed data has high entropy: compression removes redundancy and repetition, leaving a byte sequence that's distributed almost uniformly and randomly. Entropy measures that randomness, so it climbs close to the maximum of 8 bits per byte. Ordinary code has a lot of repeated patterns (commonly used opcodes, strings, alignment zero bytes), which keeps its entropy lower.
 
 On high entropy with no packer name: it's likely a custom packer, a self-written one, or a separate encryption layer that DIE has no signature for. This comes up often with malware. In that case there's no `upx -d` shortcut, you have to unpack manually: run it in a debugger, let the stub decompress itself, find the OEP and dump it (Lessons 14.2 and 14.3).
 
-On the poor import table: the original code calls plenty of APIs, but those calls live inside the part that's compressed. While the file is still on disk, they don't exist yet as ordinary imports. The stub only needs `LoadLibraryA` and `GetProcAddress` so that once decompression finishes, it can load the needed DLLs itself and look up function addresses, rebuilding the IAT in memory. That's exactly why rebuilding the IAT is its own separate step during unpacking (Lesson 14.3).
+On the poor import table: the original code calls plenty of APIs, but those calls live inside the part that's compressed. While the file is still on disk, they don't exist yet as ordinary imports. The stub only needs `LoadLibraryA` and `GetProcAddress` so that once decompression finishes, it can load the needed DLLs itself and look up function addresses, rebuilding the IAT in memory. That's why rebuilding the IAT is its own separate step during unpacking (Lesson 14.3).
 
 </details>
 
 ## Key takeaways
-A packer compresses/encrypts the original code and adds a stub that unpacks it at runtime, so the real code only appears in memory at runtime, not on disk. The OEP (Original Entry Point) is the destination of every unpack: once you're there, the original code is ready in memory.
+A packer compresses/encrypts the original code and adds a stub that unpacks it at runtime, so the real code only appears in memory at runtime, not on disk. The OEP (Original Entry Point) is where every unpack ends: once you're there, the original code is ready in memory.
 
-There are five signs of packing: entropy near 8.0, poor imports (LoadLibrary/GetProcAddress), strange section names, a section that's both writable and executable, and few strings. Use Detect It Easy for quick identification (signatures + entropy). Packers compress while protectors resist analysis (adding anti-debug/anti-VM/virtualization), so know which one you have to pick your effort.
+There are five signs of packing: entropy near 8.0, poor imports (LoadLibrary/GetProcAddress), strange section names, a section that's both writable and executable, and few strings. Use Detect It Easy for quick identification (signatures + entropy). Packers compress while protectors resist analysis (adding anti-debug/anti-VM/virtualization), so work out which one you have before deciding how much effort to spend.

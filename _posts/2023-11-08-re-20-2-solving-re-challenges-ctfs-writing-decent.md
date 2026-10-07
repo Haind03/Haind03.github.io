@@ -1,42 +1,42 @@
 ---
-title: "Lesson 20.2: Solving RE challenges in CTFs and writing a decent write-up"
+title: "Lesson 20.2: Solving RE challenges in CTFs and writing a write-up"
 image:
   path: /assets/img/covers/re-20-2-solving-re-challenges-ctfs-writing-decent.webp
-  alt: "Lesson 20.2: Solving RE challenges in CTFs and writing a decent write-up"
+  alt: "Lesson 20.2: Solving RE challenges in CTFs and writing a write-up"
 date: 2023-11-08 22:17:00 +0700
 categories: ["Technique Reverse", "Part 20 · Real-World Practice"]
 tags: [reverse-engineering, ctf]
 render_with_liquid: false
 ---
-After nineteen parts, you have enough tools and techniques. One thing is missing: the rhythm of solving for real under pressure, when nobody tells you in advance what language the challenge uses, which packer, or where the flag is hidden. CTFs are where you train that, and a write-up is how you turn one solve into knowledge you keep. This lesson covers both.
+After nineteen parts you have enough tools and techniques. What's missing is the rhythm of solving under pressure, when nobody tells you in advance what language the challenge uses, which packer, or where the flag is hidden. CTFs are where you practice that, and a write-up is how you keep what you learned from a solve. This lesson covers both.
 
 ## Where to play
 
-Not every arena suits beginners. Sorted by difficulty and purpose, picoCTF is education-oriented, and its Reverse Engineering category is great for starting. Challenges have hints and there's a big write-up community. This is the first place to go after finishing Part 2.
+Not every arena suits beginners. picoCTF is education-oriented, and its Reverse Engineering category is a good place to start. Challenges have hints and there's a big write-up community. I'd go there first after finishing Part 2.
 
 crackmes.one isn't a tournament-style CTF, but it's an endless practice pool, filterable by difficulty 1 to 6 and by language. Each language part in this series should come with a few crackmes.one challenges in that same language.
 
-Flare-On is Mandiant's annual RE contest, running a few weeks each year and getting harder with each challenge, covering all platforms (Windows native, .NET, Go, shellcode, obfuscation, sometimes even mobile and hardware). The golden point is that after each season Mandiant publishes the official solutions. Redoing old seasons with the official write-ups is a complete and free RE curriculum.
+Flare-On is Mandiant's annual RE contest, running a few weeks each year and getting harder with each challenge, covering all platforms (Windows native, .NET, Go, shellcode, obfuscation, sometimes even mobile and hardware). After each season Mandiant publishes the official solutions, so redoing old seasons with the official write-ups is a complete and free RE curriculum.
 
 HackTheBox, Root-Me, and the CTFs on CTFtime are harder, for when you're solid.
 
-Honest advice: don't jump into a live CTF before you're used to it. Do old Flare-On seasons first, with answers to compare against, you learn much faster than sitting stuck alone on a live challenge.
+Don't jump into a live CTF before you're used to it. Do old Flare-On seasons first, with answers to compare against. You learn much faster than sitting stuck alone on a live challenge.
 
 ## Methodology when opening a rev challenge
 
-Every rev challenge is, at heart, asking one question: "what input makes the program accept". The workflow below applies to almost every challenge, and it's the [reverse workflow](/posts/re-0-4-reverse-engineering-workflow-not-get-lost/) from Lesson 0.4 squeezed down for the contest setting.
+Every rev challenge asks one question: what input makes the program accept. The workflow below applies to almost every challenge, and it's the [reverse workflow](/posts/re-0-4-reverse-engineering-workflow-not-get-lost/) from Lesson 0.4 shortened for contests.
 
-First, read the prompt and list the files. Sounds obvious but many people skip it. Does the prompt say "enter the correct flag", "find the password", or "decrypt the file"? Is there an attached file other than the binary (an encrypted file, a network capture)? The flag format is usually given (`flag{...}`, `CTF{...}`), so know it and you'll recognize it when you're close.
+First, read the prompt and list the files. It sounds obvious but many people skip it. Does the prompt say "enter the correct flag", "find the password", or "decrypt the file"? Is there an attached file other than the binary (an encrypted file, a network capture)? The flag format is usually given (`flag{...}`, `CTF{...}`), so know it and you'll recognize it when you're close.
 
-Second, triage. Drag it into Detect It Easy: file type, language, packed or not, 32 or 64-bit. Run `strings`. This step decides which way you go, and it's where the whole language stretch of the series pays off. See `.NET` and open dnSpy ([Part 5](/technique-reverse/)), see Go and get GoReSym ready ([Part 8](/technique-reverse/)), see `.pyc` and use pycdc ([Part 7](/technique-reverse/)), see high entropy and unpack first ([Part 14](/technique-reverse/)).
+Second, triage. Drag it into Detect It Easy: file type, language, packed or not, 32 or 64-bit. Run `strings`. This step decides which way you go, and it's where the language parts of the series pay off. See `.NET` and open dnSpy ([Part 5](/technique-reverse/)), see Go and get GoReSym ready ([Part 8](/technique-reverse/)), see `.pyc` and use pycdc ([Part 7](/technique-reverse/)), see high entropy and unpack first ([Part 14](/technique-reverse/)).
 
-Third, find the win condition. Go backward from the "Correct" or "Wrong" string to the comparison function, or from the function that prints the flag. This is the string-first technique from [Lesson 0.4](/posts/re-0-4-reverse-engineering-workflow-not-get-lost/), effective enough that it solves most easy challenges on its own.
+Third, find the win condition. Go backward from the "Correct" or "Wrong" string to the comparison function, or from the function that prints the flag. This is the string-first technique from [Lesson 0.4](/posts/re-0-4-reverse-engineering-workflow-not-get-lost/), and it solves most easy challenges on its own.
 
-Fourth, pick the technique by the shape of the challenge. If the check logic can be read straight out, read it statically and then invert it by hand or with Python ([Lesson 16.4](/posts/re-16-4-rewriting-algorithm-python-letting-z3-solve/)). With many constraints on the input bytes, throw it at Z3 or angr ([Lesson 18.3](/posts/re-18-3-symbolic-execution-making-computer-solve-crackme/)). For a complicated transform function that can be isolated, emulate it with Unicorn ([Lesson 18.2](/posts/re-18-2-emulation-running-piece-code-without-whole/)) instead of understanding it. If anti-debug blocks the way, redirect per [Part 15](/technique-reverse/), or emulate to avoid a real debugger. And when you're totally stuck, run it dynamically and set a breakpoint at the final comparison, since often the correct flag shows up naked in a register.
+Fourth, pick the technique by the shape of the challenge. If the check logic can be read directly, read it statically and then invert it by hand or with Python ([Lesson 16.4](/posts/re-16-4-rewriting-algorithm-python-letting-z3-solve/)). With many constraints on the input bytes, throw it at Z3 or angr ([Lesson 18.3](/posts/re-18-3-symbolic-execution-making-computer-solve-crackme/)). For a complicated transform function that can be isolated, emulate it with Unicorn ([Lesson 18.2](/posts/re-18-2-emulation-running-piece-code-without-whole/)) instead of understanding it. If anti-debug blocks the way, redirect per [Part 15](/technique-reverse/), or emulate to avoid a real debugger. And when you're totally stuck, run it dynamically and set a breakpoint at the final comparison, since often the correct flag shows up in plain view in a register.
 
-Fifth, know when to drop a direction. Stuck 30 minutes on one approach, switch approaches, don't keep punching. The fast solver isn't the smarter one but the one who abandons the wrong direction sooner.
+Fifth, know when to drop a direction. If you're stuck 30 minutes on one approach, switch. The fast solver isn't smarter, he just abandons the wrong direction sooner.
 
-## Writing a write-up, the part that turns a solve into knowledge
+## Writing a write-up
 
 Solving and then forgetting is a waste. A write-up is how you pin it down, and a good one also helps others learn. A decent write-up starts with the challenge and environment: challenge name, files, hashes, and tools used, so the reader can reproduce it. Then comes the triage, meaning what you recognized at the first step and why you chose that direction.
 
@@ -44,11 +44,11 @@ Next is the process, including the mistakes. This is the most valuable part and 
 
 A write-up that only says "opened IDA, saw the flag, done" is useless. A write-up that says "I thought it was AES because I saw a 256-byte table, turns out it was RC4 because the table is initialized 0..255 and then permuted, which I recognized thanks to Lesson 16.2" teaches other people.
 
-## The reality of the road
+## What to expect
 
-Flare-On challenge number 1 each season is usually solved in ten minutes. Challenges 10 and 11 can eat a whole week of a strong person. That's normal. The goal isn't to solve everything right away but to learn one more technique from each challenge. This year you're stuck on challenge 7, next year you get through it in one sitting, that's measurable progress.
+Flare-On challenge number 1 each season is usually solved in ten minutes. Challenges 10 and 11 can take a strong person a whole week. That's normal. The goal isn't to solve everything right away but to learn one more technique from each challenge. This year you're stuck on challenge 7, next year you get through it in one sitting, and that's measurable progress.
 
-And don't hesitate to read other people's write-ups after you've struggled enough on your own. Seeing how a strong person approached the same challenge you just solved painfully is one of the fastest ways to learn in this trade.
+Read other people's write-ups after you've struggled enough on your own. Seeing how a strong person approached the same challenge you just solved painfully is one of the fastest ways to learn.
 
 ## Lab
 
@@ -56,22 +56,22 @@ The goal is to practice the rhythm of working a real reverse engineering challen
 
 Choose a reasonable reverse engineering challenge, starting from the easiest one you haven't done. Apply the process from Lesson 20.2: read the prompt, triage with DIE, identify the language and platform, go from the win/lose strings, and pick a technique. Solve until you get the flag, and write down every direction you tried, including the failed ones. Then write a write-up following the template in the solution below (the "write-up template" part). Only after you've solved it yourself, open the official solution (if there is one) and compare approaches.
 
-Some questions to reflect on. Did the triage step help you rule out wrong directions early? Which direction did you try that failed, and what sign should have told you sooner? If you meet this kind of challenge again, what will you do differently? And a few hints. If you're stuck on static reading, switch to running it dynamically and set a breakpoint at the final comparison. If there are many constraints on the input, think of Z3 or angr before solving by hand. And always check the flag you found by entering it back into the program.
+Some questions to think about. Did the triage step help you rule out wrong directions early? Which direction did you try that failed, and what sign should have told you sooner? If you meet this kind of challenge again, what will you do differently? And a few hints. If you're stuck on static reading, switch to running it dynamically and set a breakpoint at the final comparison. If there are many constraints on the input, think of Z3 or angr before solving by hand. And always check the flag you found by entering it back into the program.
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>
 
-This is not an answer to one specific challenge (the one you pick will be different). It is a sample write-up so you can see the structure and voice it should have. The content is based on a self-made crackme called `checkme` for illustration. Do your own challenge first, and only then read this sample to compare how it is presented.
+This is not an answer to one specific challenge (the one you pick will be different). It's a sample write-up so you can see the structure and voice. The content is based on a self-made crackme called `checkme` for illustration. Do your own challenge first, and only then read this sample to compare how it's presented.
 
 ## Write-up: checkme (a hypothetical crackme, level 2)
 
 The file is `checkme` (ELF 64-bit, Linux). The tools are Detect It Easy, Ghidra and Python 3. The prompt says: "Enter the right key to get the flag. Format: `flag{...}`".
 
-For triage, I dragged it into DIE: ELF x86-64, compiler GCC, not packed, normal entropy. `strings` shows two notable strings, `Correct! Here is your flag:` and `Wrong key.`. There is no plaintext key, so this isn't a straight string comparison. The triage conclusion is a native C binary with no protection, with the check logic in the code, so static reading is needed.
+For triage, I dragged it into DIE: ELF x86-64, compiler GCC, not packed, normal entropy. `strings` shows two notable strings, `Correct! Here is your flag:` and `Wrong key.`. There's no plaintext key, so this isn't a straight string comparison. The triage conclusion is a native C binary with no protection, with the check logic in the code, so static reading is needed.
 
 My first direction failed. I grepped for the string `Correct`, followed the xref to `main`, and saw it call `check_key(input)` and then branch. I assumed reading `check_key` would be all it took. Opening it, I found a loop that transforms each character and compares it with a constant array, but I misread the operation as XOR, so I tried decoding with XOR and got garbage. That cost about twenty minutes.
 
-The moment of realization came when I reread the assembly of the loop carefully instead of trusting the pseudocode. The real operation is `(c + i) ^ 0x3C`, not a plain XOR. The sign that should have told me sooner was an instruction in the decompiler that adds the index `i`, which I skipped over because I only skimmed.
+The turning point was rereading the assembly of the loop carefully instead of trusting the pseudocode. The real operation is `(c + i) ^ 0x3C`, not a plain XOR. The sign that should have told me sooner was an instruction in the decompiler that adds the index `i`, which I skipped over because I only skimmed.
 
 For the solution, the expected constant array is in `.rodata`, 12 bytes. Since the transformation is reversible, I inverted it: `c = ((expected[i]) ^ 0x3C) - i`.
 
@@ -83,7 +83,7 @@ print(key)   # R3v_Master12
 
 It gives the key `R3v_Master12`, and entering it into `checkme` makes the program print `Correct! Here is your flag: flag{...}`. Confirmed.
 
-Three lessons came out of it. Don't blindly trust pseudocode in the arithmetic part, and drop down to assembly when the decode result is garbage. An index-adding instruction `i` inside a loop is a sign of a position-dependent transformation, not a plain XOR. And always enter the key you found back into the program to confirm it, rather than trusting only your script.
+Three lessons came out of it. Don't blindly trust pseudocode in the arithmetic part, and drop down to assembly when the decode result is garbage. An instruction adding the index `i` inside a loop is a sign of a position-dependent transformation, not a plain XOR. And always enter the key you found back into the program to confirm it, rather than trusting only your script.
 
 ## A write-up template to reuse
 
@@ -108,6 +108,6 @@ One or two sentences: what you would do differently next time with this kind of 
 </details>
 
 ## Key takeaways
-Every rev challenge asks the same question: which input gets accepted. Always triage first to know which language/technique direction to use, since this is where the whole series converges. Going from the win/lose string back to the check function is the fastest way into a challenge.
+Every rev challenge asks the same question: which input gets accepted. Always triage first to know which language/technique direction to use, since this is where the whole series comes together. Going from the win/lose string back to the check function is the fastest way into a challenge.
 
-Pick the technique by the shape of the challenge: reading by hand, Z3/angr, emulation, or debugging. If you're stuck on one direction, switch, don't keep punching. A write-up must record the mistakes too, since that's the part that teaches the most.
+Pick the technique by the shape of the challenge: reading by hand, Z3/angr, emulation, or debugging. If you're stuck on one direction, switch. A write-up must record the mistakes too, since that's the part that teaches the most.

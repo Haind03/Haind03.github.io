@@ -8,13 +8,13 @@ categories: ["Technique Reverse", "Part 14 · Packers and Obfuscation"]
 tags: [reverse-engineering, packer, obfuscation]
 render_with_liquid: false
 ---
-UPX is the packer you'll meet the most, and also the best place to learn the manual unpacking workflow because it's simple, open source, and has no anti-debug. Understanding UPX is understanding the skeleton of every packer: a small piece of code (the stub) decompresses the real code into memory and then jumps to the original entry point. This lesson goes from the laziest way (one command) to what you have to do by hand when the packer fights back.
+UPX is the packer you'll meet most, and a good place to learn manual unpacking because it's simple, open source, and has no anti-debug. The skeleton of every packer is the same: a small piece of code (the stub) decompresses the real code into memory and then jumps to the original entry point. This lesson goes from the laziest way (one command) to what you do by hand when the packer fights back.
 
-## What a packer does, said briefly again
+## What a packer does
 
-A packed file has two parts: compressed data (your original code, compressed so it can't be read) and a decompression stub placed at the entry point. When it runs, the stub expands the compressed part into memory, rebuilds the import table, then jumps to the OEP (Original Entry Point, the real entry point of the original program). From the OEP onward it's the original program running.
+A packed file has two parts: compressed data (your original code, compressed so it can't be read) and a decompression stub placed at the entry point. When it runs, the stub expands the compressed part into memory, rebuilds the import table, then jumps to the OEP (Original Entry Point, the real entry point of the original program). From the OEP onward the original program runs.
 
-The goal of unpacking: catch the exact moment the stub has just finished expanding and is about to jump to the OEP, then snapshot (dump) the memory at that moment. That dump is the original code.
+To unpack, you catch the moment the stub has just finished expanding and is about to jump to the OEP, then dump the memory at that moment. That dump is the original code.
 
 ## The lazy way: upx -d
 
@@ -24,7 +24,7 @@ If the file was packed with standard UPX and nobody touched it, all you need is:
 upx -d -o output.exe packed.exe
 ```
 
-UPX recognizes its own format and expands it back. This is the best case, and also the reason UPX alone isn't a serious protection: anyone can remove it in a second.
+UPX recognizes its own format and expands it back. This is the best case, and it's why UPX alone isn't real protection: anyone can remove it in a second.
 
 A real session on Linux so you can see the numbers:
 
@@ -38,11 +38,11 @@ $ ./hello_s.unp UPX_s3cr3t
 Correct!
 ```
 
-Compressed to 39% of the size, and the unpacked version runs exactly like the original. Done.
+Compressed to 39% of the size, and the unpacked version runs like the original.
 
 ## When upx -d refuses
 
-The problem is that whoever packs the file knows about `upx -d`. The most common countermeasure: edit a few bytes in the header so UPX no longer recognizes its own file. UPX marks its blocks with a four-byte magic `UPX!`. Just change these markers and `upx -d` gives up, but the stub still runs fine because it doesn't rely on that magic to decompress.
+Whoever packs the file knows about `upx -d`. The most common countermeasure is editing a few bytes in the header so UPX no longer recognizes its own file. UPX marks its blocks with a four-byte magic `UPX!`. Change these markers and `upx -d` gives up, but the stub still runs fine because it doesn't rely on that magic to decompress.
 
 Same session as above, after changing all four `UPX!` markers to junk:
 
@@ -54,11 +54,11 @@ $ ./hello_s.broken UPX_s3cr3t
 Correct!
 ```
 
-UPX says "not packed by UPX", but the file still runs and prints "Correct!". This is the moment you have to unpack it yourself. The good news: even though the header was edited, the decompression mechanism is unchanged, so the manual technique still works.
+UPX says "not packed by UPX", but the file still runs and prints "Correct!". Now you have to unpack it yourself. Even though the header was edited, the decompression mechanism is unchanged, so the manual technique still works.
 
-## Anatomy of the UPX stub
+## The UPX stub
 
-The UPX stub on Windows starts with a very characteristic move: it saves all the registers, does the decompression, then restores the registers before jumping to the OEP.
+The UPX stub on Windows starts by saving all the registers, does the decompression, then restores the registers before jumping to the OEP.
 
 ```asm
 pushad                    ; save all registers on the stack
@@ -69,42 +69,42 @@ popad                     ; restore all registers
 jmp  <OEP>                ; tail jump: jump to the original entry point
 ```
 
-There are two golden details here. `pushad` pushes 8 registers onto the stack at once, so right after `pushad` the stack pointer (ESP) points to the block it just saved. And at the end of the stub is `popad` and then a far `jmp`, called the tail jump, which goes straight to the OEP. These two details give us two ways to find the OEP.
+Two details matter. `pushad` pushes 8 registers onto the stack at once, so right after `pushad` the stack pointer (ESP) points to the block it just saved. And at the end of the stub is `popad` and then a far `jmp`, called the tail jump, which goes straight to the OEP. These two give us two ways to find the OEP.
 
-## Method 1: the ESP trick (stack restore)
+## Method 1: the ESP trick
 
-This is the classic technique, fast and almost always effective against UPX.
+This is the classic technique, fast and almost always works on UPX.
 
-The idea: `pushad` writes 8 registers onto the stack, and `popad` will read back exactly that region. If you set a hardware breakpoint watching reads of the stack region `pushad` just wrote, that breakpoint fires exactly when `popad` runs, which is right before the tail jump to the OEP.
+`pushad` writes 8 registers onto the stack, and `popad` will read back exactly that region. If you set a hardware breakpoint watching reads of the stack region `pushad` just wrote, it fires when `popad` runs, which is right before the tail jump to the OEP.
 
 In x64dbg (x32dbg for 32-bit), open the file in the debugger and it stops at the entry point, the start of the stub. Step over the first `pushad` instruction (F8 once). Look at the ESP register, which just decreased after the pushad, then right-click ESP and choose "Follow in Dump". In the Dump window, select the first 4 bytes, right-click, Breakpoint, Hardware, Access. Press F9 (Run), and the debugger will stop when `popad` reads that region back.
 
 Now you're right before the tail jump. Step a few instructions (F8) until you see a `jmp` to a far address, completely different from the stub region. That's the tail jump. Step over it and you're at the OEP.
 
-When you reach the OEP, the code looks "clean": a normal function prologue (or for a real program the CRT startup, see [Lesson 3.1](/posts/re-3-1-hello-world-under-microscope-finding-real/)), no longer like a compression stub.
+At the OEP the code looks clean: a normal function prologue (or for a real program the CRT startup, see [Lesson 3.1](/posts/re-3-1-hello-world-under-microscope-finding-real/)), no longer like a compression stub.
 
 ## Method 2: find the tail jump directly
 
-If you have a trained eye, you can scroll to the end of the stub and look for the `popad` + far `jmp` pair. Set a breakpoint at that tail jump, run to it, then step over. This is quick but requires knowing what the stub looks like. The ESP trick is safer for beginners.
+If you have a trained eye, you can scroll to the end of the stub and look for the `popad` + far `jmp` pair. Set a breakpoint at that tail jump, run to it, then step over. This is quick but you need to know what the stub looks like. The ESP trick is safer for beginners.
 
 ## Method 3: breakpoint on the original section
 
-Another approach: the section that holds the original code is empty at the start (because the code is in compressed form). Set an "execute" memory breakpoint on that section. When the stub finishes decompressing and the CPU starts running code in the original section, the breakpoint fires, and you're close to the OEP. Useful when a complicated stub makes the ESP trick hard.
+Another approach: the section that holds the original code is empty at the start (because the code is still compressed). Set an "execute" memory breakpoint on that section. When the stub finishes decompressing and the CPU starts running code in the original section, the breakpoint fires, and you're close to the OEP. This helps when a complicated stub makes the ESP trick hard.
 
-## At the OEP, now dump
+## At the OEP, dump
 
-Reaching the OEP is only half the job. The decompressed code is in memory, but you need to save it as a runnable file. That's the job of Scylla (usually shipped with x64dbg as a plugin). Open Scylla, pick the process you're debugging, and put the OEP you just found in the OEP field. Click "IAT Autosearch" then "Get Imports", and Scylla probes and rebuilds the import table (because the stub resolved the imports in memory, but a raw dump doesn't have the right import table yet). Then "Dump" saves the memory to a file, and "Fix Dump" patches the import table into the file you just dumped.
+Reaching the OEP is only half the job. The decompressed code is in memory, but you need to save it as a runnable file. That's Scylla's job (usually shipped with x64dbg as a plugin). Open Scylla, pick the process you're debugging, and put the OEP you just found in the OEP field. Click "IAT Autosearch" then "Get Imports", and Scylla rebuilds the import table (the stub resolved the imports in memory, but a raw dump doesn't have the right import table yet). Then "Dump" saves the memory to a file, and "Fix Dump" patches the import table into the file you just dumped.
 
 The details of rebuilding the IAT, why it's needed, and the pitfalls are in [Lesson 14.3](/posts/re-14-3-dumping-process-rebuilding-iat-scylla/). Without rebuilding the IAT, the dumped file opens in IDA for static reading but usually won't run.
 
 ## When UPX is no longer UPX
 
-Careful: many packers and malware use UPX as an outer layer and wrap their own protection on top, or modify the stub so heavily that the standard pushad/popad is gone. Then the ESP trick may miss. The general principle still holds (run the stub, find the OEP, dump), but how you find the OEP has to be flexible. UPX is just the intro exercise for an unpacking mindset that applies to every packer.
+Many packers and malware use UPX as an outer layer and add their own protection on top, or modify the stub so heavily that the standard pushad/popad is gone. Then the ESP trick may miss. The principle still holds (run the stub, find the OEP, dump), but how you find the OEP has to be flexible. UPX is the intro exercise for an unpacking approach that applies to every packer.
 
 ## Key takeaways
 Try `upx -d` first, since often it's done right away. If the header was edited (the `UPX!` magic changed), `upx -d` reports NotPackedException but the file still runs, so you have to unpack manually. The UPX stub has `pushad` at the start and `popad` + tail jump at the end, and those are the two landmarks for finding the OEP.
 
-For the ESP trick, put a hardware breakpoint on the stack right after `pushad`, and it fires again when `popad` runs, near the tail jump. At the OEP, dump with Scylla and rebuild the IAT (Lesson 14.3). UPX is the intro exercise, and this mindset applies to every packer.
+For the ESP trick, put a hardware breakpoint on the stack right after `pushad`, and it fires again when `popad` runs, near the tail jump. At the OEP, dump with Scylla and rebuild the IAT (Lesson 14.3). UPX is the intro exercise, and the same approach applies to every packer.
 
 ## Lab
 
@@ -180,13 +180,13 @@ $ ./hello_s.broken UPX_s3cr3t
 Correct!
 ```
 
-This is the core point of the lab. `upx -d` relies on the `UPX!` magic to recognize and parse the file structure, so without the magic it refuses. But the decompression stub does not use that magic. It simply runs through the decompression from fixed offsets, so the file still runs and prints "Correct!". The real code is still there, and `upx -d` just won't extract it for you any more, so you have to do it yourself.
+This is the main point of the lab. `upx -d` relies on the `UPX!` magic to recognize and parse the file structure, so without the magic it refuses. But the decompression stub does not use that magic. It runs through the decompression from fixed offsets, so the file still runs and prints "Correct!". The real code is still there, and `upx -d` just won't extract it for you any more, so you have to do it yourself.
 
-The manual unpack with the ESP trick is described for Windows with x64dbg, because that is where the ESP trick is most familiar. The idea is the one from the lesson. Open the packed file and stop at the entry point (the start of the stub, usually showing `pushad`), then press F8 to step over `pushad`, after which ESP has just dropped by 32 (or 64) bytes. Right-click ESP in the Registers panel and choose Follow in Dump, select the first 4 bytes in the Dump, right-click, Breakpoint, Hardware, Access (DWORD), and press F9. The debugger stops when `popad` reads that stack region back, near the end of the stub. Press F8 a few times until you meet a `jmp` to a far address (the tail jump) and step over it. You are at the OEP, where the code is now a normal function prologue or CRT startup and no longer looks like the stub. It works because `pushad` writes 8 registers onto the stack and `popad` reads back exactly that region. A hardware breakpoint watching that stack region fires precisely at `popad`, right before the stub hands control back to the original code.
+The manual unpack with the ESP trick is described for Windows with x64dbg, because that is where the ESP trick is most familiar. The steps are the ones from the lesson. Open the packed file and stop at the entry point (the start of the stub, usually showing `pushad`), then press F8 to step over `pushad`, after which ESP has just dropped by 32 (or 64) bytes. Right-click ESP in the Registers panel and choose Follow in Dump, select the first 4 bytes in the Dump, right-click, Breakpoint, Hardware, Access (DWORD), and press F9. The debugger stops when `popad` reads that stack region back, near the end of the stub. Press F8 a few times until you meet a `jmp` to a far address (the tail jump) and step over it. You are at the OEP, where the code is now a normal function prologue or CRT startup and no longer looks like the stub. It works because `pushad` writes 8 registers onto the stack and `popad` reads back exactly that region. A hardware breakpoint watching that stack region fires precisely at `popad`, right before the stub hands control back to the original code.
 
 For the dump and IAT rebuild, at the OEP open Scylla, set the OEP, run IAT Autosearch, Get Imports, Dump, Fix Dump. The details and the reasons are in Lesson 14.3.
 
-On the questions. Changing the magic makes `upx -d` fail but the file still runs because `upx -d` uses the `UPX!` magic to recognize and read the file structure, and without it cannot parse, while the decompression stub runs from the entry point with fixed logic, never looks the magic up, and so still unpacks and runs normally. The ESP trick relies on `pushad` saving all the registers into one stack region and `popad` restoring exactly that region. Reading it back happens exactly once, at the end of the stub, so a hardware breakpoint on that region takes you straight to near the tail jump. And a raw dump isn't enough because at runtime the stub already resolved the imports and wrote the function addresses into the IAT in memory, but the raw dump has no valid Import Directory pointing at them, so when Windows loads the dumped file again the loader doesn't know how to fill in the IAT. Scylla rebuilds the Import Directory from the addresses present in memory so the dumped file can run.
+On the questions. Changing the magic makes `upx -d` fail but the file still runs because `upx -d` uses the `UPX!` magic to recognize and read the file structure, and without it cannot parse, while the decompression stub runs from the entry point with fixed logic, never looks the magic up, and so still unpacks and runs normally. The ESP trick relies on `pushad` saving all the registers into one stack region and `popad` restoring exactly that region. Reading it back happens once, at the end of the stub, so a hardware breakpoint on that region takes you to near the tail jump. And a raw dump isn't enough because at runtime the stub already resolved the imports and wrote the function addresses into the IAT in memory, but the raw dump has no valid Import Directory pointing at them, so when Windows loads the dumped file again the loader doesn't know how to fill in the IAT. Scylla rebuilds the Import Directory from the addresses present in memory so the dumped file can run.
 
 The ESP trick and Scylla steps describe the standard Windows workflow with x64dbg, so run them on a Windows machine. The automatic pack and unpack and the header corruption work on Linux as well.
 

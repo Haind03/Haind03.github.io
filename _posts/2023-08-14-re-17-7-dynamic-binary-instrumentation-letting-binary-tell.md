@@ -1,20 +1,20 @@
 ---
-title: "Lesson 17.7: Dynamic Binary Instrumentation, letting the binary tell you where it ran"
+title: "Lesson 17.7: Dynamic Binary Instrumentation"
 image:
   path: /assets/img/covers/re-17-7-dynamic-binary-instrumentation-letting-binary-tell.webp
-  alt: "Lesson 17.7: Dynamic Binary Instrumentation, letting the binary tell you where it ran"
+  alt: "Lesson 17.7: Dynamic Binary Instrumentation"
 date: 2023-08-14 14:53:00 +0700
 categories: ["Technique Reverse", "Part 17 · Patching, Hooking, Injection"]
 tags: [reverse-engineering, frida, hooking]
 render_with_liquid: false
 ---
-A debugger lets you stop and inspect point by point. Frida lets you hook a few functions. But when you want to ask something like "in this run, exactly which instructions did the program execute", or "where does the flow differ between a wrong input and a right one", both fall short. That's when you need Dynamic Binary Instrumentation (DBI).
+A debugger lets you stop and inspect point by point. Frida lets you hook a few functions. Neither helps much when you want to ask "in this run, which instructions did the program actually execute", or "where does the flow differ between a wrong input and a right one". For that you need Dynamic Binary Instrumentation (DBI).
 
 ## What DBI is
 
-DBI is a technique of inserting analysis code (instrumentation) into a binary's execution flow while it runs, with no source code and without modifying the file on disk. A DBI tool reads each basic block about to run, re-translates it together with your observation snippets, and only then lets the CPU run the instrumented version.
+DBI inserts analysis code (instrumentation) into a binary's execution flow while it runs, with no source code and without modifying the file on disk. A DBI tool reads each basic block about to run, re-translates it together with your observation snippets, and only then lets the CPU run the instrumented version.
 
-In other words, you write something like "every time an instruction runs, add one to a counter", or "every time memory is written, record the address", and the DBI tool attaches that snippet to every instruction/every write of the target program. The program has no idea it's being observed at this level.
+You write something like "every time an instruction runs, add one to a counter", or "every time memory is written, record the address", and the DBI tool attaches that snippet to every instruction/every write of the target program. The program can't tell it's being observed at this level.
 
 How it differs from the tools you've learned:
 
@@ -28,7 +28,7 @@ DBI is heavier than Frida (it runs much slower because it re-translates every bl
 
 ## Four tools people use
 
-Intel Pin is long established, powerful, and free (not open source). You write a pintool in C++, registering callbacks for each instruction (INS), each block (BBL), each loaded image (IMG). It's used a lot for instruction counting, memory traces, and taint analysis.
+Intel Pin has been around a long time and is free (not open source). You write a pintool in C++, registering callbacks for each instruction (INS), each block (BBL), each loaded image (IMG). It's used a lot for instruction counting, memory traces, and taint analysis.
 
 DynamoRIO is open source with a client architecture and a compact API. It comes with sample tools like drcov (collects coverage) and drltrace (traces library calls). Many people like it because it's open and faster than Pin for some tasks.
 
@@ -38,25 +38,25 @@ TinyInst is lightweight and leans toward coverage for fuzzing. It doesn't re-tra
 
 Beginners should start with a ready-made tool (DynamoRIO's drcov) before writing their own pintool.
 
-## The most valuable use: coverage diffing
+## Coverage diffing
 
-This is the trick that makes DBI worth learning. The idea is very simple but powerful. Run the program with a wrong input and collect the set of basic blocks executed (coverage A). Run again with a nearly right or right input and collect coverage B. Then compare. The blocks that appear only in B and not in A are the code that runs when you go deeper into the check logic.
+This is the main reason to learn DBI. Run the program with a wrong input and collect the set of basic blocks executed (coverage A). Run again with a nearly right or right input and collect coverage B. Then compare. The blocks that appear only in B and not in A are the code that runs when you go deeper into the check logic.
 
-For a crackme, this marks out the serial check function without having to understand anything beforehand: you let the program itself show you where it branches when the input gets better. Combining coverage with fuzzing is the foundation of modern fuzzing (AFL uses this very coverage idea to guide itself).
+For a crackme, this marks out the serial check function without you having to understand anything beforehand: the program itself shows you where it branches when the input gets better. Combining coverage with fuzzing is the foundation of modern fuzzing (AFL uses this coverage idea to guide itself).
 
 There are other uses too. With instruction count and execution traces, you can understand what an obfuscated function does by looking at the sequence of instructions that actually run, ignoring junk code that never executes (useful against anti-disassembly in [Lesson 15.6](/posts/re-15-6-anti-disassembly-when-disassembler-itself-gets/)). A memory trace records every memory read/write to follow where a value goes. Taint analysis marks the input as "tainted" then tracks it spreading through registers and memory cells, to see which decisions the input affects.
 
 ## DBI and anti-debug
 
-An interesting point: many anti-debug techniques in Part 15 target debuggers (checking the PEB, debug port, 0xCC breakpoints). DBI doesn't use a debugger and doesn't place 0xCC breakpoints, so some of those checks can't catch it. Still, DBI leaves its own traces (abnormally slow run time, re-translated code regions, some Pin/DynamoRIO artifacts), so sophisticated malware has anti-DBI too. It's not a silver bullet, but it's a different angle of approach when the debugger is blocked.
+Many anti-debug techniques in Part 15 target debuggers (checking the PEB, debug port, 0xCC breakpoints). DBI doesn't use a debugger and doesn't place 0xCC breakpoints, so some of those checks can't catch it. DBI leaves its own traces though (abnormally slow run time, re-translated code regions, some Pin/DynamoRIO artifacts), so sophisticated malware has anti-DBI too. It doesn't solve everything, but it gives you a different angle when the debugger is blocked.
 
 ## When to use DBI
 
-Use it when your question is "global and quantitative": coverage, counting, wide traces, taint. Don't use it when you only need to look at one function (a debugger is faster) or hook a few APIs (Frida is lighter). DBI trades speed for visibility: the program runs many times slower, but in return you see everything.
+Use it when your question is global and quantitative: coverage, counting, wide traces, taint. Don't use it when you only need to look at one function (a debugger is faster) or hook a few APIs (Frida is lighter). DBI trades speed for visibility: the program runs many times slower, but you see everything.
 
 ## Lab
 
-The task is to use a DBI tool to collect the code coverage of a program with two different inputs, then compare them to narrow down the code that runs when you get deeper into the check logic. You don't have to understand the program beforehand, because the program points the way itself. You need one DBI tool: DynamoRIO (which ships `drcov`), Intel Pin, or QBDI. This lab is described with DynamoRIO because `drcov` already collects coverage. You also need a practice target, a crackme that takes an input and prints right or wrong (for example the crackme from Lesson 3.5 or Lesson 2.5), and a tool to view and compare coverage, either Lighthouse (an IDA/Binary Ninja plugin) or your own diff script.
+The task is to use a DBI tool to collect the code coverage of a program with two different inputs, then compare them to narrow down the code that runs when you get deeper into the check logic. You don't have to understand the program beforehand, because the coverage points the way. You need one DBI tool: DynamoRIO (which ships `drcov`), Intel Pin, or QBDI. This lab is described with DynamoRIO because `drcov` already collects coverage. You also need a practice target, a crackme that takes an input and prints right or wrong (for example the crackme from Lesson 3.5 or Lesson 2.5), and a tool to view and compare coverage, either Lighthouse (an IDA/Binary Ninja plugin) or your own diff script.
 
 First run the target with an input that is certainly WRONG and collect the coverage:
 
@@ -102,6 +102,6 @@ The `drrun -t drcov` procedure and the way of loading into Lighthouse follow the
 </details>
 
 ## Key takeaways
-DBI inserts observation code into each instruction/block at runtime, with no source needed and no disk file modified. The tools are Pin (C++, powerful), DynamoRIO (open source, drcov built in), QBDI (embeddable, nice API), and TinyInst (light, for coverage/fuzzing). The strongest trick is coverage diffing between wrong and right input to find the check function.
+DBI inserts observation code into each instruction/block at runtime, with no source needed and no disk file modified. The tools are Pin (C++), DynamoRIO (open source, drcov built in), QBDI (embeddable, nice API), and TinyInst (light, for coverage/fuzzing). The most useful trick is coverage diffing between wrong and right input to find the check function.
 
 It's heavier than Frida but detailed down to each instruction, so use it for global questions, not for looking at a single point. It sidesteps part of anti-debug (no debugger, no 0xCC) but has its own anti-DBI.

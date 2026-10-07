@@ -8,17 +8,17 @@ categories: ["Technique Reverse", "Part 16 · Crypto and Algorithms"]
 tags: [reverse-engineering, crypto]
 render_with_liquid: false
 ---
-Here's some good news for reversers: encryption algorithms are very hard to hide. Not because their code is easy to read, but because almost every standard algorithm carries a fixed set of constants (magic constants), and those numbers never change. Seeing `0x67452301` at the top of a function means you're almost certainly looking at MD5 or SHA-1. This lesson teaches how to use exactly these fingerprints to mark out the crypto in a few seconds instead of reading a thousand lines of bit-twiddling loops.
+Encryption algorithms are hard to hide. Almost every standard algorithm carries a fixed set of constants (magic constants), and those numbers never change. If you see `0x67452301` at the top of a function, you're almost certainly looking at MD5 or SHA-1. This lesson shows how to use these fingerprints to mark out the crypto in a few seconds instead of reading a thousand lines of bit-twiddling loops.
 
 ## Why constants are a reliable giveaway
 
-An algorithm like SHA-256 is defined in the standard with fixed initial values and constant tables. Anyone who implements the standard correctly, whether in C, Rust or hand-written assembly, has to embed exactly those numbers in the binary. A compiler can rename variables, optimize loops, inline functions, but it can't change `0x6a09e667` into another number and still get the right result.
+An algorithm like SHA-256 is defined in the standard with fixed initial values and constant tables. Anyone who implements it correctly, in C, Rust or hand-written assembly, has to embed exactly those numbers in the binary. A compiler can rename variables, optimize loops and inline functions, but it can't change `0x6a09e667` into another number and still get the right result.
 
-In other words: the logic can be twisted, the constants can't. That's why searching for constants is the fastest and surest way to recognize crypto, much surer than trying to understand the bit-shuffling loops.
+The logic can be twisted, the constants can't. So searching for constants is the fastest and surest way to recognize crypto, a lot surer than trying to understand the bit-shuffling loops.
 
-## A set of fingerprints worth memorizing
+## Fingerprints worth memorizing
 
-You don't need to remember them all, but a few of these numbers show up constantly so it pays to know them by heart:
+You don't need to remember them all, but a few of these numbers show up constantly so it's worth knowing them:
 
 | Algorithm | Characteristic constants |
 |---|---|
@@ -31,29 +31,29 @@ You don't need to remember them all, but a few of these numbers show up constant
 | Blowfish | P-array and S-boxes initialized from the digits of pi |
 | RC4 | No constants, recognized by the KSA pattern (a loop that initializes a 256-byte array and then permutes it) |
 
-Notice the two groups. The group with clear constants (MD5, SHA, AES, TEA, CRC) gets caught by findcrypt right away. The group without constants (RC4, custom XOR, custom Base64) has to be recognized by pattern, which is for lesson 16.2.
+There are two groups here. The ones with clear constants (MD5, SHA, AES, TEA, CRC) get caught by findcrypt right away. The ones without constants (RC4, custom XOR, custom Base64) have to be recognized by pattern, which is lesson 16.2.
 
 ## Let the tools do the boring part
 
-You don't sit there probing each number by eye. There's a whole set of tools that scan for constants automatically. FindCrypt / findcrypt2 (an IDA plugin) scans the whole binary, marks every region matching a known algorithm signature, and prints a list with addresses, so one run gives you a crypto map. FindCrypt-Ghidra is the equivalent for Ghidra. capa (Mandiant) not only finds constants but infers high-level capabilities, for example "hash data via MD5" or "encrypt data using AES", which is very handy for quick triage. signsrch scans for algorithm signatures and some common implementation patterns and runs standalone outside IDA. And if you already have a yara rule set with crypto rules, scanning a batch of samples works too.
+You don't need to check each number by eye. Several tools scan for constants automatically. FindCrypt / findcrypt2 (an IDA plugin) scans the whole binary, marks every region matching a known algorithm signature, and prints a list with addresses, so one run gives you a crypto map. FindCrypt-Ghidra is the equivalent for Ghidra. capa (Mandiant) not only finds constants but infers high-level capabilities, for example "hash data via MD5" or "encrypt data using AES", which is handy for quick triage. signsrch scans for algorithm signatures and some common implementation patterns and runs standalone outside IDA. And if you already have a yara rule set with crypto rules, scanning a batch of samples works too.
 
-The real workflow is very tidy: open the binary, run findcrypt or capa first, and it shows you a few addresses, "AES here, CRC32 over there". You jump straight there instead of swimming in the rest.
+My usual routine: open the binary, run findcrypt or capa first, and it shows a few addresses, "AES here, CRC32 over there". Then I jump straight there instead of going through the rest.
 
-## Confirm with structure, don't trust blindly
+## Confirm with structure
 
-Findcrypt is very good but not magic. A constant table can match by coincidence, or a modified algorithm (for example AES with a substituted S-box, or CRC with a different polynomial) will make the tool misreport or miss. After the tool marks the region, always glance at the function structure to confirm.
+Findcrypt is very good but not perfect. A constant table can match by coincidence, and a modified algorithm (for example AES with a substituted S-box, or CRC with a different polynomial) will make the tool misreport or miss. After the tool marks the region, glance at the function structure to confirm.
 
 AES has a loop of 10/12/14 rounds, each round with SubBytes (S-box lookup), ShiftRows, MixColumns (multiplication in GF(2^8)), and AddRoundKey (xor). Hashes (MD5/SHA) process in 64-byte blocks, with a compression loop containing many bit rotations and additions. CRC32 is a loop over each byte, xor then a 256-entry table lookup, or shifting bits 8 times. TEA/XTEA has a loop that accumulates the delta `0x9E3779B9` over 32 rounds, operating on two 32-bit halves.
 
-When the constants match and the loop structure matches too, only then do you conclude for sure. If the constants match but the structure is odd, it's likely a custom variant, and that's the interesting place to dig deeper.
+When the constants match and the loop structure matches too, you can conclude it's that algorithm. If the constants match but the structure is odd, it's likely a custom variant, and that's worth digging into.
 
 ## When constants are hidden
 
-Sophisticated malware sometimes doesn't leave constants bare. It may build the constant table at runtime (computing the S-box at runtime instead of embedding it), or xor the constants with a key and decode them at use. Then static findcrypt will miss. How to get past it: run dynamically, set a breakpoint after the init code and dump the memory region holding the table, then run findcrypt on the dump. At that point the constants show up in their true form in memory.
+Sophisticated malware sometimes doesn't leave constants in the open. It may build the constant table at runtime (computing the S-box at runtime instead of embedding it), or xor the constants with a key and decode them at use. Then static findcrypt will miss. To get past it, run dynamically, set a breakpoint after the init code and dump the memory region holding the table, then run findcrypt on the dump. The constants show up in their real form in memory.
 
 ## Lab
 
-The task is to see for yourself the magic constants of crypto algorithms sitting inside a binary, and to use automatic tools to narrow down the region. The file `hashdemo.c` is a program that embeds the MD5 init values, MD5's T table, and the TEA delta. Build it on Linux with `gcc -O0 -o hashdemo hashdemo.c`, or on Windows with `gcc -O0 -o hashdemo.exe hashdemo.c` or `cl hashdemo.c`. For tools you can use Detect It Easy, IDA with FindCrypt, Ghidra with FindCrypt-Ghidra, or capa.
+The task is to see the magic constants of crypto algorithms in a binary, and to use automatic tools to narrow down the region. The file `hashdemo.c` is a program that embeds the MD5 init values, MD5's T table, and the TEA delta. Build it on Linux with `gcc -O0 -o hashdemo hashdemo.c`, or on Windows with `gcc -O0 -o hashdemo.exe hashdemo.c` or `cl hashdemo.c`. For tools you can use Detect It Easy, IDA with FindCrypt, Ghidra with FindCrypt-Ghidra, or capa.
 
 Build `hashdemo` and open it in IDA or Ghidra, then run FindCrypt (IDA) or FindCrypt-Ghidra and see which region it marks and which algorithm it names. Next search by hand: use a byte-sequence search for `01 23 45 67` (which is `0x67452301` in little-endian) and note which section it lands in. If you have capa, run `capa hashdemo` and see which capabilities it reports. Then open `tea_round` in the disassembly and check whether the constant `0x9E3779B9` appears intact, and if not, what the compiler turned it into. Finally, confirm that each constant you found matches an algorithm in the table of this lesson.
 
@@ -106,7 +106,7 @@ tea_round:
     ...
 ```
 
-The compiler recognized that `+ 0x9E3779B9` is equivalent to `- 0x61C88647` (because `0x9E3779B9 = -0x61C88647` read as a signed 32-bit number, in two's complement: `0x100000000 - 0x9E3779B9 = 0x61C88647`). It chose a `sub` with the smaller constant. The practical consequence is that searching for `B9 79 37 9E` as little-endian bytes in this code will MISS, because the constant has been transformed. FindCrypt still catches TEA in implementations that use the delta directly, but when it shows up as an optimized immediate you have to watch for the two's complement form `0x61C88647` as well. That is why you should always confirm by structure and not only by byte strings.
+The compiler recognized that `+ 0x9E3779B9` is equivalent to `- 0x61C88647` (because `0x9E3779B9 = -0x61C88647` read as a signed 32-bit number, in two's complement: `0x100000000 - 0x9E3779B9 = 0x61C88647`). It chose a `sub` with the smaller constant. So searching for `B9 79 37 9E` as little-endian bytes in this code will MISS, because the constant has been transformed. FindCrypt still catches TEA in implementations that use the delta directly, but when it shows up as an optimized immediate you have to watch for the two's complement form `0x61C88647` as well. That's why you should confirm by structure and not only by byte strings.
 
 ### Matching the algorithms
 
@@ -114,11 +114,11 @@ The values `0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476` are MD5 (or SHA-1 if
 
 ### Answers to the questions
 
-`0x67452301` becomes `01 23 45 67` because x86 is little-endian: the lowest byte is stored first (Lesson 1.1). If the MD5 init values were changed to other numbers, FindCrypt would not match the standard signature and would miss it. You then recognize it by structure: a compression loop that processes 64-byte blocks, four state variables, many rotate and add operations, and four rounds of 16 steps. That structure is characteristic of MD5 even when the constants have been replaced, and this is exactly when "confirm by structure" saves you.
+`0x67452301` becomes `01 23 45 67` because x86 is little-endian: the lowest byte is stored first (Lesson 1.1). If the MD5 init values were changed to other numbers, FindCrypt wouldn't match the standard signature and would miss it. You then recognize it by structure: a compression loop that processes 64-byte blocks, four state variables, many rotate and add operations, and four rounds of 16 steps. That structure is characteristic of MD5 even when the constants have been replaced, which is when confirming by structure saves you.
 
 </details>
 
 ## Key takeaways
 Standard crypto algorithms carry fixed constants, and the compiler can't change them. Know a few common numbers: MD5/SHA `0x67452301`, SHA-256 `0x6A09E667`, TEA delta `0x9E3779B9`, CRC32 `0xEDB88320`. Run findcrypt/capa/signsrch first to mark out the crypto instead of reading it by hand.
 
-Always confirm with the loop structure, to avoid trusting a coincidental signature. If constants are built or decoded at runtime, dump the memory and scan again.
+Confirm with the loop structure, so you don't trust a coincidental signature. If constants are built or decoded at runtime, dump the memory and scan again.

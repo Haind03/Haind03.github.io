@@ -1,20 +1,20 @@
 ---
-title: "Lesson 6.6: Frida on Android, changing app behavior while it runs"
+title: "Lesson 6.6: Frida on Android"
 image:
   path: /assets/img/covers/re-6-6-frida-android-changing-app-behavior-while.webp
-  alt: "Lesson 6.6: Frida on Android, changing app behavior while it runs"
+  alt: "Lesson 6.6: Frida on Android"
 date: 2022-10-21 21:39:00 +0700
 categories: ["Technique Reverse", "Part 06 · Java, Kotlin and Android"]
 tags: [reverse-engineering, android, java]
 render_with_liquid: false
 ---
-Reading an APK statically in JADX tells you what the app intends to do. But often you want to see a value with your own eyes at runtime, or try changing a function's result to see how the app reacts, without patching and repackaging the whole APK. That's when Frida comes in. It lets you step into any Java method while the app runs, read the arguments, change the return value, all in a few lines of JavaScript.
+Reading an APK statically in JADX tells you what the app intends to do. But often you want to see a value at runtime, or change a function's result to see how the app reacts, without patching and repackaging the whole APK. That's what Frida is for. It lets you step into any Java method while the app runs, read the arguments and change the return value, all in a few lines of JavaScript.
 
-Let me be upfront about the boundary first: what's in this lesson is security testing technique. Use it on your own apps, apps you're authorized to test, or practice apps like OWASP UnCrackable. Hooking to bypass the licensing checks of someone else's app, or cheating in online games, is a different matter and outside the scope of this series. The tool is neutral, the purpose is what counts.
+First, the boundary. This lesson is security testing technique. Use it on your own apps, apps you're authorized to test, or practice apps like OWASP UnCrackable. Hooking to bypass the licensing checks of someone else's app, or cheating in online games, is a different matter and outside the scope of this series.
 
 ## How Frida works
 
-Frida is a dynamic instrumentation toolkit. On Android, the model has two parts. frida-server is a binary that runs on the device (usually needs root) or on an emulator, the extended arm responsible for injecting code into the app process. frida / objection are the tools that run on your computer (the host), talk to frida-server over USB or TCP, and load your script into the app.
+Frida is a dynamic instrumentation toolkit. On Android there are two parts. frida-server is a binary that runs on the device (usually needs root) or on an emulator, and it injects code into the app process. frida / objection run on your computer (the host), talk to frida-server over USB or TCP, and load your script into the app.
 
 You write scripts in JavaScript. Frida injects a JS engine into the app process, and from inside it your script can call into the Android runtime and grab Java classes and methods as if you were writing Java.
 
@@ -36,11 +36,11 @@ adb shell "su -c /data/local/tmp/frida-server &"
 frida-ps -U        # list processes over USB
 ```
 
-If `frida-ps -U` lists the apps, the environment works. The frida-server version has to match the frida-tools version on the host, a version mismatch errors out right away, and this is the number one trap for beginners.
+If `frida-ps -U` lists the apps, the environment works. The frida-server version has to match the frida-tools version on the host. A mismatch errors out right away, and it's the most common trap for beginners.
 
-## Hooking Java methods: three patterns you'll use forever
+## Hooking Java methods: three patterns
 
-Every Android script starts with `Java.perform`, inside it you get a class with `Java.use`, then override the method's implementation. The three most common jobs:
+Every Android script starts with `Java.perform`. Inside it you get a class with `Java.use`, then override the method's implementation. The three most common jobs:
 
 ### 1. Change the return value
 
@@ -72,7 +72,7 @@ Java.perform(function () {
 });
 ```
 
-An important tip: `this.validate(input)` calls the original method itself. That lets you observe without breaking the logic, very handy for tracing out the checking algorithm.
+`this.validate(input)` calls the original method. That lets you observe without breaking the logic, which is handy for tracing out a checking algorithm.
 
 ### 3. Overloaded methods
 
@@ -97,11 +97,11 @@ frida -U com.example.app -l hook.js
 
 ## JADX generates the snippet for you
 
-No need to type long class names by hand. In JADX-GUI (lesson [6.3](/posts/re-6-3-jadx-gui-depth-number-one-tool/)), right-click a method and choose **Copy as Frida snippet**. It generates the `Java.use(...).implementation` skeleton with the right class and signature, and you just paste it into the script and fill in the body. This is the fastest way to go from "found the function in the decompiler" to "hooked it".
+You don't need to type long class names by hand. In JADX-GUI (lesson [6.3](/posts/re-6-3-jadx-gui-depth-number-one-tool/)), right-click a method and choose **Copy as Frida snippet**. It generates the `Java.use(...).implementation` skeleton with the right class and signature, and you paste it into the script and fill in the body. It's the fastest way to go from "found the function in the decompiler" to "hooked it".
 
-## SSL pinning and why you need to bypass it when testing
+## SSL pinning
 
-Many apps pin certificates (SSL pinning) to reject every connection that doesn't use a predefined certificate. Good for security, but when you're testing your own app and want to see the traffic through Burp/mitmproxy, pinning blocks you too. The solution in testing is to hook the certificate checking layer so it accepts your proxy.
+Many apps pin certificates (SSL pinning) to reject every connection that doesn't use a predefined certificate. That's good for security, but when you're testing your own app and want to see the traffic through Burp/mitmproxy, pinning blocks you too. In testing you hook the certificate checking layer so it accepts your proxy.
 
 The fastest way is objection, an automation layer built on Frida:
 
@@ -113,15 +113,15 @@ android sslpinning disable
 android root disable
 ```
 
-These two commands bundle a lot of common hooks for pinning and root detection, so you don't write them yourself. When objection can't handle an unusual mechanism, you go back to writing a manual Frida hook for that exact layer.
+These two commands bundle a lot of common hooks for pinning and root detection, so you don't write them yourself. When objection can't handle an unusual mechanism, go back to writing a manual Frida hook for that layer.
 
 ## Common pitfalls
 
-The first is a version mismatch between frida-server and frida-tools, which gives confusing errors, so always check it first. The second is a class that isn't loaded yet when you hook: use `-f` to spawn early, or hook the ClassLoader. Third, method names after obfuscation: if the app is renamed by R8/ProGuard (lesson [6.8](/posts/re-6-8-obfuscation-packers-android/)), the class names in the snippet are scrambled too, so just use those exact scrambled names. Last is Frida detection, since a defensive app may probe for frida-server via port 27042 or the process name, and then you need to run a renamed/different-port frida-server, or use an embedded gadget.
+The first is a version mismatch between frida-server and frida-tools, which gives confusing errors, so check it first. The second is a class that isn't loaded yet when you hook it. Use `-f` to spawn early, or hook the ClassLoader. Third is obfuscated names. If the app is renamed by R8/ProGuard (lesson [6.8](/posts/re-6-8-obfuscation-packers-android/)), the class names in the snippet are scrambled too, so just use those exact names. Last is Frida detection. A defensive app may probe for frida-server via port 27042 or the process name, and then you need to run a renamed/different-port frida-server, or use an embedded gadget.
 
 ## Lab
 
-The goal is to use Frida to change the return value of a method while the app is running, and to see the app change its behavior accordingly, without patching and repackaging the APK. Only do this on your own practice app, an app you are authorized to test, or a public app meant for learning such as OWASP UnCrackable (see Lesson 0.2 on legal and ethical limits).
+The goal is to use Frida to change the return value of a method while the app is running, and see the app change its behavior, without patching and repackaging the APK. Only do this on your own practice app, an app you're authorized to test, or a public app meant for learning such as OWASP UnCrackable (see Lesson 0.2 on legal and ethical limits).
 
 You need a rooted Android emulator (Genymotion, or an AVD with a rooted image) or a rooted device, and `frida-tools` on the host.
 
@@ -129,7 +129,7 @@ You need a rooted Android emulator (Genymotion, or an AVD with a rooted image) o
 pip install frida-tools objection
 ```
 
-You also need the frida-server build for the right architecture, pushed to the device and running (see the setup section above). Check that everything is connected with `frida-ps -U`, which should list the apps. A good target is OWASP UnCrackable-Level1, downloaded from the official OWASP MASTG UnCrackable apps page (https://mas.owasp.org/crackmes/). It has a function that checks for root and then exits, and a function that verifies a secret string, which makes it ideal for practicing hooks.
+You also need the frida-server build for the right architecture, pushed to the device and running (see the setup section above). Check that everything is connected with `frida-ps -U`, which should list the apps. A good target is OWASP UnCrackable-Level1, downloaded from the official OWASP MASTG UnCrackable apps page (https://mas.owasp.org/crackmes/). It has a function that checks for root and then exits, and a function that verifies a secret string, which makes it good for practicing hooks.
 
 Open the APK in JADX-GUI and find the class and method that check for root (or the condition that makes the app quit early). Use Copy as Frida snippet to get the hook skeleton for that method, then edit `hook.js` to force the method to return the value that lets the app continue. The file is a sample script with three patterns: forcing a root check to return false, logging the arguments and real result of a verification function, and hooking an overloaded method where you must spell out the signature. Adjust the class and method names to your target. Run it with the command below and check that the app no longer exits.
 
@@ -139,7 +139,7 @@ frida -U -f <package> -l hook.js
 
 For an extra step, hook the string verification function and log its argument and real return value to understand what it compares. You can also try the quick route with objection by running `objection -g <package> explore` and then `android root disable`.
 
-Think about two questions afterwards. Why is a runtime hook more convenient than patching smali while exploring, and why is a patch better when you want a permanent change? And if the app detects Frida and quits, how would you deal with it? Try it yourself before opening the solution.
+Two questions to think about afterwards. Why is a runtime hook more convenient than patching smali while exploring, and why is a patch better when you want a permanent change? And if the app detects Frida and quits, how would you deal with it? Try it yourself before opening the solution.
 
 <div class="lab-box">
 <div class="lab-head"><b>LAB 6.6</b>source files</div>
@@ -151,7 +151,7 @@ Think about two questions afterwards. Why is a runtime hook more convenient than
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>
 
-The general idea is that instead of editing the APK, we step into the runtime. Frida loads a JS script into the app process, we grab a Java class with `Java.use`, and we overwrite the `implementation` of the method we want to change. The steps below use OWASP UnCrackable-Level1.
+Instead of editing the APK, we step into the runtime. Frida loads a JS script into the app process, we grab a Java class with `Java.use`, and we overwrite the `implementation` of the method we want to change. The steps below use OWASP UnCrackable-Level1.
 
 First, find the blocker. Open the APK in JADX. The main Activity has a section that checks for root or a debugger and then calls `System.exit(0)` through a dialog. A typical class is named like `sg.vantagepoint.a.c`, with a method `a(...)` that returns a boolean saying whether the device is rooted.
 
@@ -202,15 +202,15 @@ objection -g owasp.mstg.uncrackable1 explore
 android root disable
 ```
 
-objection ships ready-made hooks for many root detection mechanisms, so you do not have to find each class yourself.
+objection ships ready-made hooks for many root detection mechanisms, so you don't have to find each class yourself.
 
-On the questions: a runtime hook is fast, needs no repacking or re-signing, and can change many places in one session, which is ideal while exploring. But a hook only lives while Frida is attached. For a permanent change that does not depend on Frida, patch the smali and rebuild (Lesson 6.4). If the app detects Frida, you can run a renamed frida-server on a different port than the default 27042, or embed frida-gadget in a repacked APK, or hook the Frida detection function itself so that it sees nothing.
+On the questions: a runtime hook is fast, needs no repacking or re-signing, and can change many places in one session, which is good while exploring. But a hook only lives while Frida is attached. For a permanent change that doesn't depend on Frida, patch the smali and rebuild (Lesson 6.4). If the app detects Frida, you can run a renamed frida-server on a different port than the default 27042, or embed frida-gadget in a repacked APK, or hook the Frida detection function itself so that it sees nothing.
 
 One caveat: the class names and structure of UnCrackable-Level1 above follow the familiar public version of that app. After obfuscation the method names may differ slightly depending on the build you download, so use exactly what JADX shows.
 
 </details>
 
 ## Key takeaways
-Frida has frida-server on the device and frida/objection on the host, and the versions on both sides must match. The core pattern is `Java.perform` then `Java.use("class").method.implementation = function(){...}`. Call `this.method(...)` to run the original, which you use when you only want to log without changing behavior, and overloaded methods must be specified with `.overload(...)`.
+Frida has frida-server on the device and frida/objection on the host, and the versions on both sides must match. The core pattern is `Java.perform` then `Java.use("class").method.implementation = function(){...}`. Call `this.method(...)` to run the original, which you use when you only want to log without changing behavior. Overloaded methods must be specified with `.overload(...)`.
 
 JADX Copy as Frida snippet generates a hook skeleton with the right signature, and objection bundles hooks for SSL pinning and root detection. Only use it on your own apps or ones you're authorized for, since this is security testing and not cheating.

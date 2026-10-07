@@ -1,20 +1,20 @@
 ---
-title: "Lesson 5.1: .NET internals, why decompiling gives back nearly the original source"
+title: "Lesson 5.1: .NET internals"
 image:
   path: /assets/img/covers/re-5-1-net-internals-why-decompiling-gives-back.webp
-  alt: "Lesson 5.1: .NET internals, why decompiling gives back nearly the original source"
+  alt: "Lesson 5.1: .NET internals"
 date: 2022-07-31 15:25:00 +0700
 categories: ["Technique Reverse", "Part 05 · C# and .NET"]
 tags: [reverse-engineering, dotnet]
 render_with_liquid: false
 ---
-After several parts of wrestling with native assembly, this part is a vacation. Open a .NET file in dnSpy or ILSpy and you usually get back C# that reads almost exactly like what the author wrote: the right class names, the right method names, the right variable names, not the comments but the structure is intact. The interesting question is: why is native such a mess while .NET is so nice? Answer that and you understand the approach for this whole part.
+After several parts of fighting native assembly, this part is a lot easier. Open a .NET file in dnSpy or ILSpy and you usually get C# that reads almost exactly like what the author wrote: the right class names, method names and variable names. Comments are gone but the structure is intact. Why is native such a mess while .NET is so readable? The answer explains the approach for this whole part.
 
 ## A .NET program doesn't contain machine code
 
-This is the crux. When you build a C# project, the compiler (Roslyn) doesn't produce x86 instructions. It produces **IL** (Common Intermediate Language, also called MSIL or CIL), an intermediate, CPU-independent kind of bytecode. Real machine code is only created **at runtime**, by the CLR's JIT compiler, right before a method is called for the first time.
+When you build a C# project, the compiler (Roslyn) doesn't produce x86 instructions. It produces IL (Common Intermediate Language, also called MSIL or CIL), a CPU-independent bytecode. Real machine code is only created at runtime, by the CLR's JIT compiler, right before a method is called for the first time.
 
-The full flow:
+The flow:
 
 ```
 C# source  --Roslyn-->  IL + metadata  (sits in the .exe/.dll file)
@@ -24,21 +24,21 @@ C# source  --Roslyn-->  IL + metadata  (sits in the .exe/.dll file)
                         x86/x64 machine code  (exists only in RAM at runtime)
 ```
 
-Because what's on disk is IL and not machine code, and IL is at a much higher level than assembly, translating IL back to C# is much easier than translating machine code back to C++.
+What's on disk is IL, not machine code, and IL is at a much higher level than assembly. So translating IL back to C# is much easier than translating machine code back to C++.
 
-## CLR, IL, metadata: three pieces
+## CLR, IL, metadata
 
 ![.NET architecture: source to IL plus metadata, JIT to native, dnSpy decompiles back](/assets/img/re/part-05/dotnet-arch.svg)
 
-The CLR (Common Language Runtime) is the virtual machine that runs .NET programs, a role like the JVM for Java. It loads assemblies, JITs, manages memory (the garbage collector), and does type safety checks. Code running on the CLR is called **managed code**.
+The CLR (Common Language Runtime) is the virtual machine that runs .NET programs, like the JVM for Java. It loads assemblies, JITs, manages memory (the garbage collector), and does type safety checks. Code running on the CLR is called managed code.
 
-An assembly is the unit of deployment: an `.exe` or `.dll` file. The interesting part is that it's still a valid PE file (see [Lesson 1.7](/posts/re-1-7-pe-format-anatomy-windows-exe/) again), but the code isn't in a `.text` section holding x86, it's a CLI header pointing to the IL and metadata streams. That's why DIE opening a .NET file still reports PE, but adds ".NET".
+An assembly is the unit of deployment: an `.exe` or `.dll` file. It's still a valid PE file (see [Lesson 1.7](/posts/re-1-7-pe-format-anatomy-windows-exe/) again), but the code isn't in a `.text` section holding x86. There's a CLI header pointing to the IL and metadata streams. That's why DIE opening a .NET file still reports PE, but adds ".NET".
 
-IL is stack-based bytecode: instead of operating on registers like x86, it pushes operands onto an evaluation stack and pops them off. For example `a + b` becomes "push a, push b, add". It's precisely this abstract, information-rich form that lets the decompiler rebuild the original expressions.
+IL is stack-based bytecode. Instead of operating on registers like x86, it pushes operands onto an evaluation stack and pops them off. For example `a + b` becomes "push a, push b, add". This abstract, information-rich form is what lets the decompiler rebuild the original expressions.
 
-Metadata is the real star. Alongside the IL is a set of tables fully describing every type, method, field, parameter, with their **real names**. The CLR needs metadata for reflection, binding, and type checking, so the names can't be stripped like symbols in native code. The decompiler reads the metadata directly and immediately has class and method names. This is the biggest difference from native, where variable names are gone after compiling.
+Metadata matters most here. Alongside the IL is a set of tables describing every type, method, field and parameter, with their real names. The CLR needs metadata for reflection, binding, and type checking, so the names can't be stripped like symbols in native code. The decompiler reads the metadata directly and immediately has class and method names. This is the biggest difference from native, where variable names are gone after compiling.
 
-## Looking at IL to picture it
+## Looking at IL
 
 A small C# method:
 
@@ -61,11 +61,9 @@ The matching IL (as shown by ildasm/ILSpy):
 }
 ```
 
-Notice: the method name `Add`, the type `int32`, the parameter names `a` and `b` are all intact. Compared to native, where this function becomes `sub_401000` taking two numbers in `rcx`/`rdx`, this is almost source. The decompiler just has to put it back together as `return a + b;`.
+The method name `Add`, the type `int32`, and the parameter names `a` and `b` are all intact. In native code this function becomes `sub_401000` taking two numbers in `rcx`/`rdx`. Here it's almost source, and the decompiler just has to put it back together as `return a + b;`.
 
 ## Why managed is easier than native
-
-Collected into a table to be clear:
 
 | | Native (C/C++) | Managed (.NET) |
 |---|---|---|
@@ -75,13 +73,13 @@ Collected into a table to be clear:
 | Decompile result | approximate pseudocode | C# nearly like the original |
 | Main obstacle | compiler optimization | obfuscation (see Lesson 5.5) |
 
-The last point is very important: the only thing standing between you and .NET source usually isn't the format itself, but an **obfuscator** deliberately renaming and distorting things. Most of this part is therefore about removing obfuscation, not wrestling with IL.
+The last row matters. What stands between you and .NET source is usually not the format but an obfuscator that renames and distorts things on purpose. So most of this part is about removing obfuscation, not fighting IL.
 
 ## Tools
 
-ILSpy and dnSpy are both free portable downloads. ILSpy specializes in decompiling and viewing IL, while dnSpy is strong in that it can also debug and edit assemblies. Lessons [5.2](/posts/re-5-2-ilspy-dnspy-when-decompiling-gives-back/) and [5.3](/posts/re-5-3-debugging-net-without-source-using-dnspy/) go deeper. ildasm (comes with the Windows SDK) outputs IL as text and ilasm assembles it back, ilspycmd is the command-line version of ILSpy and is handy for automation, and JetBrains' dotPeek is another free decompiler.
+ILSpy and dnSpy are both free portable downloads. ILSpy is for decompiling and viewing IL, while dnSpy can also debug and edit assemblies. Lessons [5.2](/posts/re-5-2-ilspy-dnspy-when-decompiling-gives-back/) and [5.3](/posts/re-5-3-debugging-net-without-source-using-dnspy/) go deeper. ildasm (comes with the Windows SDK) outputs IL as text and ilasm assembles it back. ilspycmd is the command-line version of ILSpy and is handy for automation, and JetBrains' dotPeek is another free decompiler.
 
-They all read the same thing: the IL and metadata in the assembly. They differ in interface and in the ability to edit.
+They all read the same thing, the IL and metadata in the assembly. They differ in interface and in whether you can edit.
 
 ## Lab
 
@@ -89,7 +87,7 @@ The goal is to confirm by hand what this lesson says: a .NET file contains IL an
 
 First recognize .NET with DIE. Drag `ILSpy.dll` (or `dnSpy.exe`) into DIE and confirm it reports a PE with an extra .NET / CLR label, and note which runtime it names (.NET Framework or modern .NET). Why is it still a PE, yet the code isn't in the `.text` section the way it would be in a plain C exe?
 
-Then open a .NET DLL in ILSpy. Open `ILSpy.exe`, choose File > Open and point it at any .NET DLL in the ILSpy folder (for example `ICSharpCode.Decompiler.dll`). Browse the tree of namespaces, classes and methods on the left and notice the names are fully intact. Pick any method and look at the decompiled C# on the right. Next switch the language box in the top corner from `C#` to `IL` and compare the IL with the C# of the same method. Look for `ldarg`, `ldloc`, `call` and `ret`, and pick a small method (a getter or an addition function) to see the IL to C# mapping most clearly.
+Then open a .NET DLL in ILSpy. Open `ILSpy.exe`, choose File > Open and point it at any .NET DLL in the ILSpy folder (for example `ICSharpCode.Decompiler.dll`). Browse the tree of namespaces, classes and methods on the left and notice the names are intact. Pick any method and look at the decompiled C# on the right. Next switch the language box in the top corner from `C#` to `IL` and compare the IL with the C# of the same method. Look for `ldarg`, `ldloc`, `call` and `ret`. A small method (a getter or an addition function) shows the IL to C# mapping best.
 
 If you have the dotnet SDK, build a program of your own. Create a project with this command:
 
@@ -103,7 +101,7 @@ Replace `Program.cs` with the file `Program.cs` that comes with this lab, then b
 dotnet build -c Debug
 ```
 
-Open the resulting DLL (in `bin/Debug/netX/Hello5x.dll`) in ILSpy, find the method `Calculator.Add`, look at its IL and compare. Switch `SumTo` to IL and see for yourself how the `for` loop turns into a conditional jump.
+Open the resulting DLL (in `bin/Debug/netX/Hello5x.dll`) in ILSpy, find the method `Calculator.Add`, look at its IL and compare. Switch `SumTo` to IL and see how the `for` loop turns into a conditional jump.
 
 Two questions to think about. If an assembly is obfuscated so that every name becomes `a`, `b`, `c`, which part of the file is touched, the IL or the metadata (hint: both kinds of names live in the metadata)? And why can dnSpy edit code while ILSpy can't (see Lessons 5.2 and 5.4)?
 
@@ -119,9 +117,9 @@ Two questions to think about. If an assembly is obfuscated so that every name be
 
 DIE reports the file is a PE, and it also recognizes the CLI header and attaches a label like `.NET` with the runtime version (for example `.NET Framework(v4.0...)` or `.NET(v8...)`). It can do that because the Optional header of a PE has a Data Directory called COM Descriptor (`IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR`, the 14th entry) that points to the CLI header, and native files normally leave this entry empty.
 
-As for why it is a PE and yet the code isn't in the normal `.text`: the Windows loader still loads the file as an ordinary PE, but the entry point is only a small stub that jumps into the CLR. The real code is IL, living in the streams (`#~`, `#Strings`, `#US`, `#Blob`) that the CLI header points to, and only the CLR understands it. The section holding them is usually named `.text`, but its content is IL plus metadata, not x86.
+As for why it's a PE and yet the code isn't in the normal `.text`: the Windows loader still loads the file as an ordinary PE, but the entry point is only a small stub that jumps into the CLR. The real code is IL, living in the streams (`#~`, `#Strings`, `#US`, `#Blob`) that the CLI header points to, and only the CLR understands it. The section holding them is usually named `.text`, but its content is IL plus metadata, not x86.
 
-When you open `ICSharpCode.Decompiler.dll` (or any .NET DLL), the tree on the left shows namespaces, classes and methods with their original names. That is direct evidence that metadata keeps names. Switch to IL mode and a simple property getter looks like this:
+When you open `ICSharpCode.Decompiler.dll` (or any .NET DLL), the tree on the left shows namespaces, classes and methods with their original names. That's direct evidence that metadata keeps names. Switch to IL mode and a simple property getter looks like this:
 
 ```
 .method public hidebysig specialname instance int32 get_Count() cil managed
@@ -170,7 +168,7 @@ public int SumTo(int n)
 
 Its IL has two locals (`total`, `i`), a label at the top of the loop, a body that accumulates, and a `blt` or `ble` (branch if less than or less or equal) that goes back to the top of the loop. A `for` loop in IL is also just compare plus jump, like assembly, but it keeps the variable names, so a decompiler can rebuild a clean `for` loop.
 
-On the reflection questions, a renaming obfuscator acts on the metadata (the `#Strings` table holds the names). IL refers to names through tokens that point into the metadata, so when the original names are replaced with `a`, `b`, `c` or unreadable characters, the decompiler still produces code with the right logic but meaningless names. The logic (IL) isn't lost, only the names. dnSpy can edit because it can recompile a method from C# or edit the IL directly and write the assembly back (using dnlib), while ILSpy leans toward reading and decompiling and doesn't focus on writing back. The details are in Lessons 5.2 and 5.4.
+On the questions, a renaming obfuscator acts on the metadata (the `#Strings` table holds the names). IL refers to names through tokens that point into the metadata, so when the original names are replaced with `a`, `b`, `c` or unreadable characters, the decompiler still produces code with the right logic but meaningless names. The logic (IL) isn't lost, only the names. dnSpy can edit because it can recompile a method from C# or edit the IL directly and write the assembly back (using dnlib), while ILSpy is mostly for reading and decompiling and doesn't write back. The details are in Lessons 5.2 and 5.4.
 
 </details>
 

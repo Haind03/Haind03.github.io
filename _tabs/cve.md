@@ -64,6 +64,10 @@ order: 2
   .ca-cvss.high { background: #ff8a3d; }
   .ca-cvss.med { background: var(--cp-yellow); }
 
+  .ca-pager { display: flex; justify-content: center; gap: .5rem; margin: 1.25rem 0 0; }
+  .ca-pager button { min-width: 2.4rem; font: 600 .8rem var(--cp-mono); color: var(--cp-text); background: var(--cp-panel); border: 1px solid var(--cp-line-2); padding: .45rem .7rem; cursor: pointer; clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px); }
+  .ca-pager button:hover { border-color: var(--cp-cyan); color: var(--cp-cyan); }
+  .ca-pager button.on { background: var(--cp-cyan); color: var(--cp-bg); border-color: var(--cp-cyan); }
   .ca-plat { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 1rem; }
   .ca-plat a { display: block; padding: 1.1rem 1.2rem; background: var(--cp-panel); border: 1px solid var(--cp-line); color: var(--cp-text); clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%); transition: border-color .2s, transform .2s; }
   .ca-plat a:hover { border-color: var(--cp-cyan); transform: translateY(-3px); text-shadow: none; }
@@ -154,6 +158,8 @@ order: 2
   </div>
 {% endfor %}
 
+<div class="ca-pager" id="ca-pager"></div>
+
 <div class="ca-h"><span class="n">0x03</span><h2>Where I report</h2></div>
 
 <div class="ca-plat">
@@ -165,23 +171,45 @@ order: 2
 
 <script>
   (function () {
+    var PER = 20;
     var bar = document.getElementById('ca-filters');
+    var pager = document.getElementById('ca-pager');
     if (!bar) return;
-    var rows = document.querySelectorAll('.ca-row');
+    var rows = Array.prototype.slice.call(document.querySelectorAll('.ca-row'));
+    var filter = 'all', page = 1;
+    function match(r, f) { return f === 'all' || (f === 'crit' ? r.dataset.sev === 'crit' : r.dataset.cls === f); }
+    function render() {
+      var shown = rows.filter(function (r) { return match(r, filter); });
+      var pages = Math.max(1, Math.ceil(shown.length / PER));
+      if (page > pages) page = pages;
+      rows.forEach(function (r) { r.classList.add('hide'); });
+      shown.slice((page - 1) * PER, page * PER).forEach(function (r) { r.classList.remove('hide'); });
+      pager.innerHTML = '';
+      if (pages < 2) return;
+      for (var i = 1; i <= pages; i++) {
+        var btn = document.createElement('button');
+        btn.textContent = i;
+        if (i === page) btn.className = 'on';
+        btn.addEventListener('click', (function (n) { return function () {
+          page = n; render();
+          var top = document.querySelector('.ca-head') || bar;
+          window.scrollTo({ top: top.getBoundingClientRect().top + window.scrollY - 90, behavior: 'smooth' });
+        }; })(i));
+        pager.appendChild(btn);
+      }
+    }
     bar.querySelectorAll('button').forEach(function (b) {
       var f = b.dataset.f;
       if (f !== 'all') {
-        var n = Array.prototype.filter.call(rows, function (r) { return f === 'crit' ? r.dataset.sev === 'crit' : r.dataset.cls === f; }).length;
+        var n = rows.filter(function (r) { return match(r, f); }).length;
         b.insertAdjacentHTML('beforeend', '<b>' + n + '</b>');
         if (!n) b.style.display = 'none';
       }
       b.addEventListener('click', function () {
         bar.querySelectorAll('button').forEach(function (x) { x.classList.toggle('on', x === b); });
-        rows.forEach(function (r) {
-          var show = f === 'all' || (f === 'crit' ? r.dataset.sev === 'crit' : r.dataset.cls === f);
-          r.classList.toggle('hide', !show);
-        });
+        filter = f; page = 1; render();
       });
     });
+    render();
   })();
 </script>

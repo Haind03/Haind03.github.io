@@ -8,13 +8,13 @@ categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
-There's one data structure you'll run into again and again in Windows code, especially malware: the PEB. It sits right inside the process's address space, you don't need to call any API to reach it, and that's exactly why it's a gold mine for both anti-debug and sneaky module enumeration. Understanding the PEB and its few siblings (TEB, handles, tokens) means understanding a big chunk of code that looks like the Matrix if you don't know it.
+The PEB is a data structure you'll keep running into in Windows code, especially malware. It lives in the process's own address space and you can read it without calling any API. That makes it useful for anti-debug tricks and for finding modules quietly. Once you know the PEB and the structures around it (TEB, handles, tokens), a lot of confusing-looking code starts to make sense.
 
-## TEB and PEB, the process's two notebooks
+## TEB and PEB
 
-Every thread has its own notebook called the TEB (Thread Environment Block), and every process has one shared notebook called the PEB (Process Environment Block). The OS builds these two structures in process memory to store all kinds of information about itself: where it's running, which DLLs it has loaded, whether it's being debugged, what the environment variables are.
+Every thread has a TEB (Thread Environment Block) and every process has one PEB (Process Environment Block). The OS builds both in process memory and stores information about the process there: where it's running, which DLLs are loaded, whether it's being debugged, the environment variables.
 
-The key point reversers need to notice is that you can get at them without calling any API. The CPU always keeps a pointer to the TEB in a special segment register:
+What matters for reversing is that you can reach them without any API call. The CPU keeps a pointer to the TEB in a segment register:
 
 ```asm
 ; x64: get the TEB pointer, then the PEB
@@ -26,15 +26,15 @@ mov eax, fs:[0x18]      ; eax = TEB address
 mov eax, fs:[0x30]      ; eax = PEB address
 ```
 
-Seeing `gs:[0x60]` or `fs:[0x30]` in a disassembly should turn a light on right away: the code is reaching into the PEB. It doesn't call `GetModuleHandle` or `IsDebuggerPresent`, it reads directly. This is the number one reason beginners get confused, since there's no API name to look up.
+When you see `gs:[0x60]` or `fs:[0x30]` in a disassembly, the code is reading the PEB. It doesn't call `GetModuleHandle` or `IsDebuggerPresent`, it just reads memory. Beginners get stuck here a lot because there's no API name to look up.
 
 ## PEB fields you'll run into
 
-The PEB has many fields, but the three below make up most of the times you'll touch it.
+The PEB has many fields, but three of them cover most of what you'll see.
 
 ### BeingDebugged (offset +0x2)
 
-This is one byte, equal to 1 when a debugger is attached to the process. Windows' `IsDebuggerPresent` internally reads exactly this byte and nothing more. So malware often skips the API and reads it directly:
+One byte, equal to 1 when a debugger is attached. `IsDebuggerPresent` internally reads this byte and nothing else, so malware often skips the API and reads it directly:
 
 ```asm
 mov rax, gs:[0x60]        ; PEB
@@ -43,54 +43,54 @@ test eax, eax
 jne  found_debugger       ; non-zero: being debugged
 ```
 
-If you can read this snippet, you recognize a classic anti-debug trick, covered in detail in [Lesson 15.2](/technique-reverse/). The simplest way around it while debugging is to set that byte to 0.
+If you can read this snippet, you've recognized a classic anti-debug trick, covered in [Lesson 15.2](/technique-reverse/). The easy bypass while debugging is to set that byte to 0.
 
 ### Ldr, the list of loaded modules
 
-The `Ldr` field (offset +0x18 on x64) points to a structure holding three linked lists of every module (DLL) loaded into the process, with base address and name. This matters because malware walks the list to find the address of kernel32.dll on its own and then locate `GetProcAddress` and `LoadLibrary` without importing them. That way its import table is squeaky clean and looks harmless at a glance, and this is the foundation of shellcode and many loaders. So when you see code walking a linked list that starts from the PEB and compares name strings (usually by hash rather than the real name, to hide it), it's almost certainly resolving APIs by hand.
+The `Ldr` field (offset +0x18 on x64) points to a structure with three linked lists of every module (DLL) loaded in the process, with base address and name. Malware walks one of these lists to find kernel32.dll by itself, then finds `GetProcAddress` and `LoadLibrary` without importing them. Its import table stays clean and looks harmless, and shellcode and many loaders are built on this. So if you see code walking a linked list that starts from the PEB and compares names (usually hashes rather than the real names), it's almost certainly resolving APIs by hand.
 
 ### NtGlobalFlag and heap flags
 
-When a process runs under a debugger, Windows sets a few flags differently: `NtGlobalFlag` in the PEB carries bits like `FLG_HEAP_ENABLE_TAIL_CHECK`, and the heap has debug flags. Malware compares these flags against "normal" values to guess whether there's a debugger. Also anti-debug, also read straight from the PEB.
+Under a debugger Windows sets a few flags differently. `NtGlobalFlag` in the PEB carries bits like `FLG_HEAP_ENABLE_TAIL_CHECK`, and the heap gets debug flags too. Malware compares these against the normal values to guess whether a debugger is there. It's another anti-debug check read straight from the PEB.
 
-## Handles, how a process holds on to resources
+## Handles
 
-When code opens a file, creates a thread or a mutex, Windows returns a HANDLE: a small integer that acts as a "ticket" referring to the real object living in the kernel. You never touch the object directly, you hand that ticket to APIs.
+When code opens a file or creates a thread or a mutex, Windows returns a HANDLE. It's a small integer that refers to the real object in the kernel. You never touch the object directly, you pass the handle to APIs.
 
-Two things here are useful for RE. Each process has its own handle table, so you can open a process in Process Hacker or System Informer and look at the Handles tab to see which files, registry keys, mutexes and connections it's holding. With malware this is a quick way to see what it touches before reading any code. The object types you see often are process, thread, file, event, mutex (mutant), section (shared memory) and registry key.
+Two things are useful for RE. Each process has its own handle table, so you can open a process in Process Hacker or System Informer and look at the Handles tab to see which files, registry keys, mutexes and connections it holds. With malware this is a quick way to see what it touches before reading any code. Common object types are process, thread, file, event, mutex (mutant), section (shared memory) and registry key.
 
-## Mutexes, a malware fingerprint
+## Mutexes as a malware fingerprint
 
-A mutex (mutual exclusion) is meant for synchronizing threads, but malware abuses it in a way that's very useful to analysts: it creates a mutex with a fixed name as soon as it runs, and if that mutex already exists it exits. The goal is to avoid infecting the same machine twice.
+A mutex (mutual exclusion) is meant for synchronizing threads, but malware uses it to avoid infecting the same machine twice. It creates a mutex with a fixed name when it starts, and if that mutex already exists it exits.
 
-The result is that the mutex name becomes a great IOC (indicator of compromise). When you see `CreateMutexW` with a strange name string, write that string down right away, it can identify a whole malware family. Sometimes you can just create that mutex on the machine ahead of time and the malware thinks it already ran and doesn't run again, a simple "vaccine".
+This makes the mutex name a good IOC (indicator of compromise). When you see `CreateMutexW` with a strange name string, write it down. It can identify a whole malware family. Sometimes you can create that mutex on the machine ahead of time, and the malware thinks it already ran and doesn't start. A simple "vaccine".
 
-## Access tokens, who's allowed to do what
+## Access tokens
 
-Every process carries an access token describing identity and rights: which user it runs as, which groups it belongs to, which privileges it has (for example `SeDebugPrivilege`, which lets it open other processes to read/write memory, the basis of injection). When you reverse a sample that tries to escalate privileges, you'll see it call `OpenProcessToken` and `AdjustTokenPrivileges` to enable `SeDebugPrivilege`. Recognizing this combo tells you it's preparing to touch another process.
+Every process carries an access token with its identity and rights: which user it runs as, which groups it belongs to, which privileges it has. One example is `SeDebugPrivilege`, which lets a process open other processes to read and write memory, and injection depends on it. When you reverse a sample that tries to escalate privileges, you'll see `OpenProcessToken` and `AdjustTokenPrivileges` used to enable `SeDebugPrivilege`. That combination means it's getting ready to touch another process.
 
 ## Lab
 
-This lab needs no code. You just watch a running process with x64dbg and Process Hacker (or System Informer), and the goal is to turn the abstract offsets from this lesson into things you found with your own hands. You need the 64-bit build of x64dbg, Process Hacker or System Informer, and any process to look at. `notepad.exe` is a safe choice, or any 64-bit program you wrote yourself.
+This lab needs no code. You watch a running process with x64dbg and Process Hacker (or System Informer), and the goal is to find the offsets from this lesson yourself. You need the 64-bit build of x64dbg, Process Hacker or System Informer, and any process to look at. `notepad.exe` is a safe choice, or any 64-bit program you wrote.
 
-Start by finding `BeingDebugged` in the PEB. Open `notepad.exe` in x64dbg (File > Open) and let it stop at the entry point. You might be tempted to type `mov rax, gs:[0x60]` in the Command box, but don't execute it. Instead type the following, which makes the Dump window jump to the PEB, because x64dbg understands `peb()` as the address of the PEB of the process being debugged.
+Start with `BeingDebugged` in the PEB. Open `notepad.exe` in x64dbg (File > Open) and let it stop at the entry point. Don't bother typing `mov rax, gs:[0x60]` in the Command box. Type the following instead, which makes the Dump window jump to the PEB, because x64dbg understands `peb()` as the PEB address of the debugged process.
 
 ```
 dump peb()
 ```
 
-In the Dump window, count two bytes from the start of the PEB (offset +0x2). That is `BeingDebugged`, and since you are debugging it must be `01`. Try editing it to `00` (right-click > Binary > Edit, or just type over it). That is exactly the manual bypass for `IsDebuggerPresent`.
+In the Dump window, count two bytes from the start of the PEB (offset +0x2). That's `BeingDebugged`, and since you're debugging it should be `01`. Edit it to `00` (right-click > Binary > Edit, or type over it). This is the manual bypass for `IsDebuggerPresent`.
 
-Next look at `NtGlobalFlag`, which sits at offset +0xBC on x64. In the Dump window jump to `peb()+0xBC`. While being debugged the value is usually `0x70` (three heap debug bits on), and when the program runs normally it is 0. Write down the number you see.
+Next, `NtGlobalFlag` sits at offset +0xBC on x64. In the Dump window jump to `peb()+0xBC`. While being debugged the value is usually `0x70` (three heap debug bits on), and when the program runs normally it's 0. Write down the number you see.
 
-Finally look at handles and mutexes. Open Process Hacker and pick a process, ideally an app that has a lot of files open or an offline game. Double-click it and go to the Handles tab, then filter by type. `File` shows the files it has open, `Mutant` is the mutex (note the names, because in malware analysis these names are IOCs), and `Key` shows the registry keys it holds. Ask yourself whether you can guess what the process is doing just from this list, before reading a single line of code.
+Finally, handles and mutexes. Open Process Hacker and pick a process, ideally an app with a lot of open files or an offline game. Double-click it, go to the Handles tab and filter by type. `File` shows the open files, `Mutant` is the mutex (note the names, since in malware analysis they're IOCs), and `Key` shows registry keys. See if you can guess what the process is doing from this list alone, before reading any code.
 
-When you are done you should have four things written down: the PEB address of the process you inspected, the value of `BeingDebugged` before and after the edit, the value of `NtGlobalFlag` while debugging, and any one mutex name you found.
+When you're done you should have four things written down: the PEB address of the process you inspected, the value of `BeingDebugged` before and after the edit, the value of `NtGlobalFlag` while debugging, and one mutex name you found.
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>
 
-Try it yourself first. These are the PEB offsets you will use most often on x64.
+Try it yourself first. These are the PEB offsets you'll use most often on x64.
 
 | Offset | Field | Meaning |
 |---|---|---|
@@ -102,17 +102,17 @@ Try it yourself first. These are the PEB offsets you will use most often on x64.
 
 On x86 the offsets differ: BeingDebugged is +0x2, NtGlobalFlag is +0x68 and Ldr is +0x0C.
 
-For the first task, after `dump peb()` the Dump window points at the start of the PEB. The third byte (offset +2) is `BeingDebugged`, and because you are debugging it reads `01`. After you set it to `00`, any call to `IsDebuggerPresent` reads exactly this byte and returns 0, meaning "no debugger". That is the essence of every anti-anti-debug plugin such as ScyllaHide: they keep this byte at 0 automatically and also patch `NtGlobalFlag` and a pile of other checks. Lesson 15.9 covers it in detail.
+For the first task, after `dump peb()` the Dump window points at the start of the PEB. The third byte (offset +2) is `BeingDebugged`, and because you're debugging it reads `01`. After you set it to `00`, any call to `IsDebuggerPresent` reads this byte and returns 0, meaning no debugger. Anti-anti-debug plugins such as ScyllaHide work the same way: they keep this byte at 0 automatically and also patch `NtGlobalFlag` and a pile of other checks. Lesson 15.9 covers it in detail.
 
-For the second task, `NtGlobalFlag` is at `peb()+0xBC`. The value `0x70` is made of three bits: `FLG_HEAP_ENABLE_TAIL_CHECK` (0x10), `FLG_HEAP_ENABLE_FREE_CHECK` (0x20) and `FLG_HEAP_VALIDATE_PARAMETERS` (0x40). Outside a debugger all three are off, so the value is 0. Malware compares `NtGlobalFlag & 0x70` against 0 and guesses a debugger when it is not zero, and the bypass is to force the field back to 0.
+For the second task, `NtGlobalFlag` is at `peb()+0xBC`. The value `0x70` is three bits: `FLG_HEAP_ENABLE_TAIL_CHECK` (0x10), `FLG_HEAP_ENABLE_FREE_CHECK` (0x20) and `FLG_HEAP_VALIDATE_PARAMETERS` (0x40). Outside a debugger all three are off, so the value is 0. Malware compares `NtGlobalFlag & 0x70` against 0 and assumes a debugger when it isn't zero. The bypass is to force the field back to 0.
 
-For the third task, in the Handles tab of Process Hacker the `File` type shows which files the process has open, so you can infer where it reads and writes. A `Mutant` (mutex) with a strange fixed name, such as a GUID or a meaningless string, is worth writing down when analyzing malware, since many well known families are recognized by their mutex name alone. The `Key` type shows registry keys, which are often where persistence gets installed.
+For the third task, the `File` type in the Handles tab shows which files the process has open, so you can tell where it reads and writes. A `Mutant` (mutex) with a strange fixed name, like a GUID or a meaningless string, is worth writing down when you analyze malware, since many known families are recognized by their mutex name alone. The `Key` type shows registry keys, which is often where persistence gets installed.
 
-The takeaway is that before you open a disassembler, the handle table alone already tells you about half of what a process does. It is a very fast piece of dynamic triage.
+Before you even open a disassembler, the handle table already tells you about half of what a process does. It's a very fast bit of dynamic triage.
 
 </details>
 
 ## Key takeaways
-The TEB (per thread) and PEB (per process) sit right in process memory, reachable via `gs:[0x60]` (x64) or `fs:[0x30]` (x86) with no API needed. Seeing those in code means it's touching the PEB, usually for anti-debug or sneaky API resolution. BeingDebugged (+2) is the guts of `IsDebuggerPresent`, and Ldr holds the list of loaded modules.
+The TEB (per thread) and PEB (per process) sit in process memory and can be reached through `gs:[0x60]` (x64) or `fs:[0x30]` (x86) with no API call. Code that does this is touching the PEB, usually for anti-debug or hand-rolled API resolution. BeingDebugged (+2) is what `IsDebuggerPresent` reads, and Ldr holds the list of loaded modules.
 
-A handle is a "ticket" referring to a kernel object, and the handle table in Process Hacker shows what a process touches. A fixed mutex name is a good IOC for identifying malware, and `SeDebugPrivilege` via `AdjustTokenPrivileges` is a sign of preparing for injection.
+A handle refers to a kernel object, and the handle table in Process Hacker shows what a process touches. A fixed mutex name is a good IOC for identifying malware, and `SeDebugPrivilege` enabled through `AdjustTokenPrivileges` suggests it's preparing for injection.

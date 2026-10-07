@@ -1,38 +1,38 @@
 ---
-title: "Lesson 13.1: Unity with the Mono backend, a gift for beginners"
+title: "Lesson 13.1: Unity with the Mono backend"
 image:
   path: /assets/img/covers/re-13-1-unity-mono-backend-gift-beginners.webp
-  alt: "Lesson 13.1: Unity with the Mono backend, a gift for beginners"
+  alt: "Lesson 13.1: Unity with the Mono backend"
 date: 2023-03-06 22:31:00 +0700
 categories: ["Technique Reverse", "Part 13 · Games: Unity, Unreal, Lua"]
 tags: [reverse-engineering, game-hacking]
 render_with_liquid: false
 ---
-Of all the kinds of games to practice reversing on, Unity with the Mono backend is the easiest, so easy it feels almost like cheating. The reason: all the gameplay code sits in a single .NET file called `Assembly-CSharp.dll`, and as you already know from Part 5, .NET decompiles to nearly the original source. Open it in dnSpy and you can read class names, variable names, logic, then edit directly and save. You never need to touch a single line of assembly.
+Unity with the Mono backend is the easiest kind of game to practice reversing on. All the gameplay code sits in a single .NET file called `Assembly-CSharp.dll`, and as you know from Part 5, .NET decompiles to nearly the original source. Open it in dnSpy and you can read class names, variable names, logic, then edit directly and save. You never touch a line of assembly.
 
-This lesson assumes you're working on an offline, single-player game of your own. Modifying online games is a completely different matter, both technically and legally, and isn't covered here.
+This lesson assumes you're working on an offline, single-player game of your own. Modifying online games is a different matter, both technically and legally, and isn't covered here.
 
 ## Recognizing a Unity game
 
-The signs are right in the install folder. Next to the game's exe there's always a folder named `<GameName>_Data`. Open it and you can tell the backend right away. If there's a `<GameName>_Data/Managed/` folder full of `.dll` files, including `Assembly-CSharp.dll`, this is the Mono backend. That's the case in this lesson, and the easiest case. If there's a `GameAssembly.dll` (a huge one) next to the exe and a `global-metadata.dat` in `il2cpp_data/Metadata/`, this is the IL2CPP backend. The code has been compiled to native, which is much harder, so it's saved for lesson [13.2](/posts/re-13-2-unity-il2cpp-when-assembly-csharp-disappears/).
+The signs are in the install folder. Next to the game's exe there's always a folder named `<GameName>_Data`. Open it and you can tell the backend. If there's a `<GameName>_Data/Managed/` folder full of `.dll` files, including `Assembly-CSharp.dll`, it's the Mono backend. That's the case in this lesson, and the easiest. If there's a `GameAssembly.dll` (a huge one) next to the exe and a `global-metadata.dat` in `il2cpp_data/Metadata/`, it's the IL2CPP backend. The code has been compiled to native, which is much harder, so it's covered in lesson [13.2](/posts/re-13-2-unity-il2cpp-when-assembly-csharp-disappears/).
 
-Just glance at whether `Managed/Assembly-CSharp.dll` or `GameAssembly.dll` is there and you know which kind you're dealing with. Dragging `Assembly-CSharp.dll` into Detect It Easy also confirms it's a .NET assembly.
+Check whether `Managed/Assembly-CSharp.dll` or `GameAssembly.dll` is there and you know which kind you have. Dragging `Assembly-CSharp.dll` into Detect It Easy also confirms it's a .NET assembly.
 
 ## Opening Assembly-CSharp.dll in dnSpy
 
-This is exactly the Part 5 workflow, applied to a game. Drag `Assembly-CSharp.dll` into dnSpy. You see the namespace and class tree just like a normal .NET project.
+This is the Part 5 workflow, applied to a game. Drag `Assembly-CSharp.dll` into dnSpy. You see the namespace and class tree just like a normal .NET project.
 
-What's different in Unity: most gameplay classes inherit `MonoBehaviour`, and the logic lives in the familiar Unity methods. `Start()` runs once when the object is created, `Update()` runs every frame, and there are other callbacks like `Awake()`, `OnEnable()` and `OnTriggerEnter()`.
+In Unity, most gameplay classes inherit `MonoBehaviour`, and the logic lives in the usual Unity methods. `Start()` runs once when the object is created, `Update()` runs every frame, and there are other callbacks like `Awake()`, `OnEnable()` and `OnTriggerEnter()`.
 
-Knowing this helps you narrow things down fast. Want the logic that adds score every frame? Look in `Update()`. Want the initial health setup? Look in `Start()` or `Awake()`.
+This helps you narrow things down. For the logic that adds score every frame, look in `Update()`. For the initial health setup, look in `Start()` or `Awake()`.
 
-## Hunting for the value to change
+## Finding the value to change
 
-Say you want to find where gold is managed. The most effective way is still to start from what's easiest to grasp. Search by name first: dnSpy has Search (Ctrl+Shift+K), so type `gold`, `coin`, `money`, `health`, `hp`. Game developers rarely obfuscate variable names in the Mono build, so you'll often see `public int gold;` or `private float health;` right away. Then use Analyze: right-click the `gold` field, choose Analyze, and look at "Used By" to see which methods read/write it. The function that subtracts gold when buying and the function that adds gold when picking it up all show up. Finally, read the logic. Go into the method with a check like `if (gold >= price)`, because that's where you step in.
+Say you want to find where gold is managed. Start with what's easiest. Search by name first: dnSpy has Search (Ctrl+Shift+K), so type `gold`, `coin`, `money`, `health`, `hp`. Game developers rarely obfuscate variable names in the Mono build, so you'll often see `public int gold;` or `private float health;` right away. Then use Analyze: right-click the `gold` field, choose Analyze, and look at "Used By" to see which methods read/write it. The function that subtracts gold when buying and the function that adds gold when picking it up both show up. Finally, read the logic. Go into the method with a check like `if (gold >= price)`, because that's where you step in.
 
 ## Modifying and saving
 
-dnSpy lets you edit directly in C# (Edit Method), exactly as in [Lesson 5.4](/posts/re-5-4-editing-net-assembly-saving-where-dnspy/). A few classic edits:
+dnSpy lets you edit directly in C# (Edit Method), as in [Lesson 5.4](/posts/re-5-4-editing-net-assembly-saving-where-dnspy/). A few common edits:
 
 ```csharp
 // Original: subtract gold when buying
@@ -58,15 +58,15 @@ void Update() {
 
 After editing, right-click the module and Save Module, overwriting `Assembly-CSharp.dll`. Run the game again and you'll see the effect. Back up the original file before overwriting, always.
 
-If the game uses strong name signing or has integrity checks you'll need extra handling, but most Mono indie games don't do that.
+If the game uses strong name signing or has integrity checks you'll need extra handling, but most Mono indie games don't.
 
 ## Extracting assets with AssetStudio
 
-Besides code, you might want to view or extract resources: textures, models, audio, text. They're in the `.assets` files and asset bundles in the `_Data` folder. **AssetStudio** (or AssetRipper) opens these files, lists them, and exports the resources into common formats. Useful when you want to understand the game's data, find hidden text strings, or just out of curiosity.
+Besides code, you might want to view or extract resources: textures, models, audio, text. They're in the `.assets` files and asset bundles in the `_Data` folder. AssetStudio (or AssetRipper) opens these files, lists them, and exports the resources into common formats. It's useful when you want to understand the game's data, find hidden text strings, or just look around.
 
-## Why Mono is so much easier than IL2CPP
+## Why Mono is easier than IL2CPP
 
-It all comes down to Mono keeping the IL and metadata intact in `Assembly-CSharp.dll`, like any .NET assembly. When the developer picks IL2CPP, the C# code is translated to C++ and compiled natively into `GameAssembly.dll`, most names are gone, and you lose the gift of decompiling to source. That's why the next lesson needs a completely different set of tools.
+Mono keeps the IL and metadata intact in `Assembly-CSharp.dll`, like any .NET assembly. When the developer picks IL2CPP, the C# code is translated to C++ and compiled natively into `GameAssembly.dll`, most names are gone, and you can no longer decompile back to source. That's why the next lesson needs a different set of tools.
 
 ## Lab
 
@@ -74,7 +74,7 @@ This lab stays strictly on an offline, single-player Unity game, either one of y
 
 Start by confirming the backend. Open the `<Game>_Data` folder and check whether it has `Managed/Assembly-CSharp.dll` (Mono) or a `GameAssembly.dll` (IL2CPP) instead, and only continue if it's Mono. Back up `Assembly-CSharp.dll` to a separate location before changing anything. Open it in dnSpy and use Search (Ctrl+Shift+K) to find a field such as `gold`, `coin`, `score`, `health` or `hp`. Right-click that field, choose Analyze, and look at "Used By" to find the methods that read or write it. Read the logic of one of those methods, for example a purchase function with something like `if (gold >= price)`, and understand what it does. Then use Edit Method (C#) to change it so the condition always holds, or pin a value inside `Update()`, and save the module, overwriting the file. Run the game again and confirm the change took effect. Finally, open the `.assets` file inside `_Data` with AssetStudio and export a texture or a text asset.
 
-A few questions worth thinking through. Why don't variable names in a Mono build usually get mangled into a/b/c the way R8 does to Android apps? If Save Module reports a strong name error, how do you deal with it (see Lesson 5.4)? And how is pinning health every frame different from blocking the function that applies damage in the first place, and which is the cleaner approach?
+A few questions to think through. Why don't variable names in a Mono build usually get mangled into a/b/c the way R8 does to Android apps? If Save Module reports a strong name error, how do you deal with it (see Lesson 5.4)? And how is pinning health every frame different from blocking the function that applies damage in the first place, and which is cleaner?
 
 
 <details class="lab-solution" markdown="1">
@@ -94,7 +94,7 @@ public class PlayerStats : MonoBehaviour {
 }
 ```
 
-The names aren't obfuscated because a Mono build doesn't enable renaming by default, which is exactly why Unity Mono is so approachable.
+The names aren't obfuscated because a Mono build doesn't enable renaming by default, which is why Unity Mono is so approachable.
 
 Analyzing usage. Right-click `gold`, choose Analyze, then Used By, and you'll see methods such as `Shop.TryBuy(int)` and `Pickup.OnTriggerEnter(Collider)`, which are where gold gets spent and earned.
 

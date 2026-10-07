@@ -1,48 +1,48 @@
 ---
-title: "Lesson 2.7: Hex editors and templates, when you need to see every byte"
+title: "Lesson 2.7: Hex editors and templates"
 image:
   path: /assets/img/covers/re-2-7-hex-editors-templates-when-you-need.webp
-  alt: "Lesson 2.7: Hex editors and templates, when you need to see every byte"
+  alt: "Lesson 2.7: Hex editors and templates"
 date: 2022-05-19 09:48:00 +0700
 categories: ["Technique Reverse", "Part 02 · The Toolkit"]
 tags: [reverse-engineering, tools]
 render_with_liquid: false
 ---
-A disassembler gives you a view at the instruction level, a debugger gives you a view at runtime. But sometimes you just want to crack a file open and look straight at every byte: fix a broken magic number, patch one byte to get past a check, or read some weird file format nobody wrote a parser for. That's when a hex editor speaks up. It's the crudest scalpel in the toolkit but also the most honest one.
+A disassembler shows you instructions and a debugger shows you what happens at runtime. Sometimes you just want to open the file and look at every byte: fix a broken magic number, patch one byte to get past a check, or read a weird file format nobody wrote a parser for. That's what a hex editor is for.
 
-This lesson won't teach you every button of the three programs. It only tells you when you need a hex editor, which one to pick, and most importantly the template/pattern concept that turns a pile of bytes into a readable structure.
+This lesson doesn't go through every button of the three programs. It covers when you need a hex editor, which one to pick, and the template/pattern idea that turns a pile of bytes into a readable structure.
 
-## When you really need a hex editor
+## When you need a hex editor
 
-Most of the time you won't open a hex editor, because IDA and x64dbg already have their own hex windows. But there are a few situations where a standalone hex editor is much faster and tidier.
+Most of the time you won't open one, because IDA and x64dbg already have hex windows. But in a few situations a standalone hex editor is faster and tidier.
 
-One is patching bytes directly in a file. You found in the debugger that a `jne` (opcode `75`) needs to become `je` (opcode `74`), and now you want to edit the file on disk directly so the patch lasts. Open the hex editor, jump to the offset, type over it, save. Done. Patch details are in [Lesson 17.1](/technique-reverse/).
+One is patching bytes directly in a file. You found in the debugger that a `jne` (opcode `75`) needs to become `je` (opcode `74`), and you want to edit the file on disk so the patch stays. Open the hex editor, jump to the offset, type over it, save. Patch details are in [Lesson 17.1](/technique-reverse/).
 
-Another is fixing a magic number or header, when a file has a few corrupted bytes at the start or someone deliberately changed the magic to hide the file type, and you restore it by hand. A third is reading a file format nobody knows, like a binary config file, a save game, or a homemade container. With no parser, you work out the structure yourself through hex. And the last is quickly checking a file: what are the first four bytes? `4D 5A` is PE, `7F 45 4C 46` is ELF, `50 4B` is ZIP. Often a glance at the start of the file is all you need.
+Another is fixing a magic number or header, when a file has a few corrupted bytes at the start or someone changed the magic on purpose to hide the file type. A third is reading a format nobody documents, like a binary config file, a save game, or a homemade container. With no parser, you work out the structure yourself from the hex. The last is a quick check: what are the first four bytes? `4D 5A` is PE, `7F 45 4C 46` is ELF, `50 4B` is ZIP. Often a glance at the start of the file is all you need.
 
-## Three options, pick by need
+## Three options
 
-### HxD, light and good enough
+### HxD
 
-HxD is a free Windows hex editor, light and quick to open. It does the basics well: view, edit bytes, search for hex or text strings, compare two files, and open disks and process memory too. If you only need to patch a few bytes or quickly look at a file, HxD is enough and there's nothing more to think about. Weakness: it doesn't understand structure, to it everything is just bytes.
+HxD is a free Windows hex editor, light and quick to open. It does the basics well: view, edit bytes, search for hex or text, compare two files, and open disks and process memory. If you only need to patch a few bytes or take a quick look, HxD is enough. The weakness is that it doesn't understand structure, to it everything is just bytes.
 
-### 010 Editor, the king of Binary Templates
+### 010 Editor
 
-010 Editor is commercial software (with a trial version), and what makes it worth the money is Binary Template. This is a standout feature. Instead of looking at bare bytes, you run a template (a script describing the file's structure) and 010 breaks the file into fields with names, types, and colors. A PE file becomes a tree of the DOS header, NT headers, section table, with each field's value clearly shown. The community has written templates for hundreds of formats (PE, ELF, ZIP, PNG, PCAP...), so you download one and run it.
+010 Editor is commercial software (with a trial), and the reason to pay for it is Binary Template. You run a template (a script describing the file's structure) and 010 breaks the file into fields with names, types and colors. A PE file becomes a tree of the DOS header, NT headers and section table, with each field's value shown. People have written templates for hundreds of formats (PE, ELF, ZIP, PNG, PCAP...), so you download one and run it.
 
-If your work often involves reading file structures, 010 saves hours of manual byte hunting.
+If your work often involves reading file structures, 010 saves a lot of manual byte hunting.
 
-### ImHex, built for reversers and free
+### ImHex
 
-ImHex is an open source hex editor, born for RE people. It has nearly all the nice things of 010 without the cost. Its pattern language is equivalent to Binary Template, describing file structure with C-like syntax. Its data inspector shows, when you put the cursor on a byte, the value if interpreted as u8/u16/u32, float, or time, in both little and big endian, which is extremely handy for guessing data types. It also has a built-in disassembler, an entropy graph, views in many encodings, a node interface for processing data, and a store of ready-made patterns you can download in the app.
+ImHex is an open source hex editor made with reversers in mind. It has most of what 010 has, without the cost. Its pattern language is equivalent to Binary Template and describes file structure with C-like syntax. The data inspector shows what the byte under the cursor would be as u8/u16/u32, float or time, in little and big endian, which helps a lot when you're guessing data types. It also has a built-in disassembler, an entropy graph, views in many encodings, a node interface for processing data, and a store of ready-made patterns you can download in the app.
 
-For beginners who don't want to spend money, ImHex is the best default choice. The rest of this lesson uses ImHex as the example.
+If you don't want to spend money, I'd start with ImHex. The rest of this lesson uses it.
 
 ## Template/pattern: turning bytes into structure
 
-This is the most important idea in the lesson. A binary file is really typed fields laid out one after another: a 4-byte number here, a string there, an array of structs behind it. The naked eye looking at hex has a hard time separating them. A template is how you tell the tool about that layout, and then it colors and labels things for you.
+A binary file is typed fields laid out one after another: a 4-byte number here, a string there, an array of structs after that. Looking at raw hex, it's hard to separate them. A template tells the tool about that layout, and then it colors and labels things for you.
 
-Take the start of a PE file as an example. The PE standard begins with a DOS header, in which two important fields are the magic `MZ` at offset 0 and `e_lfanew` at offset 0x3C (pointing to the NT headers). With ImHex's pattern language, you describe it like this:
+Take the start of a PE file. It begins with a DOS header, and two important fields in it are the magic `MZ` at offset 0 and `e_lfanew` at offset 0x3C (pointing to the NT headers). In ImHex's pattern language you describe it like this:
 
 ```c
 // Trimmed-down ImHex pattern for the start of a PE
@@ -62,11 +62,11 @@ DosHeader dos @ 0x00;              // place DosHeader at offset 0
 NtHeaders nt  @ dos.e_lfanew;      // place NtHeaders at the offset that e_lfanew points to
 ```
 
-Run this pattern on an `.exe` file and ImHex shows `dos.magic = "MZ"`, `dos.e_lfanew = 0x100` (say), then jumps there and reads `nt.signature = "PE"`, `nt.machine = 0x8664`. You just read the architecture and the number of sections without counting bytes by hand. The `@ address` syntax is the charm of the pattern language: you place a struct at an exact offset, even an offset taken from another field.
+Run this on an `.exe` and ImHex shows `dos.magic = "MZ"`, `dos.e_lfanew = 0x100` (say), then jumps there and reads `nt.signature = "PE"`, `nt.machine = 0x8664`. You get the architecture and the number of sections without counting bytes by hand. The `@ address` syntax is the handy part: you place a struct at an exact offset, even one taken from another field.
 
-Once you get this idea, you apply it to every format: write a pattern yourself for a save game, a binary config file, and the tool takes it apart for you. This is exactly the first step of reversing file formats, the topic of [Lesson 18.7](/technique-reverse/).
+Once you get this, it works for any format. Write a pattern for a save game or a binary config file and the tool takes it apart for you. This is the first step of reversing file formats, covered in [Lesson 18.7](/technique-reverse/).
 
-## Quick comparison of the three tools
+## Comparison
 
 | | HxD | 010 Editor | ImHex |
 |---|---|---|---|
@@ -77,7 +77,7 @@ Once you get this idea, you apply it to every format: write a pattern yourself f
 | Disasm/entropy | none | partial | yes |
 | Good for | quick byte patching | professional structure reading | reversers in general, beginners |
 
-Short advice: install HxD for quick patches, install ImHex as your main tool. You only need 010 when you work a lot with file formats and want its huge library of templates.
+My advice: install HxD for quick patches and ImHex as your main tool. You only need 010 if you work a lot with file formats and want its big library of templates.
 
 ## Lab
 
@@ -121,11 +121,11 @@ Write an ImHex pattern that describes it, using `pe_header.hexpat` as a referenc
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>
 
-Do everything before reading this. For the first task, these are the fixed bytes you should see. At offset `0x00`, `4D 5A` is "MZ", the magic of the DOS header, and every PE starts like this. At offset `0x3C` there is a little-endian `u32` that is `e_lfanew`. If you read `C0 00 00 00` the value is `0x000000C0`, remembering to reverse the bytes because of little-endian (see [Lesson 1.1](/posts/re-1-1-reading-hexdump-like-text/)). Jump to offset `0xC0` and the four bytes `50 45 00 00` are "PE\0\0", the signature of the NT headers. Right after the signature comes `machine` (u16): `4C 01` read backwards is `0x014C` (x86), and `64 86` read backwards is `0x8664` (x64). The next two bytes are `numberOfSections`.
+Try it yourself first. For the first task, these are the fixed bytes you should see. At offset `0x00`, `4D 5A` is "MZ", the magic of the DOS header, and every PE starts like this. At offset `0x3C` there is a little-endian `u32` that is `e_lfanew`. If you read `C0 00 00 00` the value is `0x000000C0`, reversing the bytes because of little-endian (see [Lesson 1.1](/posts/re-1-1-reading-hexdump-like-text/)). Jump to offset `0xC0` and the four bytes `50 45 00 00` are "PE\0\0", the signature of the NT headers. Right after the signature comes `machine` (u16): `4C 01` read backwards is `0x014C` (x86), and `64 86` read backwards is `0x8664` (x64). The next two bytes are `numberOfSections`.
 
-When you run `pe_header.hexpat`, ImHex shows these fields already decoded, and you only compare them with the numbers you read by hand. If they match, you understand both the manual reading and what the pattern does for you. A sample answer for a typical x64 exe is machine = `0x8664`, so x64, and `numberOfSections` is usually 5 to 7 depending on the compiler. The nice point to take away is that `e_lfanew` is a pointer inside the file. The pattern uses `NtHeaders nt @ dos.e_lfanew;` to place the struct at exactly that offset, which is why a pattern is stronger than staring at raw hex.
+When you run `pe_header.hexpat`, ImHex shows these fields already decoded, and you just compare them with the numbers you read by hand. If they match, you understand both the manual reading and what the pattern does for you. For a typical x64 exe, machine = `0x8664`, so x64, and `numberOfSections` is usually 5 to 7 depending on the compiler. Note that `e_lfanew` is a pointer inside the file. The pattern uses `NtHeaders nt @ dos.e_lfanew;` to place the struct at exactly that offset, which is why a pattern beats staring at raw hex.
 
-For the second task, `PASS=0` in hex is `50 41 53 53 3D 30`. The last byte `30` is the character '0' (in the ASCII table of [Lesson 1.1](/posts/re-1-1-reading-hexdump-like-text/), '0' = 0x30). Change `30` to `31`, save, and Notepad shows `PASS=1`. Changing exactly one byte at the right offset is enough to change behavior. When you patch a jump in a real exe the principle is identical, except that you change an opcode (for example `75` to `74` to turn `jne` into `je`) instead of an ASCII character.
+For the second task, `PASS=0` in hex is `50 41 53 53 3D 30`. The last byte `30` is the character '0' (in the ASCII table of [Lesson 1.1](/posts/re-1-1-reading-hexdump-like-text/), '0' = 0x30). Change `30` to `31`, save, and Notepad shows `PASS=1`. Changing one byte at the right offset is enough to change behavior. Patching a jump in a real exe works the same way, except you change an opcode (for example `75` to `74` to turn `jne` into `je`) instead of an ASCII character.
 
 For the third task the pattern is:
 
@@ -147,13 +147,13 @@ struct ScoreFile {
 ScoreFile file @ 0x00;
 ```
 
-The key point is that `Entry entries[count];` uses the `count` field it just read to know how long the array is. That is the real power of a pattern language: it handles structures of dynamic length, something that is almost impossible to separate by eye in raw hex. To make the sample file, write `52 4F 43 53` (which is 0x53434F52 with its bytes reversed) at the start, then the version, the count, and `count` entries. Run the pattern and ImHex lists each entry with its name and score decoded.
+`Entry entries[count];` uses the `count` field it just read to know how long the array is. So a pattern can handle structures of dynamic length, which is almost impossible to separate by eye in raw hex. To make the sample file, write `52 4F 43 53` (which is 0x53434F52 with its bytes reversed) at the start, then the version, the count, and `count` entries. Run the pattern and ImHex lists each entry with its name and score decoded.
 
-Two pitfalls come up often. One is forgetting endianness: the magic `0x53434F52` written to a little-endian file lies as `52 4F 43 53`, and getting the order wrong means the magic won't match. The other is miscounting the length of `name`, since being off by one byte shifts the whole array that follows.
+Two mistakes come up often. One is forgetting endianness: the magic `0x53434F52` in a little-endian file is stored as `52 4F 43 53`, and if you get the order wrong the magic won't match. The other is miscounting the length of `name`, since being off by one byte shifts the whole array that follows.
 
 </details>
 
 ## Key takeaways
-A hex editor is for when you need to see and edit down to the byte: patching bytes, fixing magic/headers, reading unfamiliar formats. You can quickly recognize a file from its start: `4D 5A` is PE, `7F 45 4C 46` is ELF, `50 4B` is ZIP.
+A hex editor is for when you need to see and edit down to the byte: patching bytes, fixing magic/headers, reading unfamiliar formats. You can recognize a file from its start: `4D 5A` is PE, `7F 45 4C 46` is ELF, `50 4B` is ZIP.
 
-HxD is light for quick patching, ImHex is free and strong for reversers, and 010 Editor is strongest for templates but paid. Templates and patterns turn bare bytes into named, typed fields, which is the key to reading file structure, and ImHex's `@ offset` syntax lets you place a struct at an exact position, even one taken from another field.
+HxD is light and good for quick patching, ImHex is free and strong for reversers, and 010 Editor has the strongest templates but is paid. Templates and patterns turn bare bytes into named, typed fields, and ImHex's `@ offset` syntax lets you place a struct at an exact position, even one taken from another field.

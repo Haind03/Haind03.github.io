@@ -1,27 +1,27 @@
 ---
-title: "Lesson 4.4: Exceptions, templates and lambdas, three modern C++ things that tangle up binaries"
+title: "Lesson 4.4: Exceptions, templates and lambdas"
 image:
   path: /assets/img/covers/re-4-4-exceptions-templates-lambdas-three-modern-c.webp
-  alt: "Lesson 4.4: Exceptions, templates and lambdas, three modern C++ things that tangle up binaries"
+  alt: "Lesson 4.4: Exceptions, templates and lambdas"
 date: 2022-07-16 14:52:00 +0700
 categories: ["Technique Reverse", "Part 04 · C++"]
 tags: [reverse-engineering, cpp]
 render_with_liquid: false
 ---
-By now you can read classes, vtables, and so on. But real-world C++ code has three more things that make beginners panic when they open the decompiler: a try/catch block turns into a mess of confusing tables, a small function suddenly shows up in five or six near-identical copies, and a simple-looking lambda turns into a whole hidden class. Once you understand the mechanism behind these three, they stop being scary and become just noise you know how to skip.
+By now you can read classes, vtables, and so on. But real C++ code has three more things that make beginners panic in the decompiler: a try/catch block turns into a mess of tables, a small function shows up in five or six near-identical copies, and a simple lambda turns into a whole hidden class. Once you know the mechanism behind them, they're just noise you know how to skip.
 
 ## Templates: one source function, many binary functions
 
-This is the easiest to understand so I'll start there. When you write a template:
+This is the easiest one, so I'll start there. When you write a template:
 
 ```cpp
 template <typename T>
 T add_one(T x) { return x + (T)1; }
 ```
 
-there's only one function in the source. But the compiler doesn't generate "one shared function" for all types. Each time you call it with a new type, it generates a whole separate function, called an instantiation. Calling `add_one<int>` and `add_one<double>` produces two completely different machine functions.
+there's only one function in the source. But the compiler doesn't generate one shared function for all types. Each time you call it with a new type, it generates a separate function, called an instantiation. Calling `add_one<int>` and `add_one<double>` produces two completely different machine functions.
 
-Look at the symbol list of the lab program and you see it right away:
+You can see it in the symbol list of the lab program:
 
 ```
 int    add_one<int>(int)       -> _Z7add_oneIiET_S0_
@@ -38,13 +38,13 @@ _Z7add_oneIiET_S0_:        ; add_one<int>
     ret
 ```
 
-The double version uses SSE registers (xmm) and the `addsd` instruction instead of `add`, since it works on floating point. The same source logic, two different function bodies.
+The double version uses SSE registers (xmm) and the `addsd` instruction instead of `add`, since it works on floating point. Same source logic, two different function bodies.
 
-This has a few consequences when reversing. The binary bloats, because a template used with ten types is ten functions, and template-heavy libraries (STL, Boost) push the function count into the thousands. You'll also see many nearly identical functions, differing only in data size or instruction type, and you shouldn't assume the author copy-pasted, since that's template instantiation. To save effort, remember that understanding one version is understanding the whole family. Read `add_one<int>`, then just glance at the others to confirm the same logic, and name them consistently like `add_one_int`, `add_one_double` so you don't mix them up.
+A few consequences when reversing. The binary gets bigger, because a template used with ten types is ten functions, and template-heavy libraries (STL, Boost) push the function count into the thousands. You'll also see many nearly identical functions, differing only in data size or instruction type. Don't assume the author copy-pasted, it's template instantiation. Understanding one version means understanding the whole family. Read `add_one<int>`, glance at the others to confirm the same logic, and name them consistently like `add_one_int`, `add_one_double` so you don't mix them up.
 
-## Lambdas: a hidden class disguised as a function
+## Lambdas: a hidden class
 
-A lambda looks like a tiny anonymous function, but the compiler turns it into an object. Specifically, this lambda:
+A lambda looks like a tiny anonymous function, but the compiler turns it into an object. This lambda:
 
 ```cpp
 int base = n * 10;
@@ -63,9 +63,9 @@ __lambda make{ n * 10 };
 make(7);                      // actually calls make.operator()(7)
 ```
 
-Meaning each captured variable becomes a field of a hidden struct, and the lambda body becomes the `operator()` method of that struct. Calling the lambda is calling a method, so it has a `this` pointer just like lesson [4.1](/posts/re-4-1-c-through-reversers-eyes-name-mangling/) described.
+Each captured variable becomes a field of a hidden struct, and the lambda body becomes the `operator()` method of that struct. Calling the lambda is calling a method, so it has a `this` pointer just like lesson [4.1](/posts/re-4-1-c-through-reversers-eyes-name-mangling/) described.
 
-Here's the real asm of the `operator()` of the lambda above (gcc -O0), you can see it right away:
+Here's the real asm of the `operator()` of the lambda above (gcc -O0):
 
 ```asm
 main::{lambda(int)#1}::operator()(int) const:
@@ -78,27 +78,27 @@ main::{lambda(int)#1}::operator()(int) const:
     ret
 ```
 
-Notice two things that confirm the model above: the first parameter `rdi` is `this` (SysV, on Windows it would be `rcx`), and `[rax]` reads the `base` field right at the start of the object. The capture has become data in the object, no longer a local variable.
+Two things match the model above. The first parameter `rdi` is `this` (SysV, on Windows it would be `rcx`), and `[rax]` reads the `base` field right at the start of the object. The capture is now data in the object, not a local variable.
 
-When reversing, recognize a lambda by a small struct being built on the spot (the `mov`s writing the capture into an object on the stack), then a method call with that object as `this`. Its mangled name contains a string like `ZZ...EUl...` (U for unnamed lambda). IDA/Ghidra usually show a long convoluted name, just rename it to `lambda_xxx` to keep it easy.
+To recognize a lambda when reversing, look for a small struct being built on the spot (the `mov`s writing the capture into an object on the stack), then a method call with that object as `this`. Its mangled name contains a string like `ZZ...EUl...` (U for unnamed lambda). IDA/Ghidra usually show a long ugly name, so rename it to `lambda_xxx`.
 
 ## Exceptions: the price of try/catch
 
-This is the part that tangles things the most. In the source, try/catch is tidy. In the binary, it splits into two parts: the normal running path (happy path) and the machinery that handles an exception, sitting separately, linked through data tables.
+This is the part that tangles things the most. In the source, try/catch is tidy. In the binary it splits into two parts: the normal running path (happy path) and the machinery that handles an exception, sitting separately, linked through data tables.
 
-The two main ABIs differ quite a bit. On Linux with the Itanium C++ ABI, a `throw` makes the runtime call `__cxa_throw`, and then it walks back up the stack (stack unwinding) to find a handler. The information "which handlers this frame has, what needs cleaning up" isn't in the code but in dedicated sections: `.eh_frame`, `.gcc_except_table`. The place in code that catches the exception is called a landing pad. In the decompiler you see a function that seems to "end" at `ret` but still has stray code blocks after it that nobody calls directly, and those are landing pads, which the runtime jumps into during unwinding.
+The two main ABIs differ quite a bit. On Linux with the Itanium C++ ABI, a `throw` makes the runtime call `__cxa_throw`, and then it walks back up the stack (stack unwinding) to find a handler. The information about which handlers this frame has and what needs cleaning up isn't in the code but in dedicated sections: `.eh_frame`, `.gcc_except_table`. The place in code that catches the exception is called a landing pad. In the decompiler you see a function that seems to end at `ret` but still has stray code blocks after it that nobody calls directly. Those are landing pads, which the runtime jumps into during unwinding.
 
 On Windows with MSVC, a different mechanism is used, with funclets (sub-functions for catch blocks) and unwind data in `.pdata`/`.xdata`. You'll see pointers to `FuncInfo` tables and `__CxxFrameHandler`, and a related function is `_CxxThrowException`.
 
-What both have in common, practically, for the reverser is this. try/catch code is cut apart: the try body runs straight, and the catch part sits in a separate block that the main flow doesn't reach with a normal `jmp`, so don't panic when you see "orphan" code after a function, because that's usually a handler. Also don't get lost in the unwind tables unless you really need to. In 90% of cases when reversing a crackme or finding the main logic, you only need to know "this spot can throw, that one catches" and move on, and the EH tables themselves rarely hide secrets. Seeing a `__cxa_throw` / `_CxxThrowException` call tells you there's an exception exit from here, and seeing `__cxa_begin_catch` / `__CxxFrameHandler` means you're in the handling area.
+What both have in common, for the reverser: try/catch code is cut apart. The try body runs straight, and the catch part sits in a separate block that the main flow doesn't reach with a normal `jmp`, so don't panic when you see orphan code after a function, it's usually a handler. Also don't get lost in the unwind tables unless you really need to. In most cases when reversing a crackme or finding the main logic, you only need to know "this spot can throw, that one catches" and move on. The EH tables rarely hide secrets. A `__cxa_throw` / `_CxxThrowException` call means there's an exception exit from here, and `__cxa_begin_catch` / `__CxxFrameHandler` means you're in the handling area.
 
-## Putting it together: don't let the noise hide the signal
+## Putting it together
 
-All three of these are the compiler generating extra code around the author's real logic. The general strategy is the same: recognize them, label them, then focus on the logic. A template is many copies of one function (understand one, infer the family). A lambda is a hidden class (find `operator()` and the capture fields). An exception is code cut apart (the happy path is the main thing, the handler comes later). Knowing these three templates, you read modern C++ code without being discouraged by the number of functions and the odd blocks.
+All three are the compiler generating extra code around the author's real logic. The strategy is the same: recognize them, label them, then focus on the logic. A template is many copies of one function (understand one, infer the family). A lambda is a hidden class (find `operator()` and the capture fields). An exception is code cut apart (the happy path is the main thing, the handler comes later). With these three in mind you can read modern C++ without being put off by the number of functions and the odd blocks.
 
 ## Lab
 
-The file `modern.cpp` shows what three pieces of modern C++ turn into at the binary level, so that you aren't thrown off when you meet them in a decompiler later. The task is to build it, then find the two instantiations `add_one<int>` and `add_one<double>` in the symbols and compare their asm, find the lambda's `operator()` and identify which is `this` and which is the capture field, and mark out the try/catch block by finding the throw call and the handler that sits apart from it.
+The file `modern.cpp` shows what three pieces of modern C++ turn into at the binary level, so you aren't thrown off when you meet them in a decompiler later. The task is to build it, then find the two instantiations `add_one<int>` and `add_one<double>` in the symbols and compare their asm, find the lambda's `operator()` and identify which is `this` and which is the capture field, and mark out the try/catch block by finding the throw call and the handler that sits apart from it.
 
 On Linux:
 
@@ -131,7 +131,7 @@ Start with the template. List the symbols and look for the two copies of `add_on
 
 For the exceptions, find the throw call in `main` or `safe_div`. On Linux look for `__cxa_throw` and `__cxa_allocate_exception`, and with MSVC look for `_CxxThrowException`. Work out where the catch block sits. On Linux, watch for blocks of code after the function's `ret` that the main flow never jumps to, which are landing pads. With MSVC you can also open the binary in PE-bear and find the `.pdata` and `.xdata` sections, which hold the unwind data for exceptions.
 
-Two questions are worth thinking about. If a program uses both `std::vector<int>` and `std::vector<std::string>`, how many sets of vector functions do you expect in the binary? And why would capture by value and capture by reference give different field layouts in the closure? Do it yourself before opening the solution.
+Two questions to think about. If a program uses both `std::vector<int>` and `std::vector<std::string>`, how many sets of vector functions do you expect in the binary? And why would capture by value and capture by reference give different field layouts in the closure? Do it yourself before opening the solution.
 
 <div class="lab-box">
 <div class="lab-head"><b>LAB 4.4</b>source files</div>
@@ -193,7 +193,7 @@ main::{lambda(int)#1}::operator()(int) const:   ; _ZZ4mainENKUliE_clEi
     ret
 ```
 
-The first parameter `rdi` is `this`, like in every C++ method (Lesson 4.1). A lambda is callable because it is really the `operator()` method of a hidden struct. The line `mov edx, [rax]` reads the first field of the object, which is the variable `base` captured by value. The capture is no longer a local variable but data living inside an object. In `main`, before the call, there are instructions that build the object: they compute `base = n*10` and `mov` it into the closure object's stack area. That is the closure's hidden constructor.
+The first parameter `rdi` is `this`, like in every C++ method (Lesson 4.1). A lambda is callable because it's really the `operator()` method of a hidden struct. The line `mov edx, [rax]` reads the first field of the object, which is the variable `base` captured by value. The capture isn't a local variable anymore but data inside an object. In `main`, before the call, there are instructions that build the object: they compute `base = n*10` and `mov` it into the closure object's stack area. That's the closure's hidden constructor.
 
 ### Exceptions
 
@@ -215,7 +215,7 @@ safe_div:
     ret
 ```
 
-Seeing `__cxa_throw` tells you this is the point where the exception is thrown. In `main` the `try` block runs straight through, while the `catch` block is compiled into a landing pad: a separate stretch of code that begins with `__cxa_begin_catch`, calls `e.what()` and then `printf`, and ends with `__cxa_end_catch`. The main flow never `jmp`s there, and the runtime jumps in while unwinding the stack. The navigation data for unwinding lives in `.eh_frame` and `.gcc_except_table`, not in the code. You can look at it with:
+`__cxa_throw` is the point where the exception is thrown. In `main` the `try` block runs straight through, while the `catch` block is compiled into a landing pad: a separate stretch of code that begins with `__cxa_begin_catch`, calls `e.what()` and then `printf`, and ends with `__cxa_end_catch`. The main flow never `jmp`s there, and the runtime jumps in while unwinding the stack. The navigation data for unwinding lives in `.eh_frame` and `.gcc_except_table`, not in the code. You can look at it with:
 
 ```
 readelf -S modern | grep -E 'eh_frame|except'
@@ -225,7 +225,7 @@ On MSVC, opening PE-bear shows `.pdata` (RUNTIME_FUNCTION) and `.xdata` (unwind 
 
 ### Answers to the questions
 
-`std::vector<int>` and `std::vector<std::string>` are two different instantiations, so the binary has two separate sets of vector functions (push_back, allocate, destructor and so on). This is the main reason C++ binaries that use a lot of the STL grow so large. Capture by value stores a copy of the variable as a field, like `base` above. Capture by reference stores a pointer to the original variable as the field, so the field is an address (8 bytes) rather than a value, and `operator()` has to dereference once more.
+`std::vector<int>` and `std::vector<std::string>` are two different instantiations, so the binary has two separate sets of vector functions (push_back, allocate, destructor and so on). This is the main reason C++ binaries that use a lot of the STL get so large. Capture by value stores a copy of the variable as a field, like `base` above. Capture by reference stores a pointer to the original variable as the field, so the field is an address (8 bytes) rather than a value, and `operator()` has to dereference once more.
 
 </details>
 

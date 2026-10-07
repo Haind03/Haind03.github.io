@@ -8,9 +8,9 @@ categories: ["Technique Reverse", "Part 07 · Python"]
 tags: [reverse-engineering, python]
 render_with_liquid: false
 ---
-Time to put the theory of Part 7 to real use. The pycdc project ships with sample `.pyc` files, and three of them (attached in the Lab section below) happen to cover exactly the three situations you'll hit in the wild: a broken file, a file with no header, and a file written in a newer Python version than pycdc supports. Each file teaches a different lesson, so don't skip any.
+Time to use the theory from Part 7. The pycdc project ships with sample `.pyc` files, and three of them (attached in the Lab section below) cover the three situations you'll hit in the wild: a broken file, a file with no header, and a file written for a newer Python version than pycdc supports. Each one teaches something different, so don't skip any.
 
-All the output in this lesson is the result of real runs on my machine, not made-up illustrations. If you rerun it you'll get exactly the same.
+All the output in this lesson comes from real runs on my machine. If you rerun it you'll get the same.
 
 ## Setup: build pycdc
 
@@ -22,9 +22,9 @@ cmake . -DCMAKE_BUILD_TYPE=Release
 make -j4
 ```
 
-When done you have two binaries: `pycdc` (decompiles to Python source) and `pycdas` (disassembles to readable bytecode). Remember the principle from [Lesson 7.2](/posts/re-7-2-pycdc-pycdas-two-scalpels-pyc-files/): pycdc gives nice source when it succeeds, pycdas always runs and is the lifeline when pycdc is helpless.
+When it's done you have two binaries: `pycdc` (decompiles to Python source) and `pycdas` (disassembles to readable bytecode). Remember the principle from [Lesson 7.2](/posts/re-7-2-pycdc-pycdas-two-scalpels-pyc-files/): pycdc gives nice source when it works, and pycdas always runs, so it's what you use when pycdc can't do it.
 
-## File 1: ok.pyc, the lesson of the empty file
+## File 1: ok.pyc, the empty file
 
 Try running it:
 
@@ -34,9 +34,9 @@ Bad MAGIC!
 Could not load file .../ok.pyc
 ```
 
-Before blaming the tool, check the file. `ls -l` shows `ok.pyc` weighs exactly 0 bytes. It's empty. There's nothing to decompile.
+Before blaming the tool, check the file. `ls -l` shows `ok.pyc` is exactly 0 bytes. It's empty, so there's nothing to decompile.
 
-Sounds silly but this is a real error you'll hit: a half-finished download, a broken extraction, or an accidental overwrite. "Bad MAGIC!" doesn't always mean the wrong version, sometimes the file just doesn't even have 4 magic bytes to read. A cheap lesson but it saves you an hour of wrongly suspecting pycdc.
+Sounds silly, but you'll hit this for real: a half-finished download, a broken extraction, or an accidental overwrite. "Bad MAGIC!" doesn't always mean the wrong version. Sometimes the file doesn't even have 4 magic bytes to read. It's a cheap lesson and saves you an hour of wrongly suspecting pycdc.
 
 ## File 2: apple_collector_game.pyc, a file with no header
 
@@ -45,18 +45,18 @@ $ ./pycdc apple_collector_game.pyc
 Bad MAGIC!
 ```
 
-"Bad MAGIC!" again. But this file weighs 11KB, it's not empty. Look at the first bytes:
+"Bad MAGIC!" again, but this file is 11KB, it's not empty. Look at the first bytes:
 
 ```
 $ xxd apple_collector_game.pyc | head -1
 00000000: e300 0000 0000 0000 0000 0000 0005 0000
 ```
 
-A standard `.pyc` file must start with 4 magic bytes (see [Lesson 7.1](/posts/re-7-1-python-bytecode-pyc-files/)). This one starts with `e3`. The byte `0xe3` is the marshal code for a code object (`TYPE_CODE` = `0x63` = `'c'`, plus the ref flag `0x80`). In other words, this isn't a complete `.pyc`, it's a bare marshaled code object, with the 16-byte header stripped off.
+A standard `.pyc` file must start with 4 magic bytes (see [Lesson 7.1](/posts/re-7-1-python-bytecode-pyc-files/)). This one starts with `e3`. The byte `0xe3` is the marshal code for a code object (`TYPE_CODE` = `0x63` = `'c'`, plus the ref flag `0x80`). So this isn't a complete `.pyc`, it's a bare marshaled code object with the 16-byte header stripped off.
 
-This is very common when you extract `.pyc` files from PyInstaller: many versions cut the header off. pycdc has flags for exactly this case: `-c` (load a bare code object) plus `-v` (specify the Python version, since there's no magic left to guess from).
+This is common when you extract `.pyc` files from PyInstaller, since many versions cut the header off. pycdc has flags for this case: `-c` (load a bare code object) plus `-v` (specify the Python version, since there's no magic left to guess from).
 
-The problem is which version. When there's no magic, the fastest way is to try. Run pycdas with a few versions until it loads:
+Which version? With no magic, the fastest way is to try. Run pycdas with a few versions until it loads:
 
 ```
 $ ./pycdas -c -v 3.10 apple_collector_game.pyc
@@ -70,7 +70,7 @@ apple_collector_game.pyc (Python 3.11)
     ...
 ```
 
-3.10 and below blow up, 3.11 loads cleanly and even reveals the original file name `apple_collector_game.py`. So it's Python 3.11. Now decompile:
+3.10 and below blow up, 3.11 loads cleanly and even shows the original file name `apple_collector_game.py`. So it's Python 3.11. Now decompile:
 
 ```
 $ ./pycdc -c -v 3.11 apple_collector_game.pyc
@@ -97,9 +97,9 @@ class G:
         self.fl = os.getenv('CTF_FLAG')
 ```
 
-Reading it you understand right away: this is a pygame game "Apple Collector", and it's a CTF challenge. The `R0` function checks `sys._MEIPASS`, a sure sign the program was packaged with PyInstaller (see [Lesson 7.4](/posts/re-7-4-when-python-turns-into-exe-open/)). The flag is in the environment variable `CTF_FLAG`, loaded from the accompanying `flag.env` file. So for this challenge, "solving" isn't reading code but finding the `flag.env` file in the PyInstaller bundle.
+You can read it right away: it's a pygame game, "Apple Collector", and a CTF challenge. The `R0` function checks `sys._MEIPASS`, a sure sign the program was packaged with PyInstaller (see [Lesson 7.4](/posts/re-7-4-when-python-turns-into-exe-open/)). The flag is in the environment variable `CTF_FLAG`, loaded from the accompanying `flag.env` file. So "solving" this challenge isn't about reading code, it's about finding the `flag.env` file in the PyInstaller bundle.
 
-Notice pycdc prints a few lines of `Unsupported opcode: BEFORE_WITH` and `JUMP_BACKWARD`, and some functions end with `# WARNING: Decompyle incomplete`. This is a real limit of pycdc on Python 3.11: it stumbles on `with` blocks and some loop forms. But the part it decompiled is more than enough to understand the program. Wherever it's incomplete, open pycdas and read the bytecode of just that function.
+pycdc prints a few lines of `Unsupported opcode: BEFORE_WITH` and `JUMP_BACKWARD`, and some functions end with `# WARNING: Decompyle incomplete`. That's a real limit of pycdc on Python 3.11: it stumbles on `with` blocks and some loop forms. The part it decompiled is still plenty to understand the program. Where it's incomplete, open pycdas and read the bytecode of just that function.
 
 ## File 3: out_sequencer.pyc, a version newer than pycdc
 
@@ -123,9 +123,9 @@ if not None + None:
 # WARNING: Decompyle incomplete
 ```
 
-Almost a total failure. Python 3.13 is too new for pycdc, the opcode `LOAD_FROM_DICT_OR_GLOBALS` isn't supported yet, and the result is junk. This is exactly the situation [Lesson 7.3](/posts/re-7-3-when-pycdc-gives-up-who-else/) warns about: no decompiler keeps up with every version.
+Almost a total failure. Python 3.13 is too new for pycdc, the opcode `LOAD_FROM_DICT_OR_GLOBALS` isn't supported yet, and the result is junk. This is the situation [Lesson 7.3](/posts/re-7-3-when-pycdc-gives-up-who-else/) warns about: no decompiler keeps up with every version.
 
-But don't give up. Switch to pycdas to read the bytecode, it always runs:
+Don't give up though. Switch to pycdas to read the bytecode, it always runs:
 
 ```
 $ ./pycdas out_sequencer.pyc
@@ -144,11 +144,11 @@ out_sequencer.pyc (Python 3.13)
         'Decoding catalyst DNA strand...'
 ```
 
-Even though the bytecode disassembly for 3.13 is a bit off too (pycdc hasn't mapped all the 3.13 opcodes correctly), the `[Names]` and `[Constants]` parts are still readable, and they tell the whole story. Looking at the name list you can rebuild the logic: take `encoded_catalyst_strand` (the base85 blob), `base64.b85decode`, then `zlib.decompress`, then `marshal.loads` into a code object, then `types.FunctionType` to turn it into a function and run it. This is a self-decoding loader: it hides the real payload under three layers of encoding.
+The bytecode disassembly for 3.13 is a bit off too (pycdc hasn't mapped all the 3.13 opcodes correctly), but the `[Names]` and `[Constants]` parts are still readable, and they tell the story. From the name list you can rebuild the logic: take `encoded_catalyst_strand` (the base85 blob), `base64.b85decode`, then `zlib.decompress`, then `marshal.loads` into a code object, then `types.FunctionType` to turn it into a function and run it. It's a self-decoding loader that hides the real payload under three layers of encoding.
 
-## When the tool is helpless, do it by hand
+## When the tool can't do it, do it by hand
 
-pycdc can't read 3.13, but Python itself can read its marshal (with a bit of flexibility). We peel off each layer ourselves, exactly like the loader does. Write a script (run it with `python3 -I` to be safe, see the note at the start of the course about the folder holding unfamiliar files):
+pycdc can't read 3.13, but Python itself can read its marshal (with a bit of flexibility). So we peel off each layer ourselves, the same way the loader does. Write a script (run it with `python3 -I` to be safe, see the note at the start of the course about the folder holding unfamiliar files):
 
 ```python
 import sys, base64, zlib, marshal
@@ -179,11 +179,11 @@ fn: activate_catalyst
   str: 'AUTHENTICATION   FAILED'
 ```
 
-Now it's clear: this is the "Project Chimera" challenge. The real payload encrypts a "secret formula" with RC4, with the key generated from `os.getlogin()` (the username, playing the role of the "biometric scan"). pycdc never revealed a single line, but by peeling off the three layers of base85, zlib, marshal ourselves, we recovered the whole structure and even the algorithm. This is exactly the spirit of [Lesson 0.4](/posts/re-0-4-reverse-engineering-workflow-not-get-lost/): the tool is only leverage, understanding the mechanism is what saves you when the tool breaks.
+This is the "Project Chimera" challenge. The real payload encrypts a "secret formula" with RC4, with the key generated from `os.getlogin()` (the username, playing the role of the "biometric scan"). pycdc never showed a single line, but by peeling off the three layers of base85, zlib and marshal ourselves, we recovered the whole structure and even the algorithm. This is the idea from [Lesson 0.4](/posts/re-0-4-reverse-engineering-workflow-not-get-lost/): the tool only helps, and understanding the mechanism is what saves you when the tool breaks.
 
 ## Three files, three lessons
 
-The first file, ok.pyc, teaches you to check the file before suspecting the tool, since "Bad MAGIC!" on a 0-byte file means the file is empty. The second, apple_collector_game.pyc, is a bare code object (first byte `e3`, no magic), so you use `pycdc -c -v <ver>` and find the version by trying, and it turns out to be a PyInstaller game hiding the flag in `flag.env`. The third, out_sequencer.pyc, is Python 3.13 and too new, so pycdc fails, but pycdas can still read names/consts, and peeling off the base85 + zlib + marshal layers yourself recovers the RC4 payload inside.
+The first file, ok.pyc, teaches you to check the file before suspecting the tool, since "Bad MAGIC!" on a 0-byte file means the file is empty. The second, apple_collector_game.pyc, is a bare code object (first byte `e3`, no magic), so you use `pycdc -c -v <ver>` and find the version by trying. It turns out to be a PyInstaller game hiding the flag in `flag.env`. The third, out_sequencer.pyc, is Python 3.13 and too new, so pycdc fails, but pycdas can still read names and consts, and peeling off the base85 + zlib + marshal layers yourself recovers the RC4 payload inside.
 
 ## Lab
 
@@ -221,7 +221,7 @@ $ ls -l ok.pyc
 -rwxrwxrwx 1 ... 0 ... ok.pyc
 ```
 
-The file weighs 0 bytes. There is no magic and nothing to read, so "Bad MAGIC!" here simply means the file is empty. The lesson is to always check that the file exists and isn't empty before suspecting the tool or the version.
+The file is 0 bytes. There is no magic and nothing to read, so "Bad MAGIC!" here just means the file is empty. Always check that the file exists and isn't empty before suspecting the tool or the version.
 
 For `apple_collector_game.pyc`, the first bytes are:
 
@@ -230,7 +230,7 @@ $ xxd apple_collector_game.pyc | head -1
 00000000: e300 0000 0000 0000 0000 0000 0005 0000
 ```
 
-It starts with `e3`, not a 4 byte magic. `0xe3` is `TYPE_CODE` (`0x63`) plus the ref flag (`0x80`), so this is a marshaled code object with the `.pyc` header stripped. That is why you need `-c` and `-v`. Probing the version with pycdas:
+It starts with `e3`, not a 4 byte magic. `0xe3` is `TYPE_CODE` (`0x63`) plus the ref flag (`0x80`), so this is a marshaled code object with the `.pyc` header stripped. That's why you need `-c` and `-v`. Probing the version with pycdas:
 
 ```
 $ ./pycdas -c -v 3.10 apple_collector_game.pyc
@@ -269,7 +269,7 @@ class G:
         self.fl = os.getenv('CTF_FLAG')
 ```
 
-The conclusions are that this is a pygame game, "Apple Collector", from a CTF challenge, and that `hasattr(sys, '_MEIPASS')` is a sure sign of PyInstaller, so this `.pyc` was extracted from a PyInstaller bundle. The flag sits in the environment variable `CTF_FLAG`, loaded from `flag.env`. "Solving" this challenge means finding `flag.env` in the original PyInstaller bundle, not reading the game logic. Note that pycdc prints a few `Unsupported opcode: BEFORE_WITH` and `JUMP_BACKWARD` messages and some functions end with `# WARNING: Decompyle incomplete`. That is a real limit of pycdc on 3.11 (`with` blocks, some loop shapes). The part that does decompile is still enough to understand the program, and for an incomplete function you read its bytecode with pycdas.
+This is a pygame game, "Apple Collector", from a CTF challenge, and `hasattr(sys, '_MEIPASS')` is a sure sign of PyInstaller, so this `.pyc` was extracted from a PyInstaller bundle. The flag sits in the environment variable `CTF_FLAG`, loaded from `flag.env`. "Solving" this challenge means finding `flag.env` in the original PyInstaller bundle, not reading the game logic. pycdc prints a few `Unsupported opcode: BEFORE_WITH` and `JUMP_BACKWARD` messages and some functions end with `# WARNING: Decompyle incomplete`. That's a real limit of pycdc on 3.11 (`with` blocks, some loop shapes). The part that does decompile is still enough to understand the program, and for an incomplete function you read its bytecode with pycdas.
 
 For `out_sequencer.pyc`:
 
@@ -300,7 +300,7 @@ pycdc fails because 3.13 is too new. Switch to pycdas and read the names and con
              '--- Calibrating Genetic Sequencer ---', ...
 ```
 
-Reading the names gives away the loader logic: `base64.b85decode(blob)`, then `zlib.decompress`, then `marshal.loads` into a code object, then `types.FunctionType` to run it. It is a loader that decodes itself through three layers. To peel it by hand (run with `python3 -I`):
+The names give away the loader logic: `base64.b85decode(blob)`, then `zlib.decompress`, then `marshal.loads` into a code object, then `types.FunctionType` to run it. It's a loader that decodes itself through three layers. To peel it by hand (run with `python3 -I`):
 
 ```python
 import base64, zlib, marshal
@@ -329,9 +329,9 @@ str: 'I am alive! The secret formula is:\n'
 str: 'AUTHENTICATION   FAILED'
 ```
 
-This is the "Project Chimera" challenge. The real payload encrypts the "secret formula" with RC4 (`arc4.ARC4`), with a key derived from `os.getlogin()` (the user name playing the role of a "biometric scan"). pycdc couldn't reveal a single line, yet peeling base85, zlib and marshal by hand recovers the whole structure and the algorithm. Getting the real flag needs the exact username the author used as the key, which is the puzzle part of the challenge. Here the goal of the lab is to recover the logic, and we did that even though the main tool was helpless.
+This is the "Project Chimera" challenge. The real payload encrypts the "secret formula" with RC4 (`arc4.ARC4`), with a key derived from `os.getlogin()` (the user name playing the role of a "biometric scan"). pycdc couldn't show a single line, yet peeling base85, zlib and marshal by hand recovers the whole structure and the algorithm. Getting the real flag needs the exact username the author used as the key, which is the puzzle part of the challenge. The goal of this lab is to recover the logic, and we did that even though the main tool failed.
 
-Three files gave three different causes of "Bad MAGIC!" or a failed decompile: an empty file, a stripped header and a version that is too new. `-c -v` rescues a bare code object file, and you find the version by trying it with pycdas. pycdas can almost always still read names and constants even when pycdc breaks. And when the tools can't keep up with the version, Python's own `marshal` plus an understanding of the encoding flow lets you peel the payload by hand.
+The three files gave three different causes of "Bad MAGIC!" or a failed decompile: an empty file, a stripped header and a version that is too new. `-c -v` rescues a bare code object file, and you find the version by trying it with pycdas. pycdas can almost always still read names and constants even when pycdc breaks. And when the tools can't keep up with the version, Python's own `marshal` plus an understanding of the encoding flow lets you peel the payload by hand.
 
 </details>
 

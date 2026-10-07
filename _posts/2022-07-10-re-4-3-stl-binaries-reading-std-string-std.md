@@ -1,20 +1,20 @@
 ---
-title: "Lesson 4.3: STL in binaries, reading std::string and std::vector like a native"
+title: "Lesson 4.3: STL in binaries, std::string and std::vector"
 image:
   path: /assets/img/covers/re-4-3-stl-binaries-reading-std-string-std.webp
-  alt: "Lesson 4.3: STL in binaries, reading std::string and std::vector like a native"
+  alt: "Lesson 4.3: STL in binaries, std::string and std::vector"
 date: 2022-07-10 10:42:00 +0700
 categories: ["Technique Reverse", "Part 04 · C++"]
 tags: [reverse-engineering, cpp]
 render_with_liquid: false
 ---
-Real C++ code almost never uses bare C arrays alone. It's full of `std::string`, `std::vector`, `std::map`. The good news: each of these containers has a fixed layout that repeats over and over. Once you recognize their mold, a pile of `[rax]`, `[rax+8]`, `[rax+10h]` in pseudocode suddenly means something, and you can read "ah this is a string, that's a vector" without the decompiler telling you.
+Real C++ code almost never uses bare C arrays alone. It's full of `std::string`, `std::vector`, `std::map`. Each of these containers has a fixed layout that repeats everywhere. Once you recognize it, a pile of `[rax]`, `[rax+8]`, `[rax+10h]` in pseudocode starts to mean something, and you can tell this is a string and that is a vector without the decompiler telling you.
 
 This lesson focuses on the two containers you meet most (`string` and `vector`), then quickly covers the rest. Every layout number below is from libstdc++ on x64 (the g++ toolchain), checked with the lab program. MSVC differs a little, with notes at the end.
 
-## std::string, and the trick called SSO
+## std::string and SSO
 
-Beginners often think `std::string` is just a pointer to a string. Wrong, and that very mistake makes them misread binaries.
+Beginners often think `std::string` is just a pointer to a string. It isn't, and that mistake makes them misread binaries.
 
 On libstdc++, `std::string` is a 32-byte object made of:
 
@@ -27,7 +27,7 @@ offset 16 : 16-byte union {
             }
 ```
 
-The key point is Small String Optimization (SSO): if the string is short enough (at most 15 characters on libstdc++), it doesn't allocate on the heap but stuffs the characters into the 16-byte buffer right inside the object. The pointer at offset 0 then points into the object itself (object address + 16).
+The important part is Small String Optimization (SSO): if the string is short enough (at most 15 characters on libstdc++), it doesn't allocate on the heap and puts the characters into the 16-byte buffer inside the object. The pointer at offset 0 then points into the object itself (object address + 16).
 
 The lab prints exactly this:
 
@@ -45,7 +45,7 @@ size         = 39
 capacity     = 39
 ```
 
-How to recognize a `std::string` while debugging: find an object where offset 0 is a pointer, offset 8 is a sensible small number (the length), and if that pointer points back into the object itself then you're looking at a short SSO string. Seeing a capacity of 15 is also a very characteristic sign of an empty or short string on libstdc++.
+To recognize a `std::string` while debugging, find an object where offset 0 is a pointer and offset 8 is a sensible small number (the length). If that pointer points back into the object itself, it's a short SSO string. A capacity of 15 is also typical of an empty or short string on libstdc++.
 
 In asm, getting the string length is usually:
 
@@ -60,13 +60,13 @@ mov  rax, [rbx]       ; rax = data pointer
 movzx eax, byte [rax] ; read the first character
 ```
 
-Seeing the pair "read [obj] as a pointer, read [obj+8] as a length" is almost certainly a `std::string`.
+If you see "read [obj] as a pointer, read [obj+8] as a length", it's almost certainly a `std::string`.
 
-## std::vector, three pointers say it all
+## std::vector
 
 ![Layout of std::string with SSO and the three-pointer std::vector](/assets/img/re/part-04/stl-layout.svg)
 
-`std::vector` is even easier to recognize. On libstdc++ it's just three pointers, 24 bytes:
+`std::vector` is even easier to recognize. On libstdc++ it's three pointers, 24 bytes:
 
 ```
 offset 0  : T* _M_start            pointer to the first element
@@ -81,7 +81,7 @@ size()     = (_M_finish - _M_start) / sizeof(T)
 capacity() = (_M_end_of_storage - _M_start) / sizeof(T)
 ```
 
-So in pseudocode, when you see the compiler compute `(v[8] - v[0]) >> 2` that's the `size()` of a `vector<int>` (divide by 4 because an int is 4 bytes, `>>2` is divide by 4). Recognizing the pattern "difference of two pointers then divide by element size" is recognizing a vector.
+So when you see `(v[8] - v[0]) >> 2` in pseudocode, that's the `size()` of a `vector<int>` (an int is 4 bytes, so `>>2` divides by 4). A difference of two pointers divided by the element size means vector.
 
 The lab confirms it:
 
@@ -91,27 +91,27 @@ begin (data) = 0x...ee0          (points to the heap)
 size = 4, capacity = 4
 ```
 
-A loop walking a vector in asm usually looks like: load `_M_start` into one register, load `_M_finish` into another, and loop incrementing the pointer until they're equal. Seeing the mold "run a pointer from [obj] to [obj+8]" is a `for (auto& x : v)` loop.
+A loop walking a vector in asm usually loads `_M_start` into one register, loads `_M_finish` into another, and increments the pointer until they're equal. A pointer running from [obj] to [obj+8] is a `for (auto& x : v)` loop.
 
-## The other containers, quick tour
+## The other containers
 
-You'll meet them less, but you should know their faces. std::map and std::set are implemented with a red-black tree. Each node has parent, left and right pointers, a color bit, and then the key/value. In the binary you see a lot of pointer operations rotating the tree and comparisons. The `sizeof` of the map itself is small (48 bytes in the lab, mostly the header node and a counter), and you recognize a map by its calls to very long library function names involving `_Rb_tree`.
+You'll meet them less, but you should know what they look like. std::map and std::set are implemented with a red-black tree. Each node has parent, left and right pointers, a color bit, and then the key/value. In the binary you see a lot of pointer operations rotating the tree and comparisons. The `sizeof` of the map itself is small (48 bytes in the lab, mostly the header node and a counter), and you recognize a map by its calls to very long library function names involving `_Rb_tree`.
 
-std::unique_ptr is usually just a bare pointer (8 bytes), almost vanishing after optimization. It differs from a plain pointer only in that the destructor calls `delete` automatically. std::shared_ptr is two pointers (16 bytes), one to the object and one to a control block holding the reference count. Seeing an atomic (lock-prefixed) integer increment/decrement next to a pointer is a sign of shared_ptr.
+std::unique_ptr is usually just a bare pointer (8 bytes), almost gone after optimization. It differs from a plain pointer only in that the destructor calls `delete` automatically. std::shared_ptr is two pointers (16 bytes), one to the object and one to a control block holding the reference count. An atomic (lock-prefixed) integer increment/decrement next to a pointer suggests shared_ptr.
 
 ## How MSVC differs
 
-If the binary was built with MSVC (common on Windows), the numbers change but the ideas stay the same. MSVC's `std::string` also has SSO but with a 16-byte buffer and a 15-character threshold, the field layout is in a different order, and `sizeof` is usually 32 (x64) but the union is placed at the start. MSVC's `std::vector` is still three pointers (first, last, end), the same in essence. Library function names differ (MSVC-style mangling `?...@@`), but once IDA/Ghidra demangle them you recognize them right away.
+If the binary was built with MSVC (common on Windows), the numbers change but the ideas stay the same. MSVC's `std::string` also has SSO but with a 16-byte buffer and a 15-character threshold, the field layout is in a different order, and `sizeof` is usually 32 (x64) but the union is placed at the start. MSVC's `std::vector` is still three pointers (first, last, end). Library function names differ (MSVC-style mangling `?...@@`), but once IDA/Ghidra demangle them you recognize them right away.
 
-Practical rule: don't memorize the offsets for every toolchain. Learn the mental mold: string = pointer + size + (buffer or capacity), vector = three pointers. When you meet an unfamiliar binary, build a small program with exactly that compiler, print the offsets, and apply them. That's exactly what the lab is.
+Don't memorize the offsets for every toolchain. Remember the shape: string = pointer + size + (buffer or capacity), vector = three pointers. When you meet an unfamiliar binary, build a small program with that exact compiler, print the offsets, and apply them. The lab does exactly that.
 
 ## Tips when using a decompiler
 
-Both IDA and Ghidra let you declare the types `std::string` / `std::vector` and assign them to variables, after which the pseudocode shows `.size()`, `.data()` instead of bare offsets. With IDA Pro, plugins like HexRaysPyTools (see [Lesson 4.5](/posts/re-4-5-plugins-that-rebuild-c-classes-let/)) even recognize many containers automatically. But even without a plugin, recognizing the mold by eye is a foundational skill, because the decompiler doesn't always guess right.
+Both IDA and Ghidra let you declare the types `std::string` / `std::vector` and assign them to variables, after which the pseudocode shows `.size()`, `.data()` instead of bare offsets. With IDA Pro, plugins like HexRaysPyTools (see [Lesson 4.5](/posts/re-4-5-plugins-that-rebuild-c-classes-let/)) even recognize many containers automatically. Even without a plugin, learn to recognize the layouts by eye, because the decompiler doesn't always guess right.
 
 ## Lab
 
-The goal is to see the layout of `std::string` and `std::vector` with your own eyes, understand SSO (the small string optimization), and practice recognizing them in a debugger. You build `containers.cpp`, run it to see the real layout numbers on your own machine, then open it in a debugger. On Linux with libstdc++:
+The goal is to see the layout of `std::string` and `std::vector` yourself, understand SSO (the small string optimization), and practice recognizing them in a debugger. You build `containers.cpp`, run it to see the real layout numbers on your own machine, then open it in a debugger. On Linux with libstdc++:
 
 ```
 g++ -O0 -g -std=c++17 containers.cpp -o containers
@@ -178,7 +178,7 @@ On libstdc++, `sizeof(std::string)` is 32 and `sizeof(std::vector<int>)` is 24, 
 
 For the short string, `data()` equals object + 16. Short strings use SSO: the characters live in an internal buffer at offset 16 of the object, so the data pointer points into the object itself, and no heap allocation happens. For the long string, `data()` points to a heap region far from the object (a completely different address range from the object's stack). The 39-character string exceeds the SSO threshold of 15, so the string has to `malloc` a heap buffer and the pointer at offset 0 points there.
 
-The short string's `capacity()` is 15. That is the maximum number of characters the 16-byte SSO buffer holds (15 characters plus 1 byte for the null terminator). Seeing a capacity of 15 on libstdc++ almost always means "this string is in SSO mode".
+The short string's `capacity()` is 15. That is the maximum number of characters the 16-byte SSO buffer holds (15 characters plus 1 byte for the null terminator). A capacity of 15 on libstdc++ almost always means the string is in SSO mode.
 
 The 32-byte layout of a libstdc++ `std::string` is:
 
@@ -202,13 +202,13 @@ The `std::vector<int>` layout is:
 
 `(_M_finish - _M_start) / sizeof(int)` is `(pointer[8] - pointer[0]) / 4`, which is 4, equal to `size()`. It checks out.
 
-As for the reflection questions: SSO exists to avoid a `malloc` plus `free` for every short string. Short strings are extremely common (variable names, keys, tokens), and if each one allocated on the heap it would be slow and fragment memory, whereas putting them straight into the object is free. A 24-byte object made of three increasing heap pointers (start < finish <= end_of_storage) is the clear signature of a `std::vector`, and dividing the difference of the first two pointers by the element size gives the element count, a computation the compiler always generates when you call `.size()`.
+As for the reflection questions: SSO exists to avoid a `malloc` plus `free` for every short string. Short strings are very common (variable names, keys, tokens), and if each one allocated on the heap it would be slow and fragment memory, whereas putting them in the object costs nothing. A 24-byte object made of three increasing heap pointers (start < finish <= end_of_storage) is the typical signature of a `std::vector`, and dividing the difference of the first two pointers by the element size gives the element count, a computation the compiler always generates when you call `.size()`.
 
-You don't need to memorize the offsets of every toolchain. Remember two molds: a string is (pointer, size, buffer-or-capacity) and a vector is three pointers. When you meet an unfamiliar binary, build a small program with that exact compiler and print the offsets, as this lab does.
+You don't need to memorize the offsets of every toolchain. Remember two shapes: a string is (pointer, size, buffer-or-capacity) and a vector is three pointers. When you meet an unfamiliar binary, build a small program with that exact compiler and print the offsets, as this lab does.
 
 </details>
 
 ## Key takeaways
-`std::string` (libstdc++, 32 bytes) is [0]=data pointer, [8]=size, [16]=buffer/capacity union. With SSO, strings up to 15 characters live right inside the object, and the data pointer points into the object itself (object+16). `std::vector` is three pointers (24 bytes): start, finish, end_of_storage, and size = (finish-start)/sizeof(T). Seeing "difference of two pointers then divide by element size" means it's computing a vector's size.
+`std::string` (libstdc++, 32 bytes) is [0]=data pointer, [8]=size, [16]=buffer/capacity union. With SSO, strings up to 15 characters live inside the object, and the data pointer points into the object itself (object+16). `std::vector` is three pointers (24 bytes): start, finish, end_of_storage, and size = (finish-start)/sizeof(T). A difference of two pointers divided by the element size means it's computing a vector's size.
 
 map/set are red-black trees (_Rb_tree), and shared_ptr has a control block with an atomic refcount. MSVC has different numbers but the same ideas, so test-build with exactly that compiler to get the right offsets.

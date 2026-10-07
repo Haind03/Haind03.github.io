@@ -1,20 +1,20 @@
 ---
-title: "Lesson 8.4: Lab, solving a Go crackme from start to finish"
+title: "Lesson 8.4: Lab, solving a Go crackme"
 image:
   path: /assets/img/covers/re-8-4-lab-solving-go-crackme-from-start.webp
-  alt: "Lesson 8.4: Lab, solving a Go crackme from start to finish"
+  alt: "Lesson 8.4: Lab, solving a Go crackme"
 date: 2022-11-19 16:19:00 +0700
 categories: ["Technique Reverse", "Part 08 · Go"]
 tags: [reverse-engineering, golang]
 render_with_liquid: false
 ---
-The previous three lessons gave you the theory: Go binaries are big because they carry the whole runtime, pclntab keeps the function names, Go strings go by length and don't end in null. This lesson puts it all together on a real crackme that I built with Go 1.22 while writing, then walks you through finding the password as if you'd never seen the source.
+The previous three lessons covered the theory: Go binaries are big because they carry the whole runtime, pclntab keeps the function names, and Go strings carry a length and don't end in null. This lesson puts it together on a real crackme that I built with Go 1.22, and finds the password as if I'd never seen the source.
 
-Every number below is real output, not something I made up to look nice.
+Every number below is real output.
 
-## Step 0: triage, know what you're holding
+## Step 0: triage
 
-Always start with `file` and look at the size:
+I always start with `file` and the size:
 
 ```
 $ file crackme
@@ -24,14 +24,14 @@ $ ls -la crackme
 1895284 bytes
 ```
 
-Two details give away right away that it's Go: **statically linked** (almost 1.9 MB for a program that prints one line) and the **Go BuildID** string in the header. If you're still unsure, `go version` can read the embedded build info:
+Two details say it's Go: statically linked (almost 1.9 MB for a program that prints one line) and the Go BuildID string in the header. If you're still unsure, `go version` can read the embedded build info:
 
 ```
 $ go version crackme
 crackme: go1.22.0
 ```
 
-On Windows, DIE will say "Compiler: Go" outright. Triage done: this is a Go binary, built with Go 1.22, not stripped.
+On Windows, DIE will say "Compiler: Go" directly. So this is a Go binary, built with Go 1.22, not stripped.
 
 ## Step 1: get the function names back
 
@@ -43,15 +43,15 @@ main.main
 main.checkKey
 ```
 
-`main.main` is the author's real entry point (unlike `main` in C, Go has the runtime run first and then call `main.main`). `main.checkKey` sounds like the check function. We have a target.
+`main.main` is the author's real entry point (unlike `main` in C, Go runs the runtime first and then calls `main.main`). `main.checkKey` sounds like the check function, so that's the target.
 
-In Ghidra/IDA, if the names don't show up on their own (or the binary is stripped), run GoReSym to recover them and import them, as in Lesson 8.2. Here it isn't stripped so we jump straight into `main.checkKey`.
+In Ghidra/IDA, if the names don't show up on their own (or the binary is stripped), run GoReSym to recover them and import them, as in Lesson 8.2. Here it isn't stripped, so we go straight into `main.checkKey`.
 
-One thing worth remembering: I tried fully stripping with `-ldflags "-s -w"`, and the file dropped from 1.9 MB to 1.23 MB, **but `main.checkKey` was still in strings and `go version` still read out go1.22.0.** That's because pclntab isn't a normal symbol table, and `-s -w` doesn't touch it. For a reverser, this is good news: a stripped Go binary still gives up its function names.
+I also tried fully stripping with `-ldflags "-s -w"`. The file dropped from 1.9 MB to 1.23 MB, but `main.checkKey` was still in strings and `go version` still read out go1.22.0. pclntab isn't a normal symbol table, and `-s -w` doesn't touch it. So a stripped Go binary still gives up its function names.
 
 ## Step 2: read the logic of checkKey
 
-Decompile `main.checkKey` (or read the pseudocode in Ghidra once you have symbols). Skip the Go boilerplate, and the core boils down to this:
+Decompile `main.checkKey` (or read the pseudocode in Ghidra once you have symbols). Skip the Go boilerplate and the core is this:
 
 ```go
 func checkKey(input string) bool {
@@ -68,7 +68,7 @@ func checkKey(input string) bool {
 }
 ```
 
-When reading at the assembly level, there are a few Go signs you'll run into. The length comparison comes first: a Go string is a struct of a data pointer and a length, and the function takes the input's length and compares it with 11 (a constant). Seeing a `cmp` with a constant right at the start of a check function means it's blocking wrong lengths, which tells you the password is exactly 11 characters. Then there's a loop over each byte, with a `movzx` taking one byte of the input, `xor` with 0x17, `add` the loop index, then `cmp` with a byte in the constant array, and the `want` array sits in `.rodata`. Finally, there's no plaintext password: I checked `strings crackme | grep GoCrackMe24` and got 0 results. The password is transformed so it doesn't show, and you have to reverse the algorithm.
+At the assembly level there are a few Go signs. The length comparison comes first: a Go string is a struct of a data pointer and a length, and the function takes the input's length and compares it with 11 (a constant). A `cmp` with a constant right at the start of a check function means it's rejecting wrong lengths, so the password is exactly 11 characters. Then there's a loop over each byte, with a `movzx` taking one byte of the input, `xor` with 0x17, `add` the loop index, then `cmp` with a byte in the constant array. The `want` array sits in `.rodata`. And there's no plaintext password: I checked `strings crackme | grep GoCrackMe24` and got 0 results. The password is transformed, so you have to reverse the algorithm.
 
 ## Step 3: invert it to get the password
 
@@ -78,7 +78,7 @@ The relation is `want[i] = (input[i] XOR 0x17) + i`. Inverted:
 input[i] = (want[i] - i) XOR 0x17
 ```
 
-A few lines of Python to be sure:
+A few lines of Python to check:
 
 ```python
 want = [0x50,0x79,0x56,0x68,0x7a,0x79,0x82,0x61,0x7a,0x2e,0x2d]
@@ -95,7 +95,7 @@ $ ./crackme GoCrackMe25
 Wrong password.
 ```
 
-Correct. You just reversed a Go crackme end to end: triaged it as Go, used pclntab to get function names, read `checkKey`, inverted the algorithm, got the password.
+That's a Go crackme done end to end: triaged as Go, used pclntab to get function names, read `checkKey`, inverted the algorithm, got the password.
 
 ## Lab
 
@@ -107,9 +107,9 @@ go build -ldflags "-s -w" -o crackme_strip crackme.go # stripped build, for comp
 GOOS=windows go build -o crackme.exe crackme.go       # Windows build (optional)
 ```
 
-First use `file` and `go version crackme` to confirm it is a Go binary and see which version built it. Compare the size of the normal and the `-s -w` builds, check with `strings` whether `main.checkKey` is still there in the stripped one, and draw your conclusion about pclntab. Then find the function `main.checkKey` and read its logic: how many characters is the password, and how do you know? How does the algorithm transform each character? Write a snippet that reverses it to compute the password, then run `./crackme <password>` and confirm you get "Correct!".
+First use `file` and `go version crackme` to confirm it's a Go binary and see which version built it. Compare the size of the normal and the `-s -w` builds, check with `strings` whether `main.checkKey` is still there in the stripped one, and draw your conclusion about pclntab. Then find the function `main.checkKey` and read its logic: how many characters is the password, and how do you know? How does the algorithm transform each character? Write a snippet that reverses it to compute the password, then run `./crackme <password>` and confirm you get "Correct!".
 
-Two questions to reflect on. Why does `strings` not find the password directly while it still shows function names? And if the binary were fully stripped and IDA didn't recognize the Go function names, which tool would you use (see Lesson 8.2)? Do it yourself before opening the solution: build both the normal and stripped versions, confirm `main.checkKey` is still there in the stripped one, then invert the algorithm to get the password without running it.
+Two questions to think about. Why does `strings` not find the password directly while it still shows function names? And if the binary were fully stripped and IDA didn't recognize the Go function names, which tool would you use (see Lesson 8.2)? Do it yourself before opening the solution: build both the normal and stripped versions, confirm `main.checkKey` is still there in the stripped one, then invert the algorithm to get the password without running it.
 
 <div class="lab-box">
 <div class="lab-head"><b>LAB 8.4</b>source files</div>
@@ -149,7 +149,7 @@ $ strings crackme_strip | grep -c "main.checkKey"
 1
 ```
 
-Stripping with `-s -w` shrinks the file from 1.9 MB to 1.23 MB, but the function name `main.checkKey` and the build info are still there, because they live in pclntab and not in the ordinary symbol table. The conclusion is that for a Go binary, this kind of strip does not hide function names.
+Stripping with `-s -w` shrinks the file from 1.9 MB to 1.23 MB, but the function name `main.checkKey` and the build info are still there, because they live in pclntab and not in the ordinary symbol table. For a Go binary, this kind of strip does not hide function names.
 
 The logic of `checkKey` is:
 
@@ -164,7 +164,7 @@ func checkKey(input string) bool {
 }
 ```
 
-The password is 11 characters long (the `len` is compared against 11 right at the start of the function). Each character is XORed with 0x17, then the index is added, and the result is compared with a constant array in .rodata. There is no plaintext password (`strings crackme | grep -c GoCrackMe24` gives 0).
+The password is 11 characters long (the `len` is compared against 11 right at the start of the function). Each character is XORed with 0x17, then the index is added, and the result is compared with a constant array in .rodata. There's no plaintext password (`strings crackme | grep -c GoCrackMe24` gives 0).
 
 To invert it, start from `want[i] = (input[i] ^ 0x17) + i`, which gives `input[i] = (want[i] - i) ^ 0x17`:
 
@@ -185,7 +185,7 @@ $ ./crackme short
 Wrong password.
 ```
 
-As for the questions: `strings` doesn't see the password because it is transformed (XOR plus index) before the comparison, and only the resulting array is in the binary. The function name is exposed because pclntab stores it separately so the runtime can build stack traces. If a Go binary is stripped and IDA doesn't recognize it, run GoReSym (Lesson 8.2) to parse pclntab, export the symbols and import them into IDA/Ghidra, or use GolangAnalyzerExtension for Ghidra.
+As for the questions: `strings` doesn't see the password because it's transformed (XOR plus index) before the comparison, and only the resulting array is in the binary. The function name is visible because pclntab stores it separately so the runtime can build stack traces. If a Go binary is stripped and IDA doesn't recognize it, run GoReSym (Lesson 8.2) to parse pclntab, export the symbols and import them into IDA/Ghidra, or use GolangAnalyzerExtension for Ghidra.
 
 </details>
 

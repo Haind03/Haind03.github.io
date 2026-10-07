@@ -32,10 +32,10 @@ Table of contents: [1. Triage & file identification](#1-triage--file-identificat
 
 | Tool | Platform | Price | Notes |
 |---|---|---|---|
-| **Ghidra** (NSA) (priority) | X | free | The strongest free C decompiler, supports a huge number of architectures, scriptable (Java/Python) |
+| **Ghidra** (NSA) (priority) | X | free | Free C decompiler, supports many architectures, scriptable (Java/Python) |
 | **IDA Free / IDA Pro** (priority) | X | free+paid | Industry standard; Hex-Rays decompiler (Pro); IDAPython. Free is enough for learning x86/x64 |
 | **Binary Ninja** | X | free+paid | Modern UI, multi-level IL (BNIL), good Python API; has a free cloud version |
-| **radare2** / **rizin** | X | free | Powerful CLI, fully open; rizin is the cleaner fork |
+| **radare2** / **rizin** | X | free | CLI tool, fully open; rizin is the cleaner fork |
 | **Cutter** | X | free | GUI for rizin, integrates the Ghidra decompiler (jsdec) |
 | **Hopper** | M/L | paid | Popular on macOS, has a decompiler |
 | **RetDec** (Avast) | X | free | Command-line decompiler |
@@ -58,8 +58,8 @@ Table of contents: [1. Triage & file identification](#1-triage--file-identificat
 
 | Tool | Platform | Price | Notes |
 |---|---|---|---|
-| **HxD** | W | free | Light, fast |
-| **010 Editor** | X | paid | **Binary Templates** give very powerful file structure analysis |
+| **HxD** | W | free | Light and fast |
+| **010 Editor** | X | paid | **Binary Templates** for analyzing file structure |
 | **ImHex** | X | free | Hex editor for reversers: pattern language, data inspector, disasm |
 | **wxHexEditor** | X | free | Opens large files |
 
@@ -82,7 +82,7 @@ Table of contents: [1. Triage & file identification](#1-triage--file-identificat
 
 | Tool | Platform | Price | Notes |
 |---|---|---|---|
-| **dnSpy / dnSpyEx** (priority) | W | free | Decompile + **debug + edit** .NET. |
+| **dnSpy / dnSpyEx** (priority) | W | free | Decompile, debug and edit .NET. |
 | **ILSpy** (priority) | X | free | .NET decompiler; `ilspycmd` CLI version; AvaloniaILSpy is cross-platform. |
 | **dotPeek** (JetBrains) | W | free | Decompiler, supports symbol servers |
 | **de4dot / de4dot-cex** | W | free | Removes .NET obfuscation (many protectors) |
@@ -160,7 +160,7 @@ Table of contents: [1. Triage & file identification](#1-triage--file-identificat
 
 | Tool | Platform | Price | Notes |
 |---|---|---|---|
-| **Hopper** | M/L | paid | Very strong for Mach-O/ObjC/Swift |
+| **Hopper** | M/L | paid | Good for Mach-O/ObjC/Swift |
 | **class-dump / class-dump-swift** | M | free | Extracts ObjC/Swift declarations |
 | **otool / nm / lipo / codesign** | M | free | System toolset |
 | **swift demangle** | M | free | Demangles Swift names |
@@ -213,12 +213,12 @@ Table of contents: [1. Triage & file identification](#1-triage--file-identificat
 | **Microsoft Detours** | W | free | The classic API hooking library |
 | **MinHook / PolyHook2** | W | free | Lightweight x86/x64 inline hooks |
 | **EasyHook** | W | free | Hook + inject managed/native |
-| **Intel Pin** | X | free | Powerful DBI for analysis/taint/coverage |
+| **Intel Pin** | X | free | DBI for analysis/taint/coverage |
 | **DynamoRIO** | X | free | Open-source DBI |
 | **TinyInst** | X | free | Light instrumentation for fuzzing/coverage |
-| **QBDI** (QuarksLab) | X | free | Embeddable DBI, nice API |
+| **QBDI** (QuarksLab) | X | free | Embeddable DBI with a clean API |
 
-> Injection techniques (CreateRemoteThread, APC, manual mapping, process hollowing, reflective loading...) are covered in [Lessons 17.4 & 17.5](/technique-reverse/) from the angle of **mechanism + how to detect/defend**. LD_PRELOAD / DYLD_INSERT_LIBRARIES are built-in OS mechanisms, not tools.
+> Injection techniques (CreateRemoteThread, APC, manual mapping, process hollowing, reflective loading...) are covered in [Lessons 17.4 & 17.5](/technique-reverse/) from the angle of the mechanism and how to detect/defend against it. LD_PRELOAD / DYLD_INSERT_LIBRARIES are built-in OS mechanisms, not tools.
 
 ## 17. Emulation & symbolic execution
 
@@ -241,14 +241,14 @@ Table of contents: [1. Triage & file identification](#1-triage--file-identificat
 | **signsrch** | X | free | Finds algorithm signatures |
 | **capa** | X | free | Identifies capabilities including crypto |
 | **PortEx / Kaitai Struct** | X | free | Describe & parse binary formats |
-| **CyberChef** | web/X | free | The "Swiss army knife" for encode/decode/crypto |
+| **CyberChef** | web/X | free | Encode/decode/crypto in the browser |
 
 ## 19. Binary diffing
 
 | Tool | Platform | Price | Notes |
 |---|---|---|---|
 | **BinDiff** (Google) | X | free | Matches functions between 2 binaries (patch diffing) |
-| **Diaphora** | X | free | Diff for IDA, powerful & open |
+| **Diaphora** | X | free | Open-source diff for IDA |
 | **ghidriff** | X | free | Ghidra-based diff, outputs markdown |
 | **radiff2** (radare2) | X | free | Diff from the command line |
 
@@ -317,7 +317,7 @@ MCP (Model Context Protocol) lets an LLM drive RE tools directly: read pseudocod
 | **capa-mcp / YARA MCP** | capa, YARA | Classify capabilities & scan rules on demand |
 | **unblob / binwalk MCP** | firmware tools | Extract firmware conversationally |
 
-> Safety note: MCP gives an LLM permission to run tools on your machine. When analyzing malware, run the client + MCP in an **isolated VM** (see [Lesson 0.3](/posts/re-0-3-set-up-safe-lab-before-touching/)), and don't let the agent execute samples on its own. A separate lesson on setting up MCP for RE is at [Lesson 18.8](/technique-reverse/).
+> Safety note: MCP gives an LLM permission to run tools on your machine. When analyzing malware, run the client and MCP in an isolated VM (see [Lesson 0.3](/posts/re-0-3-set-up-safe-lab-before-touching/)), and don't let the agent execute samples on its own. A separate lesson on setting up MCP for RE is at [Lesson 18.8](/technique-reverse/).
 
 ---
 

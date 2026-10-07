@@ -1,16 +1,16 @@
 ---
-title: "Lesson 15.10: When several anti layers are stacked, how to fight"
+title: "Lesson 15.10: Handling stacked anti-analysis layers"
 image:
   path: /assets/img/covers/re-15-10-when-several-anti-layers-are-stacked.webp
-  alt: "Lesson 15.10: When several anti layers are stacked, how to fight"
+  alt: "Lesson 15.10: Handling stacked anti-analysis layers"
 date: 2023-07-01 23:10:00 +0700
 categories: ["Technique Reverse", "Part 15 · Anti-Reversing and Bypasses"]
 tags: [reverse-engineering, anti-debug]
 render_with_liquid: false
 ---
-In the previous nine lessons, each one dissected a single anti technique. Reality is harsher: a malware sample or a commercial protector never uses just one trick. It stacks layers. A typical sample might have UPX or a custom packer on the outside, anti-debug placed in a TLS callback that runs even before main, anti-VM calling CPUID right at the start, an integrity check that hashes its own code section, and a core that's virtualized. You finish removing one layer and run into the next. This lesson doesn't teach any new trick, it teaches the order and the mindset so you don't drown.
+In the previous nine lessons each one covered a single anti technique. In practice a malware sample or a commercial protector never uses just one trick, it stacks layers. A typical sample might have UPX or a custom packer on the outside, anti-debug in a TLS callback that runs even before main, anti-VM calling CPUID right at the start, an integrity check that hashes its own code section, and a virtualized core. You finish removing one layer and hit the next. This lesson doesn't teach a new trick. It covers the order to work in so you don't get lost.
 
-## Rule number one: peel from the outside in
+## Work from the outside in
 
 The anti layers are ordered by when they run, and you have to respect that order. Whatever runs earliest has to be handled first, because otherwise you won't even reach the place where the next layer is.
 
@@ -26,41 +26,41 @@ A typical runtime order:
 7. Virtualized core      (the most heavily protected logic core)
 ```
 
-The classic beginner mistake is to rush into the logic core while the packer hasn't been removed, so you read nothing but junk. Just peel in order: unpack first (Lessons 14.2, 14.3), then deal with anti-debug, and only then get to the logic.
+The classic beginner mistake is to go into the logic core while the packer is still there, so you read nothing but junk. Go in order: unpack first (Lessons 14.2, 14.3), then deal with anti-debug, and only then get to the logic.
 
 ## Set up the environment properly, once
 
-Before touching a multi-layer sample, put in the effort to set up the environment so you don't have to fight each individual check. Use a VM that looks like a real machine: enough CPU cores and RAM, some user files, a changed machine name, and the easily exposed VM artifacts removed (Lesson 15.5). Plug ScyllaHide (user mode) into x64dbg to swallow most of the anti-debug APIs and PEB checks at once, so you don't patch each by hand (Lesson 15.9). Use TitanHide or HyperHide when ScyllaHide isn't enough, since they hide at a deeper layer. And turn on the options to break at the TLS callback and the system breakpoint in x64dbg, so you attach early enough before the anti-debug in TLS gets to run (Lesson 15.4).
+Before touching a multi-layer sample, spend the time to set up the environment so you don't have to fight each check separately. Use a VM that looks like a real machine: enough CPU cores and RAM, some user files, a changed machine name, and the easily exposed VM artifacts removed (Lesson 15.5). Plug ScyllaHide (user mode) into x64dbg to swallow most of the anti-debug APIs and PEB checks at once, so you don't patch each by hand (Lesson 15.9). Use TitanHide or HyperHide when ScyllaHide isn't enough, since they hide at a deeper layer. And turn on the options to break at the TLS callback and the system breakpoint in x64dbg, so you attach early enough, before the anti-debug in TLS runs (Lesson 15.4).
 
 Set it up once, snapshot it, and use it for every later sample.
 
 ## When static is blocked, switch to dynamic
 
-Anti-disassembly (Lesson 15.6) and virtualization (Lesson 14.5) make static disassemblers useless or wrong. When that happens, don't try to read statically at all costs. Run it dynamically and observe: real values show up in registers, decoded strings appear in memory, the real flow is clear when you single-step. Many anti layers are designed to beat the static reader, and they collapse as soon as you let it run and look.
+Anti-disassembly (Lesson 15.6) and virtualization (Lesson 14.5) make static disassemblers useless or wrong. When that happens, don't insist on reading statically. Run it and observe. Real values show up in registers, decoded strings appear in memory, and the real flow is clear when you single-step. Many anti layers are designed to beat the static reader, and they stop working once you let the program run and look.
 
-## Divide and conquer: isolate each check
+## Isolate each check
 
-Don't try to get past every layer at the same time. For each check, do three things: find it, understand what it decides, and neutralize exactly that decision point. Usually the decision point is a branch instruction (`cmp` then `je/jne`) after the check has run. Patch that exact branch, or change the register value at runtime, and you're through, without needing to fully understand the check mechanism.
+Don't try to get past every layer at the same time. For each check, do three things: find it, understand what it decides, and neutralize that decision point. Usually the decision point is a branch (`cmp` then `je/jne`) after the check has run. Patch that exact branch, or change the register value at runtime, and you're through, without needing to fully understand how the check works.
 
-For integrity checks (Lesson 15.8), remember the counterintuitive lesson: don't modify the code being checked, neutralize the checking function itself. Modifying the code is lighting your own fuse.
+For integrity checks (Lesson 15.8), remember not to modify the code being checked. Neutralize the checking function itself. If you modify the code, the check will catch it.
 
-## The heavy weapon: emulation skips a whole pile of anti
+## Emulation skips a lot of anti-debug
 
-This is the most important idea of the lesson. A lot of anti-debug relies on there being a real debugger and a real operating system: PEB.BeingDebugged, NtQueryInformationProcess, RDTSC timing, hardware breakpoints. If you don't use a real debugger but **emulate** the code with Unicorn or Qiling (Lesson 18.2), that whole anti-debug group becomes meaningless, because there's no debugger to detect, and you control every return value of every API.
+This is the most useful idea in the lesson. A lot of anti-debug relies on a real debugger and a real operating system: PEB.BeingDebugged, NtQueryInformationProcess, RDTSC timing, hardware breakpoints. If you don't use a real debugger but emulate the code with Unicorn or Qiling (Lesson 18.2), that whole group of anti-debug does nothing. There's no debugger to detect, and you control every return value of every API.
 
-Emulation fits when you need to run an isolated function (for example the string decryption routine, or the serial generation function) without dragging along the program's whole anti-debug machinery. Isolate the function, load it into the emulator, feed input, get the output.
+Emulation fits when you need to run an isolated function (for example the string decryption routine, or the serial generation function) without dragging along the program's whole anti-debug code. Isolate the function, load it into the emulator, feed input, get the output.
 
 ## When to stop unpicking and go black-box
 
-You don't always need to understand every layer. If your goal is just "what input makes it print Correct", often there's no need to devirtualize what the VProtect core is doing and wear yourself out. Take the black-box approach: treat the protected part as a box, only observe the relation between input and output, or use symbolic execution (Lesson 18.3) to let a solver find an input that satisfies the condition at the output. Virtualization protects how things are computed, but usually can't hide the final condition that has to hold.
+You don't always need to understand every layer. If your goal is just "what input makes it print Correct", often there's no need to devirtualize the core. Take the black-box approach: treat the protected part as a box and only observe the relation between input and output, or use symbolic execution (Lesson 18.3) to let a solver find an input that satisfies the condition at the output. Virtualization protects how things are computed, but usually can't hide the final condition that has to hold.
 
 Always go back to the original question (Lesson 0.4): what do I actually need to know? Once you can answer that, you know which layers are worth removing and which to skip.
 
-## Take notes, or you'll unpick it all over again
+## Take notes
 
-A multi-layer sample can eat many days. Write down each layer you've recognized, the address of each check, what you've neutralized and how. A simple table of "layer, address, how to bypass" saves you hours when you have to rerun, or when the sample resets after one mistake.
+A multi-layer sample can take days. Write down each layer you've recognized, the address of each check, and what you've neutralized and how. A simple table of layer, address and bypass saves hours when you have to rerun, or when the sample resets after one mistake.
 
-## A sample order to follow
+## A sample order
 
 ```
 1. Triage (DIE, strings, entropy): recognize what the outermost layer is
@@ -72,15 +72,15 @@ A multi-layer sample can eat many days. Write down each layer you've recognized,
 7. Take notes on every step
 ```
 
-No two samples are exactly alike, but this frame keeps you heading in the right direction instead of flailing.
+No two samples are exactly alike, but this order keeps you going in the right direction.
 
 ## Lab
 
-This lab has no binary to run. It trains something more important: knowing what to do, and in what order, before you touch anything. Newcomers often feel overwhelmed opening a sample with every kind of anti-technique and don't know where to start, so this exercise forces you to write the plan down.
+This lab has no binary to run. It practices something more important: knowing what to do, and in what order, before you touch anything. Newcomers often feel overwhelmed when they open a sample with every kind of anti-technique and don't know where to start, so this exercise makes you write the plan down.
 
-Imagine you receive a file `target.exe` and the first triage shows the following. Detect It Easy reports a custom packer, an entropy of 7.9 in the main section, and imports that are only `LoadLibraryA`, `GetProcAddress` and `VirtualAlloc`. There is a TLS directory with one callback. When you try it in x64dbg, the program exits immediately with the message "Debugger detected". After you get past that for now, a function calls `CPUID` and then exits when running in a VM. The license check lives in a function that looks like a huge dispatcher loop with a state variable, a sign of virtualization. And before entering the license function, a piece of code reads the program's own code section and compares it.
+Imagine you receive a file `target.exe` and the first triage shows the following. Detect It Easy reports a custom packer, an entropy of 7.9 in the main section, and imports that are only `LoadLibraryA`, `GetProcAddress` and `VirtualAlloc`. There's a TLS directory with one callback. When you try it in x64dbg, the program exits immediately with the message "Debugger detected". After you get past that for now, a function calls `CPUID` and then exits when running in a VM. The license check lives in a function that looks like a huge dispatcher loop with a state variable, a sign of virtualization. And before entering the license function, a piece of code reads the program's own code section and compares it.
 
-Your job is to write a plan. List the anti layers present in the sample and tie each to the matching lesson in Parts 14 and 15. Put them in the order you would handle them and explain why that order. For each layer, give one concrete way past it (a tool or an action). Point out which layer you would NOT try to fully remove, with the reason and an alternative approach. And describe the environment you would set up before starting.
+Your job is to write a plan. List the anti layers present in the sample and tie each to the matching lesson in Parts 14 and 15. Put them in the order you would handle them and explain why. For each layer, give one concrete way past it (a tool or an action). Say which layer you would not try to fully remove, with the reason and an alternative approach. And describe the environment you would set up before starting.
 
 A few questions to think about. Why shouldn't you touch the integrity check function by modifying the code section? In what cases does emulation (Unicorn/Qiling) let you skip most of the anti-debug without patching anything? And if all you need is a valid license key, do you have to devirtualize the core? Write your own plan first, then open the solution to compare.
 
@@ -100,19 +100,19 @@ First, the anti layers and the matching lessons:
 | Reads and compares its own code section | Integrity check | [15.8](/posts/re-15-8-integrity-checks-anti-tamper-when-program/) |
 | Dispatcher plus state variable | Virtualization | [14.5](/posts/re-14-5-code-virtualization-highest-wall/) |
 
-For the order of attack, the packer comes first. Until you unpack it, everything behind it is still compressed and meaningless to read. Get to the OEP, dump, and rebuild the IAT with Scylla. Next is the anti-debug in the TLS callback: it runs before the entry point, so it has to be neutralized before you reach the real code. Turn on stopping at TLS callbacks in x64dbg. Then the API and PEB anti-debug, neutralized with ScyllaHide from the very start. After that comes the anti-VM, handled by making the VM look real and patching the branch after `CPUID`. The integrity check is next, and it must be disabled before you patch anything else in the code, otherwise it will detect your earlier patches. The virtualized core goes last, because it is the most expensive.
+For the order of attack, the packer comes first. Until you unpack it, everything behind it is still compressed and meaningless to read. Get to the OEP, dump, and rebuild the IAT with Scylla. Next is the anti-debug in the TLS callback. It runs before the entry point, so it has to be neutralized before you reach the real code. Turn on stopping at TLS callbacks in x64dbg. Then the API and PEB anti-debug, neutralized with ScyllaHide from the very start. After that comes the anti-VM, handled by making the VM look real and patching the branch after `CPUID`. The integrity check is next, and it must be disabled before you patch anything else in the code, otherwise it will detect your earlier patches. The virtualized core goes last, because it's the most expensive.
 
 For ways past each layer: unpack the packer by hand with the ESP trick, then dump and use Scylla ([14.2](/posts/re-14-2-unpacking-upx-automatic-manual/), [14.3](/posts/re-14-3-dumping-process-rebuilding-iat-scylla/)). For the TLS anti-debug, break at the TLS callback, step past it, then patch it or let ScyllaHide handle it. For API/PEB anti-debug, use ScyllaHide ([15.9](/posts/re-15-9-bypassing-anti-debug-from-mouse-click/)). For anti-VM, build a realistic VM and patch the `je/jne` after `CPUID`. For the integrity check, patch the checksum comparison branch so it always counts as a match, and don't modify the code being checked.
 
-The layer I would not fully remove is the virtualized core. Fully devirtualizing a custom VM takes weeks. If the goal is only to find a valid license key, a black-box approach is far more efficient: set a condition on the output (where validity is decided) and then use symbolic execution ([18.3](/posts/re-18-3-symbolic-execution-making-computer-solve-crackme/)) or constraint-based brute force to find a satisfying input. A VM protects how the value is computed, and it rarely hides the final condition.
+The layer I wouldn't fully remove is the virtualized core. Fully devirtualizing a custom VM takes weeks. If the goal is only to find a valid license key, a black-box approach is much more efficient: set a condition on the output (where validity is decided) and then use symbolic execution ([18.3](/posts/re-18-3-symbolic-execution-making-computer-solve-crackme/)) or constraint-based brute force to find a satisfying input. A VM protects how the value is computed, and it rarely hides the final condition.
 
-For the environment, I would set up a VM with 4 cores and 8 GB of RAM, with user files, a renamed machine, and the easily exposed VM artifacts removed. I would run x64dbg with ScyllaHide, with stopping at TLS callbacks and the system breakpoint turned on. I would take a snapshot of the clean state so I can rerun quickly after a mistake. And I would keep Unicorn/Qiling ready to isolate and emulate the decryption routine while skipping the anti-debug.
+For the environment, I'd set up a VM with 4 cores and 8 GB of RAM, with user files, a renamed machine, and the easily exposed VM artifacts removed. I'd run x64dbg with ScyllaHide, with stopping at TLS callbacks and the system breakpoint turned on. I'd take a snapshot of the clean state so I can rerun quickly after a mistake. And I'd keep Unicorn/Qiling ready to isolate and emulate the decryption routine while skipping the anti-debug.
 
-On the reflection questions: you don't modify the code section because the integrity check will catch it. Changing the code throws the checksum off and the program detects tampering, so the right move is to neutralize the check function itself. Emulation skips anti-debug when you isolate one function and run it in Unicorn/Qiling, since there is no real debugger for PEB.BeingDebugged, NtQueryInformationProcess or RDTSC to detect, and you control every return value. And you don't need to devirtualize if you only need a valid key, because a black-box or symbolic approach on the output condition is usually enough.
+On the reflection questions: you don't modify the code section because the integrity check will catch it. Changing the code throws the checksum off and the program detects tampering, so the right move is to neutralize the check function itself. Emulation skips anti-debug when you isolate one function and run it in Unicorn/Qiling, since there's no real debugger for PEB.BeingDebugged, NtQueryInformationProcess or RDTSC to detect, and you control every return value. And you don't need to devirtualize if you only need a valid key, because a black-box or symbolic approach on the output condition is usually enough.
 
 </details>
 
 ## Key takeaways
-Peel layers in runtime order: packer, TLS, anti-VM, anti-debug, integrity, core. Set up the environment properly once (realistic VM + ScyllaHide + early attach) and then snapshot. When static is blocked, go dynamic, and don't try to read statically what anti-disasm has hit.
+Work through the layers in runtime order: packer, TLS, anti-VM, anti-debug, integrity, core. Set up the environment properly once (realistic VM + ScyllaHide + early attach) and then snapshot. When static is blocked, go dynamic, and don't try to read statically what anti-disassembly has hit.
 
-Isolate each check and neutralize exactly the decision point, without trying to do everything at once. Emulation (Unicorn/Qiling) disables the whole anti-debug group because there's no real debugger. Know when to switch to black-box or symbolic instead of fully unpicking, and take notes on each layer, otherwise you'll have to redo it from scratch.
+Isolate each check and neutralize the decision point, without trying to do everything at once. Emulation (Unicorn/Qiling) disables the whole anti-debug group because there's no real debugger. Know when to switch to black-box or symbolic instead of fully unpicking, and take notes on each layer, otherwise you'll have to redo it from scratch.

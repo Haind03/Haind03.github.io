@@ -1,20 +1,20 @@
 ---
-title: "Lesson 1.5: x86/x64 Assembly (3), recognizing if, loops, switch, arrays and structs"
+title: "Lesson 1.5: x86/x64 Assembly (3), if, loops, switch, arrays and structs"
 image:
   path: /assets/img/covers/re-1-5-x86-x64-assembly-3-recognizing-if.webp
-  alt: "Lesson 1.5: x86/x64 Assembly (3), recognizing if, loops, switch, arrays and structs"
+  alt: "Lesson 1.5: x86/x64 Assembly (3), if, loops, switch, arrays and structs"
 date: 2022-02-28 23:13:00 +0700
 categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
-Lesson 1.3 gave you the instruction set. Lesson 1.4 gave you the stack frame. Now for the most fun part: putting them together to read out high-level structure. A compiler takes your tidy `for` statement and grinds it into a pile of `cmp`, `jmp`, `inc`. The reverser's job is to go the other way: look at that pile and recognize "ah, this is a loop".
+Lesson 1.3 covered the instruction set and lesson 1.4 the stack frame. Now we put them together to read high-level structure. A compiler takes your `for` statement and turns it into a pile of `cmp`, `jmp`, `inc`. Reversing means going the other way: look at the pile and recognize "this is a loop".
 
-Good news: compilers are very mechanical. They translate each construct using a few fixed templates. Learn the templates and you can read, like memorizing letter shapes. This lesson is that set of templates.
+Compilers are very mechanical. They translate each construct with a few fixed templates, so once you know the templates you can read the code. This lesson is that set of templates.
 
 ## if / else: one jump skipping a block
 
-The simplest construct, you already met it in lesson 1.3. The key point is that the compiler jumps over the block of instructions when the condition isn't met. Notice the logic is often inverted: `if (a == b)` in C gets translated to "if a is NOT equal to b, jump away".
+You already met this in lesson 1.3. The compiler jumps over the block of instructions when the condition isn't met, so the logic is often inverted: `if (a == b)` in C becomes "if a is NOT equal to b, jump away".
 
 ```asm
     mov  eax, [rbp-4]     ; eax = x
@@ -36,15 +36,15 @@ else
     y = 2;
 ```
 
-The pattern is a `cmp`/`test`, a conditional jump to the "else" label, and at the end of the if body an unconditional `jmp` that jumps over the else block. Seeing that `jmp` at the end of a block is the sign there's an `else`. Without it it's usually a plain `if`.
+The pattern is a `cmp`/`test`, a conditional jump to the "else" label, and at the end of the if body an unconditional `jmp` over the else block. If you see that `jmp` at the end of a block, there's an `else`. Without it it's usually a plain `if`.
 
 ### Nested ifs
 
-An if inside an if is just several layers of the template above stacked up, with more jump labels. Don't try to read it in one pass, follow it one cmp/jump pair at a time. IDA and Ghidra draw a graph view that shows the branching blocks much more clearly than reading text sequentially, use it.
+An if inside an if is the same template stacked up, with more labels. Don't read it in one pass, follow one cmp/jump pair at a time. IDA and Ghidra draw a graph view that shows the branching blocks much more clearly than the text listing, so use it.
 
 ## Loops: a jump backwards
 
-This is the unmistakable signature of a loop: a jump instruction pointing back up to an address before it. Normal code runs downward, so seeing a jump upward almost certainly means a loop.
+A loop has one clear signature: a jump instruction pointing back up to an earlier address. Normal code runs downward, so a jump upward almost certainly means a loop.
 
 A typical `for (i = 0; i < n; i++)`:
 
@@ -70,13 +70,13 @@ for (int i = 0; i < n; i++) {
 }
 ```
 
-To read a loop quickly, look for four pieces. There's the initialization of the counter before the label (here `i = 0`), the condition at the top (cmp plus the exit jump), the body in the middle, and finally the increment or decrement of the counter followed by a backwards jmp to the condition.
+To read a loop quickly, look for four pieces. The counter is initialized before the label (here `i = 0`), the condition is at the top (cmp plus the exit jump), the body is in the middle, and at the end the counter is incremented or decremented, followed by a backwards jmp to the condition.
 
-`while` and `for` compile to almost the same thing, the only difference being whether there's an init part and an increment part. `do...while` puts the condition at the end, so it's even more compact (no unconditional jmp at the start of the loop). Seeing the condition checked at the bottom of the loop block means `do...while`.
+`while` and `for` compile to almost the same thing, the only difference being whether there's an init part and an increment part. `do...while` puts the condition at the end, so it's more compact (no unconditional jmp at the start). If the condition is checked at the bottom of the loop block, it's a `do...while`.
 
-## switch-case: when the compiler uses a jump table
+## switch-case: jump tables
 
-A small `switch` with a few cases is often compiled into a chain of if/else if (cmp against each value in turn). But when there are many cases with consecutive values (0, 1, 2, 3...), it uses a much faster trick: a jump table, a table of addresses. Instead of comparing one by one, it uses the value as an index straight into the table and jumps.
+A small `switch` is often compiled into a chain of if/else if (cmp against each value in turn). With many cases and consecutive values (0, 1, 2, 3...), the compiler uses a jump table, which is a table of addresses. Instead of comparing one by one, it uses the value as an index into the table and jumps.
 
 ```asm
     mov  eax, [rbp-4]      ; eax = switch value
@@ -106,11 +106,11 @@ switch (x) {
 }
 ```
 
-The pattern is a `cmp` bounding the upper limit with `ja` to default, then an indirect jump like `jmp [table + index*8]`. Seeing a `jmp` to a register (not a fixed label) along with a `*4` or `*8` is almost certainly a jump table. Good news: IDA and Ghidra recognize jump tables automatically and show the cases for you, no need to trace by hand.
+The pattern is a `cmp` bounding the upper limit with `ja` to default, then an indirect jump like `jmp [table + index*8]`. A `jmp` to a register (not a fixed label) together with a `*4` or `*8` is almost certainly a jump table. IDA and Ghidra recognize jump tables automatically and show the cases, so you don't need to trace by hand.
 
 ## Array access: multiply by the element size
 
-An array in memory is elements laid out one after another. To get `arr[i]`, the CPU computes `base address + i * element_size`. That multiplication gives away that it's an array, and also tells you the size of each element.
+An array in memory is elements laid out one after another. To get `arr[i]`, the CPU computes `base address + i * element_size`. That multiplication tells you it's an array, and also the size of each element.
 
 ```asm
     mov  rax, [rbp-8]      ; rax = base pointer of the array
@@ -124,13 +124,13 @@ Translated to C:
 int x = arr[i];   // arr is int*, so multiply by 4
 ```
 
-Reading the multiplier tells you the type. A `*1` means a byte array (char, uint8), `*2` means short (16 bit), `*4` means int or float (32 bit), and `*8` means long long, double, or a pointer on x64.
+The multiplier gives the type. `*1` is a byte array (char, uint8), `*2` is short (16 bit), `*4` is int or float (32 bit), and `*8` is long long, double, or a pointer on x64.
 
-The full syntax of an x86 memory operand is `[base + index*scale + displacement]`, for example `[rax + rcx*4 + 0x10]`. Each component means something, and the next section shows that this `displacement` is often the sign of a struct.
+The full syntax of an x86 memory operand is `[base + index*scale + displacement]`, for example `[rax + rcx*4 + 0x10]`. The `displacement` part is often a sign of a struct, as the next section shows.
 
 ## Struct access: adding a fixed offset
 
-A struct is also fields laid out one after another, but it differs from an array: you access it with a fixed offset (the field's position in the struct) rather than an index multiplied by a size. Seeing a pointer being added to different constants (0, 4, 8, 0x10...) to pull out values means it's a struct.
+A struct is also fields laid out one after another, but you access it with a fixed offset (the field's position in the struct) instead of an index multiplied by a size. If a pointer gets added to different constants (0, 4, 8, 0x10...) to pull out values, it's a struct.
 
 ```asm
     mov  rax, [rbp-8]     ; rax = pointer to the struct
@@ -152,13 +152,13 @@ int y = t->b;
 void *z = t->c;
 ```
 
-Quick way to tell arrays from structs: an array uses a varying index times a size (`rcx*4`), a struct uses constant offsets (`+4`, `+8`). An array is "the same type, many elements", a struct is "many different types, each at a fixed spot".
+Quick way to tell them apart: an array uses a varying index times a size (`rcx*4`), a struct uses constant offsets (`+4`, `+8`). An array is the same type many times, a struct is different types each at a fixed spot.
 
-In IDA you can declare a struct (press `Y` to set a type, or create the struct in Local Types) and assign it to the pointer, and `[rax+8]` instantly turns into `t->c`, which is a pleasure to read. Lesson [3.3](/posts/re-3-3-structs-assembly-art-recovering-them/) goes deep on recovering structs.
+In IDA you can declare a struct (press `Y` to set a type, or create the struct in Local Types) and assign it to the pointer, and `[rax+8]` turns into `t->c`, which is much nicer to read. Lesson [3.3](/posts/re-3-3-structs-assembly-art-recovering-them/) goes deep on recovering structs.
 
 ## Summary of the templates
 
-Stick this next to your screen when you're starting out:
+Keep this next to your screen when you're starting out:
 
 | What you see in asm | Most likely |
 |---|---|
@@ -169,11 +169,11 @@ Stick this next to your screen when you're starting out:
 | `[base + index*scale]`, scale is 1/2/4/8 | array access, scale tells the type |
 | `[base + constant]` with several different constants | struct access, the constants are field offsets |
 
-Don't memorize blindly. The surest way is to write your own C code, build it, and open it in Ghidra/IDA to see what the compiler turned it into. That's exactly the lab below.
+Don't just memorize these. The best way is to write your own C code, build it, and open it in Ghidra/IDA to see what the compiler did. That's the lab below.
 
 ## Lab
 
-The file `structures.c` packs in all five constructs above, one function each. `sum_array` is a loop plus access to an int array, `classify` is a multi-level nested if/else, `action_name` is a switch with five consecutive cases (a jump table candidate), and `level_up` accesses a struct through offsets. The goal is to point out the loop, the nested if, the switch jump table, the array access and the struct access by hand in a real binary, and match the asm against source you already know.
+The file `structures.c` has all five constructs above, one function each. `sum_array` is a loop plus access to an int array, `classify` is a multi-level nested if/else, `action_name` is a switch with five consecutive cases (a jump table candidate), and `level_up` accesses a struct through offsets. The goal is to point out the loop, the nested if, the switch jump table, the array access and the struct access by hand in a real binary, and match the asm against source you already know.
 
 Build it at both optimization levels. The `-O0` build follows the templates closely and is easy to read, while the `-O2` build shows how much harder real-world code is.
 
@@ -193,7 +193,7 @@ cl /O2 structures.c
 
 Open the binary in Ghidra (import, then auto-analyze) or IDA, go through each function in turn and answer a few questions. In `sum_array`, find the instruction that jumps backward to mark the loop, and work out the scale factor used for the array access and how it matches the `int` type. In `classify`, count the `cmp` plus conditional jump pairs and redraw the if/else tree from the jump labels. In `action_name`, decide whether the compiler built a jump table or translated the switch into an if/else chain, and if there is a table, find its address and entries. In `level_up`, list which offsets are added to the struct pointer and match them to the fields of `struct Player`. Finally compare `sum_array` between `-O0` and `-O2`: does the counter `i` still live on the stack at `-O2` or does the compiler keep it in a register, and is the loop distorted by unrolling or a changed condition form?
 
-A few hints help. Use the graph view (the `Space` key in IDA) to see the branching blocks instead of reading text sequentially. In Ghidra the decompiler window (double-click a function) gives an approximate C version to compare with, but try reading the asm yourself first and only then open the decompiler to check. If you can't spot a jump table, look for a `jmp` to a register (an indirect jump) with a `*8` (x64) or `*4` (x86) computation right before it. Compare on your own first and open the solution once you have finished.
+A few hints. Use the graph view (the `Space` key in IDA) to see the branching blocks instead of reading text. In Ghidra the decompiler window (double-click a function) gives an approximate C version to compare with, but try reading the asm yourself first and only then open the decompiler to check. If you can't spot a jump table, look for a `jmp` to a register (an indirect jump) with a `*8` (x64) or `*4` (x86) computation right before it. Compare on your own first and open the solution when you're finished.
 
 <div class="lab-box">
 <div class="lab-head"><b>LAB 1.5</b>source files</div>
@@ -205,7 +205,7 @@ A few hints help. Use the graph view (the `Space` key in IDA) to see the branchi
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>
 
-Do it yourself first. What follows is a function-by-function comparison based on an x86-64 `gcc -O0` build (Linux, System V, so the first parameters are in `rdi`, `rsi` and so on). MSVC `/Od` differs slightly in the parameter registers (`rcx`, `rdx` and so on) and uses `rbp` the same way, but the templates are identical.
+Try it yourself first. This is a function-by-function comparison based on an x86-64 `gcc -O0` build (Linux, System V, so the first parameters are in `rdi`, `rsi` and so on). MSVC `/Od` differs slightly in the parameter registers (`rcx`, `rdx` and so on) and uses `rbp` the same way, but the templates are identical.
 
 ### 1) sum_array: loop and array
 
@@ -229,7 +229,7 @@ Typical asm at `-O0`, with the prologue trimmed:
     mov  eax, [rbp-4]        ; return total
 ```
 
-The instruction that marks the loop is `jl .body`, jumping backward, and that is the loop signature. The scale factor is `rax*4`: a 4-byte element, which matches the `int` type. With a `char*` you would see `*1` and with a `double*` you would see `*8`. The compiler puts the condition at the end and enters the loop with an initial `jmp .check`, a common template for `for` and `while` at `-O0`.
+The instruction that marks the loop is `jl .body`, jumping backward. The scale factor is `rax*4`: a 4-byte element, which matches the `int` type. With a `char*` you would see `*1` and with a `double*` you would see `*8`. The compiler puts the condition at the end and enters the loop with an initial `jmp .check`, a common template for `for` and `while` at `-O0`.
 
 ### 2) classify: nested if/else
 
@@ -255,7 +255,7 @@ The three thresholds (90, 70, 50) become three cmp plus jump pairs:
 .done:
 ```
 
-There are three `cmp` plus `jl` pairs. Each "true" branch ends with `jmp .done`, and that trailing jmp at the end of a body is the sign that an else branch follows. The logic is inverted: `if (score >= 90)` becomes `cmp 90; jl .not_A` (if it is LESS than 90, skip the A branch), which is very typical. The whole nested if/else tree can be rebuilt from the chain of labels `.not_A -> .not_B -> .else_F`.
+There are three `cmp` plus `jl` pairs. Each "true" branch ends with `jmp .done`, and a trailing jmp at the end of a body means an else branch follows. The logic is inverted: `if (score >= 90)` becomes `cmp 90; jl .not_A` (if it is LESS than 90, skip the A branch), which is very typical. You can rebuild the whole nested if/else tree from the chain of labels `.not_A -> .not_B -> .else_F`.
 
 ### 3) action_name: switch
 
@@ -278,7 +278,7 @@ With 5 consecutive cases 0..4, gcc, clang and MSVC at optimized levels usually b
     dd  .case4 - .table
 ```
 
-The signature is `cmp eax, 4` plus `ja .default` (the bounds check), then `jmp rax` (an indirect jump through a register) with the target loaded from `[table + index*4]`. At `-O0`, some compilers instead translate this switch into an if/else chain comparing 0, 1, 2, 3, 4 in turn. If you see that, it is correct and there is no table, and building with `-O2` forces a jump table out. IDA and Ghidra recognize the table by themselves and label it `jpt_` along with the list of cases, so you don't have to chase offsets by hand. One trick worth knowing is that `ja` (unsigned) guards both the upper bound and negative values in one instruction, because a negative number treated as unsigned is huge.
+The signature is `cmp eax, 4` plus `ja .default` (the bounds check), then `jmp rax` (an indirect jump through a register) with the target loaded from `[table + index*4]`. At `-O0`, some compilers instead translate this switch into an if/else chain comparing 0, 1, 2, 3, 4 in turn. If you see that, it's correct and there's no table, and building with `-O2` forces a jump table out. IDA and Ghidra recognize the table by themselves and label it `jpt_` along with the list of cases, so you don't have to chase offsets by hand. One more thing: `ja` (unsigned) guards both the upper bound and negative values in one instruction, because a negative number treated as unsigned is huge.
 
 ### 4) level_up: struct through offsets
 
@@ -308,17 +308,17 @@ Matching the offsets to `struct Player`:
 | 8 | level | int | 4 |
 | 12 | grade | char | 1 |
 
-To tell it apart from an array, notice that the offset constants here are different (`+4`, `+8`, `+12`) and added to the same pointer, with no scaled index. That is a struct, not an array. `grade` is a `char`, so it uses `mov byte`, while the int fields use 32-bit operations, so the instruction size also gives away the field type. In IDA, declaring `struct Player` and setting the type of `p` (key `Y`) turns `[rax+8]` into `p->level`, which reads much better.
+To tell it from an array, notice the offset constants are different (`+4`, `+8`, `+12`) and added to the same pointer, with no scaled index. That's a struct. `grade` is a `char`, so it uses `mov byte`, while the int fields use 32-bit operations, so the instruction size also hints at the field type. In IDA, declaring `struct Player` and setting the type of `p` (key `Y`) turns `[rax+8]` into `p->level`, which reads much better.
 
 ### 5) Comparing -O0 and -O2 (sum_array)
 
-The typical differences are these. The counter `i` and `total` are no longer on the stack, because the compiler keeps them in registers (for example `total` in `eax` and `i` in `ecx`), so the repeated `[rbp-x]` reads are gone. The prologue and epilogue are leaner, and sometimes `rbp` is dropped entirely as a frame pointer (frame pointer omission). The loop may change its condition form, or with a known constant n the compiler sometimes unrolls a few iterations or even computes the result in advance. At high optimization it may also use SIMD instructions to add several elements at once.
+The typical differences are these. The counter `i` and `total` are no longer on the stack, because the compiler keeps them in registers (for example `total` in `eax` and `i` in `ecx`), so the repeated `[rbp-x]` reads are gone. The prologue and epilogue are leaner, and sometimes `rbp` is dropped as a frame pointer entirely (frame pointer omission). The loop may change its condition form, or with a known constant n the compiler sometimes unrolls a few iterations or even computes the result in advance. At high optimization it may also use SIMD instructions to add several elements at once.
 
-The lesson is that the templates of this lesson are most accurate at `-O0`. Real-world code is usually built at `-O2` or higher, so you have to get used to variables living in registers and structures being shuffled. The decompiler (Ghidra or Hex-Rays) exists to carry that heavy part, but understanding the original templates tells you what the decompiler is reconstructing and when it gets it wrong.
+The templates in this lesson are most accurate at `-O0`. Real-world code is usually built at `-O2` or higher, so you have to get used to variables living in registers and structures being shuffled around. The decompiler (Ghidra or Hex-Rays) does most of that work for you, but knowing the original templates tells you what it's reconstructing and when it gets it wrong.
 
 </details>
 
 ## Key takeaways
-For if/else, look for a cmp plus a conditional jump over a block, where a `jmp` at the end of the if body usually means there's an else, and remember the condition logic is often inverted. Loops are recognized by a jump back up, and you look for four pieces: init, condition, body, increment. do...while puts the condition at the end of the block.
+For if/else, look for a cmp plus a conditional jump over a block. A `jmp` at the end of the if body usually means there's an else, and the condition logic is often inverted. Loops show up as a jump back up, with four pieces: init, condition, body, increment. do...while puts the condition at the end of the block.
 
 A switch with many consecutive cases becomes a jump table, recognized by an indirect `jmp` plus `index*8`, and IDA/Ghidra rebuild the cases automatically. Arrays look like `[base + index*scale]` where the scale (1/2/4/8) gives the element size, while structs look like `[base + constant offset]` where each offset is a field. Building your own code and inspecting it is the fastest way to learn.

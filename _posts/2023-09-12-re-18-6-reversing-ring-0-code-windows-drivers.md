@@ -1,30 +1,30 @@
 ---
-title: "Lesson 18.6: Reversing ring-0 code, Windows drivers and Linux kernel modules"
+title: "Lesson 18.6: Reversing Windows drivers and Linux kernel modules"
 image:
   path: /assets/img/covers/re-18-6-reversing-ring-0-code-windows-drivers.webp
-  alt: "Lesson 18.6: Reversing ring-0 code, Windows drivers and Linux kernel modules"
+  alt: "Lesson 18.6: Reversing Windows drivers and Linux kernel modules"
 date: 2023-09-12 11:45:00 +0700
 categories: ["Technique Reverse", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
 render_with_liquid: false
 ---
-So far everything we've taken apart ran in ring-3, user-mode, where a bug only crashes one process. Stepping down to ring-0, kernel-mode, is a different world: code here runs with full privileges, and a small bug doesn't crash the program, it crashes the whole machine (a BSOD on Windows, a kernel panic on Linux). Rootkits, anti-cheat, and many anti-debug drivers (like TitanHide in lesson 15.9) live here, so sooner or later you have to go down.
+So far everything we've taken apart ran in ring-3, user-mode, where a bug only crashes one process. Ring-0, kernel-mode, is different. Code here runs with full privileges, and a small bug crashes the whole machine (a BSOD on Windows, a kernel panic on Linux). Rootkits, anti-cheat, and many anti-debug drivers (like TitanHide in lesson 15.9) live here, so sooner or later you have to go down.
 
-This lesson doesn't teach writing drivers, it teaches reading a driver you don't have the source for, and how to debug it without burning your machine.
+This lesson doesn't teach writing drivers. It covers reading a driver you don't have the source for, and debugging it without wrecking your machine.
 
 ## First rule: always work in a VM
 
-A reminder to be sure: when reversing ring-0 code, the VM lab from lesson 0.3 is no longer an option but a requirement. The technical reason is that debugging the kernel needs to halt the whole operating system, so you need two machines, one running the driver (the target) and one running the debugger (the host). A VM solves this neatly: the target is a VM, the host is the real machine, connected through a named pipe or network. If the driver breaks, only the VM crashes, and you restore a snapshot in a few seconds.
+When reversing ring-0 code, the VM lab from lesson 0.3 is a requirement, not an option. Debugging the kernel means halting the whole operating system, so you need two machines, one running the driver (the target) and one running the debugger (the host). With a VM, the target is a VM, the host is the real machine, and they connect through a named pipe or network. If the driver breaks, only the VM crashes, and you restore a snapshot in a few seconds.
 
-Never load an unknown driver onto your real machine to see what it does. Once is enough to remember.
+Never load an unknown driver onto your real machine to see what it does.
 
 ## Windows kernel driver: the .sys file
 
-A Windows driver (`.sys`) is still a PE file, just like the `.exe` and `.dll` in lesson 1.7, except the subsystem is Native and it links against `ntoskrnl.exe` instead of `kernel32.dll`. Open it in IDA or Ghidra as usual, but the APIs you see will be kernel relatives: `IoCreateDevice`, `ObReferenceObjectByHandle`, `MmGetSystemRoutineAddress`, `ZwOpenKey`, not `CreateFileW`.
+A Windows driver (`.sys`) is still a PE file, like the `.exe` and `.dll` in lesson 1.7, except the subsystem is Native and it links against `ntoskrnl.exe` instead of `kernel32.dll`. Open it in IDA or Ghidra as usual, but the APIs you see will be kernel ones: `IoCreateDevice`, `ObReferenceObjectByHandle`, `MmGetSystemRoutineAddress`, `ZwOpenKey`, not `CreateFileW`.
 
-### DriverEntry, the real entry point
+### DriverEntry
 
-A driver's entry point isn't `main` but `DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath)`. This is where you start reading. In `DriverEntry`, a driver usually does a couple of notable things. It creates a device object (`IoCreateDevice`) and a symbolic link (`IoCreateSymbolicLink`) so user-mode can reach it, and the device name (for example `\\Device\\MyDriver`) is a clue for finding the user-mode program that controls it. It also assigns the major functions into the `DriverObject->MajorFunction[]` table, which is the most important spot.
+A driver's entry point isn't `main` but `DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath)`. Start reading there. In `DriverEntry`, a driver usually does two notable things. It creates a device object (`IoCreateDevice`) and a symbolic link (`IoCreateSymbolicLink`) so user-mode can reach it, and the device name (for example `\\Device\\MyDriver`) is a clue for finding the user-mode program that controls it. It also assigns the major functions into the `DriverObject->MajorFunction[]` table, which is the spot that matters most.
 
 ### The MajorFunction table and IOCTLs
 
@@ -36,19 +36,19 @@ MajorFunction[IRP_MJ_CLOSE]          = DriverCreateClose;   // index 2
 MajorFunction[IRP_MJ_DEVICE_CONTROL] = DriverDeviceControl; // index 14, the most important
 ```
 
-The `IRP_MJ_DEVICE_CONTROL` slot (value 0xE) is almost always the heart of the driver, because this is where `DeviceIoControl` from user-mode gets handled. When reversing, find where slot 0xE gets assigned in `DriverEntry` and jump to that function and you're straight into the main logic.
+The `IRP_MJ_DEVICE_CONTROL` slot (value 0xE) is almost always the main part of the driver, because this is where `DeviceIoControl` from user-mode gets handled. Find where slot 0xE gets assigned in `DriverEntry`, jump to that function, and you're in the main logic.
 
 Inside the device control function, the driver reads the IOCTL code from the IRP (through `IoGetCurrentIrpStackLocation`, the field `Parameters.DeviceIoControl.IoControlCode`) and then switches on each code. Each IOCTL is a command that user-mode sends down. Rebuild the table of IOCTL codes against behavior and you've understood the driver's private API.
 
 ### Working backwards from the user-mode side
 
-A practical tip: if you also have the user-mode program that controls the driver, look for the `DeviceIoControl` call in it. The second parameter is the IOCTL code, and the input/output buffer parameters tell you the data structures. Put the user and kernel sides together and you understand the whole protocol. That's why reversing a driver is often easier when the user-mode part comes with it.
+If you also have the user-mode program that controls the driver, look for the `DeviceIoControl` call in it. The second parameter is the IOCTL code, and the input/output buffer parameters tell you the data structures. Put the user and kernel sides together and you understand the whole protocol. So reversing a driver is often easier when the user-mode part comes with it.
 
 ### Debugging with WinDbg in kernel mode
 
 Debug a driver with WinDbg (mentioned in lesson 2.6) in kernel mode. On the target VM, turn on kernel debugging with `bcdedit /debug on` and configure the transport (`bcdedit /dbgsettings net ...` or serial/named pipe), then reboot. On the host, open WinDbg and attach to the kernel over the same transport.
 
-A few commands get used a lot: `lm` lists loaded modules (find your driver), `!drvobj MyDriver 7` shows the driver object and the major function table, `bp MyDriver!DriverDeviceControl` sets a breakpoint, `!irp` shows the current IRP, and `dt` reads a struct. The target VM will freeze when a breakpoint hits, that's normal, the host controls everything.
+A few commands get used a lot: `lm` lists loaded modules (find your driver), `!drvobj MyDriver 7` shows the driver object and the major function table, `bp MyDriver!DriverDeviceControl` sets a breakpoint, `!irp` shows the current IRP, and `dt` reads a struct. The target VM freezes when a breakpoint hits. That's normal, the host controls everything.
 
 ## Linux kernel module: the .ko file
 
@@ -58,19 +58,19 @@ There are two entry points defined by macros. `module_init(func)` registers the 
 
 Module info (name, license, author, parameters) sits in the `.modinfo` section, quickly read with `modinfo file.ko`. Symbols are often still fairly intact because kernel modules tend to keep function names, so it's easier to read than a stripped Windows driver.
 
-Modules often register a character device or an entry in `/proc` or `/sys` to talk to user-mode (the equivalent of Windows' device object + IOCTL), so look for the `file_operations` struct with the `.read`, `.write`, `.unlocked_ioctl` pointers. They also sometimes hook syscalls, a classic rootkit technique that modifies `sys_call_table` to intercept `getdents` to hide files, or `kill` to receive hidden commands. Seeing a module read/write `sys_call_table` is a red flag to read carefully.
+Modules often register a character device or an entry in `/proc` or `/sys` to talk to user-mode (the equivalent of Windows' device object + IOCTL), so look for the `file_operations` struct with the `.read`, `.write`, `.unlocked_ioctl` pointers. They also sometimes hook syscalls, a classic rootkit technique that modifies `sys_call_table` to intercept `getdents` to hide files, or `kill` to receive hidden commands. If a module reads or writes `sys_call_table`, read it carefully.
 
-For debugging, use `kgdb` connected from another machine (or QEMU, tying into lesson 18.5), or use `qemu` to run the kernel with the gdbstub (`-s -S`) and attach gdb from the host. Printing logs with `printk` and reading through `dmesg` is the gentlest way to observe when you don't need to halt the kernel yet.
+For debugging, use `kgdb` connected from another machine (or QEMU, see lesson 18.5), or use `qemu` to run the kernel with the gdbstub (`-s -S`) and attach gdb from the host. Printing logs with `printk` and reading them through `dmesg` is the gentlest way to observe when you don't need to halt the kernel yet.
 
-## Why ring-0 is so different
+## What's different about ring-0
 
-A few things trip up people used to user-mode. There's no familiar libc or Win32, only the kernel API, so you have to look up kernel function names to understand them (tying into lesson 1.13). Kernel addresses are shared across all processes, not isolated like user-mode (lesson 1.2), and KASLR randomizes the kernel base on every boot.
+A few things trip up people used to user-mode. There's no familiar libc or Win32, only the kernel API, so you have to look up kernel function names to understand them (see lesson 1.13). Kernel addresses are shared across all processes, not isolated like user-mode (lesson 1.2), and KASLR randomizes the kernel base on every boot.
 
-One bug crashes the whole machine, so the trial-and-error loop is much slower, and reading statically with care before running dynamically pays off. On the bright side, drivers are usually small and focused, so once you find the device control function, the rest is compact.
+One bug crashes the whole machine, so the trial-and-error loop is much slower, and reading statically with care before running dynamically pays off. On the plus side, drivers are usually small and focused, so once you find the device control function, the rest is compact.
 
 ## Scope and ethics
 
-A reminder of the spirit of lesson 0.2: analyzing a driver to understand what it does, testing the security of your own product, or studying a rootkit in a defensive lab are all fine. Using this knowledge to disable the anti-cheat of an online game or to write a rootkit is not, both legally and professionally. Ring-0 code is where the line between research and sabotage is thinnest, so be careful.
+Same spirit as lesson 0.2. Analyzing a driver to understand what it does, testing the security of your own product, or studying a rootkit in a defensive lab are all fine. Using this knowledge to disable the anti-cheat of an online game or to write a rootkit is not, legally or professionally. Ring-0 is where the line between research and sabotage is thinnest, so be careful.
 
 ## Lab
 
@@ -90,7 +90,7 @@ make
 
 The result is `hello_ioctl.ko`. If it won't build (missing headers, or a WSL environment with no kernel tree), you can still do the reading part by following the solution.
 
-Run `modinfo hello_ioctl.ko` and read the `.modinfo` section: what are the license, description and author? Open `hello_ioctl.ko` in Ghidra (import it as an ELF) and find the function that `module_init` points to; a hint is to look at the symbol `init_module` or the `.init.text` section. Find the module's `file_operations` struct and see which functions the `.open` and `.unlocked_ioctl` pointers lead to. Go into the ioctl handler and rebuild the table of IOCTL codes (the commands user mode sends down) and what each one does. Finally, compare what you found with `hello_ioctl.c` and see how much of it was right.
+Run `modinfo hello_ioctl.ko` and read the `.modinfo` section: what are the license, description and author? Open `hello_ioctl.ko` in Ghidra (import it as an ELF) and find the function that `module_init` points to. A hint is to look at the symbol `init_module` or the `.init.text` section. Find the module's `file_operations` struct and see which functions the `.open` and `.unlocked_ioctl` pointers lead to. Go into the ioctl handler and rebuild the table of IOCTL codes (the commands user mode sends down) and what each one does. Finally, compare what you found with `hello_ioctl.c` and see how much of it was right.
 
 Two questions to think about. Why is a kernel module often easier to read than a stripped Windows driver? And if this module hooked `sys_call_table` instead of creating a character device, where would you look for that sign?
 
@@ -111,17 +111,17 @@ For `modinfo hello_ioctl.ko`, you get these (from the macros at the end of the s
 
 To find `module_init`, note that `module_init(hello_init)` makes the build create a symbol `init_module` pointing to `hello_init`, placed in the `.init.text` section. In Ghidra, look for `init_module` in the Symbol Tree (or `hello_init` if the name survives). The function calls `register_chrdev(0, "hello_ioctl", &hello_fops)` and then `printk` or `_printk` with the string `"hello_ioctl: loaded, major=%d"`. Going backwards from that string (the technique from Lesson 0.4) leads straight to `hello_init`. Likewise `cleanup_module` points to `hello_exit`, which calls `unregister_chrdev`.
 
-For `file_operations`, the third parameter of `register_chrdev` is `&hello_fops`. Jump to that address and Ghidra shows an array of function pointers. The layout of `struct file_operations` puts `.open`, `.release` and `.unlocked_ioctl` at fixed offsets (depending on the kernel version). The non-null slots point to `hello_open` (return 0), `hello_release` (return 0) and `hello_ioctl`, the main logic function for `.unlocked_ioctl`. A tip: the function in the table that has a switch with many branches is `unlocked_ioctl`, the equivalent of `IRP_MJ_DEVICE_CONTROL` on Windows.
+For `file_operations`, the third parameter of `register_chrdev` is `&hello_fops`. Jump to that address and Ghidra shows an array of function pointers. The layout of `struct file_operations` puts `.open`, `.release` and `.unlocked_ioctl` at fixed offsets (depending on the kernel version). The non-null slots point to `hello_open` (return 0), `hello_release` (return 0) and `hello_ioctl`, the main logic function for `.unlocked_ioctl`. The function in the table that has a switch with many branches is `unlocked_ioctl`, the equivalent of `IRP_MJ_DEVICE_CONTROL` on Windows.
 
-To rebuild the IOCTL table, inside `hello_ioctl` the `cmd` parameter is compared against constants. The codes are generated by the `_IO`, `_IOW` and `_IOR` macros with the magic `'H'` (0x48). `IOCTL_PING = _IO('H', 1)` is code `0x00004801` and prints "PING" and returns 0. `IOCTL_SET = _IOW('H', 2, int)` is code `0x40044802` and does a `copy_from_user` of 4 bytes into `stored_value`. `IOCTL_GET = _IOR('H', 3, int)` is code `0x80044803` and does a `copy_to_user` of `stored_value` out to user mode. The default case returns `-EINVAL` (-22). To compute `_IOW('H',2,int)`: `dir=1 (write)` sits at bit 30, `size=4` at bits 16 to 29, `type='H'=0x48` at bits 8 to 15 and `nr=2` at bits 0 to 7, which combine into `0x40044802`. Spotting `copy_from_user` and `copy_to_user` is a clear marker for IOCTL_SET and IOCTL_GET. This is the module's own private API: user mode opens `/dev/hello_ioctl` and calls `ioctl(fd, 0x40044802, &val)` to set and `ioctl(fd, 0x80044803, &out)` to get.
+To rebuild the IOCTL table, inside `hello_ioctl` the `cmd` parameter is compared against constants. The codes are generated by the `_IO`, `_IOW` and `_IOR` macros with the magic `'H'` (0x48). `IOCTL_PING = _IO('H', 1)` is code `0x00004801` and prints "PING" and returns 0. `IOCTL_SET = _IOW('H', 2, int)` is code `0x40044802` and does a `copy_from_user` of 4 bytes into `stored_value`. `IOCTL_GET = _IOR('H', 3, int)` is code `0x80044803` and does a `copy_to_user` of `stored_value` out to user mode. The default case returns `-EINVAL` (-22). To compute `_IOW('H',2,int)`: `dir=1 (write)` sits at bit 30, `size=4` at bits 16 to 29, `type='H'=0x48` at bits 8 to 15 and `nr=2` at bits 0 to 7, which combine into `0x40044802`. `copy_from_user` and `copy_to_user` are clear markers for IOCTL_SET and IOCTL_GET. This is the module's own private API: user mode opens `/dev/hello_ioctl` and calls `ioctl(fd, 0x40044802, &val)` to set and `ioctl(fd, 0x80044803, &out)` to get.
 
 Comparing with the source, everything matches: three IOCTLs, one static `stored_value` variable and a `file_operations` with three functions. The parts that tend to be off when reading are the offsets inside `file_operations` (they change with the kernel version) and `printk` being renamed to `_printk` on newer kernels.
 
-On the questions. A `.ko` is easier to read than a stripped `.sys` because Linux kernel modules usually keep many symbols (function names in the ELF symbol table, strings in `.modinfo`, names through `__ksymtab`), while commercial Windows drivers are often stripped down to just `DriverEntry`. On top of that, `printk` leaves log strings describing the behavior, which makes going from strings very effective. If the module hooked `sys_call_table`, you would look for references to the symbol `sys_call_table` (or code that scans kernel memory for this table), followed by a write of the module's function pointer into a syscall slot while saving the original pointer. The sign is that the module changes the write permission of the page holding the table (`write_cr0` clearing the WP bit, or `set_memory_rw`) before writing. That is the classic rootkit red flag.
+On the questions. A `.ko` is easier to read than a stripped `.sys` because Linux kernel modules usually keep many symbols (function names in the ELF symbol table, strings in `.modinfo`, names through `__ksymtab`), while commercial Windows drivers are often stripped down to just `DriverEntry`. Also, `printk` leaves log strings describing the behavior, which makes going from strings very effective. If the module hooked `sys_call_table`, you'd look for references to the symbol `sys_call_table` (or code that scans kernel memory for this table), followed by a write of the module's function pointer into a syscall slot while saving the original pointer. The module also changes the write permission of the page holding the table (`write_cr0` clearing the WP bit, or `set_memory_rw`) before writing. That's the classic rootkit red flag.
 
 </details>
 
 ## Key takeaways
-Always reverse ring-0 in a VM: the target is a VM, the host runs the debugger, and you take a snapshot before loading the driver. A Windows `.sys` is a PE whose entry point is `DriverEntry`, and the heart is `MajorFunction[IRP_MJ_DEVICE_CONTROL]` (slot 0xE) handling IOCTLs. Work backwards from `DeviceIoControl` on the user-mode side to understand IOCTL codes and buffer structures.
+Always reverse ring-0 in a VM: the target is a VM, the host runs the debugger, and you take a snapshot before loading the driver. A Windows `.sys` is a PE whose entry point is `DriverEntry`, and the main part is `MajorFunction[IRP_MJ_DEVICE_CONTROL]` (slot 0xE) handling IOCTLs. Work backwards from `DeviceIoControl` on the user-mode side to understand IOCTL codes and buffer structures.
 
 A Linux `.ko` is an ELF whose entry point is `module_init`, so look for `file_operations` and signs of `sys_call_table` hooking. Debug with WinDbg kernel mode on Windows, or kgdb or the QEMU gdbstub on Linux. One ring-0 bug crashes the machine, so read statically with care before running dynamically.

@@ -8,13 +8,13 @@ categories: ["Technique Reverse", "Part 07 · Python"]
 tags: [reverse-engineering, python]
 render_with_liquid: false
 ---
-After native C++ and managed .NET, Python is a breath of fresh air. Here reversing is almost like re-reading the source, because Python keeps almost everything: function names, variable names, constant names, even line numbers. Understanding how Python compiles and what a `.pyc` file contains tells you why it's so easy, and why it's sometimes still hard (versions).
+After native C++ and managed .NET, Python is a relief. Reversing it is almost like re-reading the source, because Python keeps almost everything: function names, variable names, constant names, even line numbers. Knowing how Python compiles and what a `.pyc` file contains explains why it's so easy, and why it's sometimes still hard (versions).
 
-## Python compiles too, you just don't notice
+## Python compiles too
 
-Many people think Python is purely interpreted, running straight from text. Not quite. When you run a `.py` file, CPython compiles it to bytecode first, and only then lets a virtual machine (the CPython VM) run that bytecode. This VM is stack-based, like the JVM: instructions push and pop values on a stack.
+Many people think Python is purely interpreted, running straight from text. Not quite. When you run a `.py` file, CPython compiles it to bytecode first, and then a virtual machine (the CPython VM) runs that bytecode. This VM is stack-based, like the JVM: instructions push and pop values on a stack.
 
-This bytecode doesn't vanish. For imported modules, CPython saves it as a `.pyc` file in the `__pycache__/` folder so it doesn't recompile next time. And `.pyc` is exactly what you often have to reverse, because many packaged Python programs ship only `.pyc` and not the `.py`.
+The bytecode doesn't vanish. For imported modules, CPython saves it as a `.pyc` file in the `__pycache__/` folder so it doesn't recompile next time. `.pyc` is what you often have to reverse, because many packaged Python programs ship only `.pyc` and not the `.py`.
 
 ## Inside a .pyc file
 
@@ -39,11 +39,11 @@ a7 0d 0d 0a  00 00 00 00  dc b4 c4 6a  05 01 00 00
   magic        bit field    timestamp    source size
 ```
 
-The first four bytes `a7 0d 0d 0a` are the magic number. This is the most important thing for you.
+The first four bytes `a7 0d 0d 0a` are the magic number. This is the part you care about most.
 
-## Magic number: pick the right decompiler or fail
+## Magic number: pick the right decompiler
 
-Every Python version has its own magic number, because bytecode changes between versions (opcodes added/removed/changed). The last two bytes `0d 0a` are fixed, the first two tell versions apart. A few values to give you a picture:
+Every Python version has its own magic number, because bytecode changes between versions (opcodes added, removed or changed). The last two bytes `0d 0a` are fixed, the first two tell versions apart. A few values:
 
 | Python | Magic (first 2 bytes, little-endian in the file) |
 |---|---|
@@ -53,17 +53,17 @@ Every Python version has its own magic number, because bytecode changes between 
 | 3.11 | `a7 0d` |
 | 3.12 | `cb 0d` |
 
-Why it matters: decompilers like pycdc or uncompyle6 have to know the exact version to translate the bytecode correctly. Translate a 3.11 `.pyc` with a tool that only understands 3.8 and you get garbage or errors. When you hold an unknown `.pyc`, the first thing to do is read the magic to know which Python it belongs to. Lesson [7.2](/posts/re-7-2-pycdc-pycdas-two-scalpels-pyc-files/) uses this very number.
+Decompilers like pycdc or uncompyle6 have to know the exact version to translate the bytecode correctly. Run a 3.11 `.pyc` through a tool that only understands 3.8 and you get garbage or errors. When you get an unknown `.pyc`, read the magic first to see which Python it belongs to. Lesson [7.2](/posts/re-7-2-pycdc-pycdas-two-scalpels-pyc-files/) uses this number.
 
-## The code object: where nearly all the information lives
+## The code object
 
 After the header is a marshaled code object. Unpacked, it contains `co_code`, the actual bytecode byte sequence, and `co_consts`, the constants used in the function (numbers, strings, even the code objects of child functions). It also holds `co_names` for global variable names and attribute names, `co_varnames` for local variable names and parameters, and `co_filename`, `co_name` and `co_firstlineno` for the file name, function name and line number.
 
-Looking at this list explains why Python is easy to reverse: local variable names are intact, strings are intact, even the original line numbers. No step shreds the information the way a C compiler does.
+That list is why Python is easy to reverse: local variable names are intact, strings are intact, even the original line numbers. Nothing throws the information away the way a C compiler does.
 
 ## Reading bytecode with dis
 
-Python's `dis` module prints bytecode in a readable form. With this function:
+Python's `dis` module prints bytecode in a readable form. Take this function:
 
 ```python
 def check(name):
@@ -99,19 +99,19 @@ def check(name):
         RETURN_VALUE
 ```
 
-Reading it is almost like re-reading the source. The left column is the original Python line number. `LOAD_CONST`, `STORE_FAST`, `LOAD_FAST` push and store values, `FOR_ITER` is the loop, `COMPARE_OP 2 (==)` is the comparison, and notice `LOAD_CONST 2 (666)`: the constant `0x29A` is exposed directly. A Python crackme like this leaks its secret right in `co_consts`.
+It reads almost like the source. The left column is the original Python line number. `LOAD_CONST`, `STORE_FAST`, `LOAD_FAST` push and store values, `FOR_ITER` is the loop, `COMPARE_OP 2 (==)` is the comparison, and look at `LOAD_CONST 2 (666)`: the constant `0x29A` is right there. A Python crackme like this leaks its secret in `co_consts`.
 
-Note that opcodes change by version: `PRECALL` and `BINARY_OP` above are from 3.11. Version 3.8 calls functions with `CALL_FUNCTION` and adds with `INPLACE_ADD`. This is exactly why the magic number matters.
+Opcodes change by version. `PRECALL` and `BINARY_OP` above are from 3.11. Version 3.8 calls functions with `CALL_FUNCTION` and adds with `INPLACE_ADD`. That's why the magic number matters.
 
 ## What reversing Python involves
 
-In practice you meet three situations, increasing in difficulty. In the first you have the `.pyc` and can decompile it directly with pycdc or uncompyle6 (Lessons 7.2, 7.3). In the second the program is packaged as an `.exe` with PyInstaller/py2exe, so you have to extract the `.pyc` first (Lesson 7.4). In the third it's been turned into native or encrypted by Nuitka/Cython/PyArmor, which is much harder and means reversing it like C (Lesson 7.5).
+In practice you meet three situations, getting harder. In the first you have the `.pyc` and can decompile it directly with pycdc or uncompyle6 (Lessons 7.2, 7.3). In the second the program is packaged as an `.exe` with PyInstaller/py2exe, so you have to extract the `.pyc` first (Lesson 7.4). In the third it's been turned into native code or encrypted by Nuitka/Cython/PyArmor, which is much harder and means reversing it like C (Lesson 7.5).
 
-This lesson is the foundation: knowing what a `.pyc` contains and being able to read the magic. The rest of Part 7 builds on it.
+This lesson is the foundation: knowing what a `.pyc` contains and how to read the magic. The rest of Part 7 builds on it.
 
 ## Lab
 
-In this lab you see for yourself what the lesson describes, using the `python3` on your own machine. All you need is Python 3 (`python3 --version`). The lab was checked on Python 3.11.9. On another version the magic number and a few opcodes will differ, which is exactly what you are meant to observe.
+In this lab you check what the lesson describes, using the `python3` on your own machine. All you need is Python 3 (`python3 --version`). The lab was checked on Python 3.11.9. On another version the magic number and a few opcodes will differ, which is what you're meant to observe.
 
 The program is `checker.py`, a tiny crackme whose `check` function adds up the ASCII codes of the characters and compares the sum with `0x29A`. In the folder that holds it, run the following to disassemble `check` and read the bytecode, and find which instruction carries the secret constant `0x29A`.
 
@@ -180,7 +180,7 @@ The secret constant `0x29A` appears at `LOAD_CONST 2 (666)`, right before the co
 a7 0d 0d 0a  00 00 00 00  dc b4 c4 6a  05 01 00 00
 ```
 
-Splitting them up, `a7 0d 0d 0a` is the magic number (Python 3.11). `00 00 00 00` is the bit field, which is 0, meaning the next 8 bytes use a timestamp rather than a hash. `dc b4 c4 6a` is the compile timestamp (little-endian), and `05 01 00 00` is the source size, 0x105 = 261 bytes for the original `.py` file. Of the four magic bytes, the first two, `a7 0d`, match Python 3.11 in the lesson's table, which agrees with `python3 --version` reporting 3.11.9.
+Splitting them up, `a7 0d 0d 0a` is the magic number (Python 3.11). `00 00 00 00` is the bit field, which is 0, meaning the next 8 bytes use a timestamp rather than a hash. `dc b4 c4 6a` is the compile timestamp (little-endian), and `05 01 00 00` is the source size, 0x105 = 261 bytes for the original `.py` file. The first two magic bytes, `a7 0d`, match Python 3.11 in the lesson's table, which agrees with `python3 --version` reporting 3.11.9.
 
 To read `co_consts` through marshal:
 
@@ -197,7 +197,7 @@ for c in code.co_consts:
 
 It prints `check (0, 666)`, so the secret `666` sits right in `co_consts`.
 
-Reading `co_consts` is enough because Python does not encrypt constants. They sit intact in the code object, and without understanding any bytecode you can already infer that the condition is "the sum of the ASCII codes equals 666". Switching to Python 3.8 changes the 4 magic bytes to `55 0d 0d 0a`. The timestamp and size stay in the same positions but have different values. The bytecode inside also changes its opcodes (`CALL_FUNCTION` instead of `PRECALL` and `CALL`).
+Reading `co_consts` is enough because Python doesn't encrypt constants. They sit intact in the code object, and without understanding any bytecode you can already tell that the condition is "the sum of the ASCII codes equals 666". Switching to Python 3.8 changes the 4 magic bytes to `55 0d 0d 0a`. The timestamp and size stay in the same positions but have different values. The bytecode inside also changes its opcodes (`CALL_FUNCTION` instead of `PRECALL` and `CALL`).
 
 </details>
 

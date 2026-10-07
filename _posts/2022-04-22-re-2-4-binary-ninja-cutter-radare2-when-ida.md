@@ -1,34 +1,34 @@
 ---
-title: "Lesson 2.4: Binary Ninja, Cutter and radare2, when IDA and Ghidra aren't the only options"
+title: "Lesson 2.4: Binary Ninja, Cutter and radare2"
 image:
   path: /assets/img/covers/re-2-4-binary-ninja-cutter-radare2-when-ida.webp
-  alt: "Lesson 2.4: Binary Ninja, Cutter and radare2, when IDA and Ghidra aren't the only options"
+  alt: "Lesson 2.4: Binary Ninja, Cutter and radare2"
 date: 2022-04-22 22:33:00 +0700
 categories: ["Technique Reverse", "Part 02 · The Toolkit"]
 tags: [reverse-engineering, tools]
 render_with_liquid: false
 ---
-Ask ten people who do RE what tool they use and nine will say IDA or Ghidra. But stopping there misses a whole ecosystem, and sometimes the "unpopular" tool fits your job better. This lesson covers three names worth having in your toolbox: Binary Ninja, Cutter, and radare2/rizin. Not so you drop IDA, but so you know when to reach for something else.
+Ask ten people who do RE what tool they use and nine will say IDA or Ghidra. There are other tools, and sometimes one of them fits your job better. This lesson covers three: Binary Ninja, Cutter, and radare2/rizin. I'm not suggesting you drop IDA, just that you know when to try something else.
 
-A small note before we start: I'm not trying to convince you which one is "best". The best tool is the one you're good with and that fits the problem. The goal here is to give you enough information to try them and decide yourself.
+I'm not going to say which one is best. The best tool is the one you're good with and that fits the problem. Try them and decide yourself.
 
-## Binary Ninja, the young challenger
+## Binary Ninja
 
-Binary Ninja (BN for short) is a commercial disassembler that came out later, so it learned from its elders and built a much cleaner, smoother UI. But what makes technical people love it isn't the interface, it's BNIL, its multi-level intermediate language system.
+Binary Ninja (BN for short) is a commercial disassembler that came out later than IDA, and its UI is cleaner and smoother. What technical people like about it is BNIL, its multi-level intermediate language system.
 
-The idea of an IL is this: raw assembly is messy and differs between architectures. BN lifts assembly up through progressively more abstract levels. LLIL (Low Level IL) is close to assembly but normalized, with architecture-specific junk removed. MLIL (Medium Level IL) has variables and parameters, with register and stack details gone. HLIL (High Level IL) is nearly C-style pseudocode, easy to read.
+Raw assembly is messy and differs between architectures, so BN lifts it through progressively more abstract levels. LLIL (Low Level IL) is close to assembly but normalized, with architecture-specific details removed. MLIL (Medium Level IL) has variables and parameters, with register and stack details gone. HLIL (High Level IL) is nearly C-style pseudocode, easy to read.
 
-You switch back and forth between levels to look at the same function at different levels of detail. When you need to inspect every instruction, go down to LLIL; when you want the overall logic, go up to HLIL. This is what makes writing automated analysis scripts on BN so pleasant, since its Python API works directly on these IL levels instead of on raw assembly.
+You switch between levels to look at the same function in different detail. To inspect every instruction, go down to LLIL. For the overall logic, go up to HLIL. This also makes writing automated analysis scripts on BN pleasant, since its Python API works directly on these IL levels instead of on raw assembly.
 
-A few practical points about BN. There's a commercial version (a one-time payment, updates by year) and a free cloud version that runs in the browser, enough to experiment and learn without spending a cent, so beginners can just play with the cloud version first. The Python API is praised as the cleanest and easiest to use among disassemblers, which suits you if you plan to automate a lot. The decompiler (producing HLIL) is good, though its handling of complex types is still a notch behind IDA's Hex-Rays.
+A few practical points. There's a commercial version (a one-time payment, updates by year) and a free cloud version that runs in the browser, enough to experiment and learn without spending anything. The Python API is praised as the cleanest among disassemblers, which helps if you plan to automate a lot. The decompiler (producing HLIL) is good, though its handling of complex types is still a bit behind IDA's Hex-Rays.
 
-Pick BN when you want a modern UI, often write analysis scripts, and like working on a multi-level IL.
+I'd pick BN if you want a modern UI, often write analysis scripts, and like working on a multi-level IL.
 
-## radare2 and rizin, the power of the command line
+## radare2 and rizin
 
-radare2 (r2 for short) is a fully open source RE toolkit driven from the command line. It's famous for being both powerful and hard to learn, because its command syntax is so short it's hard to remember. rizin is a fork split off from r2, cleaned up to be more consistent and approachable, so if you're just starting you may want to consider rizin.
+radare2 (r2 for short) is a fully open source RE toolkit driven from the command line. It's hard to learn, because the command syntax is so short it's hard to remember. rizin is a fork of r2, cleaned up to be more consistent, so if you're just starting you may want to look at rizin.
 
-The philosophy of r2 is that everything is a short command, combined into a working session. Sounds scary, but you only need to know about five commands to do the basics:
+In r2 everything is a short command, and you combine them in a session. It sounds scary, but about five commands cover the basics:
 
 | Command | What it does |
 |---|---|
@@ -38,29 +38,29 @@ The philosophy of r2 is that everything is a short command, combined into a work
 | `pdf` | Print disassembly of function, prints the disassembly of the current function |
 | `VV` | Enter the visual graph view (press `q` to quit) |
 
-Reading the command names helps a lot with remembering: the first letter is the group (`a` analyze, `p` print, `s` seek, `V` visual), and the later letters narrow it down. `pdf` is print (p), disassembly (d), function (f). Once you understand this pattern you don't have to memorize.
+The command names have a pattern that helps with remembering: the first letter is the group (`a` analyze, `p` print, `s` seek, `V` visual), and the later letters narrow it down. `pdf` is print (p), disassembly (d), function (f). Once you see that, you don't have to memorize.
 
-r2/rizin is completely free and open, and it runs anywhere including over SSH on a server with no GUI. Its scripting is extremely strong and combines freely with the shell and pipes, and `r2pipe` lets you drive r2 from Python, C, and many other languages. The weaknesses are a steep learning curve, and that when analyzing a big file by eye, a pure command line is more tiring than a GUI.
+r2/rizin is free and open, and it runs anywhere including over SSH on a server with no GUI. Scripting is strong and combines with the shell and pipes, and `r2pipe` lets you drive r2 from Python, C, and many other languages. The downsides are the steep learning curve, and that on a big file a pure command line is more tiring than a GUI.
 
-Pick r2/rizin when you like the command line, need to work in an environment with no GUI, or want to automate with small quick scripts.
+I'd pick r2/rizin if you like the command line, need to work with no GUI, or want to automate with small quick scripts.
 
-## Cutter, the graphical face of rizin
+## Cutter
 
-If you like the power of rizin but can't stand the command line, Cutter is the answer. It's the official GUI built on rizin, giving you disassembly, graph, hex, strings, imports windows like IDA, but the engine underneath is rizin and it's completely free.
+If you like rizin but can't stand the command line, there's Cutter. It's the official GUI built on rizin, with disassembly, graph, hex, strings and imports windows like IDA, but the engine underneath is rizin and it's free.
 
-The most valuable point: Cutter has the jsdec decompiler built in (and can plug in Ghidra's decompiler), so you get pseudocode without paying. For beginners put off by both r2 and IDA's price, Cutter is a very reasonable entry point: a familiar interface, open tooling, and you can still type rizin commands in the command box when needed.
+The most useful part is that Cutter has the jsdec decompiler built in (and can plug in Ghidra's decompiler), so you get pseudocode without paying. For beginners put off by both r2 and IDA's price, Cutter is a reasonable entry point: a familiar interface, open tooling, and you can still type rizin commands in the command box when needed.
 
-Pick Cutter when you want a full free GUI experience, or want to use rizin but prefer the mouse over the keyboard.
+I'd pick Cutter if you want a full free GUI, or want to use rizin but prefer the mouse.
 
-## So what to pick in the end
+## What to pick
 
-There's no absolutely right answer, but here's what I usually recommend. Beginners on a small budget should start with Ghidra (lesson 2.3) or Cutter, both free and with a decompiler. If you like a nice UI, often write scripts, and have a budget or use the cloud version, try Binary Ninja. Command-line people who do a lot on servers and love automation will like radare2/rizin. Professional environments needing the strongest Hex-Rays should use IDA Pro (lesson 2.2).
+There's no single right answer, but here's what I usually recommend. Beginners on a small budget should start with Ghidra (lesson 2.3) or Cutter, both free and with a decompiler. If you like a nice UI, often write scripts, and have a budget or use the cloud version, try Binary Ninja. Command-line people who work a lot on servers and like automation will like radare2/rizin. For professional work that needs the strongest Hex-Rays, use IDA Pro (lesson 2.2).
 
-More important than which tool you choose: don't keep jumping between tools while learning. Pick one, use it until the shortcuts become instinct, and only then try another. Jumping back and forth is a sure way to not get good at any of them.
+More important than which tool you choose: don't keep jumping between tools while learning. Pick one, use it until the shortcuts are automatic, and only then try another.
 
 ## Lab
 
-The goal is to take apart one binary with command-line radare2, then reopen it in Cutter, to see how the same data appears differently in a CLI and a GUI. If you can, also try the Binary Ninja cloud version. Build the sample binary `crackme_r2.c` first:
+The goal is to take apart one binary with command-line radare2, then reopen it in Cutter, to see how the same data looks in a CLI and a GUI. If you can, also try the Binary Ninja cloud version. Build the sample binary `crackme_r2.c` first:
 
 ```
 gcc -O0 -no-pie -o crackme_r2 crackme_r2.c      # Linux
@@ -72,9 +72,9 @@ You also need radare2 (or rizin) and Cutter. For radare2, run `git clone https:/
 
 Open the binary in radare2 with `r2 crackme_r2`. At the prompt, run `aaa` and then `afl` and write down the output: how many functions are there, and what are they called? Then run `s main` and `pdf` to read the disassembly of `main` and find where the password is compared, and `VV` to see the graph view of `main` (move with the arrow keys, `q` to quit). Next, look for strings in the file with `iz` (strings in the data section) and `izz` (the whole file), and decide which one hints at the password. From the message string you find, use `axt <string address>` to see what references it (a cross-reference), and check whether it leads to the check function.
 
-Then open the very same binary in Cutter. Find `main` in the Functions panel, look at the graph, and click the Decompiler tab (jsdec) to read the pseudocode. Compare that with what you read by eye in radare2: which was faster for you? Optionally, if you have a Binary Ninja cloud account, upload the binary and look at the HLIL of `main`, then compare the three views: r2 disassembly, Cutter pseudocode and Binary Ninja HLIL.
+Then open the same binary in Cutter. Find `main` in the Functions panel, look at the graph, and click the Decompiler tab (jsdec) to read the pseudocode. Compare that with what you read by eye in radare2: which was faster for you? Optionally, if you have a Binary Ninja cloud account, upload the binary and look at the HLIL of `main`, then compare the three views: r2 disassembly, Cutter pseudocode and Binary Ninja HLIL.
 
-Two questions to reflect on. What is the correct password, and which tool found it fastest? And which tool do you personally find more comfortable for this exercise, and why? Do all of it before opening the solution.
+Two questions to think about. What is the correct password, and which tool found it fastest? And which tool do you find more comfortable for this exercise, and why? Do all of it before opening the solution.
 
 <div class="lab-box">
 <div class="lab-head"><b>LAB 2.4</b>source files</div>
@@ -104,14 +104,14 @@ $ r2 crackme_r2
 ...
 ```
 
-`aaa` analyzes the whole file and `afl` lists the functions. Notice right away that there is a `sym.check_password`, with its name intact because the binary isn't stripped. That is the function to look at.
+`aaa` analyzes the whole file and `afl` lists the functions. There's a `sym.check_password`, with its name intact because the binary isn't stripped. That is the function to look at.
 
 ```
 [0x00001060]> s sym.check_password
 [0x00001149]> pdf
 ```
 
-In the disassembly of `check_password` you see a pointer to a string being loaded (a `lea` pointing at `str.r2_rocks_2024`), then a call to `strlen` to compare lengths, then `strcmp` to compare contents. radare2 annotates the string name next to the instruction, so the password is exposed right here.
+In the disassembly of `check_password` you see a pointer to a string being loaded (a `lea` pointing at `str.r2_rocks_2024`), then a call to `strlen` to compare lengths, then `strcmp` to compare contents. radare2 annotates the string name next to the instruction, so the password is visible right here.
 
 An even faster route skips reading the function altogether:
 
@@ -139,9 +139,9 @@ int check_password(char *input) {
 }
 ```
 
-For someone used to a GUI, this pseudocode reads faster than the raw disassembly in r2. In Binary Ninja (cloud), upload the binary, open `check_password` and switch to HLIL. The result is close to Cutter's: two `strlen` calls to compare lengths, then `strcmp`. The nice thing about BN is that you can toggle between LLIL, MLIL and HLIL to see the same function at three levels of detail.
+If you're used to a GUI, this pseudocode reads faster than the raw disassembly in r2. In Binary Ninja (cloud), upload the binary, open `check_password` and switch to HLIL. The result is close to Cutter's: two `strlen` calls to compare lengths, then `strcmp`. With BN you can toggle between LLIL, MLIL and HLIL to see the same function at three levels of detail.
 
-All three tools lead to the same answer. The fastest for this exercise is the `izz~` trick that finds the string directly, because the password is compared in plaintext. When the password is encrypted or generated at runtime, the string trick is no longer enough and you have to read the function carefully (or move on to the dynamic analysis of later lessons). The lesson about tools is to pick the one you read fastest. There is no prize for using the harder tool.
+All three tools lead to the same answer. The fastest for this exercise is the `izz~` trick that finds the string directly, because the password is compared in plaintext. When the password is encrypted or generated at runtime, the string trick is no longer enough and you have to read the function carefully (or move on to the dynamic analysis of later lessons). Pick the tool you read fastest. Using the harder one earns you nothing.
 
 </details>
 

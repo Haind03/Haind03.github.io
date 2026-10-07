@@ -1,22 +1,22 @@
 ---
-title: "Lesson 13.4: Lua and LuaJIT bytecode, taking apart in-game scripts"
+title: "Lesson 13.4: Lua and LuaJIT bytecode"
 image:
   path: /assets/img/covers/re-13-4-lua-luajit-bytecode-taking-apart-game.webp
-  alt: "Lesson 13.4: Lua and LuaJIT bytecode, taking apart in-game scripts"
+  alt: "Lesson 13.4: Lua and LuaJIT bytecode"
 date: 2023-04-01 22:36:00 +0700
 categories: ["Technique Reverse", "Part 13 · Games: Unity, Unreal, Lua"]
 tags: [reverse-engineering, game-hacking]
 render_with_liquid: false
 ---
-A lot of games don't write gameplay logic in C++ but in Lua, because Lua is light, easy to embed, and can be edited without rebuilding the whole engine. Roblox, Garry's Mod, World of Warcraft (addons), and a forest of mobile games all run Lua scripts. For a reverser this is good news: Lua keeps almost all its information, and decompiling gets you back something close to the source. The bad news: there are two different Lua lines (standard Lua and LuaJIT), the bytecode changes with the version, and games often encrypt scripts to make life hard for you. This lesson untangles each piece.
+A lot of games don't write gameplay logic in C++ but in Lua, because Lua is light, easy to embed, and can be edited without rebuilding the whole engine. Roblox, Garry's Mod, World of Warcraft (addons), and many mobile games all run Lua scripts. For a reverser that's good news. Lua keeps almost all its information, and decompiling gets you something close to the source. The catches: there are two different Lua lines (standard Lua and LuaJIT), the bytecode changes with the version, and games often encrypt scripts. This lesson goes through each piece.
 
 ## Lua runs on bytecode, like Python
 
 When you write a `.lua` file, the interpreter doesn't run the text directly. It compiles to bytecode first and then runs it on the Lua VM (register-based, unlike stack-based CPython). Most of the time games embed the plain `.lua` text so you can read it right away, but when the author wants to hide it, they ship compiled bytecode (made with `luac`, the Lua compiler). Then you need a decompiler.
 
-The key point to remember right away: there are two completely different bytecode families. Standard Lua (lua.org) produces bytecode with `luac`, and you decompile it with `unluac` (Java, the best one right now) or `luadec`. LuaJIT is a separate implementation, faster, and its bytecode is not compatible with standard Lua. You must use a dedicated decompiler: `luajit-decompiler`, `ljd`, or the `luajit-decompiler-v2` version.
+There are two completely different bytecode families. Standard Lua (lua.org) produces bytecode with `luac`, and you decompile it with `unluac` (Java, the best one right now) or `luadec`. LuaJIT is a separate implementation, faster, and its bytecode is not compatible with standard Lua. You need a dedicated decompiler: `luajit-decompiler`, `ljd`, or the `luajit-decompiler-v2` version.
 
-Pick the wrong branch and the decompiler errors out from the very first byte. So step one is always identification.
+Pick the wrong one and the decompiler errors out from the first byte. So step one is always identification.
 
 ## Identifying: read the magic and version
 
@@ -29,13 +29,13 @@ Standard Lua starts with the magic `1B 4C 75 61`, i.e. `\x1bLua`. The 5th byte i
 \x1b L  u  a  |  version 0x54 = Lua 5.4
 ```
 
-LuaJIT starts with the magic `1B 4C 4A`, i.e. `\x1bLJ`, then a bytecode version byte (`01`, `02`...). Seeing `LJ` tells you right away to turn to the ljd branch, don't waste time on unluac.
+LuaJIT starts with the magic `1B 4C 4A`, i.e. `\x1bLJ`, then a bytecode version byte (`01`, `02`...). If you see `LJ`, go to the ljd branch and don't waste time on unluac.
 
 If you see no magic and the file looks like high-entropy junk, the script has probably been encrypted (see the last section).
 
 ## Decompiling standard Lua with unluac
 
-A tidy workflow once you know it's standard Lua:
+A workflow once you know it's standard Lua:
 
 ```
 # compile (if you're making your own sample to learn)
@@ -45,9 +45,9 @@ luac -o script.luac script.lua
 java -jar unluac.jar script.luac > script_decompiled.lua
 ```
 
-unluac gives back code very close to the original: it keeps local variable names (if the bytecode hasn't had its debug info stripped), function names, string constants, and the if/for/while structure. If the bytecode is stripped (`luac -s`), local variable names are lost and you get `A0_1`, `L1_2`... but the logic is still complete and still readable.
+unluac gives back code very close to the original. It keeps local variable names (if the bytecode hasn't had its debug info stripped), function names, string constants, and the if/for/while structure. If the bytecode is stripped (`luac -s`), local variable names are lost and you get `A0_1`, `L1_2`..., but the logic is still complete and readable.
 
-`luadec` is the older alternative, good with Lua 5.1 but struggles with newer versions. If you hit Lua 5.1 and unluac misbehaves, try luadec.
+`luadec` is the older alternative, good with Lua 5.1 but it struggles with newer versions. If you hit Lua 5.1 and unluac misbehaves, try luadec.
 
 ## Decompiling LuaJIT with ljd
 
@@ -57,27 +57,27 @@ LuaJIT is more stubborn. `ljd` (and its rewrite `luajit-decompiler-v2`) is the m
 python3 ljd/main.py -f script_ljbc.luac
 ```
 
-Output quality is usually worse than unluac on standard Lua: some complex control structures may come out unclean, and you have to read alongside the bytecode disassembly to understand them. But for ordinary gameplay scripts it's good enough.
+Output quality is usually worse than unluac on standard Lua. Some complex control structures may come out unclean, and you have to read alongside the bytecode disassembly to understand them. For ordinary gameplay scripts it's good enough.
 
-## Structures to know when reading
+## Things to know when reading
 
-A few Lua-specific things you'll see in decompiled code. The table is Lua's central data type, serving as array, dictionary, and object (through metatables), so seeing `t[1]`, `t.field`, `t:method()` all means tables. Strings in Lua are interned and stored in the constant pool of each function prototype, so API function names, keys, and messages leak out quite a lot. Going from a string to where it's used is the familiar tactic, same as every earlier part. And `t:method(a)` is just syntactic sugar for `t.method(t, a)`, so self is a hidden first parameter, like `this`.
+A few Lua-specific things you'll see in decompiled code. The table is Lua's central data type, serving as array, dictionary, and object (through metatables), so `t[1]`, `t.field`, `t:method()` all mean tables. Strings in Lua are interned and stored in the constant pool of each function prototype, so API function names, keys, and messages leak out a lot. Going from a string to where it's used works here like everywhere else. And `t:method(a)` is just syntactic sugar for `t.method(t, a)`, so self is a hidden first parameter, like `this`.
 
 ## Finding Lua scripts in a game
 
-Before decompiling, you have to get the bytecode out first. In the game folder, look for `.lua`, `.luac`, `.lc` files, or a dedicated archive (`.pak`, `.rbxl`, asset bundle). Use `strings` and look for the magic `\x1bLua` / `\x1bLJ` to locate the bytecode block even when it's embedded in a large file. It may also be embedded in a native binary, so grep for the magic in the exe/so itself. Otherwise, unpack the game's archive with the matching tool and then scan.
+Before decompiling, you have to get the bytecode out. In the game folder, look for `.lua`, `.luac`, `.lc` files, or a dedicated archive (`.pak`, `.rbxl`, asset bundle). Use `strings` and look for the magic `\x1bLua` / `\x1bLJ` to locate the bytecode block even when it's embedded in a large file. It may also be embedded in a native binary, so grep for the magic in the exe/so itself. Otherwise, unpack the game's archive with the matching tool and then scan.
 
 ## When the script is encrypted
 
 Many games don't leave the bytecode bare but encrypt it (XOR, a custom cipher) and decrypt in memory right before loading into the Lua VM. Then decompiling the file on disk is useless.
 
-One approach is to dump from runtime. Let the game decrypt it itself, then pull the decrypted bytecode out of memory. Hook the script loading function (for example `luaL_loadbuffer`, `lua_load`, `luaL_loadbufferx`) with Frida and print the buffer at the moment it's clean bytecode. This is exactly the dynamic unpacking spirit from Part 14. The other case is when the key sits in the binary. If the cipher is simple, find the decryption function in the native code, get the key, and decrypt offline.
+One approach is to dump from runtime. Let the game decrypt it itself, then pull the decrypted bytecode out of memory. Hook the script loading function (for example `luaL_loadbuffer`, `lua_load`, `luaL_loadbufferx`) with Frida and print the buffer at the moment it's clean bytecode. It's the same dynamic unpacking idea as Part 14. The other case is when the key sits in the binary. If the cipher is simple, find the decryption function in the native code, get the key, and decrypt offline.
 
-The general principle is the same as for every kind of packer: find where the data is in its cleanest form and grab it there, instead of wrestling with the encryption layer.
+The principle is the same as for every kind of packer: find where the data is in its cleanest form and grab it there, instead of fighting the encryption layer.
 
 ## Lab
 
-The goal is to watch the full text to bytecode to decompiled cycle with your own eyes, recognize the magic bytes, and recover the logic straight from bytecode. You need `lua` and `luac` (Lua 5.3 or 5.4, installable on Ubuntu with `apt install lua5.4`, or a prebuilt Windows binary), `unluac.jar` (needs Java, downloadable from the unluac repo), and a hex editor such as HxD or ImHex, or just `xxd`.
+The goal is to go through the full text to bytecode to decompiled cycle yourself, recognize the magic bytes, and recover the logic straight from bytecode. You need `lua` and `luac` (Lua 5.3 or 5.4, installable on Ubuntu with `apt install lua5.4`, or a prebuilt Windows binary), `unluac.jar` (needs Java, downloadable from the unluac repo), and a hex editor such as HxD or ImHex, or just `xxd`.
 
 The file to work with is `guard.lua`, a Lua script that checks a license key. The valid key gets transformed with `(byte + position) % 256` and compared against an array called `EXPECTED`, so the key itself doesn't sit plainly in the bytecode.
 
@@ -119,7 +119,7 @@ Compiling and recognizing the magic. After `luac -o guard.luac guard.lua`, openi
 
 Decompiling the unstripped build. Running `java -jar unluac.jar guard.luac > guard_out.lua` gives back code very close to the original. Because the unstripped bytecode still carries debug info, unluac recovers the local variable names (`transform`, `EXPECTED`, `check`, `key`), the string constants (`"Enter license key: "`, `"Correct! Welcome."`, `"Nope."`), and the loop and if structure. The array `EXPECTED = {109, 119, 100, 99, 55, 54, 57, 60, 42}` shows up intact in the constant pool.
 
-Decompiling the stripped build. With `guard_strip.luac` (compiled with `-s`), the debug info is gone. unluac still decompiles it, but the local variable names are gone, replaced by generated names like `A0_1`, `L1_2`, `L2_3`, and local function names are gone too. The string constants and the `EXPECTED` array are still there, since they live in the constant pool rather than in debug info. The entire logic, the for loop, the `(c + i) % 256` operation, the comparison, is still complete and readable. The important point is that stripping only removes labels meant for human readers, not instructions. The bytecode still has to contain every opcode needed to run, so the logic is always recoverable.
+Decompiling the stripped build. With `guard_strip.luac` (compiled with `-s`), the debug info is gone. unluac still decompiles it, but the local variable names are gone, replaced by generated names like `A0_1`, `L1_2`, `L2_3`, and local function names are gone too. The string constants and the `EXPECTED` array are still there, since they live in the constant pool rather than in debug info. The entire logic, the for loop, the `(c + i) % 256` operation, the comparison, is still complete and readable. Stripping only removes labels meant for human readers, not instructions. The bytecode still has to contain every opcode needed to run, so the logic can always be recovered.
 
 Computing the valid license key. The check is `EXPECTED[i] == (byte(key[i]) + i) % 256`, with `i` counting from 1. Inverting it gives `byte(key[i]) = (EXPECTED[i] - i) % 256`:
 
@@ -129,7 +129,7 @@ key = ''.join(chr((EXPECTED[i] - (i + 1)) % 256) for i in range(len(EXPECTED)))
 print(key)   # lua_2024!
 ```
 
-The valid license key is **`lua_2024!`**. I checked this in Python both ways: building `EXPECTED` from `lua_2024!` with the forward formula gives exactly the array in `guard.lua`, and inverting it gives exactly `lua_2024!` back. With `lua` installed, running `lua guard.lua` and typing `lua_2024!` prints `Correct! Welcome.`
+The valid license key is `lua_2024!`. I checked this in Python both ways: building `EXPECTED` from `lua_2024!` with the forward formula gives exactly the array in `guard.lua`, and inverting it gives exactly `lua_2024!` back. With `lua` installed, running `lua guard.lua` and typing `lua_2024!` prints `Correct! Welcome.`
 
 On why stripping loses names but not logic: variable and function names are metadata for humans, while the Lua virtual machine runs on register indices. Removing names doesn't affect execution, so the bytecode still has every instruction it needs and the logic can always be rebuilt.
 

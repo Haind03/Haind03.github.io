@@ -8,7 +8,7 @@ categories: ["Technique Reverse", "Resources"]
 tags: [reverse-engineering, resources]
 render_with_liquid: false
 ---
-> Keep this next to your screen while you work. The last part is a lookup table of common x86 instructions, for when you're reading disassembly and forget one.
+> Keep this next to your screen while you work. The last part is a table of common x86 instructions, for when you're reading disassembly and forget one.
 
 ## IDA (Free/Pro)
 
@@ -148,7 +148,7 @@ For when you're reading disassembly and forget what an instruction does.
 | `ja` / `jb` | Above / below (unsigned) |
 | `js` / `jns` | Negative / non-negative |
 
-A reading tip: a `cmp` or `test` right before a `j*` instruction is an `if` statement in the source. Recognize this pair and you can read the branching logic.
+A `cmp` or `test` right before a `j*` instruction is an `if` statement in the source. Once you see this pair you can read the branching logic.
 
 ### Calling functions
 
@@ -157,7 +157,7 @@ A reading tip: a `cmp` or `test` right before a `j*` instruction is an `if` stat
 | `call func` | Call a function (push the return address then jump) |
 | `ret` | Return to the caller |
 | `leave` | Tear down the stack frame (equivalent to `mov rsp,rbp; pop rbp`) |
-| `nop` | Does nothing. RE people often use it to "delete" an instruction when patching |
+| `nop` | Does nothing. Often used to "delete" an instruction when patching |
 
 ### Common registers (x64)
 
@@ -170,4 +170,4 @@ A reading tip: a `cmp` or `test` right before a `j*` instruction is an `if` stat
 | `rbp` | Stack frame base pointer |
 | `rip` | Instruction pointer (the next instruction to run) |
 
-Knowing where parameters go and where the return value comes back is enough to understand most function calls. The details of calling conventions are in [Lesson 1.4](/technique-reverse/).
+If you know where parameters go and where the return value comes back, you can follow most function calls. Calling conventions are covered in [Lesson 1.4](/technique-reverse/).

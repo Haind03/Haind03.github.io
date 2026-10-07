@@ -1,20 +1,20 @@
 ---
-title: "Lesson 4.6: Lab, a C++ crackme with a vtable, going through the vtable to find the check function"
+title: "Lesson 4.6: Lab, a C++ crackme with a vtable"
 image:
   path: /assets/img/covers/re-4-6-lab-c-crackme-vtable-going-through.webp
-  alt: "Lesson 4.6: Lab, a C++ crackme with a vtable, going through the vtable to find the check function"
+  alt: "Lesson 4.6: Lab, a C++ crackme with a vtable"
 date: 2022-07-24 20:03:00 +0700
 categories: ["Technique Reverse", "Part 04 · C++"]
 tags: [reverse-engineering, cpp]
 render_with_liquid: false
 ---
-This lesson wraps up all of Part 4. You'll solve a C++ crackme where the key point is that it doesn't call the check function straightforwardly like the C crackme in Lesson 3.5. Instead it calls through a virtual function, meaning the call goes indirectly through the vtable. If you're used to the C habit of "find the `call check`", you'll come up empty here, since in the asm you only see a bare `call rcx`. Learning to trace through the vtable is the goal of this lesson.
+This lesson finishes Part 4. You'll solve a C++ crackme that doesn't call its check function directly like the C crackme in Lesson 3.5. It calls a virtual function, so the call goes indirectly through the vtable. If you're used to looking for `call check` in C, you won't find it here. In the asm you only see a bare `call rcx`. The goal is to learn to trace through the vtable.
 
 The crackme is attached in the Lab section below. Try solving it yourself first, what's below is a guide.
 
 ## Step 1: triage, confirm it's C++
 
-Open the binary with Detect It Easy, you'll usually see the compiler is GCC or MSVC. But the surest sign that it's C++ is elsewhere: run `nm -C` (Linux) or let IDA/Ghidra demangle, and you see names like:
+Open the binary with Detect It Easy and you'll usually see GCC or MSVC as the compiler. That doesn't tell you it's C++ though. Run `nm -C` (Linux) or let IDA/Ghidra demangle, and you see names like:
 
 ```
 SerialValidator::check(char const*) const
@@ -22,19 +22,19 @@ Validator::Validator()
 SerialValidator::~SerialValidator()
 ```
 
-Names with `::`, with parameters in parentheses, with a trailing `const`. Those are demangled C++ names. In the raw file they sit in mangled form like `_ZNK15SerialValidator5checkEPKc`. Seeing mangling tells you right away you're no longer in the flat world of C, there are classes and methods here (see Lesson 4.1 again).
+Names with `::`, parameters in parentheses, a trailing `const`. These are demangled C++ names. In the raw file they look like `_ZNK15SerialValidator5checkEPKc`. If you see mangling, you're not in plain C anymore, there are classes and methods here (see Lesson 4.1 again).
 
-Also, RTTI leaves the class name strings right in the binary. Search the Strings and you'll see `SerialValidator`, `Validator`. This is a free gift: the class names leaking out help you orient yourself.
+RTTI also leaves the class name strings in the binary. Search the Strings and you'll see `SerialValidator` and `Validator`. The class names leak out, which helps you get oriented.
 
 ## Step 2: the object has a vtable pointer at the start
 
-`main` creates the object with `new SerialValidator()` and assigns it to a pointer of type `Validator*`. Because `check` is virtual, the compiler doesn't know at compile time which function will be called, so it has to look it up in a table at runtime. That table is the vtable, and every object with virtual functions carries a pointer to its class's vtable at offset 0 (the first 8 bytes of the object on x64).
+`main` creates the object with `new SerialValidator()` and assigns it to a pointer of type `Validator*`. Because `check` is virtual, the compiler doesn't know at compile time which function will be called, so it looks it up in a table at runtime. That table is the vtable. Every object with virtual functions carries a pointer to its class's vtable at offset 0 (the first 8 bytes of the object on x64).
 
-Remember this picture: `object -> [vtable_ptr][field1][field2]...`, and `vtable -> [&check][&name][&destructor]...`. A virtual call is two dereferences: take the vtable_ptr from the object, then take the function address from the vtable.
+Picture it like this: `object -> [vtable_ptr][field1][field2]...`, and `vtable -> [&check][&name][&destructor]...`. A virtual call is two dereferences: take the vtable_ptr from the object, then take the function address from the vtable.
 
 ## Step 3: reading the virtual call in asm
 
-Here's the real snippet from `main` (g++ -O0, trimmed), the spot that calls `v->check(argv[1])`:
+This is the real snippet from `main` (g++ -O0, trimmed), the spot that calls `v->check(argv[1])`:
 
 ```asm
 mov  rax, QWORD PTR [rbp-0x18]   ; rax = object pointer (this)
@@ -49,13 +49,13 @@ mov  rdi, rax                    ; rdi = this (the first hidden parameter)
 call rcx                         ; indirect call through the vtable
 ```
 
-Notice three things. The pair `mov rax,[rax]` then `mov rcx,[rax]` is the classic signature of a virtual call: dereference the object to get the vtable, dereference the vtable to get the function pointer. The last instruction is `call rcx`, not `call <function name>`, so in the IDA/Ghidra graph there's no arrow pointing to the target function here and you can't just double-click to jump in, which is where beginners get stuck. And `rdi` gets `this` while `rsi` gets the input. This is System V (Linux). On Windows x64 it would be `rcx` for `this`, `rdx` for the input (see Lesson 4.1 again on the this pointer).
+Three things to notice. The pair `mov rax,[rax]` then `mov rcx,[rax]` is the classic signature of a virtual call: dereference the object to get the vtable, dereference the vtable to get the function pointer. The last instruction is `call rcx`, not `call <function name>`, so in the IDA/Ghidra graph there's no arrow to the target function and you can't double-click to jump in. This is where beginners get stuck. And `rdi` gets `this` while `rsi` gets the input. That's System V (Linux). On Windows x64 it would be `rcx` for `this` and `rdx` for the input (see Lesson 4.1 again on the this pointer).
 
-So how do you know `call rcx` actually calls `SerialValidator::check`? There are two ways. Statically, `vtable[0]` is loaded from the vtable pointer, and the vtable of `SerialValidator` is assigned by the constructor. Follow the constructor (or let IDA/Ghidra's RTTI analysis attach it automatically) and you get the vtable, where the first slot points to `check`. Once RTTI is there, IDA usually names the vtable `SerialValidator::vftable` itself and you just open it and read. Dynamically, set a breakpoint at `call rcx` and look at the value of `rcx` at runtime, which is exactly the address of `check`. Press step-into and you're straight in the function. This is the shortcut when the static vtable analysis is messy.
+How do you know `call rcx` actually calls `SerialValidator::check`? Two ways. Statically, `vtable[0]` is loaded from the vtable pointer, and the vtable of `SerialValidator` is set by the constructor. Follow the constructor (or let IDA/Ghidra's RTTI analysis attach it) and you get the vtable, where the first slot points to `check`. With RTTI in place, IDA usually names the vtable `SerialValidator::vftable` itself and you just open it and read. Dynamically, set a breakpoint at `call rcx` and look at `rcx` at runtime, which is the address of `check`. Step into and you're in the function. I use this when the static vtable analysis is messy.
 
 ## Step 4: reading the logic in check
 
-Once you're inside `SerialValidator::check`, the rest is like a C crackme. The logic it does:
+Once you're inside `SerialValidator::check`, the rest is like a C crackme. The logic:
 
 ```c
 if (strlen(input) != 12) return false;
@@ -66,18 +66,18 @@ for (int i = 0; i < 12; i++) {
 return true;
 ```
 
-The 12-byte `expected` array lives in the object (a field of `SerialValidator`, filled in by the constructor). The algorithm transforms each character then compares with a constant, the same form as Lesson 3.5, the only difference being that now you have to go through the vtable to reach it.
+The 12-byte `expected` array lives in the object (a field of `SerialValidator`, filled in by the constructor). The algorithm transforms each character and compares it with a constant, same form as Lesson 3.5. The only difference is that you have to go through the vtable to reach it.
 
 ## Step 5: reverse it to find the password
 
-The transform `t = (c ^ 0x5A) + i` is invertible: `c = (expected[i] - i) ^ 0x5A`. A few lines of Python give you the password. The details of the numbers and the full solution are in the "Show solution" block below.
+The transform `t = (c ^ 0x5A) + i` is invertible: `c = (expected[i] - i) ^ 0x5A`. A few lines of Python give you the password. The numbers and the full solution are in the "Show solution" block below.
 
 ## Why this lesson matters
 
-With a C crackme you find the `call check` and you're done. A C++ crackme with virtual functions doesn't give you that. Lots of real software, especially game engines and big applications, is full of virtual calls, interfaces, plugins. Getting used to tracing through the vtable (recognizing the two-dereference pattern, using RTTI, or setting a breakpoint to read the function pointer at runtime) is a skill you'll use for life when reversing C++.
+With a C crackme you find the `call check` and you're done. A C++ crackme with virtual functions doesn't give you that. A lot of real software, especially game engines and big applications, is full of virtual calls, interfaces and plugins. You'll use tracing through the vtable (recognizing the two-dereference pattern, using RTTI, or setting a breakpoint to read the function pointer at runtime) every time you reverse C++.
 
 ## Key takeaways
-Names with `::` and parameters after demangling, along with class name strings from RTTI, are a sure sign of C++. An object with virtual functions carries a vtable pointer at offset 0. A virtual call in asm looks like `mov reg,[obj]` then `mov reg2,[reg]` then `call reg2`, with no target function name. `this` is the first hidden parameter, in rdi on Linux or rcx on Windows. When you're stuck with a static vtable, set a breakpoint at `call reg` and read the register value to learn the target function.
+Names with `::` and parameters after demangling, plus class name strings from RTTI, are a sure sign of C++. An object with virtual functions carries a vtable pointer at offset 0. A virtual call in asm looks like `mov reg,[obj]` then `mov reg2,[reg]` then `call reg2`, with no target function name. `this` is the first hidden parameter, in rdi on Linux or rcx on Windows. If the static vtable is a mess, set a breakpoint at `call reg` and read the register to get the target function.
 
 ## Lab
 
@@ -122,7 +122,7 @@ $ nm -C crackme | grep -i check
 SerialValidator::check(char const*) const
 ```
 
-The name has `::`, a `char const*` parameter and a `const` suffix, so this is a C++ method. In Strings you also see `SerialValidator` and `Validator` left behind by RTTI. The conclusion is a C++ binary with at least two classes and a function named `check`.
+The name has `::`, a `char const*` parameter and a `const` suffix, so this is a C++ method. In Strings you also see `SerialValidator` and `Validator` left behind by RTTI. So it's a C++ binary with at least two classes and a function named `check`.
 
 ### 2. The path in main to the virtual call
 
@@ -141,7 +141,7 @@ mov  rdi, rax                    ; this
 call rcx                         ; call through the vtable
 ```
 
-Two consecutive dereferences (`mov rax,[rax]` then `mov rcx,[rax]`) followed by `call rcx` are the signature of a virtual call. `rdi` is this and `rsi` is the input (System V). A fast way into `check` is to set a breakpoint at `call rcx`, run, read `rcx`, and step in. Alternatively, let IDA or Ghidra use RTTI to label the vtable and open the first slot.
+Two consecutive dereferences (`mov rax,[rax]` then `mov rcx,[rax]`) followed by `call rcx` are the signature of a virtual call. `rdi` is this and `rsi` is the input (System V). A fast way into `check` is to set a breakpoint at `call rcx`, run, read `rcx`, and step in. Or let IDA or Ghidra use RTTI to label the vtable and open the first slot.
 
 ### 3. The logic in check
 
@@ -174,7 +174,7 @@ print(pw)   # V7abl3_Cr4ck
 
 Running `./crackme V7abl3_Cr4ck` again gives "Correct!". Done.
 
-The only hard part compared with a C crackme is that the call goes through the vtable, and recognizing the pattern and using RTTI or a runtime breakpoint gets you past it. When the check algorithm is invertible (XOR and addition here), you compute the password directly. If it used a one-way hash it could not be inverted, and you would have to brute-force or patch instead.
+The only hard part compared with a C crackme is that the call goes through the vtable. Once you recognize the pattern and use RTTI or a runtime breakpoint, you're past it. When the check algorithm is invertible (XOR and addition here), you compute the password directly. If it used a one-way hash it couldn't be inverted, and you'd have to brute-force or patch instead.
 
 </details>
 

@@ -1,26 +1,26 @@
 ---
-title: "Lesson 18.3: Symbolic execution, making the computer solve the crackme for you"
+title: "Lesson 18.3: Symbolic execution"
 image:
   path: /assets/img/covers/re-18-3-symbolic-execution-making-computer-solve-crackme.webp
-  alt: "Lesson 18.3: Symbolic execution, making the computer solve the crackme for you"
+  alt: "Lesson 18.3: Symbolic execution"
 date: 2023-09-04 11:00:00 +0700
 categories: ["Technique Reverse", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
 render_with_liquid: false
 ---
-In [lesson 16.4](/posts/re-16-4-rewriting-algorithm-python-letting-z3-solve/) you wrote constraints by hand and let Z3 solve them. But writing constraints by hand means reading and understanding every comparison in the binary and copying it down without a single wrong sign. With a check function that has a few dozen branches, that's tiring and error-prone. Symbolic execution does the copying for you: it runs the binary with the input as symbolic variables, collects constraints along the way, then calls a solver. You only need to say "find the path to the spot that prints Correct".
+In [lesson 16.4](/posts/re-16-4-rewriting-algorithm-python-letting-z3-solve/) you wrote constraints by hand and let Z3 solve them. That means reading every comparison in the binary and copying it down without a single wrong sign. With a check function that has a few dozen branches, that's tiring and easy to get wrong. Symbolic execution does the copying for you: it runs the binary with the input as symbolic variables, collects constraints along the way, then calls a solver. You only say "find the path to the spot that prints Correct".
 
 ## The core idea
 
 In a normal run, the input is a concrete value, for example `s[0] = 0x41`. Symbolic execution replaces it with a symbolic variable (a symbol), call it `c0`. When it meets the instruction `s[0] ^ 0x41`, the machine doesn't compute a number but records the expression `c0 ^ 0x41`. When it meets a branch `if (... == 0)`, it splits into two paths: one path adds the constraint `c0 ^ 0x41 == 0`, the other adds `c0 ^ 0x41 != 0`, and it continues down both.
 
-Like this, each execution path accumulates a set of constraints. When it reaches the goal (the spot that prints "Correct"), we have enough constraints describing "which input leads here", and handing that to an SMT solver gives a concrete input. You don't read the logic, you don't copy constraints, you only point at the goal and at the spots to avoid.
+So each execution path accumulates a set of constraints. When it reaches the goal (the spot that prints "Correct"), the constraints describe which input leads there, and handing them to an SMT solver gives a concrete input. You don't read the logic or copy constraints, you only point at the goal and at the spots to avoid.
 
-A few terms are worth knowing. Symbolic execution means running with symbolic variables and exploring paths by splitting branches. Concolic (concrete + symbolic) runs with real values while tracking symbols, balancing accuracy and speed, and Triton goes this way. Path explosion is the number of paths growing exponentially with the number of branches, and it's the method's weak spot.
+A few terms to know. Symbolic execution means running with symbolic variables and exploring paths by splitting branches. Concolic (concrete + symbolic) runs with real values while tracking symbols, balancing accuracy and speed, and Triton goes this way. Path explosion is the number of paths growing exponentially with the number of branches, and it's the method's weak spot.
 
-## angr, the main knife
+## angr
 
-angr is an open Python framework, the most popular for symbolic execution on binaries. The workflow always involves four things. A Project loads the binary, and a State holds the initial state (registers, memory, symbolic input). The simulation manager (`simgr`) is the machinery that pushes states forward, sorting them into found/active/deadended. Finally `explore(find=..., avoid=...)` says the goal to reach and the spots to avoid.
+angr is an open Python framework, the most popular for symbolic execution on binaries. The workflow always involves four things. A Project loads the binary, and a State holds the initial state (registers, memory, symbolic input). The simulation manager (`simgr`) pushes states forward, sorting them into found/active/deadended. Finally `explore(find=..., avoid=...)` gives the goal to reach and the spots to avoid.
 
 An example solving a crackme that takes a serial through `argv[1]`:
 
@@ -47,21 +47,21 @@ found = simgr.found[0]
 print(found.solver.eval(serial, cast_to=bytes))
 ```
 
-`find` and `avoid` take the stdout of the simulated process (`posix.dumps(1)` is file descriptor 1). Instead of just hand-picked addresses, we let angr run until stdout contains "Correct". When it finishes, `found.solver.eval` asks the solver "which serial satisfies every constraint on this path" and returns bytes.
+`find` and `avoid` take the stdout of the simulated process (`posix.dumps(1)` is file descriptor 1). Instead of hand-picked addresses, we let angr run until stdout contains "Correct". When it finishes, `found.solver.eval` asks the solver which serial satisfies every constraint on this path and returns bytes.
 
 Run on this lab's crackme, angr prints the exact serial in a few seconds without us ever reading the `check` function.
 
 ## Triton and other options
 
-Triton (Quarkslab) leans toward concolic and integrates DBI (tying to [lesson 17.7](/posts/re-17-7-dynamic-binary-instrumentation-letting-binary-tell/)). It's strong when you want to trace one real execution path and then derive symbols along it, avoiding path explosion. Miasm, maat and manticore are other frameworks, each with its own strength. At the bottom of all of them is still an SMT solver (usually Z3).
+Triton (Quarkslab) leans toward concolic and integrates DBI (tying to [lesson 17.7](/posts/re-17-7-dynamic-binary-instrumentation-letting-binary-tell/)). It's good when you want to trace one real execution path and then derive symbols along it, which avoids path explosion. Miasm, maat and manticore are other frameworks, each with its own strengths. Underneath all of them is an SMT solver (usually Z3).
 
 ## When to use angr, when to go back to hand-written Z3
 
-angr wins when the check logic has many branches but each branch is simple, you're too lazy to read it, and the input space is moderate. It handles the translation from binary to constraints for you.
+angr works well when the check logic has many branches but each branch is simple, you don't want to read it all, and the input space is moderate. It handles the translation from binary to constraints for you.
 
-angr loses (and hand-written Z3 or another approach wins) in a few cases. Path explosion is one: big loops and many nested branches blow up the number of paths, and then you limit the exploration area, or symbolize only the check function (use `call_state` to call the function directly instead of running from main). Heavy crypto or one-way hashes are another: hashing MD5/SHA or multi-round AES produces huge constraints the solver can't handle, and a one-way hash can't in theory be solved by a solver, so you have to brute force or find another route (tying back to [lesson 16.4](/posts/re-16-4-rewriting-algorithm-python-letting-z3-solve/)). The last is syscalls or a complex environment: angr has to be able to simulate whatever the program calls, and without hooks it gets lost.
+It struggles in a few cases, where hand-written Z3 or another approach wins. Path explosion is one: big loops and many nested branches blow up the number of paths, and then you limit the exploration area, or symbolize only the check function (use `call_state` to call the function directly instead of running from main). Heavy crypto or one-way hashes are another: hashing MD5/SHA or multi-round AES produces huge constraints the solver can't handle, and a one-way hash can't in theory be solved by a solver, so you have to brute force or find another route (tying back to [lesson 16.4](/posts/re-16-4-rewriting-algorithm-python-letting-z3-solve/)). The last is syscalls or a complex environment: angr has to be able to simulate whatever the program calls, and without hooks it gets lost.
 
-Pragmatic rule: try angr first because it's cheap, if it hangs or explodes narrow the scope, if that doesn't work read by hand and write Z3.
+My rule: try angr first because it's cheap, and if it hangs or explodes, narrow the scope. If that doesn't work, read by hand and write Z3.
 
 ## Lab
 
@@ -95,7 +95,7 @@ Three questions to think about. Why does angr find the serial without you copyin
 
 The correct serial is `AorrnsqT`. I verified it end to end on Linux. I built with `gcc -O0 -no-pie -fno-stack-protector -o crackme crackme.c`, then `python3 solve_angr.py ./crackme` (angr 9.2.213) printed `Serial: AorrnsqT`. Feeding it back, `./crackme AorrnsqT` prints `Correct! Access granted.` (exit 0), while `./crackme WRONGXXX` prints `Nope.` (exit 1). angr found this serial without us reading the `check` function.
 
-Here is what angr did. It loaded the binary, created 8 symbolic bytes `c0..c7`, joined them into `serial`, and passed it through `argv[1]`. It added a soft constraint that each byte is printable (0x20 to 0x7e) for a tidy result. Then `explore(find=..., avoid=...)` pushed all states forward, keeping the states whose stdout contains `Correct` and dropping those containing `Nope`. On the state it found, `solver.eval(serial)` derives bytes satisfying every constraint accumulated along the way.
+Here's what angr did. It loaded the binary, created 8 symbolic bytes `c0..c7`, joined them into `serial`, and passed it through `argv[1]`. It added a soft constraint that each byte is printable (0x20 to 0x7e) for a tidy result. Then `explore(find=..., avoid=...)` pushed all states forward, keeping the states whose stdout contains `Correct` and dropping those containing `Nope`. On the state it found, `solver.eval(serial)` derives bytes satisfying every constraint accumulated along the way.
 
 To compare with solving by hand, open `crackme.c`: the `check` function applies 8 constraints.
 
