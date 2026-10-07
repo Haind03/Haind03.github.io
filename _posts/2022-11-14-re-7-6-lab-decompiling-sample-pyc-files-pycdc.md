@@ -203,7 +203,7 @@ For `out_sequencer.pyc`, look at the first bytes and work out the Python version
 
 A few questions to think about afterwards. Why doesn't "Bad MAGIC!" always mean a wrong version? When pycdc doesn't support the file's Python version, what other ways do you have to get information? And why would a loader hide its payload behind several layers of base85, zlib and marshal instead of leaving the code in the open?
 
-A safety note. These files are harmless to read and disassemble, but the third one contains a payload that decodes itself and then runs, so analyze it statically only (decode by hand) and never `exec` it. If you want to run it, do it in a VM following [Lesson 0.3](/posts/re-0-3-set-up-safe-lab-before-to/). When you write the layer-peeling script, run it with `python3 -I` and keep the unknown files in a folder of their own.
+A safety note. These files are harmless to read and disassemble, but the third one contains a payload that decodes itself and then runs, so analyze it statically only (decode by hand) and never `exec` it. If you want to run it, do it in a VM following [Lesson 0.3](/posts/re-0-3-set-up-safe-lab-before-touching/). When you write the layer-peeling script, run it with `python3 -I` and keep the unknown files in a folder of their own.
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

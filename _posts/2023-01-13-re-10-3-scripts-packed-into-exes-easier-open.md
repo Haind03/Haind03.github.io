@@ -64,7 +64,7 @@ A malware sample is reported as "hard", you drag it into IDA and see nothing but
 
 ## Lab
 
-The goal is to build the reflex of asking "is this just a packaged script?" and to extract the original source. You need Detect It Easy (the `diec.exe` command line tool and the GUI), Exe2Aut or AutoIt-Ripper for AutoIt, Resource Hacker or CFF Explorer for AutoHotkey, 7-Zip for NSIS, and innounp or UniExtract2 for Inno Setup. If the sample is malware, run everything inside an isolated VM (see [Lesson 0.3](/posts/re-0-3-set-up-safe-lab-before-to/)).
+The goal is to build the reflex of asking "is this just a packaged script?" and to extract the original source. You need Detect It Easy (the `diec.exe` command line tool and the GUI), Exe2Aut or AutoIt-Ripper for AutoIt, Resource Hacker or CFF Explorer for AutoHotkey, 7-Zip for NSIS, and innounp or UniExtract2 for Inno Setup. If the sample is malware, run everything inside an isolated VM (see [Lesson 0.3](/posts/re-0-3-set-up-safe-lab-before-touching/)).
 
 Collect a few exes, either from your machine or made yourself: install a small program packed with NSIS or Inno (a lot of free software uses them), write a short AutoHotkey script and compile it, and write an AutoIt script and compile it. For each file, run `diec.exe <file>` and open the DIE GUI, and note the identification traces: AU3, AUTOHOTKEY SCRIPT, Nullsoft Install System, Inno Setup. Compare them against the table in the lesson.
 
