@@ -6,9 +6,10 @@
   result: FINISHER
   badge: acc
 - date: Dec 2025
-  name: M*CTF 2025, international Attack-Defense CTF, Russia
+  name: M*CTF 2025, international Attack-Defense CTF, Moscow
   result: CHAMPION
   badge: gold
+  post: /posts/ctf-mctf-2025-moscow/
 - date: Nov 2025
   name: CSCV 2025, Vietnam Student Cyber Security Contest, Bracket B (Jeopardy)
   result: RUNNER-UP

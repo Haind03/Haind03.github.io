@@ -43,4 +43,4 @@ _PTIT.Celebi with the ISP flag and the Attack-Defense third prize._
 
 ## Next time
 
-I came out of this with one rule for Attack-Defense: never let the attack side eat the defense side. One person watches our own services at all times, no matter how good the exploit looks. I've tried to play by it in every Attack-Defense game since.
+I came out of this with one rule for Attack-Defense: never let the attack side eat the defense side. One person watches our own services at all times, no matter how good the exploit looks. I've tried to play by it in every Attack-Defense game since, and in Moscow a year later [it won us the whole thing](/posts/ctf-mctf-2025-moscow/).
