@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="330" viewBox="0 0 720 330" font-family="Segoe UI, Arial, sans-serif">
+  <rect x="0" y="0" width="720" height="330" rx="10" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="360" y="30" text-anchor="middle" font-size="18" font-weight="700" fill="#111">Các dạng đóng gói .NET hiện đại</text>
+  <text x="360" y="52" text-anchor="middle" font-size="12" fill="#888">còn IL + metadata thì dnSpy/ILSpy đọc được, mất rồi thì phải reverse như native</text>
+
+  <!-- col 1 -->
+  <rect x="30" y="70" width="200" height="200" rx="8" fill="#eafaf0" stroke="#2e8b57"/>
+  <text x="130" y="94" text-anchor="middle" font-size="13" font-weight="700" fill="#1d5e3a">Single-file bundle</text>
+  <text x="130" y="122" text-anchor="middle" font-size="11" fill="#333">Gộp mọi DLL vào 1 exe</text>
+  <text x="130" y="146" text-anchor="middle" font-size="11" fill="#333">IL vẫn còn nguyên</text>
+  <text x="130" y="170" text-anchor="middle" font-size="11" fill="#333">Trích ra rồi mở dnSpy</text>
+  <rect x="55" y="210" width="150" height="40" rx="6" fill="#d7f0e0" stroke="#2e8b57"/>
+  <text x="130" y="235" text-anchor="middle" font-size="12" font-weight="600" fill="#1d5e3a">DỄ: decompile được</text>
+
+  <!-- col 2 -->
+  <rect x="260" y="70" width="200" height="200" rx="8" fill="#fff7e6" stroke="#d99a00"/>
+  <text x="360" y="94" text-anchor="middle" font-size="13" font-weight="700" fill="#8a6100">ReadyToRun (R2R)</text>
+  <text x="360" y="122" text-anchor="middle" font-size="11" fill="#333">Có sẵn native code</text>
+  <text x="360" y="146" text-anchor="middle" font-size="11" fill="#333">nhưng IL vẫn kèm theo</text>
+  <text x="360" y="170" text-anchor="middle" font-size="11" fill="#333">dnSpy vẫn đọc IL</text>
+  <rect x="285" y="210" width="150" height="40" rx="6" fill="#fdf0d0" stroke="#d99a00"/>
+  <text x="360" y="235" text-anchor="middle" font-size="12" font-weight="600" fill="#8a6100">VẪN decompile được</text>
+
+  <!-- col 3 -->
+  <rect x="490" y="70" width="200" height="200" rx="8" fill="#fdecea" stroke="#c0392b"/>
+  <text x="590" y="94" text-anchor="middle" font-size="13" font-weight="700" fill="#7b241c">NativeAOT</text>
+  <text x="590" y="122" text-anchor="middle" font-size="11" fill="#333">Biên dịch thẳng native</text>
+  <text x="590" y="146" text-anchor="middle" font-size="11" fill="#333">KHÔNG còn IL/metadata</text>
+  <text x="590" y="170" text-anchor="middle" font-size="11" fill="#333">managed như trước</text>
+  <rect x="515" y="210" width="150" height="40" rx="6" fill="#f8d7d2" stroke="#c0392b"/>
+  <text x="590" y="229" text-anchor="middle" font-size="12" font-weight="600" fill="#7b241c">KHÓ: phải dùng</text>
+  <text x="590" y="244" text-anchor="middle" font-size="12" font-weight="600" fill="#7b241c">IDA/Ghidra</text>
+
+  <text x="360" y="300" text-anchor="middle" font-size="12" fill="#555">Dùng Detect It Easy để nhận ra đang gặp dạng nào trước khi chọn công cụ.</text>
+</svg>

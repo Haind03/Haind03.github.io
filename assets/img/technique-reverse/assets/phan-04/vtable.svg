@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="360" viewBox="0 0 720 360" font-family="Segoe UI, Arial, sans-serif">
+  <rect x="0" y="0" width="720" height="360" rx="10" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="360" y="30" text-anchor="middle" font-size="18" font-weight="700" fill="#111">Object, vtable và lời gọi virtual</text>
+
+  <!-- object -->
+  <text x="110" y="64" text-anchor="middle" font-size="13" font-weight="600" fill="#333">Object trong bộ nhớ</text>
+  <g font-size="12" font-family="Consolas, monospace">
+    <rect x="30" y="74" width="160" height="38" fill="#e8f0fe" stroke="#4472c4"/><text x="110" y="98" text-anchor="middle" fill="#1a3a6b">vptr</text>
+    <rect x="30" y="112" width="160" height="34" fill="#eafaf0" stroke="#2e8b57"/><text x="110" y="134" text-anchor="middle" fill="#1d5e3a">field: id</text>
+    <rect x="30" y="146" width="160" height="34" fill="#eafaf0" stroke="#2e8b57"/><text x="110" y="168" text-anchor="middle" fill="#1d5e3a">field: balance</text>
+  </g>
+  <text x="110" y="196" text-anchor="middle" font-size="10" fill="#888">vptr luôn ở offset 0</text>
+
+  <!-- vtable -->
+  <text x="400" y="64" text-anchor="middle" font-size="13" font-weight="600" fill="#333">vtable (bảng con trỏ hàm)</text>
+  <g font-size="12" font-family="Consolas, monospace">
+    <rect x="300" y="74" width="200" height="34" fill="#fff7e6" stroke="#d99a00"/><text x="400" y="96" text-anchor="middle" fill="#8a6100">[0] -> ~Dtor</text>
+    <rect x="300" y="108" width="200" height="34" fill="#fff7e6" stroke="#d99a00"/><text x="400" y="130" text-anchor="middle" fill="#8a6100">[1] -> check()</text>
+    <rect x="300" y="142" width="200" height="34" fill="#fff7e6" stroke="#d99a00"/><text x="400" y="164" text-anchor="middle" fill="#8a6100">[2] -> print()</text>
+  </g>
+
+  <path d="M190 93 L298 91" stroke="#4472c4" stroke-width="2" marker-end="url(#b)"/>
+  <text x="245" y="82" text-anchor="middle" font-size="10" fill="#4472c4">trỏ tới</text>
+
+  <!-- funcs -->
+  <g font-size="12" font-family="Consolas, monospace">
+    <rect x="560" y="108" width="130" height="34" fill="#fdecea" stroke="#c0392b"/><text x="625" y="130" text-anchor="middle" fill="#7b241c">Derived::check</text>
+  </g>
+  <path d="M500 125 L558 125" stroke="#d99a00" stroke-width="2" marker-end="url(#c)"/>
+
+  <text x="360" y="236" text-anchor="middle" font-size="13" font-weight="600" fill="#333">Trong assembly, lời gọi virtual trông như:</text>
+  <rect x="150" y="248" width="420" height="58" rx="6" fill="#f7f8fa" stroke="#ccc"/>
+  <text x="170" y="270" font-size="12" font-family="Consolas, monospace" fill="#333">mov  rax, [obj]        ; rax = vptr</text>
+  <text x="170" y="288" font-size="12" font-family="Consolas, monospace" fill="#333">call [rax+8]           ; gọi slot [1] = check()</text>
+
+  <text x="360" y="336" text-anchor="middle" font-size="12" fill="#c0392b">Thấy call [reg+offset] là dấu hiệu lời gọi virtual. Offset cho biết slot nào.</text>
+
+  <defs>
+    <marker id="b" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#4472c4"/></marker>
+    <marker id="c" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#d99a00"/></marker>
+  </defs>
+</svg>

@@ -1,13 +1,11 @@
 ---
 # the default layout is 'page'
 icon: fas fa-info-circle
-order: 4
+order: 5
 ---
 
-Xin chào! Mình là **HaiND** ([@Haind03](https://github.com/Haind03)), sinh viên Học viện Công nghệ Bưu chính Viễn thông (PTIT).
+Mình là HaiND ([@Haind03](https://github.com/Haind03)), học ở PTIT.
 
-- 🔐 Cybersecurity researcher: vulnerability research, reverse engineering, digital forensics
-- 🎯 Threat hunter | CTF player
-- 📍 Việt Nam
+Hay chơi CTF, chủ yếu mảng reverse, forensics. Ngoài ra thì làm vulnerability research với threat hunting.
 
-Blog này dùng để lưu write-up CTF và ghi chú nghiên cứu.
+Blog này là chỗ mình để write-up và ghi chép, phần lớn là series [Technique Reverse](/technique-reverse/).

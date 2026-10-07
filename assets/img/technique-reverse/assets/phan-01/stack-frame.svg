@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="620" height="420" viewBox="0 0 620 420" font-family="Segoe UI, Arial, sans-serif">
+  <rect x="0" y="0" width="620" height="420" rx="10" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="310" y="30" text-anchor="middle" font-size="18" font-weight="700" fill="#111">Stack frame của một lời gọi hàm</text>
+  <text x="310" y="50" text-anchor="middle" font-size="12" fill="#888">stack mọc xuống: địa chỉ cao ở trên, thấp ở dưới</text>
+
+  <g font-size="13">
+    <rect x="160" y="66" width="300" height="38" fill="#f4f4f4" stroke="#999"/>
+    <text x="310" y="90" text-anchor="middle" fill="#555">... frame của hàm gọi (caller) ...</text>
+
+    <rect x="160" y="104" width="300" height="38" fill="#eef6ff" stroke="#4472c4"/>
+    <text x="310" y="128" text-anchor="middle" fill="#1a3a6b">tham số tràn stack (thứ 5 trở đi)</text>
+
+    <rect x="160" y="142" width="300" height="38" fill="#fdecea" stroke="#c0392b"/>
+    <text x="310" y="166" text-anchor="middle" fill="#7b241c">địa chỉ trở về (do call đẩy vào)</text>
+
+    <rect x="160" y="180" width="300" height="38" fill="#fff7e6" stroke="#d99a00"/>
+    <text x="310" y="204" text-anchor="middle" fill="#8a6100">rbp cũ đã lưu  &#8592; rbp trỏ vào đây</text>
+
+    <rect x="160" y="218" width="300" height="38" fill="#eafaf0" stroke="#2e8b57"/>
+    <text x="310" y="242" text-anchor="middle" fill="#1d5e3a">biến cục bộ  var_4  = [rbp-4]</text>
+
+    <rect x="160" y="256" width="300" height="38" fill="#eafaf0" stroke="#2e8b57"/>
+    <text x="310" y="280" text-anchor="middle" fill="#1d5e3a">biến cục bộ  var_8  = [rbp-8]</text>
+
+    <rect x="160" y="294" width="300" height="38" fill="#f0eefb" stroke="#6b46c1"/>
+    <text x="310" y="318" text-anchor="middle" fill="#45307d">shadow space (Win64, 32 byte)  &#8592; rsp</text>
+  </g>
+
+  <!-- pointers -->
+  <path d="M470 199 L540 199" stroke="#d99a00" stroke-width="2" marker-end="url(#a)"/>
+  <text x="548" y="203" font-size="12" fill="#d99a00" font-weight="700">rbp</text>
+  <path d="M470 313 L540 313" stroke="#6b46c1" stroke-width="2" marker-end="url(#a)"/>
+  <text x="548" y="317" font-size="12" fill="#6b46c1" font-weight="700">rsp</text>
+
+  <text x="80" y="200" text-anchor="middle" font-size="11" fill="#999" transform="rotate(-90 80 200)">địa chỉ giảm dần &#8595;</text>
+
+  <text x="310" y="356" text-anchor="middle" font-size="12" fill="#333">prologue: push rbp; mov rbp, rsp; sub rsp, N</text>
+  <text x="310" y="376" text-anchor="middle" font-size="12" fill="#333">epilogue: leave (mov rsp,rbp; pop rbp); ret</text>
+  <text x="310" y="402" text-anchor="middle" font-size="11" fill="#888">4 tham số đầu Win64: rcx, rdx, r8, r9 (không nằm trên stack)</text>
+
+  <defs><marker id="a" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#888"/></marker></defs>
+</svg>
