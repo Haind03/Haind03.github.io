@@ -29,7 +29,7 @@ The golden rule of NOPing is to count the bytes correctly. However many bytes th
 
 ## For real: patching a crackme
 
-Take the crackme `patchme` in [labs/17.1](https://github.com/Haind03/Technique-Reverse/blob/main/labs/17.1). It compares the password to `s3cr3t`. Here's `main` after `objdump -d -M intel` (real output from a gcc build on Linux):
+Take the crackme `patchme` in `labs/17.1`. It compares the password to `s3cr3t`. Here's `main` after `objdump -d -M intel` (real output from a gcc build on Linux):
 
 ```asm
 4011f2:  e8 7f ff ff ff   call  401176 <check>   ; call the check function, result in eax

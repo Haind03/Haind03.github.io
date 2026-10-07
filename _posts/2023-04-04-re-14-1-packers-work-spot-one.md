@@ -24,7 +24,7 @@ File on disk:                 At runtime (in memory):
 +------------------+          +------------------+
 ```
 
-The most important consequence for RE: **the real code only exists in readable form in memory at runtime, not on disk.** So static analysis (opening the file in IDA/Ghidra) only sees the stub and a pile of junk. To see the real code, you have to let it unpack itself and then grab it, which is what lessons [14.2](https://github.com/Haind03/Technique-Reverse/blob/main/phan-14-packer-obfuscation/14.2-unpack-upx.md) and [14.3](https://github.com/Haind03/Technique-Reverse/blob/main/phan-14-packer-obfuscation/14.3-dump-rebuild-iat.md) are about.
+The most important consequence for RE: **the real code only exists in readable form in memory at runtime, not on disk.** So static analysis (opening the file in IDA/Ghidra) only sees the stub and a pile of junk. To see the real code, you have to let it unpack itself and then grab it, which is what lessons [14.2](/posts/re-14-2-unpacking-upx-automatic-manual/) and [14.3](/posts/re-14-3-dumping-process-rebuilding-iat-scylla/) are about.
 
 ## OEP: the destination of every unpack
 
@@ -73,7 +73,7 @@ The strings in the original code (messages, URLs, paths) are compressed/encrypte
 
 These two words get mixed up a lot, so let's separate them clearly. A packer is mainly for compression (reducing size) or hiding code at a basic level. UPX is the classic example, originally made to compress exes, and a plain packer is relatively easy to remove. A protector aims at anti-analysis. Besides compressing/encrypting, it adds anti-debug, anti-VM, anti-dump, integrity checks, and the heaviest of all, virtualization (turning code into the bytecode of a private VM). Themida, VMProtect and Enigma belong to this group, and removing a protector is many levels harder.
 
-The line isn't absolute (many modern packers come with some protection), but knowing which kind you're up against decides whether you spend an hour or a week. Anti-debug and anti-VM are the content of Part 15, virtualization is [Lesson 14.5](https://github.com/Haind03/Technique-Reverse/blob/main/phan-14-packer-obfuscation/14.5-virtualization.md).
+The line isn't absolute (many modern packers come with some protection), but knowing which kind you're up against decides whether you spend an hour or a week. Anti-debug and anti-VM are the content of Part 15, virtualization is [Lesson 14.5](/technique-reverse/).
 
 ## Packer triage workflow
 

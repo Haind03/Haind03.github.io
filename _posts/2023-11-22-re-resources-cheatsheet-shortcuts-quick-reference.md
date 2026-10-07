@@ -167,4 +167,4 @@ A reading tip: a `cmp` or `test` right before a `j*` instruction is an `if` stat
 | `rbp` | Stack frame base pointer |
 | `rip` | Instruction pointer (the next instruction to run) |
 
-Knowing where parameters go and where the return value comes back is enough to understand most function calls. The details of calling conventions are in [Lesson 1.4](https://github.com/Haind03/Technique-Reverse/tree/main/phan-01-nen-tang-may-tinh).
+Knowing where parameters go and where the return value comes back is enough to understand most function calls. The details of calling conventions are in [Lesson 1.4](/technique-reverse/).

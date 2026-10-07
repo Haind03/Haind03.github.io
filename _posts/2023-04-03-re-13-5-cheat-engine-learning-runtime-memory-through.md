@@ -78,7 +78,7 @@ When `find out what accesses` gives you the base address of the character object
 Strip off the game costume and here's what you just learned: scanning memory to locate data, tracing pointer paths to get stable addresses through ASLR, hardware breakpoints to find code that touches data, code injection via AOB scan, and rebuilding structs at runtime. All five skills are the bread and butter of malware analysis and of any dynamic analysis. Cheat Engine just happens to be the most fun way to practice them.
 
 ## Lab
-See [labs/13.5/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/13.5). Use the bundled Cheat Engine Tutorial (legal, made for learning) or an offline game of your own: find values with exact and unknown scans, build a pointer path that survives a restart, use find out what accesses to find the handling instruction, and try a simple AA script.
+See `labs/13.5/`. Use the bundled Cheat Engine Tutorial (legal, made for learning) or an offline game of your own: find values with exact and unknown scans, build a pointer path that survives a restart, use find out what accesses to find the handling instruction, and try a simple AA script.
 
 ## Key takeaways
 Only use it on your own offline/single-player games, since online is cheating and illegal. Use an exact value scan when you know the number, and unknown with increased/decreased when the value is hidden, picking the right type (4 Bytes, Float...). Heap addresses change every run, so you need a pointer path hanging off the module base to be stable.

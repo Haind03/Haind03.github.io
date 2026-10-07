@@ -74,7 +74,7 @@ The general principle is the same as for every kind of packer: find where the da
 
 ## Lab
 
-See [labs/13.4/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/13.4). The task: compile a Lua script with `luac`, identify the magic and version in hex, then decompile it back with `unluac` and compare with the original. The solution is at [solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/13.4/solution.md).
+See `labs/13.4/`. The task: compile a Lua script with `luac`, identify the magic and version in hex, then decompile it back with `unluac` and compare with the original. The solution is at `solution.md`.
 
 ## Key takeaways
 Embedded Lua is usually plain text you can read directly, and only the bytecode form needs a decompiler. There are two different families: standard Lua (magic `\x1bLua`, use unluac/luadec) and LuaJIT (magic `\x1bLJ`, use ljd), so identify first. The version byte after the magic (`51`/`52`/`53`/`54`) decides the decompiler.

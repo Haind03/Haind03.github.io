@@ -13,7 +13,7 @@ Both are already in the repo: `dnSpy-net-win64/dnSpy.exe` and `ILSpy_binaries_9.
 
 Short answer: use both, each for its own job.
 
-ILSpy is for reading. It's light, fast, cross-platform (there's an Avalonia build running on Linux/macOS), and it has a command-line version `ilspycmd` to export a whole C# project to disk so you can grep to your heart's content. When you just need to understand the code, ILSpy is enough. dnSpy (the maintained fork is dnSpyEx) does more: besides reading, it can debug an assembly with no source, and edit and save it back. Lessons [5.3](https://github.com/Haind03/Technique-Reverse/blob/main/phan-05-csharp-dotnet/5.3-debug-net-dnspy.md) and [5.4](https://github.com/Haind03/Technique-Reverse/blob/main/phan-05-csharp-dotnet/5.4-sua-il-csharp-patch.md) will use those two abilities. In this lesson we use dnSpy mainly for reading and investigating.
+ILSpy is for reading. It's light, fast, cross-platform (there's an Avalonia build running on Linux/macOS), and it has a command-line version `ilspycmd` to export a whole C# project to disk so you can grep to your heart's content. When you just need to understand the code, ILSpy is enough. dnSpy (the maintained fork is dnSpyEx) does more: besides reading, it can debug an assembly with no source, and edit and save it back. Lessons [5.3](/posts/re-5-3-debugging-net-without-source-using-dnspy/) and [5.4](/posts/re-5-4-editing-net-assembly-saving-where-dnspy/) will use those two abilities. In this lesson we use dnSpy mainly for reading and investigating.
 
 The two tools' interfaces are nearly the same, so learning one lets you use the other.
 
@@ -61,10 +61,10 @@ With the source on disk you can use grep, ripgrep, or open it in your favorite e
 
 ## Lab
 
-In [labs/5.2/](https://github.com/Haind03/Technique-Reverse/blob/main/labs/5.2) there are instructions to open the .NET DLLs already in the repo (for example ILSpy's `ICSharpCode.Decompiler.dll`) with both ILSpy and dnSpy, decompile, use Search and Analyze to follow a method, and try exporting the project to C# with ilspycmd. The solution is in `solution.md`.
+In `labs/5.2/` there are instructions to open the .NET DLLs already in the repo (for example ILSpy's `ICSharpCode.Decompiler.dll`) with both ILSpy and dnSpy, decompile, use Search and Analyze to follow a method, and try exporting the project to C# with ilspycmd. The solution is in `solution.md`.
 
 ## Common pitfalls
-One is opening the empty apphost `.exe` instead of the `.dll` that holds the code, so open the `.dll` with the same name. Another is trusting the decompiled C# absolutely, when you should flip to IL to check anything that looks off. Skipping Analyze and trying to read sequentially also costs you, since Used By/Uses saves a huge amount of time. Finally, obfuscated code (names like `a.b.c`, encrypted strings) still decompiles but is hard to read. That's the topic of lesson [5.5](https://github.com/Haind03/Technique-Reverse/blob/main/phan-05-csharp-dotnet/5.5-obfuscator-de4dot.md).
+One is opening the empty apphost `.exe` instead of the `.dll` that holds the code, so open the `.dll` with the same name. Another is trusting the decompiled C# absolutely, when you should flip to IL to check anything that looks off. Skipping Analyze and trying to read sequentially also costs you, since Used By/Uses saves a huge amount of time. Finally, obfuscated code (names like `a.b.c`, encrypted strings) still decompiles but is hard to read. That's the topic of lesson [5.5](/posts/re-5-5-net-obfuscators-strip-them/).
 
 ## Key takeaways
 ILSpy is for reading (light, cross-platform, ilspycmd exports projects) and dnSpy is for reading, debugging and editing. The tree goes assembly > namespace > type > method, and clicking a method gives you C#. Flip C# to IL when the decompile looks suspicious, and search by string to jump straight to the logic. Analyze (Used By / Uses) is .NET's cross-reference, so use it to rebuild the flow.

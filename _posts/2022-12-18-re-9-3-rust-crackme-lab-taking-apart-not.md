@@ -7,7 +7,7 @@ render_with_liquid: false
 ---
 Rust isn't hard because it's mysterious, it's hard because the compiler is overly enthusiastic: it inlines a ton, flattens iterator chains into flat loops, and sprinkles panic machinery everywhere. But that very panic machinery is a reverser's friend. This lesson combines 9.1 and 9.2 into a real case: getting the password out of a Rust crackme.
 
-The lab file is at [labs/9.3/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/9.3). Try it yourself first, the path is below.
+The lab file is at `labs/9.3/`. Try it yourself first, the path is below.
 
 ## Step 0: confirm it's Rust
 
@@ -64,7 +64,7 @@ Run the crackme again with that password:
 Correct! Flag: RE{Rust_1s_Fun!}
 ```
 
-Done. Note: I haven't built and run the binary for this lab in place because the environment doesn't have `rustc`, but the algorithm was checked in Python (encrypting forward gives exactly the constant array, inverting gives exactly the password). On a machine with Rust it runs as described. Details in [solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/9.3/solution.md).
+Done. Note: I haven't built and run the binary for this lab in place because the environment doesn't have `rustc`, but the algorithm was checked in Python (encrypting forward gives exactly the constant array, inverting gives exactly the password). On a machine with Rust it runs as described. Details in `solution.md`.
 
 ## Why Rust is worth practicing
 

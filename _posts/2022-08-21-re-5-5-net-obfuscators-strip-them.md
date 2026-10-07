@@ -65,7 +65,7 @@ Don't expect to get beautiful source back as if it had never been obfuscated. Th
 
 ## Lab
 
-Practice at [labs/5.5/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/5.5): obfuscate a small assembly yourself with ConfuserEx then use de4dot to strip it and compare, or if you can't install it, follow the string decryption tracing workflow in dnSpy on an obfuscated sample.
+Practice at `labs/5.5/`: obfuscate a small assembly yourself with ConfuserEx then use de4dot to strip it and compare, or if you can't install it, follow the string decryption tracing workflow in dnSpy on an obfuscated sample.
 
 ## Key takeaways
 Obfuscation doesn't encrypt the program, it only makes the decompiled code hard to read, and it still has to run. The four common layers are renaming, string encryption, control flow, and anti-tamper/anti-debug. Always identify the protector first (DIE/dnSpy) and then choose the tool.

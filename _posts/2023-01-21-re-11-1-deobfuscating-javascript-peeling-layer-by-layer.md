@@ -13,7 +13,7 @@ The key point to remember first: **obfuscation doesn't encrypt the logic, it onl
 
 When you get an unfamiliar JS file, it falls into one of four levels, and each is handled differently:
 
-The first level is minified code, which is only compressed (whitespace removed, variable names shortened to `a`, `b`). It's not real obfuscation, just a way to make the file small, and once you beautify it you can read it almost immediately. The second level is obfuscated code, deliberately made hard with string arrays, control flow flattening and dead code, and it's the most expensive level to deal with. The third is bundled code, where webpack/rollup merges many modules into one giant file and you need to split the modules out. The fourth is compiled code, Electron (V8 bytecode) or WebAssembly, which is lessons [11.2](https://github.com/Haind03/Technique-Reverse/blob/main/phan-11-javascript-electron-wasm/11.2-electron-asar-v8.md) and [11.3](/posts/re-11-3-webassembly-reading-bytecode-that-runs-browser/).
+The first level is minified code, which is only compressed (whitespace removed, variable names shortened to `a`, `b`). It's not real obfuscation, just a way to make the file small, and once you beautify it you can read it almost immediately. The second level is obfuscated code, deliberately made hard with string arrays, control flow flattening and dead code, and it's the most expensive level to deal with. The third is bundled code, where webpack/rollup merges many modules into one giant file and you need to split the modules out. The fourth is compiled code, Electron (V8 bytecode) or WebAssembly, which is lessons [11.2](/posts/re-11-2-dissecting-electron-app-from-app-asar/) and [11.3](/posts/re-11-3-webassembly-reading-bytecode-that-runs-browser/).
 
 ## Level 1: beautify, always the first thing
 
@@ -91,4 +91,4 @@ Obfuscation only hides the logic, it doesn't encrypt it, so code that runs means
 webcrack is the strongest and synchrony is plan B, and you don't need a full cleanup, just readable logic. When the tools give up, write your own Babel/AST transform, which is also how the tools work inside. For payloads in `eval`/`Function`, print them with `console.log` and don't run them.
 
 ## Lab
-See [labs/11.1/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/11.1). It has a license checker ready, a minified version, a version obfuscated with the real obfuscator.io, and the result after beautifying and running synchrony. The task: peel it back to the original logic and find a valid license key.
+See `labs/11.1/`. It has a license checker ready, a minified version, a version obfuscated with the real obfuscator.io, and the result after beautifying and running synchrony. The task: peel it back to the original logic and find a valid license key.

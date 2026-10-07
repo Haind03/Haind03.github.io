@@ -24,7 +24,7 @@ The practical consequence for a reverser: **don't try to read it all.** 95% of t
 
 ## pclntab: why Go is never truly "stripped"
 
-![Go binary: big runtime, pclntab survives strip](/assets/img/technique-reverse/assets/phan-08/go-binary.svg)
+![Go binary: big runtime, pclntab survives strip](/assets/img/re/part-08/go-binary.svg)
 
 This is the most important point of the lesson. Go embeds a structure called **pclntab** (program counter line table) into every binary. Its original purpose is so the runtime can print a stack trace with function names and line numbers on panic. But for a reverser, it's an address-to-function-name mapping table that's already in the file.
 
@@ -46,7 +46,7 @@ The pclntab magic number by Go version (the first 4 bytes of the table), and rec
 | `f0 ff ff ff` | Go 1.18 to 1.19 |
 | `f1 ff ff ff` | Go 1.20 and up |
 
-Lesson [8.2](https://github.com/Haind03/Technique-Reverse/blob/main/phan-08-go/8.2-khoi-phuc-ten-ham-go.md) will use GoReSym and the IDA/Ghidra plugins to read pclntab and rename thousands of functions in a single run.
+Lesson [8.2](/posts/re-8-2-recovering-function-names-types-go-binaries/) will use GoReSym and the IDA/Ghidra plugins to read pclntab and rename thousands of functions in a single run.
 
 ## Recognizing that a binary is Go
 

@@ -69,7 +69,7 @@ During triage, knowing whether the file is stripped sets the right expectation f
 
 ## Lab
 
-The lab is at [labs/1.6/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/1.6). You build the same C file four ways (-O0 and -O2, with and without strip), then open them in Ghidra to see inlining, strength reduction, and the difference between stripped and non-stripped with your own eyes. The solution with comparisons is at [labs/1.6/solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/1.6/solution.md), but try it before opening.
+The lab is at `labs/1.6/`. You build the same C file four ways (-O0 and -O2, with and without strip), then open them in Ghidra to see inlining, strength reduction, and the difference between stripped and non-stripped with your own eyes. The solution with comparisons is at `labs/1.6/solution.md`, but try it before opening.
 
 ## Key takeaways
 Compilation has four stages: preprocessor, compiler, assembler, linker, and macros disappear right at stage one. Dynamic linking exposes imports, which are golden clues during triage, while static linking stuffs library code inside and makes things harder. At runtime the loader maps sections, loads DLLs, fills the IAT and handles relocations, so "on disk" differs from "in memory".

@@ -27,7 +27,7 @@ Good RE people don't pick a side. Use static to narrow down "where is the intere
 
 ## Layers of abstraction: the key to the whole field
 
-![Layers of abstraction of a program](/assets/img/technique-reverse/assets/common/tang-truu-tuong.svg)
+![Layers of abstraction of a program](/assets/img/re/common/abstraction-layers.svg)
 
 This is the most important thing in this lesson. Remember it and you'll understand how the whole series is laid out.
 

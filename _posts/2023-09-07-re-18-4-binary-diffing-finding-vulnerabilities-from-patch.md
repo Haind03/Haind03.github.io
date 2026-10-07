@@ -30,7 +30,7 @@ A few concepts to remember. A matched function is one where a corresponding pair
 
 ## A real example
 
-Lab [18.4](https://github.com/Haind03/Technique-Reverse/tree/main/labs/18.4) has two versions of a small login program. The only difference in the source is in the `copy_name` function: v1 copies the username with `strcpy` into a 16-byte buffer without checking the length (a classic stack buffer overflow), and v2 adds a length check before copying.
+Lab `18.4` has two versions of a small login program. The only difference in the source is in the `copy_name` function: v1 copies the username with `strcpy` into a 16-byte buffer without checking the length (a classic stack buffer overflow), and v2 adds a length check before copying.
 
 Build both with gcc `-O1` and run `objdump -d`. This is `copy_name` from v1 (the vulnerable one):
 

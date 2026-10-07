@@ -43,4 +43,4 @@ Delphi/C++Builder is native x86/x64, but it drags in a forest of VCL functions a
 Identify with DIE, then use IDR to recover VCL names and rebuild forms and event handlers. Start from event handlers such as Button1Click rather than from main, because main is just the message loop.
 
 ## Lab
-See [labs/10.1/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/10.1): identify a Delphi exe with DIE, use IDR to rebuild the forms and event handlers, then trace to the function that handles the OK button.
+See `labs/10.1/`: identify a Delphi exe with DIE, use IDR to rebuild the forms and event handlers, then trace to the function that handles the OK button.

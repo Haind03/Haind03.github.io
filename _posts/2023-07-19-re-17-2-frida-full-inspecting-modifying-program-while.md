@@ -124,7 +124,7 @@ The Frida host and frida-server (on Android/iOS) must be the same version, and a
 
 ## Lab
 
-See [labs/17.2/](https://github.com/Haind03/Technique-Reverse/blob/main/labs/17.2). The task: use Frida to hook the compare function of a small program to expose the correct string it's comparing against your input, then try forcing the return value to get past the check. A sample `hook.js` is provided in `src/`.
+See `labs/17.2/`. The task: use Frida to hook the compare function of a small program to expose the correct string it's comparing against your input, then try forcing the return value to get past the check. A sample `hook.js` is provided in `src/`.
 
 ## Key takeaways
 Frida injects a JS agent into the running process, sees everything from the inside, and works cross-platform. `Interceptor.attach` with `onEnter` (parameters) and `onLeave` (return value) is the main tool. `args[i]` is numbered by logical parameter order and Frida handles the calling convention, but each is a NativePointer, so you have to interpret the type yourself.

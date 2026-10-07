@@ -62,7 +62,7 @@ Pragmatic rule: try angr first because it's cheap, if it hangs or explodes narro
 
 ## Lab
 
-The folder [labs/18.3/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/18.3). `src/crackme.c` checks an 8-character serial through a chain of constraints on the bytes. The task is to build it, then let `solve_angr.py` find the serial by itself, without reading the `check` function. Compare the result with the hand-read approach. The solution and the correct serial are in `solution.md` (this serial was actually found by angr, see the writeup).
+The folder `labs/18.3/`. `src/crackme.c` checks an 8-character serial through a chain of constraints on the bytes. The task is to build it, then let `solve_angr.py` find the serial by itself, without reading the `check` function. Compare the result with the hand-read approach. The solution and the correct serial are in `solution.md` (this serial was actually found by angr, see the writeup).
 
 ## Key takeaways
 Symbolic execution replaces the input with symbolic variables, splits branches to explore, then uses an SMT solver to find the input that reaches the goal. With angr you set up a Project, a State (symbolic input via `claripy.BVS`), a simulation manager, and `explore(find=, avoid=)`, and `find`/`avoid` can match on stdout so you don't need hand-picked addresses. The weak spots are path explosion and heavy crypto/hashes, and then you narrow the scope or go back to hand-written Z3. Try angr first because it's cheap, and if it fails read by hand.

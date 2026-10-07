@@ -17,7 +17,7 @@ The last three are where you need to understand things well.
 
 ## Single-file: everything in one exe
 
-![Comparing single-file, ReadyToRun, NativeAOT in terms of decompilability](/assets/img/technique-reverse/assets/phan-05/dotnet-packaging.svg)
+![Comparing single-file, ReadyToRun, NativeAOT in terms of decompilability](/assets/img/re/part-05/dotnet-packaging.svg)
 
 When you publish with `PublishSingleFile=true`, the toolchain stuffs all the dependent DLLs (and sometimes the runtime too) into a single `.exe` file for tidiness. It sounds like hiding, but it's really just a bundle: the `.NET` DLLs are still intact inside, just repacked.
 

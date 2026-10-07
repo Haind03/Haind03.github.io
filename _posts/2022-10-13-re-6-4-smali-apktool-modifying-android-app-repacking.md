@@ -46,7 +46,7 @@ Recognizing the `invoke` then `move-result` then `if-eqz` sequence means you're 
 
 ## The classic patching workflow
 
-![APK patching workflow: apktool d, edit smali, apktool b, re-sign](/assets/img/technique-reverse/assets/phan-06/smali-patch-flow.svg)
+![APK patching workflow: apktool d, edit smali, apktool b, re-sign](/assets/img/re/part-06/smali-patch-flow.svg)
 
 Say the app has a license check function that returns a boolean, and false blocks you. The goal: make it always return true. There are four steps, and if you remember them you can do it.
 
@@ -96,7 +96,7 @@ Frida (lesson [6.6](/posts/re-6-6-frida-android-changing-app-behavior-while/)) h
 
 ## Lab
 
-See [labs/6.4/](https://github.com/Haind03/Technique-Reverse/blob/main/labs/6.4). You'll take an APK with a check function, use apktool to unpack it into smali, find and patch that function to always return true, rebuild, sign, then verify. The solution is in `solution.md`.
+See `labs/6.4/`. You'll take an APK with a check function, use apktool to unpack it into smali, find and patch that function to always return true, rebuild, sign, then verify. The solution is in `solution.md`.
 
 ## Key takeaways
 Android runs DEX (register-based), not JVM bytecode, and smali is the assembly for DEX. Edit smali, not the decompiled Java, because there's no clean path from Java back to DEX. For registers, `p0` is this (non-static method), `p1...` are parameters, and `v0...` are locals. `move-result` takes the return value of the last call, like rax in x86.

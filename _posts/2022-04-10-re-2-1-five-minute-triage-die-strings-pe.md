@@ -80,7 +80,7 @@ The goal of triage isn't to understand the program, but to know which way to go 
 
 ## Lab
 
-Practice right away on the tools already in the repo. Details and solution at [labs/2.1/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/2.1). Run `diec` on a few of the exe files available (`die.exe`, `dnSpy.exe`, `ILSpy.exe`, `jadx-gui-1.5.1.exe`) and compare the compiler and file type each one reports. Read their entropy and see if any is abnormal. Then run strings on one file and pick out three interesting clues.
+Practice right away on the tools already in the repo. Details and solution at `labs/2.1/`. Run `diec` on a few of the exe files available (`die.exe`, `dnSpy.exe`, `ILSpy.exe`, `jadx-gui-1.5.1.exe`) and compare the compiler and file type each one reports. Read their entropy and see if any is abnormal. Then run strings on one file and pick out three interesting clues.
 
 ## Key takeaways
 Always triage before opening a disassembler, because five minutes buys you hours. DIE answers the file type, compiler or packer, and 32/64-bit ("PE32+" is 64-bit). Entropy near 8 in a section means it's likely packed or encrypted, so the next job is unpacking, and a poor import table (only LoadLibrary/GetProcAddress left) is a sign of a packer hiding APIs.

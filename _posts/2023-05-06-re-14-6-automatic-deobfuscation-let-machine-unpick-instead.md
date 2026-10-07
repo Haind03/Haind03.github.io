@@ -41,11 +41,11 @@ Of the same family of thinking there are a few other directions worth knowing by
 
 ## Symbolic execution, the common weapon for MBA and flattening
 
-This is the most general approach, and also the bridge to [Part 18](https://github.com/Haind03/Technique-Reverse/tree/main/phan-18-nang-cao). Tools like Triton or angr treat the input as symbolic variables, run through the code, and instead of computing a number they compute a formula. There are two direct uses for deobfuscation.
+This is the most general approach, and also the bridge to [Part 18](/technique-reverse/). Tools like Triton or angr treat the input as symbolic variables, run through the code, and instead of computing a number they compute a formula. There are two direct uses for deobfuscation.
 
 One is simplifying MBA: have Triton build the symbolic expression of an MBA chunk, then use the simplifier or Z3 to prove it's equivalent to a short expression. In practice an MBA expression of thirty bit operations often reduces to `a ^ b` or `a + b`. The other is undoing flattening: symbolic/concolic execution follows the real execution flow, joining the original blocks in the order they actually run, skipping the dispatcher, and from that trace you rebuild a clean CFG.
 
-Triton is compact and can be embedded in other tools; angr is heavier but comes with CFG recovery and lots of utilities. The details of symbolic execution are saved for [Lesson 18.3](https://github.com/Haind03/Technique-Reverse/tree/main/phan-18-nang-cao).
+Triton is compact and can be embedded in other tools; angr is heavier but comes with CFG recovery and lots of utilities. The details of symbolic execution are saved for [Lesson 18.3](/technique-reverse/).
 
 ## Automatic or by hand: choose by scale
 
@@ -63,7 +63,7 @@ A tip that's often forgotten: a lot of the time you don't need to undo any obfus
 
 ## Lab
 
-See [labs/14.6/](https://github.com/Haind03/Technique-Reverse/blob/main/labs/14.6). You'll take a function with MBA or opaque predicates, use D-810 or Miasm to simplify it, and compare the pseudocode before and after. If you can't install the tools yet, the lab has a sample MBA expression for you to reduce by hand, enough to see with your own eyes a monstrous expression collapse into a single XOR.
+See `labs/14.6/`. You'll take a function with MBA or opaque predicates, use D-810 or Miasm to simplify it, and compare the pseudocode before and after. If you can't install the tools yet, the lab has a sample MBA expression for you to reduce by hand, enough to see with your own eyes a monstrous expression collapse into a single XOR.
 
 ## Key takeaways
 All automatic deobfuscation follows one formula: lift to IR, simplify, lower back down. D-810 unpicks right inside Hex-Rays microcode and is strong on MBA, opaque predicates and flattening, though it is rule-based. HexRaysDeob is the predecessor, and Rolf Rolles' series is the one to read to understand microcode. Miasm is a full Python framework (IR, emulation, symbolic, simplify) where you program the workflow yourself, and symbolic execution (Triton, angr) is the general weapon for both MBA and flattening, with details in Part 18. Weigh the scale: do a small spot by hand and only build a tool for bulk work, and sometimes you just emulate to get the answer with no unpicking needed.

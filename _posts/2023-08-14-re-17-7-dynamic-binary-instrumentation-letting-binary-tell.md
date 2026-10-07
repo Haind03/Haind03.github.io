@@ -53,7 +53,7 @@ Use it when your question is "global and quantitative": coverage, counting, wide
 
 ## Lab
 
-See [labs/17.7/](https://github.com/Haind03/Technique-Reverse/blob/main/labs/17.7): use a DBI tool to collect the coverage of a program with a right input and a wrong input, then compare them to mark out the check function yourself.
+See `labs/17.7/`: use a DBI tool to collect the coverage of a program with a right input and a wrong input, then compare them to mark out the check function yourself.
 
 ## Key takeaways
 DBI inserts observation code into each instruction/block at runtime, with no source needed and no disk file modified. The tools are Pin (C++, powerful), DynamoRIO (open source, drcov built in), QBDI (embeddable, nice API), and TinyInst (light, for coverage/fuzzing). The strongest trick is coverage diffing between wrong and right input to find the check function.

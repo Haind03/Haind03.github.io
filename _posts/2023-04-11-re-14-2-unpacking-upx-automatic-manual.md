@@ -104,4 +104,4 @@ Try `upx -d` first, since often it's done right away. If the header was edited (
 For the ESP trick, put a hardware breakpoint on the stack right after `pushad`, and it fires again when `popad` runs, near the tail jump. At the OEP, dump with Scylla and rebuild the IAT (Lesson 14.3). UPX is the intro exercise, and this mindset applies to every packer.
 
 ## Lab
-The folder [labs/14.2/](https://github.com/Haind03/Technique-Reverse/blob/main/labs/14.2) has a sample program, the pack command, and how to corrupt the header yourself to practice manual unpacking. The full writeup with real numbers is in [solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/14.2/solution.md).
+The folder `labs/14.2/` has a sample program, the pack command, and how to corrupt the header yourself to practice manual unpacking. The full writeup with real numbers is in `solution.md`.

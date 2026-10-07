@@ -69,7 +69,7 @@ First recognize it's Swift (`$s` symbols, `__swift5_*` sections, links `libswift
 
 ## Lab
 
-See [labs/12.2/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/12.2). You'll demangle a batch of Swift symbols, and practice spotting retain/release and witness tables in a Swift Mach-O.
+See `labs/12.2/`. You'll demangle a batch of Swift symbols, and practice spotting retain/release and witness tables in a Swift Mach-O.
 
 ## Key takeaways
 

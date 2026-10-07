@@ -111,7 +111,7 @@ What all of the above has in common: Go hands a lot of work to the runtime, and 
 
 ## Lab
 
-Source code and instructions in [labs/8.3/](https://github.com/Haind03/Technique-Reverse/blob/main/labs/8.3). You'll build this lesson's Go program, look at the stuck-together string blob, and trace how the code loads strings with pointer plus length.
+Source code and instructions in `labs/8.3/`. You'll build this lesson's Go program, look at the stuck-together string blob, and trace how the code loads strings with pointer plus length.
 
 ## Key takeaways
 A Go string is (pointer, length) and is NOT terminated by a 0 byte, so string literals merge into one stuck-together blob. To cut a string correctly, follow the code that loads it: a `LEAQ` pointer next to a small constant, which is the length. A slice is (data, len, cap), 24 bytes, and a slice literal is a series of MOVQ into consecutive stack slots.

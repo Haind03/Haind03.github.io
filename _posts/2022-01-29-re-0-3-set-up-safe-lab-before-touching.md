@@ -31,7 +31,7 @@ The classic two-VM model is one Windows VM that runs the sample (the victim mach
 
 Take a "clean" snapshot right after installing your tools, before running any sample, and give it a clear name like `clean-base`. Turn off shared folders and the shared clipboard when analyzing real malware, since those are two escape routes that often get forgotten (turn them back on when you're only doing crackmes). Turn off USB auto-mount too.
 
-Consider not installing VM Guest Additions or VMware Tools when analyzing sophisticated samples, since a lot of malware checks for their presence to know it's being watched (anti-VM, covered in [Lesson 15.5](https://github.com/Haind03/Technique-Reverse/tree/main/phan-15-anti-reverse)). Keep your tools on the host or on a read-only shared drive, and don't mix them with the folder that holds samples.
+Consider not installing VM Guest Additions or VMware Tools when analyzing sophisticated samples, since a lot of malware checks for their presence to know it's being watched (anti-VM, covered in [Lesson 15.5](/technique-reverse/)). Keep your tools on the host or on a read-only shared drive, and don't mix them with the folder that holds samples.
 
 ## Pre-built tools: FLARE-VM and REMnux
 

@@ -21,7 +21,7 @@ The JVM is a stack-based virtual machine, unlike x86 which is register-based. Th
 
 ## Reading some real bytecode
 
-![Stack-based JVM bytecode vs register-based DEX bytecode](/assets/img/technique-reverse/assets/phan-06/dex-vs-jvm.svg)
+![Stack-based JVM bytecode vs register-based DEX bytecode](/assets/img/re/part-06/dex-vs-jvm.svg)
 
 Take a method that adds two numbers:
 
@@ -94,7 +94,7 @@ Android doesn't run `.class` directly. It compiles them into DEX (Dalvik Executa
 
 ## Lab
 
-See the instructions at [labs/6.1](https://github.com/Haind03/Technique-Reverse/blob/main/labs/6.1). In short: compile a small Java file, use `javap -c` to view the bytecode, then decompile it again with JADX or CFR and compare it with the original source. Get a feel for how well the decompiler recovers things.
+See the instructions at `labs/6.1`. In short: compile a small Java file, use `javap -c` to view the bytecode, then decompile it again with JADX or CFR and compare it with the original source. Get a feel for how well the decompiler recovers things.
 
 ## Key takeaways
 Java compiles to JVM bytecode (not machine code), so `.class` keeps method/field/type names intact. The JVM is a stack-based virtual machine: operands get pushed onto the stack and then instructions pop them to process. The constant pool holds every string and referenced name, so reading it shows you all the clues, and `javap -c` shows the bytecode, where the instruction prefix (`i` for int, `a` for reference) tells you the type.

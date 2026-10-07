@@ -7,7 +7,7 @@ render_with_liquid: false
 ---
 Last lesson you read a simple function. But real functions take parameters, have local variables, and call other functions. All of that happens on the stack following a set of rules called a calling convention. Once you know these rules, looking at a `call` tells you which parameters are being passed, what the function returns, and where the locals live. Without them, you'll be guessing all afternoon.
 
-![Stack frame of a function call: parameters, return address, saved rbp, locals, shadow space](/assets/img/technique-reverse/assets/phan-01/stack-frame.svg)
+![Stack frame of a function call: parameters, return address, saved rbp, locals, shadow space](/assets/img/re/part-01/stack-frame.svg)
 
 ## What call and ret really do
 
@@ -118,7 +118,7 @@ You just did two things: recognized three parameters from rcx/rdx/r8 (so you kno
 
 ## Lab
 
-The folder [labs/1.4/](https://github.com/Haind03/Technique-Reverse/blob/main/labs/1.4) has a C file with a few functions taking different numbers of parameters. The task: build with `-O0` on both Windows (or picture Win64) and Linux, then open it in IDA/Ghidra/objdump and confirm yourself which registers the parameters are in on each system, where the shadow space is, and which are the locals. The answer is in `solution.md`, but try comparing on your own first.
+The folder `labs/1.4/` has a C file with a few functions taking different numbers of parameters. The task: build with `-O0` on both Windows (or picture Win64) and Linux, then open it in IDA/Ghidra/objdump and confirm yourself which registers the parameters are in on each system, where the shadow space is, and which are the locals. The answer is in `solution.md`, but try comparing on your own first.
 
 ## Key takeaways
 `call` pushes the return address on the stack then jumps, and `ret` pops it and goes back. The prologue `push rbp; mov rbp, rsp` marks the start of a function and `leave; ret` marks the end. On Win64, parameters 1-4 are in `rcx, rdx, r8, r9` with 32 bytes of shadow space and the return in `rax`. On System V (Linux/macOS), parameters 1-6 are in `rdi, rsi, rdx, rcx, r8, r9` and the return is in `rax`.

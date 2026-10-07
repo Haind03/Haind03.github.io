@@ -9,7 +9,7 @@ Every `.exe`, `.dll`, `.sys` on Windows follows the same mold called PE (Portabl
 
 ## The big picture first
 
-![PE file structure: DOS header, PE signature, File header, Optional header, section table and sections](/assets/img/technique-reverse/assets/phan-01/pe-structure.svg)
+![PE file structure: DOS header, PE signature, File header, Optional header, section table and sections](/assets/img/re/part-01/pe-structure.svg)
 
 A PE file is laid out sequentially like this, from offset 0 down:
 
@@ -104,7 +104,7 @@ That's enough theory. Open PE-bear (or CFF Explorer), drag an exe in, and you'll
 
 ## Lab
 
-See [labs/1.7/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/1.7). The tasks include finding the entry point by hand, listing the sections, reading the IAT of an exe on your machine, and an exercise converting RVA to file offset using the formula above. A sample solution is in `solution.md`, but do it before you open it.
+See `labs/1.7/`. The tasks include finding the entry point by hand, listing the sections, reading the IAT of an exe on your machine, and an exercise converting RVA to file offset using the formula above. A sample solution is in `solution.md`, but do it before you open it.
 
 ## Key takeaways
 A PE file starts with "MZ" (`4D 5A`), and `e_lfanew` at offset 0x3C points to the NT headers, which start with "PE\0\0". Machine tells x86 (0x14C) from x64 (0x8664), AddressOfEntryPoint is where code starts, and ImageBase is the preferred base.

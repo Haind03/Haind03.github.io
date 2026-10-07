@@ -39,7 +39,7 @@ Tip: a simple block diagram drawn by hand or in a notes file, one line per block
 
 ### 4. Deep analysis of the main components
 
-Only now do you dig. For each question from step 1, go into the block you carved out and apply the right technique. For a check algorithm or crypto, identify constants ([Lesson 16.1](/posts/re-16-1-identifying-crypto-algorithms-by-their-constants/)) and rewrite in Python or solve with Z3 ([Lesson 16.4](/posts/re-16-4-rewriting-algorithm-python-letting-z3-solve/)). For a protection layer, unpack ([Part 14](https://github.com/Haind03/Technique-Reverse/tree/main/phan-14-packer-obfuscation)) and get past anti-debug ([Part 15](https://github.com/Haind03/Technique-Reverse/tree/main/phan-15-anti-reverse)). For a data format or protocol, rebuild the spec ([Lesson 18.7](/posts/re-18-7-reversing-network-protocols-proprietary-file-formats/)). And confirm hypotheses dynamically by setting breakpoints, looking at real values, or hooking with Frida ([Lesson 17.2](/posts/re-17-2-frida-full-inspecting-modifying-program-while/)).
+Only now do you dig. For each question from step 1, go into the block you carved out and apply the right technique. For a check algorithm or crypto, identify constants ([Lesson 16.1](/posts/re-16-1-identifying-crypto-algorithms-by-their-constants/)) and rewrite in Python or solve with Z3 ([Lesson 16.4](/posts/re-16-4-rewriting-algorithm-python-letting-z3-solve/)). For a protection layer, unpack ([Part 14](/technique-reverse/)) and get past anti-debug ([Part 15](/technique-reverse/)). For a data format or protocol, rebuild the spec ([Lesson 18.7](/posts/re-18-7-reversing-network-protocols-proprietary-file-formats/)). And confirm hypotheses dynamically by setting breakpoints, looking at real values, or hooking with Frida ([Lesson 17.2](/posts/re-17-2-frida-full-inspecting-modifying-program-while/)).
 
 Keep repeating static then dynamic then notes until you've answered all the questions.
 
@@ -57,7 +57,7 @@ After that comes the program architecture, the overall map of the components and
 
 The golden rule is that every claim needs evidence. "The program encrypts with RC4" is just an empty sentence until you point out which address the KSA function is at. Don't guess and then write it as if proven.
 
-The full template to fill in is at [labs/20.3/bao-cao-mau.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/20.3/bao-cao-mau.md).
+The full template to fill in is at `labs/20.3/bao-cao-mau.md`.
 
 ## Key takeaways
 Pick a right-sized and legal target, not too easy and not too hard. Start with concrete questions and don't take on "reverse everything". Triage, map, and only then dig deep in the right place, repeating static and dynamic.

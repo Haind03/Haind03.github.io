@@ -71,4 +71,4 @@ A raw dump doesn't run because it has the IAT values but lost the import directo
 If Autosearch is wrong, find the IAT by hand from a `call [address]` in the unpacked code. Always dump at the correct OEP, because a wrong OEP ruins the whole file.
 
 ## Lab
-See [labs/14.3/](https://github.com/Haind03/Technique-Reverse/blob/main/labs/14.3/README.md). Continuing from the file you unpacked by hand in lab 14.2, use Scylla to dump it and fix the IAT into a standalone runnable file.
+See `labs/14.3/`. Continuing from the file you unpacked by hand in lab 14.2, use Scylla to dump it and fix the IAT into a standalone runnable file.

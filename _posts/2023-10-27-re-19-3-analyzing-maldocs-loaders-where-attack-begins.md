@@ -78,7 +78,7 @@ import base64, gzip
 print(gzip.decompress(base64.b64decode(enc)).decode())
 ```
 
-Lab [19.3](https://github.com/Haind03/Technique-Reverse/tree/main/labs/19.3) has benign sample strings for you to practice exactly these two patterns.
+Lab `19.3` has benign sample strings for you to practice exactly these two patterns.
 
 ## A compact workflow
 

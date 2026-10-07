@@ -85,7 +85,7 @@ Your job is just to reverse to get exactly three things: which algorithm, where 
 
 ## Lab
 
-The folder [labs/16.3/](https://github.com/Haind03/Technique-Reverse/blob/main/labs/16.3): a program that encrypts a flag with TEA. Your task is to recognize TEA through the delta in the disassembly, get the key, then write Python to decrypt it. The solution and the verification script are in `solution.md`.
+The folder `labs/16.3/`: a program that encrypts a flag with TEA. Your task is to recognize TEA through the delta in the disassembly, get the key, then write Python to decrypt it. The solution and the verification script are in `solution.md`.
 
 ## Key takeaways
 TEA/XTEA is recognized by the delta `0x9E3779B9`, 32 rounds, and shl 4 / shr 5, and it's easy to decrypt because it's symmetric. AES shows an S-box starting `63 7C 77 7B` (or 4 T-tables) and 10/12/14 rounds. ChaCha/Salsa has the string "expand 32-byte k" and is all add-rotate-XOR. DES has 8 small S-boxes, many permutation tables, and 16 Feistel rounds.

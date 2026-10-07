@@ -25,7 +25,7 @@ Because what's on disk is IL and not machine code, and IL is at a much higher le
 
 ## CLR, IL, metadata: three pieces
 
-![.NET architecture: source to IL plus metadata, JIT to native, dnSpy decompiles back](/assets/img/technique-reverse/assets/phan-05/dotnet-arch.svg)
+![.NET architecture: source to IL plus metadata, JIT to native, dnSpy decompiles back](/assets/img/re/part-05/dotnet-arch.svg)
 
 The CLR (Common Language Runtime) is the virtual machine that runs .NET programs, a role like the JVM for Java. It loads assemblies, JITs, manages memory (the garbage collector), and does type safety checks. Code running on the CLR is called **managed code**.
 
@@ -76,13 +76,13 @@ The last point is very important: the only thing standing between you and .NET s
 
 ## Tools
 
-ILSpy and dnSpy are both included in this repo (the parent folder `ILSpy_binaries_9.0.0...` and `dnSpy-net-win64`). ILSpy specializes in decompiling and viewing IL, while dnSpy is strong in that it can also debug and edit assemblies. Lessons [5.2](https://github.com/Haind03/Technique-Reverse/blob/main/phan-05-csharp-dotnet/5.2-ilspy-dnspy.md) and [5.3](https://github.com/Haind03/Technique-Reverse/blob/main/phan-05-csharp-dotnet/5.3-debug-net-dnspy.md) go deeper. ildasm (comes with the Windows SDK) outputs IL as text and ilasm assembles it back, ilspycmd is the command-line version of ILSpy and is handy for automation, and JetBrains' dotPeek is another free decompiler.
+ILSpy and dnSpy are both included in this repo (the parent folder `ILSpy_binaries_9.0.0...` and `dnSpy-net-win64`). ILSpy specializes in decompiling and viewing IL, while dnSpy is strong in that it can also debug and edit assemblies. Lessons [5.2](/posts/re-5-2-ilspy-dnspy-when-decompiling-gives-back/) and [5.3](/posts/re-5-3-debugging-net-without-source-using-dnspy/) go deeper. ildasm (comes with the Windows SDK) outputs IL as text and ilasm assembles it back, ilspycmd is the command-line version of ILSpy and is handy for automation, and JetBrains' dotPeek is another free decompiler.
 
 They all read the same thing: the IL and metadata in the assembly. They differ in interface and in the ability to edit.
 
 ## Lab
 
-See [labs/5.1/](https://github.com/Haind03/Technique-Reverse/blob/main/labs/5.1). You'll use DIE to recognize a file as .NET, then open it in ILSpy or dnSpy to see the IL and metadata with your own eyes. If your machine doesn't have the dotnet SDK, just use `ILSpy.dll` itself or the .NET DLLs in the repo as samples to look at.
+See `labs/5.1/`. You'll use DIE to recognize a file as .NET, then open it in ILSpy or dnSpy to see the IL and metadata with your own eyes. If your machine doesn't have the dotnet SDK, just use `ILSpy.dll` itself or the .NET DLLs in the repo as samples to look at.
 
 ## Key takeaways
 A .NET file on disk contains IL bytecode plus metadata, not machine code, and machine code is only produced at runtime by the JIT. A .NET assembly is still a PE, but the code sits behind the CLI header and not in the usual .text section. Metadata keeps type/method/field names intact, so decompiling gives nearly the original source.

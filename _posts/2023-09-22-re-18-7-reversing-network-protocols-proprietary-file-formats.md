@@ -62,7 +62,7 @@ This technique is the foundation of extracting configs and understanding malware
 
 ## Lab
 
-The folder [`labs/18.7/`](https://github.com/Haind03/Technique-Reverse/tree/main/labs/18.7). You'll run `make_savefile.py` to create three `.sav` files that differ in one detail each, use differential on the hexdump to work out the structure yourself, write your own parser, then compare with `parse_savefile.py`. There's also a part on building an ImHex pattern.
+The folder `labs/18.7/`. You'll run `make_savefile.py` to create three `.sav` files that differ in one detail each, use differential on the hexdump to work out the structure yourself, write your own parser, then compare with `parse_savefile.py`. There's also a part on building an ImHex pattern.
 
 ## Key takeaways
 Differential is weapon number one: create samples that differ in one detail, and the byte that changes is that field. Every format anchors on a magic number at the start, so find it first. There are three common molds: fixed field, length-prefixed (a length number then data), and repeated records/TLV.

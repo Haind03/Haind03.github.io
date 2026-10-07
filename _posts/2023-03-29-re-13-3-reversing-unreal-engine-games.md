@@ -71,7 +71,7 @@ The key point to remember: Unreal is harder than Unity because there's no "open 
 
 ## Lab
 
-See [labs/13.3/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/13.3). The task: with an offline Unreal game of yours, browse the `.pak` with FModel (get the AES key if it's encrypted), then inject UE4SS to dump the SDK and find a class in the live viewer.
+See `labs/13.3/`. The task: with an offline Unreal game of yours, browse the `.pak` with FModel (get the AES key if it's encrypted), then inject UE4SS to dump the SDK and find a class in the live viewer.
 
 ## Key takeaways
 Unreal is native C++, so the logic is in the big exe and you open it in IDA/Ghidra like a C++ program (Part 4). You identify it by `-Shipping.exe`, `Content/Paks/*.pak`, `/Game/` strings, and U/A/F classes. Assets in .pak are browsed with FModel/UModel, and you need the AES key if the index is encrypted.

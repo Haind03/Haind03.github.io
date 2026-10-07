@@ -9,7 +9,7 @@ You write exactly three lines of C, compile, and open it in Ghidra. You should s
 
 ## Why there's a pile of code before main
 
-![From entry point through CRT startup to the real main](/assets/img/technique-reverse/assets/phan-03/crt-to-main.svg)
+![From entry point through CRT startup to the real main](/assets/img/re/part-03/crt-to-main.svg)
 
 When the operating system loads the program, it doesn't jump straight into `main`. It jumps to the entry point recorded in the header (the `AddressOfEntryPoint` field of the PE, or `e_entry` of the ELF). This entry point points at the C runtime (CRT) init code, not code you wrote.
 
@@ -83,11 +83,11 @@ IDA Pro has FLIRT signature libraries that recognize CRT and standard library fu
 
 ## Lab
 
-Source code and instructions: [labs/3.1/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/3.1).
+Source code and instructions: `labs/3.1/`.
 
 The task is to build the same `hello.c` with `gcc` (Linux) and MSVC (Windows), then open it in Ghidra or IDA and start from the entry point. Trace to the real `main` yourself in two ways, following `__libc_start_main` or the 3-parameter function, and working backwards from the string. Finally, compare the amount of CRT code before main between the two compilers.
 
-The detailed solution is in [labs/3.1/solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/3.1/solution.md), but do it yourself first.
+The detailed solution is in `labs/3.1/solution.md`, but do it yourself first.
 
 ## Key takeaways
 The entry point in the header points to CRT startup, not your `main`. The CRT sets up the environment, gets argc/argv/envp, runs global constructors, and only then calls `main`. On Linux, find `call __libc_start_main` and `main` is the parameter in **rdi**. On Windows there's no nicely named function, so start from strings (xref) or find the function taking 3 parameters argc/argv/envp.

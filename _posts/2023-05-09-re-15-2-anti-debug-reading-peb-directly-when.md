@@ -73,7 +73,7 @@ Usually ScyllaHide is the first choice because it covers almost the whole PEB gr
 
 ## Lab
 
-The folder [labs/15.2/](https://github.com/Haind03/Technique-Reverse/blob/main/labs/15.2). It has `peb_check.c`, which reads BeingDebugged and NtGlobalFlag directly through the PEB. The task: build it, run it normally (reports not debugged), run it under x64dbg (reports debugged), then find the `gs:[0x60]` read in the disassembly and get past it by editing the flags or using ScyllaHide. Instructions are in the lab's README.
+The folder `labs/15.2/`. It has `peb_check.c`, which reads BeingDebugged and NtGlobalFlag directly through the PEB. The task: build it, run it normally (reports not debugged), run it under x64dbg (reports debugged), then find the `gs:[0x60]` read in the disassembly and get past it by editing the flags or using ScyllaHide. Instructions are in the lab's README.
 
 ## Key takeaways
 The PEB can be accessed without an API: `gs:[0x60]` (x64), `fs:[0x30]` (x86), and when you see it, be alert. BeingDebugged is at offset `0x2` and is 1 when debugged. NtGlobalFlag is at offset `0xBC` (x64), the three heap debug bits add up to `0x70`, and it's set by the loader and not by the code. Heap Flags/ForceFlags are nonzero when a debugger is present, though that check is picky about the Windows version.

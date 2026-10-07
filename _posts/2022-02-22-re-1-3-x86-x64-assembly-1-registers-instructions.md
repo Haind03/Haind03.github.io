@@ -121,7 +121,7 @@ ret             ; return to the caller
 
 ### nop: does nothing, but very useful
 
-`nop` (no operation) does nothing at all. Sounds useless but it's the number one patching tool: when you want to "delete" an annoying check without shifting other addresses, you overwrite it with `nop`. Lesson [17.1](https://github.com/Haind03/Technique-Reverse/tree/main/phan-17-patch-hook-frida) uses it a lot.
+`nop` (no operation) does nothing at all. Sounds useless but it's the number one patching tool: when you want to "delete" an annoying check without shifting other addresses, you overwrite it with `nop`. Lesson [17.1](/posts/re-17-1-patching-binaries-changing-one-byte-change/) uses it a lot.
 
 ## Reading a real snippet
 

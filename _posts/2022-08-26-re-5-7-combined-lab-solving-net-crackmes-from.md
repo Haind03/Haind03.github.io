@@ -7,7 +7,7 @@ render_with_liquid: false
 ---
 The last five lessons were theory and individual operations. This one puts it all together into a complete .NET reversing session, through three crackmes that get harder. If you can do all three, the .NET part counts as done for the basics.
 
-The source code and detailed tasks are at [labs/5.7/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/5.7). Here I walk through the thinking, and you go down to the lab and do it by hand before opening the solution.
+The source code and detailed tasks are at `labs/5.7/`. Here I walk through the thinking, and you go down to the lab and do it by hand before opening the solution.
 
 All three use the ILSpy and dnSpy already in the repo (the parent folder). You need the .NET SDK to build them into `.dll` form, and then you take apart your own product.
 

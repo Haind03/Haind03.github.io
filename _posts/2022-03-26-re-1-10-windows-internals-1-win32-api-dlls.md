@@ -86,7 +86,7 @@ A few quick ways to look at imports. DIE has an Import tab that lists DLLs and f
 
 ## Lab
 
-The exercise is at [labs/1.10/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/1.10): open the imports of a few different exes and practice guessing their functionality from the API list alone, and put each function into the right purpose group. A sample writeup is in `solution.md`.
+The exercise is at `labs/1.10/`: open the imports of a few different exes and practice guessing their functionality from the API list alone, and put each function into the right purpose group. A sample writeup is in `solution.md`.
 
 ## Key takeaways
 The Win32 API lives in DLLs (kernel32, user32, advapi32, ntdll...), and the exe calls into them to ask Windows to do things. kernel32 usually calls down into ntdll and then syscalls into the kernel, so calling Nt*/syscall directly is suspicious. The suffix A means ANSI and W means Unicode UTF-16 (with interleaved 00 bytes in memory).

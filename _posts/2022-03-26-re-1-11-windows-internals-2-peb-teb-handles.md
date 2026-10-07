@@ -40,7 +40,7 @@ test eax, eax
 jne  found_debugger       ; non-zero: being debugged
 ```
 
-If you can read this snippet, you recognize a classic anti-debug trick, covered in detail in [Lesson 15.2](https://github.com/Haind03/Technique-Reverse/tree/main/phan-15-anti-reverse). The simplest way around it while debugging is to set that byte to 0.
+If you can read this snippet, you recognize a classic anti-debug trick, covered in detail in [Lesson 15.2](/technique-reverse/). The simplest way around it while debugging is to set that byte to 0.
 
 ### Ldr, the list of loaded modules
 
@@ -68,7 +68,7 @@ Every process carries an access token describing identity and rights: which user
 
 ## Lab
 
-Details in [labs/1.11/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/1.11). In short, open any process in x64dbg, use a command to jump to the PEB, find the `BeingDebugged` byte and confirm it equals 1 (because it's being debugged). Then open Process Hacker or System Informer, look at the Handles tab of a process, and find the mutexes and files it's holding. Finally, check the offsets you see against the offset table in [solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/1.11/solution.md).
+Details in `labs/1.11/`. In short, open any process in x64dbg, use a command to jump to the PEB, find the `BeingDebugged` byte and confirm it equals 1 (because it's being debugged). Then open Process Hacker or System Informer, look at the Handles tab of a process, and find the mutexes and files it's holding. Finally, check the offsets you see against the offset table in `solution.md`.
 
 ## Key takeaways
 The TEB (per thread) and PEB (per process) sit right in process memory, reachable via `gs:[0x60]` (x64) or `fs:[0x30]` (x86) with no API needed. Seeing those in code means it's touching the PEB, usually for anti-debug or sneaky API resolution. BeingDebugged (+2) is the guts of `IsDebuggerPresent`, and Ldr holds the list of loaded modules.

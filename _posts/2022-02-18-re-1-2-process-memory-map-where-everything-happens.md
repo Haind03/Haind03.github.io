@@ -17,7 +17,7 @@ The practical consequence: to read or write another process's memory (the founda
 
 ## The memory map of a process
 
-![Process memory map: code, data, heap growing up, stack growing down, libraries](/assets/img/technique-reverse/assets/phan-01/bo-nho-tien-trinh.svg)
+![Process memory map: code, data, heap growing up, stack growing down, libraries](/assets/img/re/part-01/process-memory.svg)
 
 The address space is split into several regions, each with its own job. From low to high, roughly:
 

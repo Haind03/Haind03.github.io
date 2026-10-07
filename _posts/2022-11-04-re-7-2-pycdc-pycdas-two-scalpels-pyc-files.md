@@ -121,7 +121,7 @@ Run `pycdas file.pyc` first to learn the version and look at Names/Constants ove
 
 ## Lab
 
-The folder [labs/7.2/](https://github.com/Haind03/Technique-Reverse/blob/main/labs/7.2) has instructions to build pycdc and run it on exactly the sample files in the repo (`ok.pyc`, `out_sequencer.pyc`, `apple_collector_game.pyc`) so you can see all three outcomes yourself: a clean decompile, a failed decompile because of a new version, and a header error. `solution.md` comes with the real output.
+The folder `labs/7.2/` has instructions to build pycdc and run it on exactly the sample files in the repo (`ok.pyc`, `out_sequencer.pyc`, `apple_collector_game.pyc`) so you can see all three outcomes yourself: a clean decompile, a failed decompile because of a new version, and a header error. `solution.md` comes with the real output.
 
 ## Key takeaways
 pycdc rebuilds source and pycdas dumps bytecode, and neither needs a Python runtime of the exact version. Build with cmake + make in a few minutes if the prebuilt version has library errors. `Unsupported opcode` or `WARNING: Decompyle incomplete` means you shouldn't trust the source pycdc printed, so switch to pycdas. pycdc is weak with Python 3.12/3.13, which is a real limitation, not something you did wrong.

@@ -39,7 +39,7 @@ A detail that often confuses beginners: VB6 uses BSTR for strings, which are Uni
 
 ## Lab
 
-See [labs/10.2/](https://github.com/Haind03/Technique-Reverse/blob/main/labs/10.2). The task is to identify a VB6 exe through the `msvbvm60.dll` import, work out whether it's P-Code or native, then use VB Decompiler to open the forms and find the event handler holding the check logic.
+See `labs/10.2/`. The task is to identify a VB6 exe through the `msvbvm60.dll` import, work out whether it's P-Code or native, then use VB Decompiler to open the forms and find the event handler holding the check logic.
 
 ## Key takeaways
 The `msvbvm60.dll` import is a sure sign of VB6, which is completely different from VB.NET running on the CLR. VB6 has two modes, P-Code (bytecode running on the runtime, little real x86) and Native (real x86 but flooded with `__vba*` calls), and counterintuitively P-Code is usually easier to recover to near-source than native. VB Decompiler is the central tool, since it rebuilds forms and event handlers, decompiles P-Code, and annotates native. VB6 strings are BSTR (Unicode with a length prefix), compared through `__vbaStrCmp`.

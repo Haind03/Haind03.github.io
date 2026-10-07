@@ -15,7 +15,7 @@ Malware and CTF binaries very often link statically, partly to run on any machin
 
 ## FLIRT, when IDA names the familiar functions itself
 
-![FLIRT signature: before and after applying](/assets/img/technique-reverse/assets/phan-03/flirt.svg)
+![FLIRT signature: before and after applying](/assets/img/re/part-03/flirt.svg)
 
 FLIRT (Fast Library Identification and Recognition Technology) is IDA's mechanism for recognizing a known library function and renaming it automatically. The idea is simple: each compiled libc function has a characteristic byte "fingerprint" (the pattern of the first bytes of the function, ignoring the address parts that change on relocation). IDA keeps a store of signatures for many compiler and libc versions. During analysis, it compares each function against the store, and where one matches it changes `sub_401A20` to `strlen` and colors it differently.
 
@@ -95,7 +95,7 @@ Open a C binary, and before reading any function, check whether the file is stat
 
 ## Lab
 
-See [labs/3.4/](https://github.com/Haind03/Technique-Reverse/blob/main/labs/3.4). You'll build the same program in static and dynamic forms, open the static one in IDA to see the forest of functions, then apply the libc FLIRT and count how many functions get named, compared to the tidy dynamic version.
+See `labs/3.4/`. You'll build the same program in static and dynamic forms, open the static one in IDA to see the forest of functions, then apply the libc FLIRT and count how many functions get named, compared to the tidy dynamic version.
 
 ## Key takeaways
 Static linking stuffs libc code into the file and bloats the function table to thousands, most of which isn't the author's code. FLIRT in IDA recognizes and names library functions by byte fingerprint; apply it via `Shift+F5` and pick the set matching the compiler. A wrong set names nothing, which is harmless, so just try another. For unfamiliar libraries you can make your own signatures with FLAIR (`pelf`/`plb` + `sigmake`), while Ghidra uses FunctionID with narrower coverage, so practice recognizing by eye.

@@ -114,4 +114,4 @@ Kotlin compiles to the same bytecode as Java, so JADX shows Java and the origina
 A data class gives itself away through `component1/2...`, `copy`, and `equals`/`hashCode`/`toString` per field. An extension function becomes a static method with a `$this$...` parameter. Coroutines become a state machine with `label` + `switch`, so read each `case` in order like the sequential steps of the source.
 
 ## Lab
-Practice at [labs/6.5/](https://github.com/Haind03/Technique-Reverse/blob/main/labs/6.5/README.md): open a Kotlin app in JADX and recognize each of the patterns above yourself.
+Practice at `labs/6.5/`: open a Kotlin app in JADX and recognize each of the patterns above yourself.

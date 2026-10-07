@@ -118,7 +118,7 @@ The first is a version mismatch between frida-server and frida-tools, which give
 
 ## Lab
 
-See [labs/6.6/](https://github.com/Haind03/Technique-Reverse/blob/main/labs/6.6). You'll hook a method in a practice app of your own to change the return value, and watch the app change behavior accordingly. The file `src/hook.js` is a sample script for you to edit.
+See `labs/6.6/`. You'll hook a method in a practice app of your own to change the return value, and watch the app change behavior accordingly. The file `src/hook.js` is a sample script for you to edit.
 
 ## Key takeaways
 Frida has frida-server on the device and frida/objection on the host, and the versions on both sides must match. The core pattern is `Java.perform` then `Java.use("class").method.implementation = function(){...}`. Call `this.method(...)` to run the original, which you use when you only want to log without changing behavior, and overloaded methods must be specified with `.overload(...)`.

@@ -55,11 +55,11 @@ If you come from IDA, most concepts are the same but the names and shortcuts dif
 
 A few points IDA people often trip on. Ghidra does not open the decompiler with F5, because the decompiler is a panel that's always showing and you just click the function. Undo/Redo in Ghidra is Ctrl+Z/Ctrl+Y and it remembers analysis operations too, which is stronger than IDA on this point. And Ghidra saves automatically into the project, but remember File > Save (Ctrl+S) before closing to be safe.
 
-On power: IDA's decompiler (Hex-Rays) usually produces slightly smoother code, especially with heavily optimized code, but Ghidra is free and the quality is very close, and the scripting side (Java or Python) for automation is extremely powerful, covered in [Lesson 18.1](https://github.com/Haind03/Technique-Reverse/tree/main/phan-18-nang-cao). For a learner, Ghidra loses nothing significant.
+On power: IDA's decompiler (Hex-Rays) usually produces slightly smoother code, especially with heavily optimized code, but Ghidra is free and the quality is very close, and the scripting side (Java or Python) for automation is extremely powerful, covered in [Lesson 18.1](/technique-reverse/). For a learner, Ghidra loses nothing significant.
 
 ## Lab
 
-The hands-on exercise and writeup are at [labs/2.3/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/2.3). You'll import the same small crackme into Ghidra, run auto-analysis, go from Defined Strings to the check function, rename and retype so the pseudocode is readable, then compare the feel with IDA in [Lesson 2.2](/posts/re-2-2-ida-beginners-master-tool-before-binary/). Doing both tools on the same binary is the fastest way to see where they're alike and different.
+The hands-on exercise and writeup are at `labs/2.3/`. You'll import the same small crackme into Ghidra, run auto-analysis, go from Defined Strings to the check function, rename and retype so the pseudocode is readable, then compare the feel with IDA in [Lesson 2.2](/posts/re-2-2-ida-beginners-master-tool-before-binary/). Doing both tools on the same binary is the fastest way to see where they're alike and different.
 
 ## Key takeaways
 Ghidra makes you create a project first, then import, then Analyze (auto-analysis) before it's usable. The four main windows are Listing (asm), Decompiler (pseudocode), Symbol Tree (functions), and Data Type Manager (types). To get to work fast, use Window > Defined Strings, double-click a string, and press Ctrl+Shift+F to xref to the function that uses it. Rename with L, retype with Ctrl+L, comment with the semicolon, and name things as soon as you understand them. Compared to IDA the concepts are the same but the keys differ, and the decompiler is always showing, so no F5 is needed.

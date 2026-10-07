@@ -95,9 +95,9 @@ All three of these are the compiler generating extra code around the author's re
 
 ## Lab
 
-The folder [labs/4.4/](https://github.com/Haind03/Technique-Reverse/blob/main/labs/4.4). Build `src/modern.cpp`, then find the two instantiations `add_one<int>` and `add_one<double>` in the symbols and compare their asm. Find the lambda's `operator()` and identify which is `this` and which is the capture field. Then mark out the try/catch block by finding the throw call and where the handler sits apart.
+The folder `labs/4.4/`. Build `src/modern.cpp`, then find the two instantiations `add_one<int>` and `add_one<double>` in the symbols and compare their asm. Find the lambda's `operator()` and identify which is `this` and which is the capture field. Then mark out the try/catch block by finding the throw call and where the handler sits apart.
 
-Details and the solution are in the [README](https://github.com/Haind03/Technique-Reverse/blob/main/labs/4.4/README.md) and [solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/4.4/solution.md).
+Details and the solution are in the README and `solution.md`.
 
 ## Key takeaways
 With templates, each type is a separate function in the binary, so many near-identical functions are usually instantiations and not copy-paste. Lambdas become a hidden struct where captures become fields and the body becomes `operator()` with a `this` pointer. With exceptions, try/catch is split into the happy path and separate handlers, linked through unwind tables (.eh_frame/.gcc_except_table on Linux, .pdata/.xdata on Windows). The throw tells are `__cxa_throw` (Linux) and `_CxxThrowException` (MSVC). Don't get lost in the EH tables, since most of the time you only need to know "it may throw here, it's caught there".

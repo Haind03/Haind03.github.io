@@ -52,13 +52,13 @@ The check function sits outside the self-checked region, so editing it doesn't b
 
 The second is to patch the checksum comparison branch. If you don't want to touch the whole function, find the `cmp got, EXPECTED` followed by `jne fail` and invert/NOP that branch. Same idea: make the comparison result always "match".
 
-The third is to patch in memory after the check has run. Let the program self-check at startup (the code on disk is intact so it passes), then use a debugger to edit the code in RAM after that point. The checksum has already run, nobody checks again. This is why runtime patching is sometimes easier than patching on disk, tying back to [Lesson 17.1](https://github.com/Haind03/Technique-Reverse/tree/main/phan-17-patch-hook-frida).
+The third is to patch in memory after the check has run. Let the program self-check at startup (the code on disk is intact so it passes), then use a debugger to edit the code in RAM after that point. The checksum has already run, nobody checks again. This is why runtime patching is sometimes easier than patching on disk, tying back to [Lesson 17.1](/technique-reverse/).
 
 There's a fourth way that's rarely used: recompute `EXPECTED` to match the patched code and overwrite the embedded value. It's only feasible when you understand the checksum algorithm well and can find where the value is stored, and multiple cross-checking layers make it a pain.
 
 ## Where to find the integrity-check function
 
-During static analysis, look for a function that reads its own code section: a pointer pointing into the `.text` region (the address of another function, or the image base) and then looping over every byte. Look for a CRC loop too, with `xor`, `shr`, and a characteristic constant. CRC32 often exposes the polynomial `0xEDB88320`, tying back to how to spot constants in [Lesson 16.1](https://github.com/Haind03/Technique-Reverse/tree/main/phan-16-crypto-thuat-toan). Other signs are comparing the result against a hard-coded 32-bit constant and then branching to exit, and the function being called very early (in initialization, or a TLS callback, see [Lesson 15.4](/posts/re-15-4-advanced-anti-debug-self-debug-tls/)) or called repeatedly many times.
+During static analysis, look for a function that reads its own code section: a pointer pointing into the `.text` region (the address of another function, or the image base) and then looping over every byte. Look for a CRC loop too, with `xor`, `shr`, and a characteristic constant. CRC32 often exposes the polynomial `0xEDB88320`, tying back to how to spot constants in [Lesson 16.1](/technique-reverse/). Other signs are comparing the result against a hard-coded 32-bit constant and then branching to exit, and the function being called very early (in initialization, or a TLS callback, see [Lesson 15.4](/posts/re-15-4-advanced-anti-debug-self-debug-tls/)) or called repeatedly many times.
 
 A dynamic tip: set a breakpoint for when some code reads memory inside its own `.text` region (a read memory breakpoint on the code section). Any function that touches code for a reason other than executing it is very suspicious.
 

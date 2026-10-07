@@ -132,7 +132,7 @@ On older devices and lots of firmware, you'll meet 32-bit ARM (AArch32), where t
 
 ## Lab
 
-See [labs/1.9/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/1.9). You'll cross-compile a small C file to ARM64 and compare the assembly with the source yourself, or if you can't install the toolchain, read the given ARM64 snippet and translate it back to C. The solution is in `labs/1.9/solution.md`, do it yourself before opening it.
+See `labs/1.9/`. You'll cross-compile a small C file to ARM64 and compare the assembly with the source yourself, or if you can't install the toolchain, read the given ARM64 snippet and translate it back to C. The solution is in `labs/1.9/solution.md`, do it yourself before opening it.
 
 ## Key takeaways
 ARM is RISC: simple fixed-length instructions, arithmetic only on registers, and memory access has to go through `ldr`/`str`. The registers are `x0..x30` (64 bit) and `w0..w30` (low 32 bits), with parameters in `x0..x7` and the return in `x0`.

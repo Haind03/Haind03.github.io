@@ -61,7 +61,7 @@ Seeing the pair "read [obj] as a pointer, read [obj+8] as a length" is almost ce
 
 ## std::vector, three pointers say it all
 
-![Layout of std::string with SSO and the three-pointer std::vector](/assets/img/technique-reverse/assets/phan-04/stl-layout.svg)
+![Layout of std::string with SSO and the three-pointer std::vector](/assets/img/re/part-04/stl-layout.svg)
 
 `std::vector` is even easier to recognize. On libstdc++ it's just three pointers, 24 bytes:
 
@@ -108,7 +108,7 @@ Both IDA and Ghidra let you declare the types `std::string` / `std::vector` and 
 
 ## Lab
 
-The folder [labs/4.3/](https://github.com/Haind03/Technique-Reverse/blob/main/labs/4.3). You'll build `containers.cpp`, run it to see the real layout numbers on your own machine, then open it in a debugger and observe SSO and the vector's three pointers with your own eyes. Details in the lab's README, the solution in `solution.md`.
+The folder `labs/4.3/`. You'll build `containers.cpp`, run it to see the real layout numbers on your own machine, then open it in a debugger and observe SSO and the vector's three pointers with your own eyes. Details in the lab's README, the solution in `solution.md`.
 
 ## Key takeaways
 `std::string` (libstdc++, 32 bytes) is [0]=data pointer, [8]=size, [16]=buffer/capacity union. With SSO, strings up to 15 characters live right inside the object, and the data pointer points into the object itself (object+16). `std::vector` is three pointers (24 bytes): start, finish, end_of_storage, and size = (finish-start)/sizeof(T). Seeing "difference of two pointers then divide by element size" means it's computing a vector's size.

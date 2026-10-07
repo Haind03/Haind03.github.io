@@ -128,7 +128,7 @@ This table will go stale, since new tools keep coming out. The principle doesn't
 
 ## Lab
 
-See [labs/7.3/](https://github.com/Haind03/Technique-Reverse/blob/main/labs/7.3). You'll take a `.pyc` file, try several decompilers in turn, see with your own eyes which one refuses which version, then read the bytecode yourself with `dis`/`marshal` to get the answer when tools give up.
+See `labs/7.3/`. You'll take a `.pyc` file, try several decompilers in turn, see with your own eyes which one refuses which version, then read the bytecode yourself with `dis`/`marshal` to get the answer when tools give up.
 
 ## Key takeaways
 No decompiler wins on every version, because Python bytecode keeps changing. uncompyle6 is strong on Python 2.x through 3.8 and decompyle3 patches 3.7 through 3.9 further, but both flatly refuse bytecode that's too new (we saw it drop the 3.11 file). pycdc is runtime-independent, and PyLingual (web, ML) fits newer Python.

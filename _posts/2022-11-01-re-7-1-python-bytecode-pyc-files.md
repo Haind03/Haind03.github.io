@@ -15,7 +15,7 @@ This bytecode doesn't vanish. For imported modules, CPython saves it as a `.pyc`
 
 ## Inside a .pyc file
 
-![.pyc file structure: a 16-byte header and a marshaled code object](/assets/img/technique-reverse/assets/phan-07/pyc-structure.svg)
+![.pyc file structure: a 16-byte header and a marshaled code object](/assets/img/re/part-07/pyc-structure.svg)
 
 A `.pyc` file has two parts: a short header, then a marshaled (serialized) code object.
 

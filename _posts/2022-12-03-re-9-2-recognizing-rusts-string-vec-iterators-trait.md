@@ -75,7 +75,7 @@ In real Rust reversing, this is the least discouraging way to work. Demangle and
 
 ## Lab
 
-See [labs/9.2/](https://github.com/Haind03/Technique-Reverse/blob/main/labs/9.2). You build a small Rust program using `String`, `Vec` and an iterator chain, then observe it in Ghidra to see with your own eyes the glued strings, the three-field structure of `Vec`, and the iterator inlined into a flat loop.
+See `labs/9.2/`. You build a small Rust program using `String`, `Vec` and an iterator chain, then observe it in Ghidra to see with your own eyes the glued strings, the three-field structure of `Vec`, and the iterator inlined into a flat loop.
 
 ## Key takeaways
 String/str and Vec are all pointer plus length (Vec/String add capacity) and not null-terminated. Strings are glued together, and the boundaries are in the length constants in the code. An iterator chain (map/filter/sum) is inlined into a flat loop with no separate functions, so read by behavior and don't look for function names.

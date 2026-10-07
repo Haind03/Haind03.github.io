@@ -13,7 +13,7 @@ This lesson won't teach you every button of the three programs. It only tells yo
 
 Most of the time you won't open a hex editor, because IDA and x64dbg already have their own hex windows. But there are a few situations where a standalone hex editor is much faster and tidier.
 
-One is patching bytes directly in a file. You found in the debugger that a `jne` (opcode `75`) needs to become `je` (opcode `74`), and now you want to edit the file on disk directly so the patch lasts. Open the hex editor, jump to the offset, type over it, save. Done. Patch details are in [Lesson 17.1](https://github.com/Haind03/Technique-Reverse/tree/main/phan-17-patch-hook-frida).
+One is patching bytes directly in a file. You found in the debugger that a `jne` (opcode `75`) needs to become `je` (opcode `74`), and now you want to edit the file on disk directly so the patch lasts. Open the hex editor, jump to the offset, type over it, save. Done. Patch details are in [Lesson 17.1](/technique-reverse/).
 
 Another is fixing a magic number or header, when a file has a few corrupted bytes at the start or someone deliberately changed the magic to hide the file type, and you restore it by hand. A third is reading a file format nobody knows, like a binary config file, a save game, or a homemade container. With no parser, you work out the structure yourself through hex. And the last is quickly checking a file: what are the first four bytes? `4D 5A` is PE, `7F 45 4C 46` is ELF, `50 4B` is ZIP. Often a glance at the start of the file is all you need.
 
@@ -61,7 +61,7 @@ NtHeaders nt  @ dos.e_lfanew;      // place NtHeaders at the offset that e_lfane
 
 Run this pattern on an `.exe` file and ImHex shows `dos.magic = "MZ"`, `dos.e_lfanew = 0x100` (say), then jumps there and reads `nt.signature = "PE"`, `nt.machine = 0x8664`. You just read the architecture and the number of sections without counting bytes by hand. The `@ address` syntax is the charm of the pattern language: you place a struct at an exact offset, even an offset taken from another field.
 
-Once you get this idea, you apply it to every format: write a pattern yourself for a save game, a binary config file, and the tool takes it apart for you. This is exactly the first step of reversing file formats, the topic of [Lesson 18.7](https://github.com/Haind03/Technique-Reverse/tree/main/phan-18-nang-cao).
+Once you get this idea, you apply it to every format: write a pattern yourself for a save game, a binary config file, and the tool takes it apart for you. This is exactly the first step of reversing file formats, the topic of [Lesson 18.7](/technique-reverse/).
 
 ## Quick comparison of the three tools
 
@@ -78,7 +78,7 @@ Short advice: install HxD for quick patches, install ImHex as your main tool. Yo
 
 ## Lab
 
-The exercises and writeup are at [labs/2.7/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/2.7). You'll use ImHex (or 010) to parse a PE file header with a pattern, patch a byte in a small file and observe the change, and write a pattern yourself for a simple file format.
+The exercises and writeup are at `labs/2.7/`. You'll use ImHex (or 010) to parse a PE file header with a pattern, patch a byte in a small file and observe the change, and write a pattern yourself for a simple file format.
 
 ## Key takeaways
 A hex editor is for when you need to see and edit down to the byte: patching bytes, fixing magic/headers, reading unfamiliar formats. You can quickly recognize a file from its start: `4D 5A` is PE, `7F 45 4C 46` is ELF, `50 4B` is ZIP.

@@ -31,7 +31,7 @@ This group confuses beginners the most. A packer (or "app shielding", "DEX prote
 
 Common packers (mostly from China because of the app market there) are Bangcle (SecShell), Qihoo Jiagu, Tencent Legu, Ali (Alibaba) protection, and Baidu. Many are free so malware uses them too.
 
-There are several signs an app is packed. Opening JADX shows almost nothing: only an odd Application class and a few class loaders, with no business logic anywhere. In `AndroidManifest.xml`, the `application` tag points to an odd packer `android:name` class (for example `com.secshell.shellwrapper...`, `com.stub.StubApp`, `com.qihoo...`), which is the loader that runs first. There's an oddly named `.so` file in `lib/`, and a large unexplained file in `assets/` (the encrypted DEX itself). The `classes.dex` is abnormally small for the complexity of the app, and the entropy of the file in assets is very high (a sign of compression/encryption, like PE packers in [Lesson 14.1](https://github.com/Haind03/Technique-Reverse/tree/main/phan-14-packer-obfuscation)).
+There are several signs an app is packed. Opening JADX shows almost nothing: only an odd Application class and a few class loaders, with no business logic anywhere. In `AndroidManifest.xml`, the `application` tag points to an odd packer `android:name` class (for example `com.secshell.shellwrapper...`, `com.stub.StubApp`, `com.qihoo...`), which is the loader that runs first. There's an oddly named `.so` file in `lib/`, and a large unexplained file in `assets/` (the encrypted DEX itself). The `classes.dex` is abnormally small for the complexity of the app, and the entropy of the file in assets is very high (a sign of compression/encryption, like PE packers in [Lesson 14.1](/technique-reverse/)).
 
 ## Strategy for removing a packer: dump the DEX at runtime
 
@@ -48,7 +48,7 @@ frida-dexdump -U -n app_name
 
 The result is one or more `.dex` files. Drag them into JADX and you see the real code. For stubborn packers that decrypt piece by piece (lazy), you may need to use the app for a while so the parts all load before dumping, or use more specialized tools (the upgraded FRIDA-DEXDUMP, or dedicated unpackers for each packer family).
 
-This approach is an example of the general principle in unpacking: don't try to decrypt manually, let the program decrypt itself and take the result. You'll meet this exact mindset again with PE packers in [Lesson 14.2](https://github.com/Haind03/Technique-Reverse/tree/main/phan-14-packer-obfuscation).
+This approach is an example of the general principle in unpacking: don't try to decrypt manually, let the program decrypt itself and take the result. You'll meet this exact mindset again with PE packers in [Lesson 14.2](/technique-reverse/).
 
 ## When you meet an unfamiliar app, ask in order
 
@@ -56,7 +56,7 @@ Open JADX first and check whether you see business logic. If you do but it's onl
 
 ## Lab
 
-See [labs/6.8/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/6.8): identify whether an APK is obfuscated or packed purely from the signs, and if there's a packer, dump the DEX with frida-dexdump and reopen it in JADX. The file [solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/6.8/solution.md) has the writeup.
+See `labs/6.8/`: identify whether an APK is obfuscated or packed purely from the signs, and if there's a packer, dump the DEX with frida-dexdump and reopen it in JADX. The file `solution.md` has the writeup.
 
 ## Key takeaways
 Tell obfuscation (code still there, just hard to read) from packing (code hidden, only expanded at runtime), because they're handled differently. R8/ProGuard is mostly renaming, the logic is still readable, and mapping.txt belongs to whoever built it. DexGuard and commercial obfuscators add string encryption, control flow, and anti-debug, so use dynamic analysis to decrypt strings.

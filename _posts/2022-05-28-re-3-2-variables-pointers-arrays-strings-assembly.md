@@ -7,7 +7,7 @@ render_with_liquid: false
 ---
 C code revolves around four things: variables, pointers, arrays, strings. The compiler turns all of them into similar-looking memory accesses, so at a glance they're easy to mix up. But each kind has its own fingerprint in assembly. Learn to recognize them and you can read most C code without the source.
 
-All the asm below is real output of `gcc -O0` on the file [labs/3.2/src/datatypes.c](https://github.com/Haind03/Technique-Reverse/blob/main/labs/3.2/src/datatypes.c), Intel syntax, System V (Linux). On Windows the order of parameter registers is different (rcx, rdx...) but the idea is identical.
+All the asm below is real output of `gcc -O0` on the file `labs/3.2/src/datatypes.c`, Intel syntax, System V (Linux). On Windows the order of parameter registers is different (rcx, rdx...) but the idea is identical.
 
 ## Local and global variables live in two different places
 
@@ -34,7 +34,7 @@ In one sentence: `[rbp-x]` is local, `[rip+x]` (or an absolute address in .data/
 
 ## Pointers: the value is an address
 
-![Pointers and arrays in memory](/assets/img/technique-reverse/assets/phan-03/con-tro-mang.svg)
+![Pointers and arrays in memory](/assets/img/re/part-03/pointers-arrays.svg)
 
 There's nothing mystical about a pointer: it's a variable whose value is an address. What confuses beginners is the dereference step, taking the value at that address. In assembly, a dereference is always a two-step pair: load the pointer into a register, then access through that register's brackets.
 
@@ -99,7 +99,7 @@ Every time you change a variable to `char *` or `int[5]`, the decompiler updates
 
 ## Lab
 
-Source code and instructions at [labs/3.2/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/3.2). Summary: build `datatypes.c` with `-O0`, open it in IDA or Ghidra, then point out by hand in each function which is a global variable, a local variable, a pointer dereference, the array access formula, and the string-handling loop. The full comparison writeup is at [labs/3.2/solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/3.2/solution.md), but do it yourself first.
+Source code and instructions at `labs/3.2/`. Summary: build `datatypes.c` with `-O0`, open it in IDA or Ghidra, then point out by hand in each function which is a global variable, a local variable, a pointer dereference, the array access formula, and the string-handling loop. The full comparison writeup is at `labs/3.2/solution.md`, but do it yourself first.
 
 ## Key takeaways
 `[rbp-x]` is a local variable, while `[rip+x]` or a fixed address in .data/.bss is a global variable. A pointer is a variable holding an address, and a dereference is always loading the pointer into a register and then accessing `[register]`, so counting the levels of brackets is counting the stars. An array's fingerprint is `index * element_size` added to the base, where `*4` is int and `*8` is a 64-bit pointer.

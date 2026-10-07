@@ -39,7 +39,7 @@ Finding a string like "Wrong password" or "Premium activated" gets you almost ex
 
 Real apps almost always go through R8/ProGuard, turning names into `a`, `b`, `c`. JADX has an automatic renaming feature: go to Preferences, turn on Deobfuscation, and set the minimum/maximum name length thresholds. JADX will generate consistent fake names (like `C0001a`) in place of colliding one-character names, helping you tell them apart. It doesn't restore the original names (they were lost at build time), but it makes the code less chaotic and lets you rename gradually.
 
-For heavier obfuscation (string encryption, control flow) JADX gives up on that part, and you have to go the dynamic route (Frida, see [Lesson 6.6](https://github.com/Haind03/Technique-Reverse/blob/main/phan-06-java-kotlin-android/6.6-frida-android-hook-bypass.md)) or other tools. Details on the types of obfuscation are in [Lesson 6.8](https://github.com/Haind03/Technique-Reverse/blob/main/phan-06-java-kotlin-android/6.8-obfuscation-android-r8-packer.md).
+For heavier obfuscation (string encryption, control flow) JADX gives up on that part, and you have to go the dynamic route (Frida, see [Lesson 6.6](/technique-reverse/)) or other tools. Details on the types of obfuscation are in [Lesson 6.8](/technique-reverse/).
 
 ## Copy as Frida snippet, the bridge to dynamic hooking
 
@@ -67,7 +67,7 @@ When you want stronger searching than the GUI offers, or want to open it in a fa
 
 ## Lab
 
-Do it in [labs/6.3/](https://github.com/Haind03/Technique-Reverse/blob/main/labs/6.3): open an APK with JADX-GUI, go from a string to the code, rename things to make them readable, generate a Frida snippet for a method, and export the source to grep.
+Do it in `labs/6.3/`: open an APK with JADX-GUI, go from a string to the code, rename things to make them readable, generate a Frida snippet for a method, and export the source to grep.
 
 ## Key takeaways
 JADX opens APK/DEX/JAR/AAB, merges multidex automatically, and parses the manifest. Open AndroidManifest and look for the MAIN activity to know the app's entry point. The three main keys are Ctrl+Shift+F (global search), `x` (find usage, which is the xref), and `n` (rename).

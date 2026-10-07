@@ -45,7 +45,7 @@ Two things are worth burning into memory. The vptr is always at offset 0, so if 
 
 ## Recognizing a virtual call in assembly
 
-![Object, vtable and a virtual call through call reg+offset](/assets/img/technique-reverse/assets/phan-04/vtable.svg)
+![Object, vtable and a virtual call through call reg+offset](/assets/img/re/part-04/vtable.svg)
 
 Here's real asm from the function `report(Shape* s)` calling `s->name()` and `s->area()`, compiled with `g++ -O0`:
 

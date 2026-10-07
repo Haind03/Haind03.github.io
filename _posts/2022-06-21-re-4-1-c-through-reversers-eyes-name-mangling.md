@@ -47,7 +47,7 @@ Looks even stranger, but you don't need to read it by hand. Leave that to tools.
 
 ## Demangle: giving names back to the reader
 
-![Name mangling: the same method becomes different names on GCC and MSVC](/assets/img/technique-reverse/assets/phan-04/name-mangling.svg)
+![Name mangling: the same method becomes different names on GCC and MSVC](/assets/img/re/part-04/name-mangling.svg)
 
 Nobody sits and decodes mangling by eye. With c++filt, which ships with GCC, `echo _ZN7Counter3addEi | c++filt` gives `Counter::add(int)` right away, and you can pipe the whole `nm` output through it to demangle in bulk. MSVC ships undname, which does the same for names of the `?...` kind. IDA and Ghidra demangle automatically, so IDA shows `Counter::add(int)` right in the function list and you barely have to do anything. If you see names still in mangled form, check the demangling config in the options.
 
@@ -76,11 +76,11 @@ A practical tip: in IDA/Ghidra pseudocode, if a function keeps using the first p
 
 Combining the two things above gives you a way to recognize you're looking at C++ and not C. The clearest sign is mangled function names (`_ZN...` or `?...@@`) in the function list. Beyond that, the call always loads an object pointer into rdi/rcx before the call, and that pointer is reused to access fields by offset (`[this+0]`, `[this+4]`). A constructor also runs right after memory is allocated for the object (on the stack or after `new`), usually as the first function to touch that memory.
 
-When you see all three, drop the "standalone C function" thinking and start thinking in objects: what is this, what fields the class has, which method reads/writes which field. Lesson [4.2](https://github.com/Haind03/Technique-Reverse/blob/main/phan-04-cpp/4.2-class-vtable-ke-thua.md) goes on into vtables and inheritance, where C++ really differs from C.
+When you see all three, drop the "standalone C function" thinking and start thinking in objects: what is this, what fields the class has, which method reads/writes which field. Lesson [4.2](/posts/re-4-2-classes-vtables-inheritance-rtti-rebuilding-class/) goes on into vtables and inheritance, where C++ really differs from C.
 
 ## Lab
 
-The folder [labs/4.1/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/4.1). You'll build a small class, look at the mangled names in the binary, demangle them, and point out the this pointer in rdi/rcx in a method call. When you're done compare with [solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/4.1/solution.md).
+The folder `labs/4.1/`. You'll build a small class, look at the mangled names in the binary, demangle them, and point out the this pointer in rdi/rcx in a method call. When you're done compare with `solution.md`.
 
 ## Key takeaways
 C++ at the binary level is C plus a few conventions, not a new world. Name mangling stuffs class, method and parameter types into the symbol name to support overloading, with GCC/Clang using `_ZN...` and MSVC using `?...@@`. Don't decode it by hand: use c++filt, undname, or let IDA/Ghidra demangle automatically. C++ symbols are a gift because they give class, method and parameter names, more than C does.

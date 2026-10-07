@@ -69,4 +69,4 @@ An Electron app is Chromium + Node.js + packaged JavaScript code, not compiled t
 On `.jsc` (bytenode, V8 bytecode), try strings first. Dumping from runtime is the winning way and disassembly is the last resort.
 
 ## Lab
-See [labs/11.2/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/11.2): find and extract the `app.asar` of an Electron app, read the code, try modifying it and repacking.
+See `labs/11.2/`: find and extract the `app.asar` of an Electron app, read the code, try modifying it and repacking.

@@ -61,7 +61,7 @@ A pitfall: plugins name things from RTTI, but RTTI reflects the class name at co
 
 ## Lab
 
-The lab is at [labs/4.5/](https://github.com/Haind03/Technique-Reverse/blob/main/labs/4.5): reuse the C++ binary with RTTI from lab 4.2, run Class Informer (or Ghidra's RTTIAnalyzer), then compare the time and results with when you built it by hand in 4.2.
+The lab is at `labs/4.5/`: reuse the C++ binary with RTTI from lab 4.2, run Class Informer (or Ghidra's RTTIAnalyzer), then compare the time and results with when you built it by hand in 4.2.
 
 ## Key takeaways
 Class-building plugins mainly rely on RTTI, so with RTTI they're fast and without it they run out of steam. On IDA the standard combo is Class Informer (lists classes from RTTI) plus HexRaysPyTools (turns them into types in the decompiler), with Virtuailor for virtual calls. On Ghidra the built-in RTTIAnalyzer covers the basic step and OOAnalyzer/Kaiju cover binaries without RTTI.

@@ -99,7 +99,7 @@ You don't need to master the API-hiding tricks right now. Just notice "wait, thi
 
 ## Lab
 
-The exercise is at [labs/1.13/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/1.13): build a small C program that calls `CreateFileW` and `RegOpenKeyExW`, then use x64dbg to set breakpoints at those two APIs and read all the parameters in the right register order, and compare with the API Monitor output. The solution is in `solution.md`, but read the parameters yourself first.
+The exercise is at `labs/1.13/`: build a small C program that calls `CreateFileW` and `RegOpenKeyExW`, then use x64dbg to set breakpoints at those two APIs and read all the parameters in the right register order, and compare with the API Monitor output. The solution is in `solution.md`, but read the parameters yourself first.
 
 ## Key takeaways
 Always look up the prototype on MSDN first, to know the number and types of parameters. On Win64, parameters 1 to 4 are in `rcx rdx r8 r9`, parameter 5 onwards is at `[rsp+0x20]` going up, and the return is in `rax`. Read backwards from the `call` instruction to gather the prepared parameters.

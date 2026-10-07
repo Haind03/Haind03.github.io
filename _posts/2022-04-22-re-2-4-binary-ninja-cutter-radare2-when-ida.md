@@ -57,7 +57,7 @@ More important than which tool you choose: don't keep jumping between tools whil
 
 ## Lab
 
-See [labs/2.4/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/2.4). You'll take apart the same small binary with command-line radare2 using the command chain `aaa`, `afl`, `pdf`, then reopen it in Cutter to see the same data as a GUI, and if you can, try the Binary Ninja cloud version. The goal is to see three tools look at the same file in three different ways.
+See `labs/2.4/`. You'll take apart the same small binary with command-line radare2 using the command chain `aaa`, `afl`, `pdf`, then reopen it in Cutter to see the same data as a GUI, and if you can, try the Binary Ninja cloud version. The goal is to see three tools look at the same file in three different ways.
 
 ## Key takeaways
 Binary Ninja has a modern UI, a multi-level IL (LLIL/MLIL/HLIL), a nice Python API, and a free cloud version to try. radare2/rizin is command line, free, and strong at automation, with five core commands: `aaa`, `afl`, `s`, `pdf`, `VV`. Its command names follow a pattern (group plus narrowing), and understanding the pattern saves memorizing.

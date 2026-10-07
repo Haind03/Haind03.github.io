@@ -79,9 +79,9 @@ LD_PRELOAD is not a cure-all. It can't touch static functions, inlined functions
 
 ## Lab
 
-The folder [labs/17.6/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/17.6) has a crackme that calls `strcmp` to compare the password, and a `hook.c` library that overrides `strcmp` to log. The task: build both, run the crackme with `LD_PRELOAD` and read the correct password falling out of the log, without disassembling. Then try writing a `ptrace` hook yourself to understand how to disable the anti-debug.
+The folder `labs/17.6/` has a crackme that calls `strcmp` to compare the password, and a `hook.c` library that overrides `strcmp` to log. The task: build both, run the crackme with `LD_PRELOAD` and read the correct password falling out of the log, without disassembling. Then try writing a `ptrace` hook yourself to understand how to disable the anti-debug.
 
-The reference result (actually run with gcc on Linux) is in [labs/17.6/solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/17.6/solution.md).
+The reference result (actually run with gcc on Linux) is in `labs/17.6/solution.md`.
 
 ## Key takeaways
 LD_PRELOAD loads your library before libc, so your same-named function wins, and it only intercepts functions called through the PLT (dynamic libraries). In a hook, get the real function with `dlsym(RTLD_NEXT, "name")` and call it back so the program runs normally. Hooking `strcmp` exposes the password right away if the crackme compares strings with strcmp.

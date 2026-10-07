@@ -78,7 +78,7 @@ The general principle: when pseudocode looks abnormally chaotic right in the mid
 
 ## Lab
 
-See [labs/15.6/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/15.6). You're given a byte sequence with junk bytes and one overlapping spot. The task is to determine the real CPU flow, point out the instruction the disassembler missed, and fix it in IDA (undefine, make code at the right place). The solution is at [solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/15.6/solution.md).
+See `labs/15.6/`. You're given a byte sequence with junk bytes and one overlapping spot. The task is to determine the real CPU flow, point out the instruction the disassembler missed, and fix it in IDA (undefine, make code at the right place). The solution is at `solution.md`.
 
 ## Key takeaways
 x86 is variable-length, so a byte can be in the middle of one instruction and the start of another, and that's the root of every trick. A junk byte after `jmp` is never run by the CPU but shifts the disassembler, so patch it to `nop`. Overlapping instructions give the same byte sequence two meanings depending on the offset, because the CPU jumps into the middle of an instruction. `push addr; ret` hides the jump target from recursive descent.

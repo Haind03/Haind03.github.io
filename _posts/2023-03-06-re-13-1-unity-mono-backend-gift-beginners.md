@@ -67,7 +67,7 @@ It all comes down to Mono keeping the IL and metadata intact in `Assembly-CSharp
 
 ## Lab
 
-See [labs/13.1/](https://github.com/Haind03/Technique-Reverse/blob/main/labs/13.1). The task: with an offline Unity Mono game of your own, open `Assembly-CSharp.dll` in dnSpy, find a value like score or health, edit it with dnSpy, save and test it, then extract an asset with AssetStudio.
+See `labs/13.1/`. The task: with an offline Unity Mono game of your own, open `Assembly-CSharp.dll` in dnSpy, find a value like score or health, edit it with dnSpy, save and test it, then extract an asset with AssetStudio.
 
 ## Key takeaways
 Unity has two backends: Mono (`Managed/Assembly-CSharp.dll`, easy) and IL2CPP (`GameAssembly.dll`, hard). Mono is .NET, so you open it in dnSpy to read nearly the source, then edit and Save Module. Gameplay logic lives in classes inheriting `MonoBehaviour`, so look at `Start()`/`Update()`, and go from variable names (gold, health) through Search and Analyze to reach the logic.

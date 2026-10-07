@@ -19,7 +19,7 @@ The second way is subtler: when Windows attaches a debugger, it calls `DbgUiRemo
 
 The third way is simple but annoying: periodic checks. A background thread re-runs all the anti-debug checks from the previous three lessons (BeingDebugged, NtQueryInformationProcess...) every few seconds. You attach cleanly, and a few seconds later it detects you and exits.
 
-The general ways around anti-attach start with attaching early, or not attaching at all. If you can, run the program straight from the debugger from the start (spawn) instead of attaching later, and then the debugger slot is yours before the anti-attach code gets to run. To disable the periodic check loop, find the thread doing it and patch the check function to return "no debugger", or use ScyllaHide/TitanHide to hide it entirely (see [Lesson 15.9](https://github.com/Haind03/Technique-Reverse/blob/main/phan-15-anti-reverse/15.9-vuot-qua-scyllahide-titanhide.md)). If `DbgUiRemoteBreakin` was patched, restore it to its original in memory before attaching.
+The general ways around anti-attach start with attaching early, or not attaching at all. If you can, run the program straight from the debugger from the start (spawn) instead of attaching later, and then the debugger slot is yours before the anti-attach code gets to run. To disable the periodic check loop, find the thread doing it and patch the check function to return "no debugger", or use ScyllaHide/TitanHide to hide it entirely (see [Lesson 15.9](/technique-reverse/)). If `DbgUiRemoteBreakin` was patched, restore it to its original in memory before attaching.
 
 ## Anti-dump: turning your dump into garbage
 

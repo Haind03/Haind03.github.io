@@ -27,7 +27,7 @@ Open a disassembler/decompiler (Ghidra, IDA) and start reading, but with a strat
 
 The best way to narrow things down is to work backwards from strings. See an interesting string like "Wrong password"? Click it, look at the cross-references (xrefs) to see where that string is used. That place is almost certainly the password check function. This is the number one beginner technique and it's extremely effective. You can also work from imports: when you see `CreateFileW`, `RegSetValueEx`, `InternetOpen`, each API tells part of the story (files, registry, network), so put xrefs on the suspicious ones.
 
-The entry point of a native binary is not the author's `main` but the runtime's startup code, so you have to find the real `main`. Lesson [3.1](https://github.com/Haind03/Technique-Reverse/tree/main/phan-03-c) shows how to spot it in that pile. Once you're in the code, read the decompiler first and assembly second. For beginners, the C pseudocode from Hex-Rays or Ghidra is much easier to swallow, and you only drop down to assembly when the decompiler gets it wrong or you need instruction-level accuracy.
+The entry point of a native binary is not the author's `main` but the runtime's startup code, so you have to find the real `main`. Lesson [3.1](/posts/re-3-1-hello-world-under-microscope-finding-real/) shows how to spot it in that pile. Once you're in the code, read the decompiler first and assembly second. For beginners, the C pseudocode from Hex-Rays or Ghidra is much easier to swallow, and you only drop down to assembly when the decompiler gets it wrong or you need instruction-level accuracy.
 
 Rename and comment as soon as you understand something. Found out `sub_401000` hashes a string? Rename it to `hash_string` right away. Every name you assign makes the next function easier to read. This is the big difference between someone slow but steady and someone drowning in `sub_xxx`.
 
@@ -53,7 +53,7 @@ One small tip that works well: write the question first, answer later. "What doe
 
 ## Putting it together as a loop
 
-![The reverse workflow is a loop of Triage, Static, Dynamic, Notes](/assets/img/technique-reverse/assets/common/quy-trinh-reverse.svg)
+![The reverse workflow is a loop of Triage, Static, Dynamic, Notes](/assets/img/re/common/re-workflow.svg)
 
 ```
    TRIAGE  (DIE, strings, file type)

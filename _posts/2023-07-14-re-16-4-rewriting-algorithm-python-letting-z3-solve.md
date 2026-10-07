@@ -72,7 +72,7 @@ A few tips matter here. Use the right width: a byte is `BitVec(name, 8)`, and wh
 
 ## Lab: a crackme solved entirely with Z3
 
-The lab at [labs/16.4/](https://github.com/Haind03/Technique-Reverse/blob/main/labs/16.4) is a crackme that deliberately ties 12 input bytes together: a chain of equations `A[i]*f[i] + f[i+1] == C[i]`, two cross xor constraints, and a sum constraint. No operation compares the input to the flag directly, so you can't pull the flag out of memory or strings. You read the constraint system in the binary, copy it into Z3, and hit solve.
+The lab at `labs/16.4/` is a crackme that deliberately ties 12 input bytes together: a chain of equations `A[i]*f[i] + f[i+1] == C[i]`, two cross xor constraints, and a sum constraint. No operation compares the input to the flag directly, so you can't pull the flag out of memory or strings. You read the constraint system in the binary, copy it into Z3, and hit solve.
 
 The reference solution `solve_z3.py` builds exactly that system and spits out the flag in a blink. Results actually checked in this environment (gcc 11.4, Python 3.11, z3 5.1.0):
 
@@ -86,7 +86,7 @@ Enter flag: Correct! Valid flag.
 
 Z3 found `Z3_Rul3s_RE!` purely from the constraint constants, and the crackme itself confirms it's valid. I also checked that it's the unique solution, so there's no second flag.
 
-Step-by-step details are in [labs/16.4/solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/16.4/solution.md), including how to match each C line to a Z3 constraint.
+Step-by-step details are in `labs/16.4/solution.md`, including how to match each C line to a Z3 constraint.
 
 ## When Z3 is not the answer
 

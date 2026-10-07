@@ -54,7 +54,7 @@ Quick rule: multiplication by an index (`*4`, `*8`) means think array, while add
 
 ## The padding and alignment trap
 
-![Struct layout in memory with padding](/assets/img/technique-reverse/assets/phan-03/struct-layout.svg)
+![Struct layout in memory with padding](/assets/img/re/part-03/struct-layout.svg)
 
 Don't expect the fields to sit tightly together. The compiler inserts padding bytes so each field sits at an address divisible by its size (alignment). For example:
 
@@ -108,7 +108,7 @@ The same code, but the second you can read and understand in two seconds. Multip
 
 ## Lab
 
-Source code and instructions are at [labs/3.3/](https://github.com/Haind03/Technique-Reverse/blob/main/labs/3.3). In short: build a C program that uses a struct with several field types, open it in IDA or Ghidra, read the raw pseudocode, then rebuild the struct and compare before/after. The file [solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/3.3/solution.md) has the struct layout and each field's offset for you to check against, but build it yourself before opening it.
+Source code and instructions are at `labs/3.3/`. In short: build a C program that uses a struct with several field types, open it in IDA or Ghidra, read the raw pseudocode, then rebuild the struct and compare before/after. The file `solution.md` has the struct layout and each field's offset for you to check against, but build it yourself before opening it.
 
 ## Key takeaways
 A struct in assembly is a base address plus a constant offset, and each offset is a field. Arrays use `[base + index*scale]` with a changing index, while structs use `[base + constant]` with different types. Padding/alignment makes offsets non-contiguous, which is normal and not an error. In IDA you use Local Types/Structures, type the C declaration, and assign the type with `Y`, and in Ghidra you use the Data Type Manager, Auto Create Structure, and retype with Ctrl+L. Building structs is one of the highest-return things when reading C/C++ code.

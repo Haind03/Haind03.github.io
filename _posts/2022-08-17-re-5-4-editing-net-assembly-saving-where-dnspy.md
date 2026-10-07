@@ -63,7 +63,7 @@ An example idea with dnlib: load the module, walk to the check method, insert `l
 
 ## Lab
 
-The exercise is at [labs/5.4/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/5.4): patch a .NET crackme so it always reports success, do it both ways (Edit Method C# and Edit IL), then save the module and run it again. The full solution with the specific IL is at [labs/5.4/solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/5.4/solution.md), do it yourself before opening it.
+The exercise is at `labs/5.4/`: patch a .NET crackme so it always reports success, do it both ways (Edit Method C# and Edit IL), then save the module and run it again. The full solution with the specific IL is at `labs/5.4/solution.md`, do it yourself before opening it.
 
 ## Key takeaways
 Patching .NET is cleaner than native because methods are located through metadata tokens, and dnSpy recomputes offsets when you Save Module. Edit Method (C#) is fastest, but you get stuck when the decompiler translated it wrong. Edit IL always works, so remember a few instructions: `ldc.i4.0/1`, `ret`, `brtrue/brfalse`, `nop`.

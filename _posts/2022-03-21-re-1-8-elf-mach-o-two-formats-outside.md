@@ -96,7 +96,7 @@ Looking at this table you can see all three tell the same story, just with diffe
 
 ## Lab
 
-The lab is at [labs/1.8/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/1.8). You'll use `readelf`, `objdump`, `nm` yourself to dissect an ELF binary, find the entry point, list the segments, and observe PLT/GOT. There's a hello world file to build and a sample writeup to compare against. If you don't have a Linux machine, running in WSL or a light VM is enough.
+The lab is at `labs/1.8/`. You'll use `readelf`, `objdump`, `nm` yourself to dissect an ELF binary, find the entry point, list the segments, and observe PLT/GOT. There's a hello world file to build and a sample writeup to compare against. If you don't have a Linux machine, running in WSL or a light VM is enough.
 
 ## Key takeaways
 The ELF magic is `7F 'E' 'L' 'F'`, Mach-O is `FEEDFACE/FACF`, and a fat binary is `CAFEBABE`. ELF has two tables: the program header (segments, for the loader to run) and the section header (sections, for analysis). Segments are for running, sections are for reading.

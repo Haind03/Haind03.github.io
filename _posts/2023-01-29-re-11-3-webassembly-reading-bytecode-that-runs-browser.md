@@ -68,4 +68,4 @@ WASM is stack-based bytecode, read much like Python/JVM bytecode. The first step
 Strings and constants are in the data section of linear memory, so look them up with `wasm-objdump -x`. An XOR pattern in a loop is usually a check or string decode.
 
 ## Lab
-Code and instructions: [labs/11.3/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/11.3). In short: take a `.wasm` file, run `wasm2wat` and read it, find the exported function that checks the key, use `wasm-decompile` to cross-check, then work out the key.
+Code and instructions: `labs/11.3/`. In short: take a `.wasm` file, run `wasm2wat` and read it, find the exported function that checks the key, use `wasm-decompile` to cross-check, then work out the key.

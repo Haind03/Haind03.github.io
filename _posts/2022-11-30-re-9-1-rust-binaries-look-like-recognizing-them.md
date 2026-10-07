@@ -15,7 +15,7 @@ One important difference from Go: Rust **has no GC runtime**, no goroutine sched
 
 ## Recognizing a Rust binary
 
-![Rust binary: panic strings, v0 mangling, inlined iterators](/assets/img/technique-reverse/assets/phan-09/rust-binary.svg)
+![Rust binary: panic strings, v0 mangling, inlined iterators](/assets/img/re/part-09/rust-binary.svg)
 
 A few signs, using DIE or `strings`. Source path strings like `src/main.rs`, `library/std/src/...` and `/rustc/<hash>/...` show up because Rust embeds file paths in the panic info. There's also the version string `rustc 1.xx.x`, and crate names in symbols such as `core::`, `alloc::`, `std::` and third-party crates. Mangled symbols start with `_ZN` (legacy) or `_R` (v0), see the section below. Finally there are panic strings like `called \`Option::unwrap()\` on a \`None\` value`, `index out of bounds` and `attempt to add with overflow`.
 
@@ -50,7 +50,7 @@ Put together as a working rhythm: triage with DIE, confirm it's Rust, and note t
 
 ## Lab
 
-See [labs/9.1/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/9.1). If your machine has `rustc`, build a small program in both debug and release modes, observe the mangling and panic strings, then demangle with rustfilt.
+See `labs/9.1/`. If your machine has `rustc`, build a small program in both debug and release modes, observe the mangling and panic strings, then demangle with rustfilt.
 
 ## Key takeaways
 Rust is hard to read because of monomorphization, heavy inlining and static linking, though structurally it's closer to C++ than Go (no GC runtime). Recognize Rust by `src/*.rs` paths, `rustc` strings, `core::`/`alloc::`/`std::` symbols and panic strings.

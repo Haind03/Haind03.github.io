@@ -64,11 +64,11 @@ Stopped, now you inspect. A few operations you repeat over and over. Right-click
 
 This is the fun part. Say you find a `jne` that jumps to the "Wrong password" branch, and you want it to always take the right branch. Select the `jne` line and press `Space` (or right-click, Assemble). Type the new instruction: change `jne` to `je` to flip the condition, type `nop` to remove the jump entirely, or change it to `jmp` to jump unconditionally. Press OK and the instruction is changed in memory, so you can run it right away.
 
-Remember that this patch only lives in memory, close it and it's gone. To save it as a new `.exe` file, open Patches with `Ctrl+P`, look at the list of changes, then Patch File to write it to disk. Deeper patching techniques (code caves, patching on disk vs at runtime) are saved for lesson [17.1](https://github.com/Haind03/Technique-Reverse/tree/main/phan-17-patch-hook-frida).
+Remember that this patch only lives in memory, close it and it's gone. To save it as a new `.exe` file, open Patches with `Ctrl+P`, look at the list of changes, then Patch File to write it to disk. Deeper patching techniques (code caves, patching on disk vs at runtime) are saved for lesson [17.1](/posts/re-17-1-patching-binaries-changing-one-byte-change/).
 
 ## Plugins worth knowing
 
-x64dbg is powerful partly thanks to plugins, and two come up early. ScyllaHide hides the debugger's presence from user-mode anti-debug techniques. A lot of protected programs behave differently when they see they're being debugged, and ScyllaHide makes them think no one is watching; details are in lesson [15.9](https://github.com/Haind03/Technique-Reverse/tree/main/phan-15-anti-reverse). Scylla dumps the process and rebuilds the import table (IAT) after unpacking, and is used in lesson [14.3](https://github.com/Haind03/Technique-Reverse/tree/main/phan-14-packer-obfuscation).
+x64dbg is powerful partly thanks to plugins, and two come up early. ScyllaHide hides the debugger's presence from user-mode anti-debug techniques. A lot of protected programs behave differently when they see they're being debugged, and ScyllaHide makes them think no one is watching; details are in lesson [15.9](/posts/re-15-9-bypassing-anti-debug-from-mouse-click/). Scylla dumps the process and rebuilds the import table (IAT) after unpacking, and is used in lesson [14.3](/posts/re-14-3-dumping-process-rebuilding-iat-scylla/).
 
 ## The standard rhythm: static first, dynamic after
 
@@ -78,7 +78,7 @@ Static draws the map, dynamic confirms. x64dbg is the second half of that pair.
 
 ## Lab
 
-Practice setting breakpoints, reading comparison operands, and patching a jump: see [labs/2.5/](https://github.com/Haind03/Technique-Reverse/blob/main/labs/2.5). You'll build a small crackme, enter a wrong serial, let x64dbg show you the correct serial right in a register, and finally patch it to accept any serial.
+Practice setting breakpoints, reading comparison operands, and patching a jump: see `labs/2.5/`. You'll build a small crackme, enter a wrong serial, let x64dbg show you the correct serial right in a register, and finally patch it to accept any serial.
 
 ## Key takeaways
 Use `x64dbg.exe` for 64-bit and `x32dbg.exe` for 32-bit, and pick the right build. The panels that matter are CPU (disassembly), Registers, Dump, Stack and Memory Map. Breakpoints come in three kinds: software (`F2`, fast, modifies a byte), hardware (harder to detect, max 4), and memory (catches access to a memory region). `bp APIName` in the Command box stops at the start of an API function, with parameters already in rcx/rdx/r8/r9.

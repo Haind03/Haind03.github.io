@@ -66,7 +66,7 @@ Emulation doesn't fit when the code is so tied to the OS/API/hardware that fakin
 
 ## Lab
 
-See [labs/18.2/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/18.2): run `emu_xor.py` to use Unicorn yourself to decrypt a string without rewriting the algorithm, then try changing the key and length. The solution and how to extend it to functions with multiple parameters are in `solution.md`.
+See `labs/18.2/`: run `emu_xor.py` to use Unicorn yourself to decrypt a string without rewriting the algorithm, then try changing the key and length. The solution and how to extend it to functions with multiple parameters are in `solution.md`.
 
 ## Key takeaways
 Emulation means building a virtual CPU, loading byte code, setting registers and memory, running, and reading the result. Unicorn is pure CPU emulation with no OS, so it fits self-contained computation functions, and its model is always the same four steps: create the machine, map and write memory, set registers, run and read. The traps are that `ret` needs a return address, calls out will break, and you have to map enough memory.

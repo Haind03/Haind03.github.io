@@ -215,7 +215,7 @@ Table of contents: [1. Triage & file identification](#1-triage--file-identificat
 | **TinyInst** | X | free | Light instrumentation for fuzzing/coverage |
 | **QBDI** (QuarksLab) | X | free | Embeddable DBI, nice API |
 
-> Injection techniques (CreateRemoteThread, APC, manual mapping, process hollowing, reflective loading...) are covered in [Lessons 17.4 & 17.5](https://github.com/Haind03/Technique-Reverse/tree/main/phan-17-patch-hook-frida) from the angle of **mechanism + how to detect/defend**. LD_PRELOAD / DYLD_INSERT_LIBRARIES are built-in OS mechanisms, not tools.
+> Injection techniques (CreateRemoteThread, APC, manual mapping, process hollowing, reflective loading...) are covered in [Lessons 17.4 & 17.5](/technique-reverse/) from the angle of **mechanism + how to detect/defend**. LD_PRELOAD / DYLD_INSERT_LIBRARIES are built-in OS mechanisms, not tools.
 
 ## 17. Emulation & symbolic execution
 
@@ -314,7 +314,7 @@ MCP (Model Context Protocol) lets an LLM drive RE tools directly: read pseudocod
 | **capa-mcp / YARA MCP** | capa, YARA | Classify capabilities & scan rules on demand |
 | **unblob / binwalk MCP** | firmware tools | Extract firmware conversationally |
 
-> Safety note: MCP gives an LLM permission to run tools on your machine. When analyzing malware, run the client + MCP in an **isolated VM** (see [Lesson 0.3](/posts/re-0-3-set-up-safe-lab-before-touching/)), and don't let the agent execute samples on its own. A separate lesson on setting up MCP for RE is at [Lesson 18.8](https://github.com/Haind03/Technique-Reverse/tree/main/phan-18-nang-cao).
+> Safety note: MCP gives an LLM permission to run tools on your machine. When analyzing malware, run the client + MCP in an **isolated VM** (see [Lesson 0.3](/posts/re-0-3-set-up-safe-lab-before-touching/)), and don't let the agent execute samples on its own. A separate lesson on setting up MCP for RE is at [Lesson 18.8](/technique-reverse/).
 
 ---
 

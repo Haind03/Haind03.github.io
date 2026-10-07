@@ -25,7 +25,7 @@ There are four steps, every time. Locate the validate function by going from the
 
 ## Dissecting the lab's keygenme
 
-The lab [labs/3.6](https://github.com/Haind03/Technique-Reverse/blob/main/labs/3.6) has a keygenme that takes a `username` and a `serial`. Open it in Ghidra, go to `validate`, and you see its core is this loop (translated back to C so it's easier to look at):
+The lab `labs/3.6` has a keygenme that takes a `username` and a `serial`. Open it in Ghidra, go to `validate`, and you see its core is this loop (translated back to C so it's easier to look at):
 
 ```c
 static const uint16_t SEED[4] = { 0x1337, 0xBEEF, 0xCAFE, 0x5A5A };
@@ -65,7 +65,7 @@ print(make_serial("alice"))   # 193F-C6FA-D50C-666B
 
 Run with the username `alice` it gives `193F-C6FA-D50C-666B`, feed it into the keygenme and it says "Correct". Try `bob`, `RE_Learner`, or any other string, and each gives a valid serial. That's the difference between "got through once" and "really understood": you just reproduced the program's licensing logic.
 
-The full writeup, including the cross-check results actually run, is at [labs/3.6/solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/3.6/solution.md).
+The full writeup, including the cross-check results actually run, is at `labs/3.6/solution.md`.
 
 ## When a keygen is helpless
 

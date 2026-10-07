@@ -9,7 +9,7 @@ The first time someone hands you an `.apk` file and says "take a look at what th
 
 ## An APK is really just a ZIP file
 
-![Inside an APK file: manifest, classes.dex, lib, resources, assets, META-INF](/assets/img/technique-reverse/assets/phan-06/apk-structure.svg)
+![Inside an APK file: manifest, classes.dex, lib, resources, assets, META-INF](/assets/img/re/part-06/apk-structure.svg)
 
 The first thing that surprises many people: an APK has no mysterious format at all, it's a renamed ZIP file. Change the `.apk` extension to `.zip` and extract it with any tool and you see all its guts. Try it right now with any app on your phone.
 

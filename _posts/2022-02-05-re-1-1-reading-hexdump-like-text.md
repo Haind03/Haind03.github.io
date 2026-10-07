@@ -56,7 +56,7 @@ Three columns: the offset (position from the start of the file), the bytes in he
 
 ## Endianness, the classic beginner trap
 
-![Little-endian: the value 0x12345678 is stored in memory as 78 56 34 12](/assets/img/technique-reverse/assets/phan-01/little-endian.svg)
+![Little-endian: the value 0x12345678 is stored in memory as 78 56 34 12](/assets/img/re/part-01/little-endian.svg)
 
 This is where most beginners trip. The question is in what byte order the 32-bit number `0x12345678` is stored in memory.
 
@@ -74,7 +74,7 @@ Reversing crypto and obfuscation means running into bit operations constantly. T
 
 Then there are shifts. Shift left (`<<`) doubles the value each step and shift right (`>>`) halves it each step. Compilers often replace multiplication/division by powers of 2 with shifts because it's faster, so seeing `shl eax, 3` means it's multiplying by 8.
 
-Since XOR is everywhere, remember one thing: if you see a loop going through data and `xor`ing each byte with a constant or a key, 90% of the time it's a string encryption/decryption routine. Lesson [16.2](https://github.com/Haind03/Technique-Reverse/tree/main/phan-16-crypto-thuat-toan) goes deeper.
+Since XOR is everywhere, remember one thing: if you see a loop going through data and `xor`ing each byte with a constant or a key, 90% of the time it's a string encryption/decryption routine. Lesson [16.2](/posts/re-16-2-xor-rc4-custom-base64-three-youll/) goes deeper.
 
 ## Practice
 

@@ -70,7 +70,7 @@ Start by triaging the live process: in Process Hacker, look at Modules (strange 
 
 If you have the injector sample, set breakpoints at the API chain in each item above and read the parameters (tying back to [Lesson 1.13](/posts/re-1-13-recognizing-windows-apis-when-reversing-reading/)) to know where it injects and how. Finally, dump the injected payload and analyze it as a standalone module.
 
-Shellcode injection, APC injection, thread hijacking and process hollowing (variants of step 3) are split off into [Lesson 17.5](https://github.com/Haind03/Technique-Reverse/blob/main/phan-17-patch-hook-frida/17.5-shellcode-apc-hollowing.md).
+Shellcode injection, APC injection, thread hijacking and process hollowing (variants of step 3) are split off into [Lesson 17.5](/technique-reverse/).
 
 ## Key takeaways
 Almost every injection consists of opening the process, putting code or a path into the target's memory, and forcing it to run. LoadLibrary + CreateRemoteThread needs a DLL on disk, has a thread start of LoadLibraryW, and is the easiest to spot. SetWindowsHookEx and AppInit_DLLs let Windows spread the DLL itself, and you inspect them with Autoruns. Manual mapping and reflective loading dodge the loader so the DLL isn't in the module list, and the tell is a private execute region with no backing module. PE-sieve/HollowsHunter are the main detection tools, with Process Hacker and Procmon supporting them.

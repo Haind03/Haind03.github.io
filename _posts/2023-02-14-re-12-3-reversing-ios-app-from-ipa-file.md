@@ -41,7 +41,7 @@ All of them need a **jailbroken** device (or an equivalent environment) because 
 
 Once you have the decrypted binary (`cryptid` = 0), the rest is what you've already learned:
 
-It's a Mach-O, so recall [Lesson 1.8](/posts/re-1-8-elf-mach-o-two-formats-outside/) and remember to check for fat binaries and the arm64 architecture. If the app is written in Objective-C, read it by `objc_msgSend` and selectors like in [Lesson 12.1](/posts/re-12-1-objective-c-where-every-call-goes/) and run class-dump to get the headers. If it's written in Swift, demangle and read the metadata like in [Lesson 12.2](https://github.com/Haind03/Technique-Reverse/blob/main/phan-12-swift-objc-apple/12.2-swift-metadata-demangle.md). The code is ARM64, so see [Lesson 1.9](/posts/re-1-9-arm-arm64-basics-people-who-already/) again.
+It's a Mach-O, so recall [Lesson 1.8](/posts/re-1-8-elf-mach-o-two-formats-outside/) and remember to check for fat binaries and the arm64 architecture. If the app is written in Objective-C, read it by `objc_msgSend` and selectors like in [Lesson 12.1](/posts/re-12-1-objective-c-where-every-call-goes/) and run class-dump to get the headers. If it's written in Swift, demangle and read the metadata like in [Lesson 12.2](/technique-reverse/). The code is ARM64, so see [Lesson 1.9](/posts/re-1-9-arm-arm64-basics-people-who-already/) again.
 
 In other words, FairPlay is just one door. Once you're through, the tools and mindset are the same as analyzing a normal Mach-O.
 
@@ -88,7 +88,7 @@ A common mistake is forgetting that App Store apps are still FairPlay encrypted,
 
 ## Lab
 
-See [labs/12.3/](https://github.com/Haind03/Technique-Reverse/blob/main/labs/12.3). You need a jailbroken iOS device and an app you made yourself (or have permission for). The task: dump the decrypted binary, confirm `cryptid` goes to 0, analyze the Mach-O, then hook a method with objection. The file `src/hook.js` has a sample iOS Frida script.
+See `labs/12.3/`. You need a jailbroken iOS device and an app you made yourself (or have permission for). The task: dump the decrypted binary, confirm `cryptid` goes to 0, analyze the Mach-O, then hook a method with objection. The file `src/hook.js` has a sample iOS Frida script.
 
 ## Key takeaways
 An IPA is a ZIP, and the important binary is the Mach-O with the same name as the app, so read Info.plist first. App Store binaries have `__TEXT` encrypted by FairPlay (check for `cryptid` = 1), so you have to dump the decrypted copy from memory with frida-ios-dump or bagbak, which needs a jailbroken device. Apps you build yourself aren't encrypted.

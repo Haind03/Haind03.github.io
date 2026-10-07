@@ -151,7 +151,7 @@ void *z = t->c;
 
 Quick way to tell arrays from structs: an array uses a varying index times a size (`rcx*4`), a struct uses constant offsets (`+4`, `+8`). An array is "the same type, many elements", a struct is "many different types, each at a fixed spot".
 
-In IDA you can declare a struct (press `Y` to set a type, or create the struct in Local Types) and assign it to the pointer, and `[rax+8]` instantly turns into `t->c`, which is a pleasure to read. Lesson [3.3](https://github.com/Haind03/Technique-Reverse/tree/main/phan-03-c) goes deep on recovering structs.
+In IDA you can declare a struct (press `Y` to set a type, or create the struct in Local Types) and assign it to the pointer, and `[rax+8]` instantly turns into `t->c`, which is a pleasure to read. Lesson [3.3](/posts/re-3-3-structs-assembly-art-recovering-them/) goes deep on recovering structs.
 
 ## Summary of the templates
 
@@ -170,7 +170,7 @@ Don't memorize blindly. The surest way is to write your own C code, build it, an
 
 ## Lab
 
-The [`labs/1.5/`](https://github.com/Haind03/Technique-Reverse/tree/main/labs/1.5) folder has a C file that packs in all five constructs above. Build it (instructions are in the lab's README), open the binary in Ghidra or IDA, and point out by hand where the nested if is, where the loop is, where the switch jump table is, where the array is. When you're done, compare against [`labs/1.5/solution.md`](https://github.com/Haind03/Technique-Reverse/blob/main/labs/1.5/solution.md).
+The `labs/1.5/` folder has a C file that packs in all five constructs above. Build it (instructions are in the lab's README), open the binary in Ghidra or IDA, and point out by hand where the nested if is, where the loop is, where the switch jump table is, where the array is. When you're done, compare against `labs/1.5/solution.md`.
 
 Try both optimization levels: build with `-O0` (easy to read, close to the templates) then rebuild with `-O2` (the compiler optimizes, more distortion). Compare the two to see how optimization makes code harder to read, this is a more valuable real-world lesson than any theory.
 

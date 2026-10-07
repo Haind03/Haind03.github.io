@@ -109,7 +109,7 @@ Set a time limit as well. If you're stuck on one for more than two evenings, rea
 
 In `labs/20.1/` there are `src/level1.c`, `level2.c` and `level3.c`, three crackmes representing levels 1 to 3, built with gcc. The answers and solutions are in `solution.md`, but try on your own first. There's also `src/keygen_level3.py`, a reference keygen for level3. The main task is to create a crackmes.one account, solve in order starting from difficulty 1, and write a writeup for each.
 
-Details in [labs/20.1/README.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/20.1/README.md).
+Details in `labs/20.1/README.md`.
 
 ## Key takeaways
 

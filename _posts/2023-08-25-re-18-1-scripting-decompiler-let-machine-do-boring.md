@@ -129,7 +129,7 @@ There's no single answer. In practice: if you live in IDA, use IDAPython; if you
 
 ## Lab
 
-See [labs/18.1/](https://github.com/Haind03/Technique-Reverse/blob/main/labs/18.1). The task: write a script that automatically decrypts strings for a binary whose strings are XORed, and put the result as a comment at each location. The `src/` folder has sample IDAPython and Ghidra scripts for you to reference and adapt to your own binary.
+See `labs/18.1/`. The task: write a script that automatically decrypts strings for a binary whose strings are XORed, and put the result as a comment at each location. The `src/` folder has sample IDAPython and Ghidra scripts for you to reference and adapt to your own binary.
 
 ## Key takeaways
 

@@ -11,7 +11,7 @@ Good news: you already learned ARM64 in [Lesson 1.9](/posts/re-1-9-arm-arm64-bas
 
 ## JNI is the bridge between Java and native
 
-![JNI bridging from Java to a native function in a .so file](/assets/img/technique-reverse/assets/phan-06/jni-bridge.svg)
+![JNI bridging from Java to a native function in a .so file](/assets/img/re/part-06/jni-bridge.svg)
 
 JNI (Java Native Interface) is the mechanism that lets Java call C/C++ code. The basic flow is that a Java class loads the library, since `System.loadLibrary("check")` loads `libcheck.so`. The method is then declared `native` with no body: `public native boolean checkLicense(String s);`. Inside `libcheck.so` there's a C function that actually implements that method.
 
@@ -75,7 +75,7 @@ An APK is a ZIP file, so extract it and take `lib/arm64-v8a/lib<name>.so` (prefe
 ## Key takeaways
 A Java method declared `native` means the logic lives in a `.so` file, which JADX can't read. JNI functions follow the naming convention `Java_package_Class_method`, so search for the string `Java_` in the .so. If you don't see it, look for `JNI_OnLoad` and read `RegisterNatives` to see which function the method maps to.
 
-Every JNI function has two hidden leading parameters, `JNIEnv* env` (x0) and `jobject thiz` (x1), and real parameters start at x2. Read JNI signatures with the type table: `Z` boolean, `I` int, `L...;` object, `[` array. Analyzing the .so is just ordinary ARM64 reversing, so see Lesson 1.9 again.
+Every JNI function has two hidden leading parameters, `JNIEnv* env` (x0) and `jobject thiz` (x1), and real parameters start at x2. Read JNI signatures with the type table: `Z` boolean, `I` int, `L...;` object, `` array. Analyzing the .so is just ordinary ARM64 reversing, so see Lesson 1.9 again.
 
 ## Lab
-See [labs/6.7/](https://github.com/Haind03/Technique-Reverse/blob/main/labs/6.7): extract the .so from an APK, open it in Ghidra, find the JNI function both ways, and compare against a JNI C example you write yourself.
+See [labs/6.7/: extract the .so from an APK, open it in Ghidra, find the JNI function both ways, and compare against a JNI C example you write yourself.

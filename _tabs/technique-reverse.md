@@ -5,7 +5,7 @@ order: 1
 render_with_liquid: false
 ---
 
-This is where I keep my reverse engineering notes, written up as a series that goes from computer fundamentals, through each language one by one, to packers, anti-reversing, hooking and malware analysis. The lab sources and sample binaries live in the [Technique-Reverse](https://github.com/Haind03/Technique-Reverse) repo.
+This is where I keep my reverse engineering notes, written up as a series that goes from computer fundamentals, through each language one by one, to packers, anti-reversing, hooking and malware analysis.
 
 Everything here is for learning, CTFs, crackmes and analysing software you own or are allowed to look at.
 {: .prompt-warning }

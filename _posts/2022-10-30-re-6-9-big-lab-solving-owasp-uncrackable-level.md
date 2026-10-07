@@ -9,7 +9,7 @@ This lesson pulls together everything in Part 6. Instead of a crackme I cooked u
 
 Why use this set and not some app out there: it's completely legal. Open source, made for learning, and OWASP encourages you to break it. There's no copyright or terms-of-service violation like when you touch a commercial app. This is a proper practice ground.
 
-Download it officially from the MASTG repo (link in [labs/6.9/README.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/6.9/README.md)). Don't download random APKs from elsewhere, only the official build is clean and matches the challenge.
+Download it officially from the MASTG repo (link in `labs/6.9/README.md`). Don't download random APKs from elsewhere, only the official build is clean and matches the challenge.
 
 ## General rules
 
@@ -29,7 +29,7 @@ The second is the verify function. When you press the button, the app calls a fu
 The check function decrypts the secret with AES using a hardcoded key embedded in the code, then compares against the input. Since both the key and the ciphertext are in the app, you copy the algorithm out, rerun it with Python or a small piece of Java, and print the secret. Once you've read it you have the answer, no need to install the app.
 
 ### The dynamic route
-If you're too lazy to solve the AES, let the app run and hook it. But the app exits right away because of root detection, so first you have to neutralize that. Use Frida to hook the detection functions to return false, and hook `System.exit` too to be safe. Then hook the verify function to print the string it compares against, which is the secret. A sample script is in [labs/6.9/solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/6.9/solution.md).
+If you're too lazy to solve the AES, let the app run and hook it. But the app exits right away because of root detection, so first you have to neutralize that. Use Frida to hook the detection functions to return false, and hook `System.exit` too to be safe. Then hook the verify function to print the string it compares against, which is the secret. A sample script is in `labs/6.9/solution.md`.
 
 Takeaway from Level 1: root detection is just a paper lock on the door. It stops ordinary users, but it can't stop someone holding Frida.
 
@@ -58,7 +58,7 @@ Level 3 is Level 2 plus active defenses, in the spirit of [Lesson 6.8](/posts/re
 ### The approach
 This is where you have to remove the layers one at a time, in order. Get past anti-Frida first: hook early (early instrumentation, use `frida -f` to spawn rather than attaching late) the Frida-detection functions and make them return negative, or use a renamed, different-port frida-server to dodge naive detection. Then get past anti-tampering by hooking the signature-check function to return the original app's value, or hooking the checksum comparison function. Only then do verify, handled just like Level 2 (analyze the .so or hook the comparison).
 
-The order matters: you can't hook verify if the app has already exited after detecting Frida. Remove the outermost defense first and work your way inward. This is exactly the mindset for handling combined layers of anti that [Lesson 15.10](https://github.com/Haind03/Technique-Reverse/tree/main/phan-15-anti-reverse) will cover in detail.
+The order matters: you can't hook verify if the app has already exited after detecting Frida. Remove the outermost defense first and work your way inward. This is exactly the mindset for handling combined layers of anti that [Lesson 15.10](/technique-reverse/) will cover in detail.
 
 Takeaway from Level 3: when the app fights your tools, the match turns into layer removal. Be patient, one layer at a time, and always save the final comparison as your ambush point.
 

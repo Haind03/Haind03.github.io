@@ -93,7 +93,7 @@ Start with triage: `strings`/DIE showing `_MEIPASS`, `pyi`, `python3xx` means Py
 
 ## Lab
 
-The folder [labs/7.4/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/7.4) has instructions for building a PyInstaller exe from a small script and then extracting it back yourself, including how to handle the magic header. The whole workflow in this lesson was actually run on PyInstaller 6.20 / Python 3.11, and the output in [solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/7.4/solution.md) is real.
+The folder `labs/7.4/` has instructions for building a PyInstaller exe from a small script and then extracting it back yourself, including how to handle the magic header. The whole workflow in this lesson was actually run on PyInstaller 6.20 / Python 3.11, and the output in `solution.md` is real.
 
 ## Key takeaways
 PyInstaller packs the interpreter and compressed `.pyc` files into the exe, so the logic is still Python bytecode, and you recognize it by `_MEIPASS`, `pyi`, `python3xx` in the strings. `pyinstxtractor(-ng)` extracts it, and you read the Python version and Possible entry point lines. Skip the `.pyc` files named `pyi*` and take the file named after the original script. The extracted `.pyc` may be missing the magic header, so copy one from a healthy `.pyc` onto the start to patch it. py2exe/cx_Freeze usually keep `.pyc` files in `library.zip`, so unzip then decompile. Packaging isn't encryption, and secrets in the code are fully exposed.

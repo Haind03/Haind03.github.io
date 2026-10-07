@@ -62,7 +62,7 @@ For all three of the above, the fastest approach isn't to debug byte by byte in 
 
 ## Lab
 
-In `labs/16.2/` there's `src/make_data.py`, which generates three encrypted strings (multi-byte XOR, RC4, custom Base64), and `src/solve.py`, which solves all three. Task: look at the three ciphertexts, recognize each type, then write the Python decoder yourself before opening the solution. Everything was actually run with Python 3.11, and the results are in the [solution](https://github.com/Haind03/Technique-Reverse/blob/main/labs/16.2/solution.md).
+In `labs/16.2/` there's `src/make_data.py`, which generates three encrypted strings (multi-byte XOR, RC4, custom Base64), and `src/solve.py`, which solves all three. Task: look at the three ciphertexts, recognize each type, then write the Python decoder yourself before opening the solution. Everything was actually run with Python 3.11, and the results are in the solution.
 
 ## Key takeaways
 A loop that XORs a buffer with a constant or key array is a string encryption routine, and known-plaintext gets you the key. RC4 has no magic constant: you recognize it by the 256 array initialized 0..255 and then the two permutation loops with mod 256, and finding the key is enough to decrypt because it's symmetric.

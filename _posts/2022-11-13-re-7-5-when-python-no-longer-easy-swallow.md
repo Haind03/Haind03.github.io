@@ -11,7 +11,7 @@ This is the same turning point as NativeAOT on the .NET side (Lesson 5.6): the l
 
 ## Three spoilers, three different natures
 
-![Python packaging: PyInstaller is easy to decompile, Nuitka/Cython/PyArmor are hard](/assets/img/technique-reverse/assets/phan-07/python-packaging.svg)
+![Python packaging: PyInstaller is easy to decompile, Nuitka/Cython/PyArmor are hard](/assets/img/re/part-07/python-packaging.svg)
 
 The most important thing to grasp is that these three are different in nature, so the handling is completely different too. Nuitka compiles Python to C and then compiles on to native machine code, so the Python bytecode disappears completely. Cython also translates Python (or Cython syntax) to C and then to a C extension (`.pyd` on Windows, `.so` on Linux), so it's native too. PyArmor is different: it still runs Python bytecode, but encrypts and wraps it, only decrypting in memory at runtime, so at its core it's still Python, just locked.
 

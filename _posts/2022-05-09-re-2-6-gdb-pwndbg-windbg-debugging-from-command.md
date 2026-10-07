@@ -118,7 +118,7 @@ People who've been at it a long time use all three and aren't loyal to any. Tool
 
 ## Lab
 
-The source and instructions are at [labs/2.6/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/2.6). In short: compile a small C program that has a password check function, load it into GDB + pwndbg, set a breakpoint at the compare function, read the arguments with `info registers` and `x`, then modify a register value to force the program to accept a wrong password. When you finish you'll see the static-then-dynamic rhythm of [Lesson 0.4](/posts/re-0-4-reverse-engineering-workflow-not-get-lost/) right in the command line. The full writeup is in [solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/2.6/solution.md), do it yourself before opening it.
+The source and instructions are at `labs/2.6/`. In short: compile a small C program that has a password check function, load it into GDB + pwndbg, set a breakpoint at the compare function, read the arguments with `info registers` and `x`, then modify a register value to force the program to accept a wrong password. When you finish you'll see the static-then-dynamic rhythm of [Lesson 0.4](/posts/re-0-4-reverse-engineering-workflow-not-get-lost/) right in the command line. The full writeup is in `solution.md`, do it yourself before opening it.
 
 ## Key takeaways
 In GDB, remember `set disassembly-flavor intel` right at the start for readability. The core command set is `b`, `r`, `c`, `si`/`ni`, `finish`, `info registers`, `x/`, and `set`. The formula is `x/<count><format><size>`, so `x/16xg $rsp` is 16 8-byte hex values at the stack.

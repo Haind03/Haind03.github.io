@@ -68,7 +68,7 @@ If you see an IAT slot pointing to a region that doesn't belong to the original 
 
 ## Lab
 
-See [labs/17.3/](https://github.com/Haind03/Technique-Reverse/blob/main/labs/17.3): observe an inline hook in memory, recognize the `jmp` at the start of a function, and compare prologues to tell a hooked function from a clean one.
+See `labs/17.3/`: observe an inline hook in memory, recognize the `jmp` at the start of a function, and compare prologues to tell a hooked function from a clean one.
 
 ## Key takeaways
 A hook wedges into a function call, and it's the foundation of EDRs, Frida, compatibility tools, and analysis. An IAT hook changes a pointer in the Import Address Table, so it only catches calls through the IAT: clean but not comprehensive. An inline hook overwrites the start of a function with `jmp`, and a trampoline keeps the original bytes to call the real function, so it catches every call.

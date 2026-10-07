@@ -49,7 +49,7 @@ That last step is where you save the most time: after recovering names, `main.ma
 
 ## Lab
 
-See [labs/8.2/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/8.2). You'll run GoReSym on a Go binary and compare the function window in Ghidra before and after having the symbols, to see with your own eyes the difference pclntab makes.
+See `labs/8.2/`. You'll run GoReSym on a Go binary and compare the function window in Ghidra before and after having the symbols, to see with your own eyes the difference pclntab makes.
 
 ## Key takeaways
 A stripped Go binary can still recover many function names thanks to pclntab, since the runtime needs it to print stack traces. GoReSym is the first tool to run, giving function names, types, build info and the Go version. The alternatives are IDAGolangHelper for IDA, GolangAnalyzerExtension for Ghidra, and redress on the command line.
