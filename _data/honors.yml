@@ -17,6 +17,10 @@
   name: Flare-On 12, Mandiant's reverse engineering challenge
   result: FINISHER
   badge: acc
+- date: Sep 2025
+  name: Digital Dragons CTF 2025, Da Nang (Jeopardy, team BlueCyber_Intern)
+  result: CONSOLATION
+  post: /posts/ctf-digital-dragons-2025/
 - date: Nov 2024
   name: Flare-On 11, every challenge solved
   result: FINISHER
