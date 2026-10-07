@@ -28,7 +28,7 @@ This helps you narrow things down. For the logic that adds score every frame, lo
 
 ## Finding the value to change
 
-Say you want to find where gold is managed. Start with what's easiest. Search by name first: dnSpy has Search (Ctrl+Shift+K), so type `gold`, `coin`, `money`, `health`, `hp`. Game developers rarely obfuscate variable names in the Mono build, so you'll often see `public int gold;` or `private float health;` right away. Then use Analyze: right-click the `gold` field, choose Analyze, and look at "Used By" to see which methods read/write it. The function that subtracts gold when buying and the function that adds gold when picking it up both show up. Finally, read the logic. Go into the method with a check like `if (gold >= price)`, because that's where you step in.
+Say you want to find where gold is managed. Start with what's easiest. Search by name first. dnSpy has Search (Ctrl+Shift+K), so type `gold`, `coin`, `money`, `health`, `hp`. Game developers rarely obfuscate variable names in the Mono build, so you'll often see `public int gold;` or `private float health;` right away. Then use Analyze. Right-click the `gold` field, choose Analyze, and look at "Used By" to see which methods read/write it. The function that subtracts gold when buying and the function that adds gold when picking it up both show up. Finally, read the logic. Go into the method with a check like `if (gold >= price)`, because that's where you step in.
 
 ## Modifying and saving
 
@@ -62,7 +62,7 @@ If the game uses strong name signing or has integrity checks you'll need extra h
 
 ## Extracting assets with AssetStudio
 
-Besides code, you might want to view or extract resources: textures, models, audio, text. They're in the `.assets` files and asset bundles in the `_Data` folder. AssetStudio (or AssetRipper) opens these files, lists them, and exports the resources into common formats. It's useful when you want to understand the game's data, find hidden text strings, or just look around.
+Besides code, you might want to view or extract resources, such as textures, models, audio and text. They're in the `.assets` files and asset bundles in the `_Data` folder. AssetStudio (or AssetRipper) opens these files, lists them, and exports the resources into common formats. It's useful when you want to understand the game's data, find hidden text strings, or just look around.
 
 ## Why Mono is easier than IL2CPP
 
@@ -70,7 +70,7 @@ Mono keeps the IL and metadata intact in `Assembly-CSharp.dll`, like any .NET as
 
 ## Lab
 
-This lab stays strictly on an offline, single-player Unity game, either one of your own or a small sample you build yourself, never an online game. You need a Unity game built with the Mono backend, meaning its data folder has `<Game>_Data/Managed/Assembly-CSharp.dll`. The surest way to get one is to make it yourself: install Unity, build a small scene with a `gold` and a `health` variable, and build a Windows version with the Mono backend selected in Player Settings, not IL2CPP. You also need dnSpy and AssetStudio or AssetRipper.
+This lab stays strictly on an offline, single-player Unity game, either one of your own or a small sample you build yourself, never an online game. You need a Unity game built with the Mono backend, meaning its data folder has `<Game>_Data/Managed/Assembly-CSharp.dll`. The surest way to get one is to make it yourself. Install Unity, build a small scene with a `gold` and a `health` variable, and build a Windows version with the Mono backend selected in Player Settings, not IL2CPP. You also need dnSpy and AssetStudio or AssetRipper.
 
 Start by confirming the backend. Open the `<Game>_Data` folder and check whether it has `Managed/Assembly-CSharp.dll` (Mono) or a `GameAssembly.dll` (IL2CPP) instead, and only continue if it's Mono. Back up `Assembly-CSharp.dll` to a separate location before changing anything. Open it in dnSpy and use Search (Ctrl+Shift+K) to find a field such as `gold`, `coin`, `score`, `health` or `hp`. Right-click that field, choose Analyze, and look at "Used By" to find the methods that read or write it. Read the logic of one of those methods, for example a purchase function with something like `if (gold >= price)`, and understand what it does. Then use Edit Method (C#) to change it so the condition always holds, or pin a value inside `Update()`, and save the module, overwriting the file. Run the game again and confirm the change took effect. Finally, open the `.assets` file inside `_Data` with AssetStudio and export a texture or a text asset.
 
@@ -132,15 +132,15 @@ Checking the result. Running the game again, the first approach lets you buy thi
 
 Extracting assets. Open AssetStudio, use File, Load folder, and point it at `<Game>_Data`. The Asset List tab lists Texture2D, TextAsset, AudioClip and more. Pick a texture and use Export selected assets to get a PNG. A TextAsset sometimes reveals configuration data or an interesting hidden string.
 
-On why names survive: a Mono build compiles `Assembly-CSharp.dll` directly with no obfuscator in the pipeline. Renaming requires integrating a separate tool, and most indie games don't bother, unlike Android where R8 is on by default once minification is enabled.
+On why names survive, a Mono build compiles `Assembly-CSharp.dll` directly with no obfuscator in the pipeline. Renaming requires integrating a separate tool, and most indie games don't bother, unlike Android where R8 is on by default once minification is enabled.
 
-On the strong name error: dnSpy usually handles it automatically on Save Module, and if it doesn't, remove the strong name or re-sign it, as covered in Lesson 5.4. Most Mono games aren't strong-name signed, so this rarely comes up in practice.
+On the strong name error, dnSpy usually handles it automatically on Save Module, and if it doesn't, remove the strong name or re-sign it, as covered in Lesson 5.4. Most Mono games aren't strong-name signed, so this rarely comes up in practice.
 
-On pinning health versus blocking damage: pinning health every frame still lets damage happen and then yanks health back up afterward, which can flicker or even let you die if a single frame's damage is large enough. Blocking the function that applies damage (turning `TakeDamage` into a no-op) is cleaner, since health never changes at all. The function that receives damage is the better target.
+On pinning health versus blocking damage, pinning health every frame still lets damage happen and then yanks health back up afterward, which can flicker or even let you die if a single frame's damage is large enough. Blocking the function that applies damage (turning `TakeDamage` into a no-op) is cleaner, since health never changes at all. The function that receives damage is the better target.
 
 </details>
 
 ## Key takeaways
-Unity has two backends: Mono (`Managed/Assembly-CSharp.dll`, easy) and IL2CPP (`GameAssembly.dll`, hard). Mono is .NET, so you open it in dnSpy to read nearly the source, then edit and Save Module. Gameplay logic lives in classes inheriting `MonoBehaviour`, so look at `Start()`/`Update()`, and go from variable names (gold, health) through Search and Analyze to reach the logic.
+Unity has two backends, which are Mono (`Managed/Assembly-CSharp.dll`, easy) and IL2CPP (`GameAssembly.dll`, hard). Mono is .NET, so you open it in dnSpy to read nearly the source, then edit and Save Module. Gameplay logic lives in classes inheriting `MonoBehaviour`, so look at `Start()`/`Update()`, and go from variable names (gold, health) through Search and Analyze to reach the logic.
 
 AssetStudio extracts textures/models/audio/text. Always back up the original file, and only do this on your own offline games.

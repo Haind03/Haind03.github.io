@@ -14,7 +14,7 @@ Rust is spreading fast, from command-line tools to malware, so sooner or later y
 
 There are three reasons, and knowing them makes opening the decompiler less of a shock. The first is monomorphization. Generics in Rust don't share a single copy of the code, and each concrete type generates its own copy of the function. A `Vec<T>` used with five types is five nearly identical copies of the functions, so the binary gets bigger and full of duplicate functions. The second is aggressive inlining. Rust's optimizer (through LLVM) inlines very heavily, so an iterator chain like `.iter().map().filter().collect()` turns into a flat loop, with no function boundaries left. The third is static linking by default. Like Go, Rust binaries usually bundle the whole standard library, so the file is big and the author's code is mixed with a lot of library code.
 
-One important difference from Go: Rust has no GC runtime and no goroutine scheduler. Structurally it's closer to C++, so what you learned reading C++ in Part 4 (especially vtables, structs, STL) carries over a lot.
+One important difference from Go is that Rust has no GC runtime and no goroutine scheduler. Structurally it's closer to C++, so what you learned reading C++ in Part 4 (especially vtables, structs, STL) carries over a lot.
 
 ## Recognizing a Rust binary
 
@@ -49,11 +49,11 @@ Rust uses `Option<T>` and `Result<T, E>` everywhere, so recognizing them helps y
 
 ## Approach
 
-My usual rhythm: triage with DIE, confirm it's Rust, and note the rustc version if you see it. Turn on the demangler in IDA/Ghidra, or run rustfilt on the symbol table. Use panic strings to go backwards to the author's functions, ignoring `core`/`alloc`/`std`. Iterator chains are flattened, so read by logic instead of trying to recover the original function boundaries. Use your C++ experience (Part 4) for structs and parameter passing.
+My usual rhythm is to triage with DIE, confirm it's Rust, and note the rustc version if you see it. Turn on the demangler in IDA/Ghidra, or run rustfilt on the symbol table. Use panic strings to go backwards to the author's functions, ignoring `core`/`alloc`/`std`. Iterator chains are flattened, so read by logic instead of trying to recover the original function boundaries. Use your C++ experience (Part 4) for structs and parameter passing.
 
 ## Lab
 
-The task is to see the traits of a Rust binary this lesson describes: name mangling, panic strings, and the effect of the optimization level. You need `rustc`, and optionally `rustfilt` (install it with `cargo install rustfilt`). Check with `rustc --version`. If your machine has no Rust toolchain, read the solution to see the described results and you can still follow the lesson.
+The task is to see the traits of a Rust binary this lesson describes, namely name mangling, panic strings, and the effect of the optimization level. You need `rustc`, and optionally `rustfilt` (install it with `cargo install rustfilt`). Check with `rustc --version`. If your machine has no Rust toolchain, read the solution to see the described results and you can still follow the lesson.
 
 Build three variants from `main.rs`. The debug build is `rustc main.rs -o rust_demo_dbg`, the release build is `rustc -O main.rs -o rust_demo_rel`, and the v0 mangling build is `rustc -O -C symbol-mangling-version=v0 main.rs -o rust_demo_v0`. Compare the sizes of the three files and think about why they are all large even though the program is tiny. Then look for panic strings:
 
@@ -112,7 +112,7 @@ which `rustfilt` turns into `rust_demo::transform`. The part `17h3a9f...` is a l
 
 ### Task 5: debug vs release
 
-In debug, `transform` stays fairly close to the source and you can see the separate calls to the iterator adapters. In release, the whole chain `.bytes().enumerate().map(...).fold(...)` is inlined and merged into one flat loop that walks each byte, multiplies by the index, and accumulates into an accumulator initialized to `0x1337`. There are no separate `map` or `fold` functions left. That's why release Rust is hard to read: you have to read by the logic of the loop, not by the original function structure.
+In debug, `transform` stays fairly close to the source and you can see the separate calls to the iterator adapters. In release, the whole chain `.bytes().enumerate().map(...).fold(...)` is inlined and merged into one flat loop that walks each byte, multiplies by the index, and accumulates into an accumulator initialized to `0x1337`. There are no separate `map` or `fold` functions left. That's why release Rust is hard to read, because you have to read by the logic of the loop, not by the original function structure.
 
 ### Answers to the questions
 

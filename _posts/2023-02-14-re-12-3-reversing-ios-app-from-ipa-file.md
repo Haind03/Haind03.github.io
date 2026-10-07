@@ -8,9 +8,9 @@ categories: ["Technique Reverse", "Part 12 · Swift and Objective-C"]
 tags: [reverse-engineering, ios, swift]
 render_with_liquid: false
 ---
-Reversing iOS differs from Android in a way that puts beginners off: you need to understand Mach-O and Objective-C/Swift, you first have to get past Apple's encryption layer, and you almost always need a jailbroken device. This lesson goes from the IPA file to hooking a running method, and says plainly where you need a real device.
+Reversing iOS differs from Android in a way that puts beginners off, since you need to understand Mach-O and Objective-C/Swift, you first have to get past Apple's encryption layer, and you almost always need a jailbroken device. This lesson goes from the IPA file to hooking a running method, and says plainly where you need a real device.
 
-A reminder of the boundary from [Lesson 0.2](/posts/re-0-2-legal-ethics-part-everyone-wants-skip/): everything below is for security testing on your own app or an app you have permission for, not for cracking other people's apps.
+A reminder of the boundary from [Lesson 0.2](/posts/re-0-2-legal-ethics-part-everyone-wants-skip/), which is that everything below is for security testing on your own app or an app you have permission for, not for cracking other people's apps.
 
 ## An IPA is a ZIP file
 
@@ -30,7 +30,7 @@ The file that matters is the Mach-O binary with the same name as the app (no ext
 
 ## FairPlay encryption
 
-This is where iOS is different. Binaries downloaded from the App Store are encrypted by Apple with FairPlay DRM: the `__TEXT` part (which holds the code) is encrypted, and only decrypted in memory at runtime on a device with the right license. A `cryptid` of 1 in the `LC_ENCRYPTION_INFO` load command means the binary is still encrypted.
+This is where iOS is different. Binaries downloaded from the App Store are encrypted by Apple with FairPlay DRM, so the `__TEXT` part (which holds the code) is encrypted, and only decrypted in memory at runtime on a device with the right license. A `cryptid` of 1 in the `LC_ENCRYPTION_INFO` load command means the binary is still encrypted.
 
 In practice, if you drag a binary straight from an App Store IPA into IDA/Ghidra, the code is just encrypted garbage. You have to get a decrypted copy first.
 
@@ -38,7 +38,7 @@ To get one, let the device decrypt it in RAM (like it does when running the app)
 
 The most popular tool right now is frida-ios-dump, a Python script running through Frida. It runs the app, reads the decrypted `__TEXT` region in memory, writes it over the binary, sets `cryptid` back to 0, and repackages it into a decrypted IPA. bagbak is a newer tool with the same idea, also built on Frida. Clutch is an old tool that's often broken on new iOS, and I only mention it so you recognize the name.
 
-All of them need a jailbroken device (or an equivalent environment) because they have to read the process memory of another app. This blocks a lot of people learning iOS: without a jailbroken device you almost can't go further with App Store apps. An app you build yourself and install through Xcode isn't under FairPlay, which is much easier for learning.
+All of them need a jailbroken device (or an equivalent environment) because they have to read the process memory of another app. This blocks a lot of people learning iOS, since without a jailbroken device you almost can't go further with App Store apps. An app you build yourself and install through Xcode isn't under FairPlay, which is much easier for learning.
 
 ## After decryption: analyze it as a Mach-O
 
@@ -148,7 +148,7 @@ For static analysis, open the decrypted binary in Ghidra (pick the right arm64 s
 
 With objection, `ios hooking watch class LoginViewController` prints every time a method of that class is called, together with its arguments. It is the fastest way to learn the execution flow without writing a script. With the Frida script, `frida -U -f com.example.myapp -l hook.js` hooks `- checkPassword:`, logs the first argument (`args[2]`) and forces a return of true (`retval.replace(ptr(1))`).
 
-On the questions, you can't analyze the App Store binary directly because the `__TEXT` part is encrypted by FairPlay, and the code is only garbage until iOS decrypts it in RAM at run time, so you have to dump the decrypted version to read it. `args[1]` is the selector because in ObjC every method is a C function of the form `method(self, SEL, ...)`: `args[0]` is self and `args[1]` is the selector (SEL), so the parameters the developer declared start at `args[2]`. Without a jailbroken device you can learn with an app you build and install through Xcode (it isn't subject to FairPlay, and you can debug and hook freely on the simulator or a dev device), or practice on crackmes and deliberately vulnerable apps such as DVIA-v2 and iGoat.
+On the questions, you can't analyze the App Store binary directly because the `__TEXT` part is encrypted by FairPlay, and the code is only garbage until iOS decrypts it in RAM at run time, so you have to dump the decrypted version to read it. `args[1]` is the selector because in ObjC every method is a C function of the form `method(self, SEL, ...)`, where `args[0]` is self and `args[1]` is the selector (SEL), so the parameters the developer declared start at `args[2]`. Without a jailbroken device you can learn with an app you build and install through Xcode (it isn't subject to FairPlay, and you can debug and hook freely on the simulator or a dev device), or practice on crackmes and deliberately vulnerable apps such as DVIA-v2 and iGoat.
 
 </details>
 

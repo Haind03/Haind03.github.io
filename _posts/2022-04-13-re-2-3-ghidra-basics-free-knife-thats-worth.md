@@ -18,13 +18,13 @@ Unlike IDA (drag a file in and it runs), Ghidra makes you create a project first
 
 Open Ghidra, choose File > New Project, choose Non-Shared Project (you're working alone), and set a name and a location. Then drag the file you want to analyze into the project window, or use File > Import File. Ghidra recognizes the format (PE, ELF, Mach-O) and the architecture itself, so usually you leave the defaults and click OK. Double-click the imported file to open CodeBrowser, the main working window. Ghidra asks "Analyze now?". Choose Yes, and when the analyzer list shows up leave the defaults and click Analyze.
 
-Auto-analysis is where Ghidra scans the whole file: finding functions, building cross-references, recognizing strings, guessing data types. A small file finishes in seconds, a big one takes longer. When the progress bar finishes you can start.
+Auto-analysis is where Ghidra scans the whole file, finding functions, building cross-references, recognizing strings, guessing data types. A small file finishes in seconds, a big one takes longer. When the progress bar finishes you can start.
 
 ## CodeBrowser
 
-The CodeBrowser interface looks messy at first, but you only use four places all the time. The Listing (middle of the screen) is the disassembly: assembly with addresses, comments, labels. It's the most accurate view of the original. The Decompiler (usually on the right) shows C-like pseudocode of the selected function. You open it by clicking a function or pressing Ctrl+E, and beginners read it the most because it's easier than assembly. The Symbol Tree (on the left) lists functions, imports, exports, and labels, and it's where you jump to a function by name. The Data Type Manager (bottom left) stores data types, and when you want to apply a struct or a Windows type to a variable, you get it from here.
+The CodeBrowser interface looks messy at first, but you only use four places all the time. The Listing (middle of the screen) is the disassembly, which is assembly with addresses, comments, labels. It's the most accurate view of the original. The Decompiler (usually on the right) shows C-like pseudocode of the selected function. You open it by clicking a function or pressing Ctrl+E, and beginners read it the most because it's easier than assembly. The Symbol Tree (on the left) lists functions, imports, exports, and labels, and it's where you jump to a function by name. The Data Type Manager (bottom left) stores data types, and when you want to apply a struct or a Windows type to a variable, you get it from here.
 
-Listing and Decompiler stay in sync: click a line on one side and the other jumps along. I usually read the Decompiler to get the idea, then check the Listing when I need instruction-level accuracy.
+Listing and Decompiler stay in sync. Click a line on one side and the other jumps along. I usually read the Decompiler to get the idea, then check the Listing when I need instruction-level accuracy.
 
 ## Start from strings
 
@@ -72,7 +72,7 @@ MSVC (Win):   cl /Od crackme01.c
 
 I use `-O0` so the decompiler output stays close to the source, which suits a first time. Don't open `crackme01.c` to peek at the answer before you've tried it yourself.
 
-Create a Non-Shared Project in Ghidra, import `crackme01`, answer Yes when asked to analyze, and let auto-analysis finish. Open Window > Defined Strings and find the two result messages. Which one hints that this is where the right/wrong decision is made? Double-click the success string to jump to the Listing, then press Ctrl+Shift+F (Find References To) to find the function that references it, and check whether it is `main` or some other function that calls into it. Open the check function in the Decompiler, rename it (L) to `check_password`, and rename the parameter to `input` for readability. Then read the pseudocode: what does the function compare `input` against? Find the correct password, run the binary, type it in, and confirm you get "Access granted". Finally, if you did the lesson 2.2 lab, open the same binary in IDA and compare. Which job was faster, which keys differed, and which decompiler reads better to you?
+Create a Non-Shared Project in Ghidra, import `crackme01`, answer Yes when asked to analyze, and let auto-analysis finish. Open Window > Defined Strings and find the two result messages. Which one hints that this is where the right/wrong decision is made? Double-click the success string to jump to the Listing, then press Ctrl+Shift+F (Find References To) to find the function that references it, and check whether it is `main` or some other function that calls into it. Open the check function in the Decompiler, rename it (L) to `check_password`, and rename the parameter to `input` for readability. Then read the pseudocode. What does the function compare `input` against? Find the correct password, run the binary, type it in, and confirm you get "Access granted". Finally, if you did the lesson 2.2 lab, open the same binary in IDA and compare. Which job was faster, which keys differed, and which decompiler reads better to you?
 
 A few hints. If Defined Strings doesn't show the string you expect, check that auto-analysis has actually finished (the bar at the bottom). The password sits in the pseudocode as a string constant being compared, so you don't need to debug, reading is enough. If the decompiler shows variables of type `undefined`, try retyping them (Ctrl+L) to `char *` or `int` to make them clearer.
 
@@ -90,7 +90,7 @@ The password is `Gh1dra_R0cks`. Typing it gives "Access granted. Congratulations
 
 After creating the project and importing `crackme01`, answer Yes to "Analyze now?" and leave the analyzers at their defaults. For a small binary like this, auto-analysis finishes in a few seconds, and you're done when the status bar at the bottom stops running.
 
-Window > Defined Strings shows, among others, `Enter password: `, `Access granted. Congratulations!`, `Wrong password. Try again.` and `Gh1dra_R0cks`, which is the password itself, sitting in `.rodata`. The `Access granted` string marks the success branch. Even `Gh1dra_R0cks` shows up here: plenty of easy crackmes leak the password in the strings table before you ever open a function.
+Window > Defined Strings shows, among others, `Enter password: `, `Access granted. Congratulations!`, `Wrong password. Try again.` and `Gh1dra_R0cks`, which is the password itself, sitting in `.rodata`. The `Access granted` string marks the success branch. Even `Gh1dra_R0cks` shows up here, and plenty of easy crackmes leak the password in the strings table before you ever open a function.
 
 For the xref step, double-click `Access granted...` to get to the Listing, put the cursor on it and press Ctrl+Shift+F. The reference leads back to `main`, since the result string is printed there. If you xref the string `Gh1dra_R0cks` instead, it leads straight into the `check_password` function (named `FUN_...` at first in the Listing), because that's where the real comparison happens. In the Decompiler, put the cursor on the name of the `FUN_...` function that holds the comparison, press L and rename it to `check_password`, then rename the parameter to `input`. The pseudocode gets noticeably easier to read right away.
 
@@ -110,9 +110,9 @@ int check_password(char *input)
 }
 ```
 
-The function compares the input character by character against the string constant `Gh1dra_R0cks`. That's the password. Ghidra may render the loop a little differently (with an internal index variable, calling `strlen` repeatedly), but the logic is the same: match the length, then match each character. To confirm, run the binary, type `Gh1dra_R0cks`, and the success message appears.
+The function compares the input character by character against the string constant `Gh1dra_R0cks`. That's the password. Ghidra may render the loop a little differently (with an internal index variable, calling `strlen` repeatedly), but the logic is the same, which is to match the length, then match each character. To confirm, run the binary, type `Gh1dra_R0cks`, and the success message appears.
 
-Compared with IDA, going from a string to a function takes about the same number of steps: IDA uses Shift+F12 to open Strings and X for xrefs, while Ghidra uses Defined Strings and then Ctrl+Shift+F. As decompilers, both read the password out easily on `-O0` code. Hex-Rays (IDA) tends to fold `strlen` a bit more neatly, while Ghidra spells it out more. Renaming is N in IDA and L in Ghidra: different key, same effect. For something this size the two tools are on par. The big differences only show up on complex binaries and when you need scripting.
+Compared with IDA, going from a string to a function takes about the same number of steps. IDA uses Shift+F12 to open Strings and X for xrefs, while Ghidra uses Defined Strings and then Ctrl+Shift+F. As decompilers, both read the password out easily on `-O0` code. Hex-Rays (IDA) tends to fold `strlen` a bit more neatly, while Ghidra spells it out more. Renaming is N in IDA and L in Ghidra, a different key with the same effect. For something this size the two tools are on par. The big differences only show up on complex binaries and when you need scripting.
 
 </details>
 

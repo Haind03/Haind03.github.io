@@ -24,7 +24,7 @@ How it differs from the tools you've learned:
 | Frida ([Lesson 17.2](/posts/re-17-2-frida-full-inspecting-modifying-program-while/)) | function-level hooks | reading/changing parameters, observing APIs |
 | DBI (Pin, DynamoRIO...) | per instruction/block, whole program | coverage, wide traces, taint |
 
-DBI is heavier than Frida (it runs much slower because it re-translates every block) but far more detailed: it sees every instruction, not just function boundaries.
+DBI is heavier than Frida (it runs much slower because it re-translates every block) but far more detailed, since it sees every instruction, not just function boundaries.
 
 ## Four tools people use
 
@@ -42,7 +42,7 @@ Beginners should start with a ready-made tool (DynamoRIO's drcov) before writing
 
 This is the main reason to learn DBI. Run the program with a wrong input and collect the set of basic blocks executed (coverage A). Run again with a nearly right or right input and collect coverage B. Then compare. The blocks that appear only in B and not in A are the code that runs when you go deeper into the check logic.
 
-For a crackme, this marks out the serial check function without you having to understand anything beforehand: the program itself shows you where it branches when the input gets better. Combining coverage with fuzzing is the foundation of modern fuzzing (AFL uses this coverage idea to guide itself).
+For a crackme, this marks out the serial check function without you having to understand anything beforehand. The program itself shows you where it branches when the input gets better. Combining coverage with fuzzing is the foundation of modern fuzzing (AFL uses this coverage idea to guide itself).
 
 There are other uses too. With instruction count and execution traces, you can understand what an obfuscated function does by looking at the sequence of instructions that actually run, ignoring junk code that never executes (useful against anti-disassembly in [Lesson 15.6](/posts/re-15-6-anti-disassembly-when-disassembler-itself-gets/)). A memory trace records every memory read/write to follow where a value goes. Taint analysis marks the input as "tainted" then tracks it spreading through registers and memory cells, to see which decisions the input affects.
 
@@ -52,11 +52,11 @@ Many anti-debug techniques in Part 15 target debuggers (checking the PEB, debug 
 
 ## When to use DBI
 
-Use it when your question is global and quantitative: coverage, counting, wide traces, taint. Don't use it when you only need to look at one function (a debugger is faster) or hook a few APIs (Frida is lighter). DBI trades speed for visibility: the program runs many times slower, but you see everything.
+Use it when your question is global and quantitative, such as coverage, counting, wide traces, taint. Don't use it when you only need to look at one function (a debugger is faster) or hook a few APIs (Frida is lighter). DBI trades speed for visibility. The program runs many times slower, but you see everything.
 
 ## Lab
 
-The task is to use a DBI tool to collect the code coverage of a program with two different inputs, then compare them to narrow down the code that runs when you get deeper into the check logic. You don't have to understand the program beforehand, because the coverage points the way. You need one DBI tool: DynamoRIO (which ships `drcov`), Intel Pin, or QBDI. This lab is described with DynamoRIO because `drcov` already collects coverage. You also need a practice target, a crackme that takes an input and prints right or wrong (for example the crackme from Lesson 3.5 or Lesson 2.5), and a tool to view and compare coverage, either Lighthouse (an IDA/Binary Ninja plugin) or your own diff script.
+The task is to use a DBI tool to collect the code coverage of a program with two different inputs, then compare them to narrow down the code that runs when you get deeper into the check logic. You don't have to understand the program beforehand, because the coverage points the way. You need one DBI tool, such as DynamoRIO (which ships `drcov`), Intel Pin, or QBDI. This lab is described with DynamoRIO because `drcov` already collects coverage. You also need a practice target, a crackme that takes an input and prints right or wrong (for example the crackme from Lesson 3.5 or Lesson 2.5), and a tool to view and compare coverage, either Lighthouse (an IDA/Binary Ninja plugin) or your own diff script.
 
 First run the target with an input that is certainly WRONG and collect the coverage:
 
@@ -64,7 +64,7 @@ First run the target with an input that is certainly WRONG and collect the cover
 drrun -t drcov -- ./target wrongwrong
 ```
 
-The result is a `drcov.*.log` file recording the basic blocks that ran. Run it again with a "better" input (the right length, the right prefix, or an input you guess gets further into the check function) and collect a second coverage. Compare the two sets of blocks: the blocks that appear ONLY in the second run are code newly triggered by going deeper. Load both coverage files into Lighthouse in IDA or Binary Ninja, color them, and see which function the new blocks fall in. That is very likely the check function (or branch). Finally open that function and read it statically to confirm it is the serial or password check logic.
+The result is a `drcov.*.log` file recording the basic blocks that ran. Run it again with a "better" input (the right length, the right prefix, or an input you guess gets further into the check function) and collect a second coverage. Compare the two sets of blocks. The blocks that appear ONLY in the second run are code newly triggered by going deeper. Load both coverage files into Lighthouse in IDA or Binary Ninja, color them, and see which function the new blocks fall in. That is very likely the check function (or branch). Finally open that function and read it statically to confirm it is the serial or password check logic.
 
 Some questions to think about. Why does coverage diffing find the check function faster than reading statically from the start? If the right and wrong inputs give identical coverage all the way to the end, what does that suggest about how the check works (for example a comparison that does not branch early)? And DBI runs many times slower than a normal run, so when is that cost worth paying and when should you go back to a debugger?
 
@@ -87,11 +87,11 @@ This produces `drcov.target.<pid>.0000.proc.log`, which you rename to `cov_wrong
 drrun -t drcov -- ./target RE00000000
 ```
 
-and rename it to `cov_better.log`. To compare, the quickest way is to load both into Lighthouse (IDA: File > Load file > Code coverage file). Lighthouse colors the blocks that ran. Open the two coverages and use the diff (composition) feature to get `cov_better - cov_wrong`. The extra blocks lit up in the "better" run concentrate in one function, usually the per-character comparison or the serial transform function, and that is the target. Open that function statically (F5 in IDA) to read the logic and recover the correct serial.
+and rename it to `cov_better.log`. To compare, the quickest way is to load both into Lighthouse (in IDA, File > Load file > Code coverage file). Lighthouse colors the blocks that ran. Open the two coverages and use the diff (composition) feature to get `cov_better - cov_wrong`. The extra blocks lit up in the "better" run concentrate in one function, usually the per-character comparison or the serial transform function, and that is the target. Open that function statically (F5 in IDA) to read the logic and recover the correct serial.
 
 ### Why this is fast
 
-Instead of reading from `main` down through the CRT and dozens of helper functions, you let the program filter for you: only the code that reacts to the better input shows up in the diff. For a large or obfuscated binary, this is the cheapest way to narrow things down.
+Instead of reading from `main` down through the CRT and dozens of helper functions, you let the program filter for you, so only the code that reacts to the better input shows up in the diff. For a large or obfuscated binary, this is the cheapest way to narrow things down.
 
 ### Answers to the questions
 

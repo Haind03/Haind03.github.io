@@ -10,7 +10,7 @@ render_with_liquid: false
 ---
 IDA and Ghidra let you read code while it stands still. x64dbg lets you watch it run. It's a free, open source ring-3 (user-mode) debugger, and almost everyone doing RE on Windows opens it daily. This lesson goes from finding the interface confusing to setting breakpoints, inspecting registers, and patching a check.
 
-x64dbg is two builds in one package: `x64dbg.exe` for 64-bit binaries and `x32dbg.exe` for 32-bit. Pick the wrong one and it won't load, so check how many bits the target file is first (lesson [2.1](/posts/re-2-1-five-minute-triage-die-strings-pe/) handles that).
+x64dbg is two builds in one package, with `x64dbg.exe` for 64-bit binaries and `x32dbg.exe` for 32-bit. Pick the wrong one and it won't load, so check how many bits the target file is first (lesson [2.1](/posts/re-2-1-five-minute-triage-die-strings-pe/) handles that).
 
 ## The screen layout
 
@@ -65,7 +65,7 @@ Once stopped, you inspect. Right-click a register or operand that holds an addre
 
 ## Patching
 
-Say you find a `jne` that jumps to the "Wrong password" branch, and you want it to always take the right branch. Select the `jne` line and press `Space` (or right-click, Assemble). Type the new instruction: change `jne` to `je` to flip the condition, type `nop` to remove the jump entirely, or change it to `jmp` to jump unconditionally. Press OK and the instruction is changed in memory, so you can run it right away.
+Say you find a `jne` that jumps to the "Wrong password" branch, and you want it to always take the right branch. Select the `jne` line and press `Space` (or right-click, Assemble). Type the new instruction, for example change `jne` to `je` to flip the condition, type `nop` to remove the jump entirely, or change it to `jmp` to jump unconditionally. Press OK and the instruction is changed in memory, so you can run it right away.
 
 This patch only lives in memory, close the debugger and it's gone. To save it as a new `.exe` file, open Patches with `Ctrl+P`, look at the list of changes, then Patch File to write it to disk. Deeper patching techniques (code caves, patching on disk vs at runtime) are in lesson [17.1](/posts/re-17-1-patching-binaries-changing-one-byte-change/).
 
@@ -111,7 +111,7 @@ Last, patch the program so it accepts any serial. After `check` returns, look fo
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>
 
-Do the whole lab before reading this. The logic lives in `make_serial`. It uses `name = "reverser"` and adds up the ASCII code of each character: r+e+v+e+r+s+e+r = 114+101+118+101+114+115+101+114 = 878. The serial is `"RE-" + (878 * 7)`, which is `RE-6146`. To check:
+Do the whole lab before reading this. The logic lives in `make_serial`. It uses `name = "reverser"` and adds up the ASCII code of each character, so r+e+v+e+r+s+e+r = 114+101+118+101+114+115+101+114 = 878. The serial is `"RE-" + (878 * 7)`, which is `RE-6146`. To check:
 
 ```
 serial_check.exe RE-6146
@@ -133,7 +133,7 @@ loc_wrong:
 ...                   ; prints "Wrong serial."
 ```
 
-There are three ways to patch it, and you pick one. You can flip the condition: select `je loc_wrong`, press `Space` and change it to `jne loc_wrong`. Now the correct serial is rejected and wrong ones are accepted, a bit backwards, but for the lab a random serial will pass. You can remove the jump: change `je loc_wrong` to `nop` (x64dbg inserts enough nops to fill the instruction length), so the flow never takes the wrong branch and always prints "Correct!". Or you can force the result: put a breakpoint at `test eax, eax` and set `eax = 1` in Registers each time it stops, which leaves the code untouched but has to be repeated on every run. For an exported file I'd `nop` the jump (or turn `je` into a `jmp` straight to the correct branch).
+There are three ways to patch it, and you pick one. You can flip the condition. Select `je loc_wrong`, press `Space` and change it to `jne loc_wrong`. Now the correct serial is rejected and wrong ones are accepted, a bit backwards, but for the lab a random serial will pass. You can remove the jump. Change `je loc_wrong` to `nop` (x64dbg inserts enough nops to fill the instruction length), so the flow never takes the wrong branch and always prints "Correct!". Or you can force the result. Put a breakpoint at `test eax, eax` and set `eax = 1` in Registers each time it stops, which leaves the code untouched but has to be repeated on every run. For an exported file I'd `nop` the jump (or turn `je` into a `jmp` straight to the correct branch).
 
 To save the patch, press `Ctrl+P`, check the list of changes, choose Patch File and save `serial_check_patched.exe`. Run it outside the debugger:
 
@@ -142,11 +142,11 @@ serial_check_patched.exe anything-at-all
 Correct! Welcome.
 ```
 
-To sum up: a breakpoint on an API name (`bp strcmp`) takes you straight to the moment of comparison, where the correct serial is in the parameters. Static and dynamic analysis confirm each other, since reading `make_serial` gives the same answer the debugger showed. Patching a single jump is the most common way past a check, and `nop` is the safe choice because it doesn't shift any addresses.
+To sum up, a breakpoint on an API name (`bp strcmp`) takes you straight to the moment of comparison, where the correct serial is in the parameters. Static and dynamic analysis confirm each other, since reading `make_serial` gives the same answer the debugger showed. Patching a single jump is the most common way past a check, and `nop` is the safe choice because it doesn't shift any addresses.
 
 </details>
 
 ## Key takeaways
-Use `x64dbg.exe` for 64-bit and `x32dbg.exe` for 32-bit, and pick the right build. The panels that matter are CPU (disassembly), Registers, Dump, Stack and Memory Map. Breakpoints come in three kinds: software (`F2`, fast, modifies a byte), hardware (harder to detect, max 4), and memory (catches access to a memory region). `bp APIName` in the Command box stops at the start of an API function, with parameters already in rcx/rdx/r8/r9.
+Use `x64dbg.exe` for 64-bit and `x32dbg.exe` for 32-bit, and pick the right build. The panels that matter are CPU (disassembly), Registers, Dump, Stack and Memory Map. Breakpoints come in three kinds, which are software (`F2`, fast, modifies a byte), hardware (harder to detect, max 4), and memory (catches access to a memory region). `bp APIName` in the Command box stops at the start of an API function, with parameters already in rcx/rdx/r8/r9.
 
 For control, `F7` steps into, `F8` steps over, `F9` runs, `Ctrl+F9` goes to return, and `F4` runs to the selected line. To patch, press `Space` to assemble a new instruction and `Ctrl+P` to save to a file. Always narrow down with static first, then set dynamic breakpoints in the right place.

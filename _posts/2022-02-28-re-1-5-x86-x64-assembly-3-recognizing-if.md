@@ -8,13 +8,13 @@ categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
-Lesson 1.3 covered the instruction set and lesson 1.4 the stack frame. Now we put them together to read high-level structure. A compiler takes your `for` statement and turns it into a series of `cmp`, `jmp`, `inc`. Reversing means going the other way: look at the pile and recognize "this is a loop".
+Lesson 1.3 covered the instruction set and lesson 1.4 the stack frame. Now we put them together to read high-level structure. A compiler takes your `for` statement and turns it into a series of `cmp`, `jmp`, `inc`. Reversing means going the other way, which is to look at the pile and recognize "this is a loop".
 
 Compilers are very mechanical. They translate each construct with a few fixed templates, so once you know the templates you can read the code. This lesson is that set of templates.
 
 ## if / else: one jump skipping a block
 
-You already met this in lesson 1.3. The compiler jumps over the block of instructions when the condition isn't met, so the logic is often inverted: `if (a == b)` in C becomes "if a is NOT equal to b, jump away".
+You already met this in lesson 1.3. The compiler jumps over the block of instructions when the condition isn't met, so the logic is often inverted. For example, `if (a == b)` in C becomes "if a is NOT equal to b, jump away".
 
 ```asm
     mov  eax, [rbp-4]     ; eax = x
@@ -44,7 +44,7 @@ An if inside an if is the same template stacked up, with more labels. Don't read
 
 ## Loops: a jump backwards
 
-A loop has one clear signature: a jump instruction pointing back up to an earlier address. Normal code runs downward, so a jump upward almost certainly means a loop.
+A loop has one clear signature, a jump instruction pointing back up to an earlier address. Normal code runs downward, so a jump upward almost certainly means a loop.
 
 A typical `for (i = 0; i < n; i++)`:
 
@@ -152,7 +152,7 @@ int y = t->b;
 void *z = t->c;
 ```
 
-Quick way to tell them apart: an array uses a varying index times a size (`rcx*4`), a struct uses constant offsets (`+4`, `+8`). An array is the same type many times, a struct is different types each at a fixed spot.
+A quick way to tell them apart is that an array uses a varying index times a size (`rcx*4`), while a struct uses constant offsets (`+4`, `+8`). An array is the same type many times, a struct is different types each at a fixed spot.
 
 In IDA you can declare a struct (press `Y` to set a type, or create the struct in Local Types) and assign it to the pointer, and `[rax+8]` turns into `t->c`, which is much nicer to read. Lesson [3.3](/posts/re-3-3-structs-assembly-art-recovering-them/) goes deep on recovering structs.
 
@@ -191,7 +191,7 @@ cl /Od structures.c
 cl /O2 structures.c
 ```
 
-Open the binary in Ghidra (import, then auto-analyze) or IDA, go through each function in turn and answer a few questions. In `sum_array`, find the instruction that jumps backward to mark the loop, and work out the scale factor used for the array access and how it matches the `int` type. In `classify`, count the `cmp` plus conditional jump pairs and redraw the if/else tree from the jump labels. In `action_name`, decide whether the compiler built a jump table or translated the switch into an if/else chain, and if there is a table, find its address and entries. In `level_up`, list which offsets are added to the struct pointer and match them to the fields of `struct Player`. Finally compare `sum_array` between `-O0` and `-O2`: does the counter `i` still live on the stack at `-O2` or does the compiler keep it in a register, and is the loop distorted by unrolling or a changed condition form?
+Open the binary in Ghidra (import, then auto-analyze) or IDA, go through each function in turn and answer a few questions. In `sum_array`, find the instruction that jumps backward to mark the loop, and work out the scale factor used for the array access and how it matches the `int` type. In `classify`, count the `cmp` plus conditional jump pairs and redraw the if/else tree from the jump labels. In `action_name`, decide whether the compiler built a jump table or translated the switch into an if/else chain, and if there is a table, find its address and entries. In `level_up`, list which offsets are added to the struct pointer and match them to the fields of `struct Player`. Finally compare `sum_array` between `-O0` and `-O2`. Does the counter `i` still live on the stack at `-O2` or does the compiler keep it in a register, and is the loop distorted by unrolling or a changed condition form?
 
 A few hints. Use the graph view (the `Space` key in IDA) to see the branching blocks instead of reading text. In Ghidra the decompiler window (double-click a function) gives an approximate C version to compare with, but try reading the asm yourself first and only then open the decompiler to check. If you can't spot a jump table, look for a `jmp` to a register (an indirect jump) with a `*8` (x64) or `*4` (x86) computation right before it. Compare on your own first and open the solution when you're finished.
 
@@ -229,7 +229,7 @@ Typical asm at `-O0`, with the prologue trimmed:
     mov  eax, [rbp-4]        ; return total
 ```
 
-The instruction that marks the loop is `jl .body`, jumping backward. The scale factor is `rax*4`: a 4-byte element, which matches the `int` type. With a `char*` you would see `*1` and with a `double*` you would see `*8`. The compiler puts the condition at the end and enters the loop with an initial `jmp .check`, a common template for `for` and `while` at `-O0`.
+The instruction that marks the loop is `jl .body`, jumping backward. The scale factor is `rax*4`, a 4-byte element, which matches the `int` type. With a `char*` you would see `*1` and with a `double*` you would see `*8`. The compiler puts the condition at the end and enters the loop with an initial `jmp .check`, a common template for `for` and `while` at `-O0`.
 
 ### 2) classify: nested if/else
 
@@ -255,7 +255,7 @@ The three thresholds (90, 70, 50) become three cmp plus jump pairs:
 .done:
 ```
 
-There are three `cmp` plus `jl` pairs. Each "true" branch ends with `jmp .done`, and a trailing jmp at the end of a body means an else branch follows. The logic is inverted: `if (score >= 90)` becomes `cmp 90; jl .not_A` (if it is LESS than 90, skip the A branch), which is very typical. You can rebuild the whole nested if/else tree from the chain of labels `.not_A -> .not_B -> .else_F`.
+There are three `cmp` plus `jl` pairs. Each "true" branch ends with `jmp .done`, and a trailing jmp at the end of a body means an else branch follows. The logic is inverted, as `if (score >= 90)` becomes `cmp 90; jl .not_A` (if it is LESS than 90, skip the A branch), which is very typical. You can rebuild the whole nested if/else tree from the chain of labels `.not_A -> .not_B -> .else_F`.
 
 ### 3) action_name: switch
 
@@ -278,7 +278,7 @@ With 5 consecutive cases 0..4, gcc, clang and MSVC at optimized levels usually b
     dd  .case4 - .table
 ```
 
-The signature is `cmp eax, 4` plus `ja .default` (the bounds check), then `jmp rax` (an indirect jump through a register) with the target loaded from `[table + index*4]`. At `-O0`, some compilers instead translate this switch into an if/else chain comparing 0, 1, 2, 3, 4 in turn. If you see that, it's correct and there's no table, and building with `-O2` forces a jump table out. IDA and Ghidra recognize the table by themselves and label it `jpt_` along with the list of cases, so you don't have to chase offsets by hand. One more thing: `ja` (unsigned) guards both the upper bound and negative values in one instruction, because a negative number treated as unsigned is huge.
+The signature is `cmp eax, 4` plus `ja .default` (the bounds check), then `jmp rax` (an indirect jump through a register) with the target loaded from `[table + index*4]`. At `-O0`, some compilers instead translate this switch into an if/else chain comparing 0, 1, 2, 3, 4 in turn. If you see that, it's correct and there's no table, and building with `-O2` forces a jump table out. IDA and Ghidra recognize the table by themselves and label it `jpt_` along with the list of cases, so you don't have to chase offsets by hand. One more thing is that `ja` (unsigned) guards both the upper bound and negative values in one instruction, because a negative number treated as unsigned is huge.
 
 ### 4) level_up: struct through offsets
 
@@ -319,6 +319,6 @@ The templates in this lesson are most accurate at `-O0`. Real-world code is usua
 </details>
 
 ## Key takeaways
-For if/else, look for a cmp plus a conditional jump over a block. A `jmp` at the end of the if body usually means there's an else, and the condition logic is often inverted. Loops show up as a jump back up, with four pieces: init, condition, body, increment. do...while puts the condition at the end of the block.
+For if/else, look for a cmp plus a conditional jump over a block. A `jmp` at the end of the if body usually means there's an else, and the condition logic is often inverted. Loops show up as a jump back up, with four pieces, which are init, condition, body, increment. do...while puts the condition at the end of the block.
 
 A switch with many consecutive cases becomes a jump table, recognized by an indirect `jmp` plus `index*8`, and IDA/Ghidra rebuild the cases automatically. Arrays look like `[base + index*scale]` where the scale (1/2/4/8) gives the element size, while structs look like `[base + constant offset]` where each offset is a field. Building your own code and inspecting it is the fastest way to learn.

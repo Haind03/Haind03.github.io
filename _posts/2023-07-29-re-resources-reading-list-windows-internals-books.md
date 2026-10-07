@@ -17,11 +17,11 @@ Mark Russinovich, David Solomon and Alex Ionescu, Microsoft Press. This is the b
 
 ## Windows via C/C++ (5th edition)
 
-Jeffrey Richter and Christophe Nasarre, Microsoft Press. Windows Internals explains the kernel side, this one is about the Win32 API from the programmer's side: processes, threads, synchronization, memory, DLLs and DLL injection. It's old, but when you reverse a Windows binary you're mostly reading calls into these APIs, and knowing how they're meant to be used makes the disassembly easier to follow.
+Jeffrey Richter and Christophe Nasarre, Microsoft Press. Windows Internals explains the kernel side, this one is about the Win32 API from the programmer's side, covering processes, threads, synchronization, memory, DLLs and DLL injection. It's old, but when you reverse a Windows binary you're mostly reading calls into these APIs, and knowing how they're meant to be used makes the disassembly easier to follow.
 
 ## Practical Malware Analysis
 
-Michael Sikorski and Andrew Honig, [No Starch Press](https://nostarch.com/malware). Still the best starting point for malware analysis, in my opinion. It covers static and dynamic analysis, IDA, OllyDbg, and then the tricks malware uses against you: anti-disassembly, anti-debugging, anti-VM and packers. The labs at the end of each chapter are what make it worth it, so do them. The anti-reverse part of my series (Part 15) leans on these chapters a lot.
+Michael Sikorski and Andrew Honig, [No Starch Press](https://nostarch.com/malware). Still the best starting point for malware analysis, in my opinion. It covers static and dynamic analysis, IDA, OllyDbg, and then the tricks malware uses against you, such as anti-disassembly, anti-debugging, anti-VM and packers. The labs at the end of each chapter are what make it worth it, so do them. The anti-reverse part of my series (Part 15) leans on these chapters a lot.
 
 ## Practical Reverse Engineering
 

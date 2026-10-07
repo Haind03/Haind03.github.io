@@ -10,7 +10,7 @@ render_with_liquid: false
 ---
 Unity gives you DLLs that read almost like source. Unreal doesn't. Unreal Engine is written in C++ and compiled straight to native, so all the logic sits in one huge exe that you open in IDA/Ghidra like a normal C++ program (going back to Part 4 helps). On the other hand, UE has its own reflection system and a strong community tool ecosystem, so there are still plenty of ways in. This lesson is an overview.
 
-Scope: this is for your own offline/single-player games, for learning and research. Touching online multiplayer games involves anti-cheat and terms of service, and is outside the scope of this series.
+This is for your own offline/single-player games, for learning and research. Touching online multiplayer games involves anti-cheat and terms of service, and is outside the scope of this series.
 
 ## Recognizing an Unreal game
 
@@ -20,7 +20,7 @@ Knowing the UE version (UE4.x or UE5.x) matters a lot because community tools ar
 
 ## Three fronts
 
-When reversing Unreal you work on three different fronts, and pick one based on what you need. The first is assets in .pak files: models, textures, audio, and what matters most to a reverser, Blueprints and DataTables, using FModel/UModel. The second is native C++ code in the exe: core logic, engine functions, anti-analysis, using IDA/Ghidra helped by an SDK dump. The third is runtime, where you inject into the running game to call functions, read objects, and script, using UE4SS.
+When reversing Unreal you work on three different fronts, and pick one based on what you need. The first is assets in .pak files, such as models, textures, audio, and what matters most to a reverser, Blueprints and DataTables, using FModel/UModel. The second is native C++ code in the exe, such as core logic, engine functions, anti-analysis, using IDA/Ghidra helped by an SDK dump. The third is runtime, where you inject into the running game to call functions, read objects, and script, using UE4SS.
 
 ### .pak files and AES encryption
 
@@ -40,7 +40,7 @@ Blueprint is Unreal's visual scripting, compiled into bytecode that runs on the 
 
 ## SDK dump
 
-Open an Unreal exe in IDA with no preparation and you drown: hundreds of thousands of functions, no names. What saves you is Unreal's reflection system. The engine stores info about every UClass, UProperty, UFunction in memory at runtime (to serialize, to let Blueprints call C++, to make the editor work). An SDK dumper walks those structures and generates C++ headers describing all the classes, field offsets, and function addresses of this specific game.
+Open an Unreal exe in IDA with no preparation and you drown in hundreds of thousands of functions with no names. What saves you is Unreal's reflection system. The engine stores info about every UClass, UProperty, UFunction in memory at runtime (to serialize, to let Blueprints call C++, to make the editor work). An SDK dumper walks those structures and generates C++ headers describing all the classes, field offsets, and function addresses of this specific game.
 
 With the SDK, you know the structs of the important objects (what offset the player position is at in AActor, where health is). You also get the names and addresses of UFunctions, which you map back into IDA to name functions.
 
@@ -50,7 +50,7 @@ Dumpers start from GObjects (the global array of every UObject) and GNames (the 
 
 UE4SS (Unreal Engine Scripting System) is a DLL injected into the game. It gives you an automatic SDK dump (C++ headers and also formats for other tools) and a live property viewer, where you browse the living UObject tree and view and edit properties directly. It also has Lua scripting, so you can write scripts that call UFunctions, hook functions, and change behavior without patching the exe, which is good for quick experiments. There's also a console and many modding utilities.
 
-A typical workflow: inject UE4SS, dump the SDK, open the live viewer to find the objects and properties you care about, then either write a Lua script to intervene, or take the offsets/function addresses over to IDA for deeper static analysis.
+A typical workflow is to inject UE4SS, dump the SDK, open the live viewer to find the objects and properties you care about, then either write a Lua script to intervene, or take the offsets/function addresses over to IDA for deeper static analysis.
 
 ## The workflow side by side
 
@@ -70,7 +70,7 @@ A typical workflow: inject UE4SS, dump the SDK, open the live viewer to find the
                                  and read native C++ (Part 4)
 ```
 
-Unreal is harder than Unity because there's no "open the DLL and read the source" step. But the engine's own reflection system is the weak point: it has to describe every class and function in memory for the engine to run, and the SDK dumper just reads that description back.
+Unreal is harder than Unity because there's no "open the DLL and read the source" step. But the engine's own reflection system is the weak point, since it has to describe every class and function in memory for the engine to run, and the SDK dumper just reads that description back.
 
 ## Lab
 
@@ -95,7 +95,7 @@ In FModel, open Settings and point Game Directory at `Content/Paks/`, choose the
 
 When the `.pak` is AES encrypted, FModel says "encrypted" and needs an AES key of the form `0x` plus 64 hex digits (32 bytes). You can get it by using an AES key finder for Unreal, which scans the exe for data matching the key pattern, or by attaching a debugger, setting a breakpoint at the pak decryption function (the one that receives the index buffer) and reading the key from the parameters or memory. Paste the key into the AES section of FModel and reload, and now you can browse.
 
-To dump the SDK, install UE4SS into the game folder following the instructions for your version. Run the game and UE4SS loads. Use the dump command or hotkey to generate the SDK: a set of C++ headers describing classes, enums and structs with field offsets and function RVAs. Open the headers and find the player character class (usually inheriting from `ACharacter` or `APawn`). The result looks like:
+To dump the SDK, install UE4SS into the game folder following the instructions for your version. Run the game and UE4SS loads. Use the dump command or hotkey to generate the SDK, which is a set of C++ headers describing classes, enums and structs with field offsets and function RVAs. Open the headers and find the player character class (usually inheriting from `ACharacter` or `APawn`). The result looks like:
 
 ```cpp
 class ABP_PlayerCharacter_C : public ACharacter {
@@ -108,7 +108,7 @@ class ABP_PlayerCharacter_C : public ACharacter {
 
 Write down the offsets of `Health` and `Gold` and the RVA of a function you care about. In the live property viewer of UE4SS, browse the UObject tree and find the player instance (filter by the class name from the previous step). Select it and the property table shows the running values. Editing `Health` here shows the effect in the game at once, which is the fastest way to confirm you found the right field.
 
-For the native step, take the RVA of a UFunction from the SDK dump, open the exe in IDA or Ghidra and jump to the address (ImageBase + RVA). Read the pseudocode as an ordinary C++ function: `this` is in rcx (Win64), and the fields accessed through `[this+offset]` match the offsets in the SDK. From here you use the Part 4 skills (C++, vtables).
+For the native step, take the RVA of a UFunction from the SDK dump, open the exe in IDA or Ghidra and jump to the address (ImageBase + RVA). Read the pseudocode as an ordinary C++ function, where `this` is in rcx (Win64), and the fields accessed through `[this+offset]` match the offsets in the SDK. From here you use the Part 4 skills (C++, vtables).
 
 On the questions, Unity Mono keeps its code in Assembly-CSharp.dll as .NET and dnSpy reads it almost like source, while Unreal compiles C++ to native with no managed DLL, so you have to read assembly. Unity's IL2CPP is similar to Unreal in this respect. The reflection paradox is that the engine needs to describe every class and function in memory to serialize, to let Blueprint call C++ and to make the editor work, and that same description lets an SDK dumper rebuild the entire structure. A feature for developers becomes an entry point for the reverser. As for Blueprint versus C++, Blueprint is a bytecode VM stored in assets, which you can pull from the pak but the tools that read the bytecode are still limited, while C++ is native code in the exe, harder to read but with an SDK dump and decompilers to help. Many games mix both, so you have to know which layer the logic you're looking for lives in.
 
@@ -117,4 +117,4 @@ On the questions, Unity Mono keeps its code in Assembly-CSharp.dll as .NET and d
 ## Key takeaways
 Unreal is native C++, so the logic is in the big exe and you open it in IDA/Ghidra like a C++ program (Part 4). You identify it by `-Shipping.exe`, `Content/Paks/*.pak`, `/Game/` strings, and U/A/F classes. Assets in .pak are browsed with FModel/UModel, and you need the AES key if the index is encrypted.
 
-The engine's reflection is the way in: an SDK dumper reads GObjects/GNames and generates C++ headers with offsets and function addresses. UE4SS injects at runtime and gives you the SDK dump, a live property viewer, and Lua scripting. Blueprint is its own bytecode inside an asset, not native code.
+The engine's reflection is the way in. An SDK dumper reads GObjects/GNames and generates C++ headers with offsets and function addresses. UE4SS injects at runtime and gives you the SDK dump, a live property viewer, and Lua scripting. Blueprint is its own bytecode inside an asset, not native code.

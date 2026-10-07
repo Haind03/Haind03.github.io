@@ -10,15 +10,15 @@ render_with_liquid: false
 ---
 Last lesson cut open the Windows PE. Reversing doesn't only happen on Windows though. Servers run Linux, Android is Linux at the core, and Macs and iPhones use their own format. PE is the format for Windows files, ELF is Linux's and Mach-O is Apple's. Know these three and you can read the header of almost every binary you'll meet.
 
-All three solve the same problem: packaging code, data, and the info on how to load it into memory. Learn one and the other two come fast. This lesson focuses on ELF because you'll meet it most, then skims Mach-O and compares.
+All three solve the same problem, which is packaging code, data, and the info on how to load it into memory. Learn one and the other two come fast. This lesson focuses on ELF because you'll meet it most, then skims Mach-O and compares.
 
 ## ELF
 
-ELF (Executable and Linkable Format) is used for everything that runs on Linux: executables, `.so` libraries, `.o` object files, even core dumps. It's easy to recognize. The first 4 bytes are always `7F 45 4C 46`, that is `0x7F` followed by the ASCII characters "ELF". Open any file in `/bin` with a hex editor and you'll see it.
+ELF (Executable and Linkable Format) is used for everything that runs on Linux, including executables, `.so` libraries, `.o` object files, even core dumps. It's easy to recognize. The first 4 bytes are always `7F 45 4C 46`, that is `0x7F` followed by the ASCII characters "ELF". Open any file in `/bin` with a hex editor and you'll see it.
 
 ### The header
 
-The ELF header sits at the start of the file. The magic (`7F 45 4C 46`) confirms it's ELF. The class says 32-bit (ELFCLASS32) or 64-bit (ELFCLASS64), and the endianness says little or big endian. The type is `ET_EXEC` (fixed-address executable), `ET_DYN` (shared object or PIE, can run at any address), or `ET_REL` (object file). The machine field gives the CPU architecture: x86-64, ARM, MIPS, RISC-V and so on. The entry point (`e_entry`) is the virtual address where code starts running, the same idea as PE's `AddressOfEntryPoint`. The header also records the location of the program header table and the section header table.
+The ELF header sits at the start of the file. The magic (`7F 45 4C 46`) confirms it's ELF. The class says 32-bit (ELFCLASS32) or 64-bit (ELFCLASS64), and the endianness says little or big endian. The type is `ET_EXEC` (fixed-address executable), `ET_DYN` (shared object or PIE, can run at any address), or `ET_REL` (object file). The machine field gives the CPU architecture, such as x86-64, ARM, MIPS, RISC-V and so on. The entry point (`e_entry`) is the virtual address where code starts running, the same idea as PE's `AddressOfEntryPoint`. The header also records the location of the program header table and the section header table.
 
 Commands to read it:
 
@@ -52,7 +52,7 @@ The GOT (Global Offset Table) is a table of pointers. Each slot holds the real a
 
 Lazy binding means the address is resolved only on the first call. On the first call to `printf@plt`, it jumps through the GOT to the dynamic linker's resolver, finds the real address of `printf`, writes it into the GOT slot, and then makes the call. After that, `printf@plt` jumps straight through the GOT to the saved address.
 
-What to remember: `call printf@plt` means an external function is being called, and to see its real address at runtime you look at the matching GOT slot in the debugger. The GOT is also a classic attack target (GOT overwrite), but that's the exploit side.
+Remember that `call printf@plt` means an external function is being called, and to see its real address at runtime you look at the matching GOT slot in the debugger. The GOT is also a classic attack target (GOT overwrite), but that's the exploit side.
 
 ### Stripped or not
 
@@ -69,7 +69,7 @@ macOS and iOS use Mach-O. The way of thinking is like ELF but the names and a fe
 
 The magic is `0xFEEDFACE` (32-bit) or `0xFEEDFACF` (64-bit). Apple made it spell "feed face" on purpose. A Mach-O can also be a fat binary (universal binary), one file bundling several architectures, for example x86-64 and ARM64 for Intel and Apple Silicon machines. The magic of a fat file is `0xCAFEBABE`. When reversing, you usually extract the architecture you need with `lipo`.
 
-Load commands replace ELF's program headers. They're a list of instructions for the loader: which segment maps where, which libraries are needed, where the entry point is, what the code signature looks like. Mach-O also has segments, named in uppercase with two underscores: `__TEXT` (code, read-only) and `__DATA` (writable data). Inside each segment there are sections like `__text` and `__cstring`.
+Load commands replace ELF's program headers. They're a list of instructions for the loader, covering which segment maps where, which libraries are needed, where the entry point is, what the code signature looks like. Mach-O also has segments, named in uppercase with two underscores, such as `__TEXT` (code, read-only) and `__DATA` (writable data). Inside each segment there are sections like `__text` and `__cstring`.
 
 Tools on a Mac:
 
@@ -109,13 +109,13 @@ gcc -O0 -o hello_stripped hello.c
 strip hello_stripped                # stripped build
 ```
 
-Start with identification. Run `file hello` and read off the bit width, whether it's dynamically or statically linked, and whether it's stripped. Repeat with `hello_stripped` and compare. Next read the header with `readelf -h hello`: note the four magic bytes, the entry point (`e_entry`), and whether the type is `ET_EXEC` or `ET_DYN`. Modern gcc builds PIE by default, so it's usually `ET_DYN`.
+Start with identification. Run `file hello` and read off the bit width, whether it's dynamically or statically linked, and whether it's stripped. Repeat with `hello_stripped` and compare. Next read the header with `readelf -h hello` and note the four magic bytes, the entry point (`e_entry`), and whether the type is `ET_EXEC` or `ET_DYN`. Modern gcc builds PIE by default, so it's usually `ET_DYN`.
 
 Then compare segments and sections. `readelf -l hello` shows the program headers (segments) and, at the bottom, the "Section to Segment mapping". Find which loadable segment holds `.text` and what permissions it has (R E). `readelf -S hello` shows the section headers, where you should locate `.text`, `.rodata`, `.data`, `.bss`, `.plt` and `.got`. The string "Hello, ELF!" sits in one of them, and you can check with `readelf -p .rodata hello`.
 
 For the PLT/GOT, use `objdump -d -j .plt hello` to see the PLT stubs. Then run `objdump -d hello | grep -A3 '<main>:'` and look for the calls to `printf@plt` and `strlen@plt`. Notice that `main` doesn't call libc directly but goes through `@plt`. `readelf -r hello` prints the relocation table, which is the list of GOT slots that get filled with real addresses at run time.
 
-For symbols, run `nm hello` and find `main` and `secret_len`. Then see what `nm hello_stripped` reports now, whether `secret_len` is still visible, and what happens to `printf` (try `nm -D hello_stripped` for the dynamic symbols). Finally, go back to the PE lesson (Lesson 1.7) and match things up: which PE field corresponds to the ELF entry point, and which PE mechanism corresponds to the PLT/GOT? Answer everything yourself before opening the solution.
+For symbols, run `nm hello` and find `main` and `secret_len`. Then see what `nm hello_stripped` reports now, whether `secret_len` is still visible, and what happens to `printf` (try `nm -D hello_stripped` for the dynamic symbols). Finally, go back to the PE lesson (Lesson 1.7) and match things up by asking which PE field corresponds to the ELF entry point, and which PE mechanism corresponds to the PLT/GOT? Answer everything yourself before opening the solution.
 
 <div class="lab-box">
 <div class="lab-head"><b>LAB 1.8</b>source files</div>
@@ -227,6 +227,6 @@ Finally, the comparison with PE. The ELF `e_entry` corresponds to the PE `Addres
 </details>
 
 ## Key takeaways
-The ELF magic is `7F 'E' 'L' 'F'`, Mach-O is `FEEDFACE/FACF`, and a fat binary is `CAFEBABE`. ELF has two tables: the program header (segments, for the loader to run) and the section header (sections, for analysis).
+The ELF magic is `7F 'E' 'L' 'F'`, Mach-O is `FEEDFACE/FACF`, and a fat binary is `CAFEBABE`. ELF has two tables, the program header (segments, for the loader to run) and the section header (sections, for analysis).
 
 PLT/GOT is how Linux calls library functions, with lazy binding filling the real address into the GOT on the first call. Stripping cuts `.symtab` (internal functions become sub_xxx) but `.dynsym` stays, so imported function names are still visible. Mach-O can be a fat binary containing multiple architectures, and you use `lipo` to extract one. PE, ELF and Mach-O share the same ideas, only the names differ.

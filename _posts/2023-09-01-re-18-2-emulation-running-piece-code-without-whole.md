@@ -8,13 +8,13 @@ categories: ["Technique Reverse", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
 render_with_liquid: false
 ---
-Sometimes you only need to know what a function returns, but to run it you'd have to get through a lot of anti-debug, or the function sits deep inside a binary that can't run on your machine (wrong architecture, missing libraries, needs special hardware). Debugging gets in the way, and reading statically costs a whole afternoon. Emulation is the third option: build a virtual CPU, load that exact piece of byte code into it, set the registers and memory as they were when it was called, run it, then read the result. There's no real debugger, so most anti-debug does nothing.
+Sometimes you only need to know what a function returns, but to run it you'd have to get through a lot of anti-debug, or the function sits deep inside a binary that can't run on your machine (wrong architecture, missing libraries, needs special hardware). Debugging gets in the way, and reading statically costs a whole afternoon. Emulation is the third option, where you build a virtual CPU, load that exact piece of byte code into it, set the registers and memory as they were when it was called, run it, then read the result. There's no real debugger, so most anti-debug does nothing.
 
 ## Unicorn: a CPU in 20 lines of Python
 
-Unicorn Engine is a CPU emulation engine split out of QEMU, supporting x86, ARM, ARM64, MIPS and many other architectures. It knows nothing about the operating system, files, or syscalls. It does one thing: given a sequence of bytes that are machine instructions, it executes each instruction and updates registers and memory. That's enough to run a pure-computation function like a string decryption routine.
+Unicorn Engine is a CPU emulation engine split out of QEMU, supporting x86, ARM, ARM64, MIPS and many other architectures. It knows nothing about the operating system, files, or syscalls. It does one thing. Given a sequence of bytes that are machine instructions, it executes each instruction and updates registers and memory. That's enough to run a pure-computation function like a string decryption routine.
 
-Using Unicorn always follows the same four steps. You create the virtual machine with an architecture and mode (`Uc(UC_ARCH_X86, UC_MODE_64)`), then allocate memory (`mem_map`) and write the code and data in (`mem_write`). Next you set the input registers (`reg_write`): parameters, stack pointer, buffer pointer. Finally you run (`emu_start`) and read the result out (`reg_read`, `mem_read`).
+Using Unicorn always follows the same four steps. You create the virtual machine with an architecture and mode (`Uc(UC_ARCH_X86, UC_MODE_64)`), then allocate memory (`mem_map`) and write the code and data in (`mem_write`). Next you set the input registers (`reg_write`), such as parameters, stack pointer, buffer pointer. Finally you run (`emu_start`) and read the result out (`reg_read`, `mem_read`).
 
 The XOR decryption snippet below really runs (see lab 18.2):
 
@@ -41,7 +41,7 @@ mu.emu_start(BASE, BASE + len(CODE))
 print(bytes(mu.mem_read(DATA, len(enc))).decode())  # -> emulation_wins!
 ```
 
-You don't need to understand every detail of the function. You only need to know it takes a pointer in `rdi` and a length in `rsi`, copy the byte code of the loop out of IDA, and let Unicorn do the rest. It's a quick way to solve the string-deobfuscation functions malware loves: instead of computing XOR by hand, you let the virtual CPU run the malware's own code.
+You don't need to understand every detail of the function. You only need to know it takes a pointer in `rdi` and a length in `rsi`, copy the byte code of the loop out of IDA, and let Unicorn do the rest. It's a quick way to solve the string-deobfuscation functions malware loves. Instead of computing XOR by hand, you let the virtual CPU run the malware's own code.
 
 ## Three traps when using Unicorn
 
@@ -49,11 +49,11 @@ A `ret` instruction needs a valid return address on the stack, otherwise the VM 
 
 Calls out to an API or a syscall will break because Unicorn has no operating system. Either avoid the stretch with the call, or set a hook to fake that call.
 
-You also have to map enough memory: code, data, stack, and any region the function touches. Forgetting to map one region gives a `UC_ERR_READ_UNMAPPED` error right away.
+You also have to map enough memory, covering code, data, stack, and any region the function touches. Forgetting to map one region gives a `UC_ERR_READ_UNMAPPED` error right away.
 
 ## Qiling: Unicorn plus an operating system
 
-When the function you need to run calls Windows APIs or Linux syscalls, bare Unicorn isn't enough. Qiling is a framework built on Unicorn that adds an OS emulation layer: it can load a whole PE or ELF file, emulating the loader, syscalls, and part of the Win32 API, and lets you hook any API. You can run a whole malware binary in a Python sandbox, intercepting and modifying all its calls, without real Windows.
+When the function you need to run calls Windows APIs or Linux syscalls, bare Unicorn isn't enough. Qiling is a framework built on Unicorn that adds an OS emulation layer, so it can load a whole PE or ELF file, emulating the loader, syscalls, and part of the Win32 API, and lets you hook any API. You can run a whole malware binary in a Python sandbox, intercepting and modifying all its calls, without real Windows.
 
 Qiling fits when you want to run a binary of a different architecture than your machine, catch the APIs the malware calls, or automate config extraction by running to a point and then reading memory.
 
@@ -63,7 +63,7 @@ Mandiant's Speakeasy is an emulator aimed at Windows malware and shellcode analy
 
 ## When emulation beats debugging and static analysis
 
-Choose emulation when the target function is pure computation (decrypt, hash, transform) and you only need input to output. It also fits a binary full of anti-debug, since without a real debugger the IsDebuggerPresent, timing, and trap checks are all useless (see Part 15). A binary of the wrong architecture for your machine works too: an ARM64 function runs fine on Unicorn even if you're on an x86 machine. And when you want to automate, you can run the same function with thousands of inputs to find a pattern.
+Choose emulation when the target function is pure computation (decrypt, hash, transform) and you only need input to output. It also fits a binary full of anti-debug, since without a real debugger the IsDebuggerPresent, timing, and trap checks are all useless (see Part 15). A binary of the wrong architecture for your machine works too, since an ARM64 function runs fine on Unicorn even if you're on an x86 machine. And when you want to automate, you can run the same function with thousands of inputs to find a pattern.
 
 Emulation doesn't fit when the code is so tied to the OS/API/hardware that faking it costs more effort than running it for real, or when it's virtualized (then the VM bytecode is what you need to understand, see lesson 14.5). Emulating one piece is easy, but the effort grows fast as you emulate more of a large program. Cut the target down small.
 
@@ -106,7 +106,7 @@ c3            ret                         ; done
 
 Following the System V calling convention, the input registers are `rdi`, the buffer pointer, and `rsi`, the length. We load the encrypted buffer into the `DATA` region, point `rdi` at it, set `rsi` to its length, and run. After running, reading the `DATA` region back gives the original string.
 
-On the return address and the stop point: a `ret` instruction takes 8 bytes off the top of the stack as the address to jump to. If the stack holds garbage, the emulated CPU jumps into unmapped memory and throws `UC_ERR_FETCH_UNMAPPED`. So we write `BASE + len(CODE)` onto the top of the stack ahead of time, and tell `emu_start` to stop exactly at that address. When `ret` runs, it jumps to that stop point, Unicorn sees it has reached the target, and it finishes cleanly. This is the standard trick for emulating a function that ends in `ret`.
+On the return address and the stop point, since a `ret` instruction takes 8 bytes off the top of the stack as the address to jump to. If the stack holds garbage, the emulated CPU jumps into unmapped memory and throws `UC_ERR_FETCH_UNMAPPED`. So we write `BASE + len(CODE)` onto the top of the stack ahead of time, and tell `emu_start` to stop exactly at that address. When `ret` runs, it jumps to that stop point, Unicorn sees it has reached the target, and it finishes cleanly. This is the standard trick for emulating a function that ends in `ret`.
 
 On switching to an addition function, `CODE` becomes:
 
@@ -117,13 +117,13 @@ CODE = bytes.fromhex("80070748ffc748ffce75f5c3")
 
 and the data is built with `bytes((c - 7) & 0xFF for c in b"...")`. The rest of the emulation logic stays the same.
 
-On a call leading outside the snippet: if there's a `call printf` in the middle, Unicorn jumps to printf's address, which isn't mapped, and the emulation breaks. There are two ways to handle it. One is to only emulate the portion without the call, narrowing the target down. The other is to set a `UC_HOOK_CODE` hook, or a hook on that specific address range, to simulate printf yourself (logging the arguments, then resuming execution by setting `rip` past the call). When you need to simulate many APIs, switch to Qiling instead, since it already has that layer built in.
+On a call leading outside the snippet, if there's a `call printf` in the middle, Unicorn jumps to printf's address, which isn't mapped, and the emulation breaks. There are two ways to handle it. One is to only emulate the portion without the call, narrowing the target down. The other is to set a `UC_HOOK_CODE` hook, or a hook on that specific address range, to simulate printf yourself (logging the arguments, then resuming execution by setting `rip` past the call). When you need to simulate many APIs, switch to Qiling instead, since it already has that layer built in.
 
-On getting past anti-debug: anti-debug checks rely on detecting that a real debugger is attached (IsDebuggerPresent, PEB.BeingDebugged, RDTSC timing, INT3 traps). Inside Unicorn there's no real process, no standard PEB, and no debugger attached at all, so these checks either have nothing to read or read back a clean value. We run exactly the piece of logic we need and skip the whole defensive layer.
+On getting past anti-debug, anti-debug checks rely on detecting that a real debugger is attached (IsDebuggerPresent, PEB.BeingDebugged, RDTSC timing, INT3 traps). Inside Unicorn there's no real process, no standard PEB, and no debugger attached at all, so these checks either have nothing to read or read back a clean value. We run exactly the piece of logic we need and skip the whole defensive layer.
 
 </details>
 
 ## Key takeaways
-Emulation means building a virtual CPU, loading byte code, setting registers and memory, running, and reading the result. Unicorn is pure CPU emulation with no OS, so it fits self-contained computation functions, and its model is always the same four steps: create the machine, map and write memory, set registers, run and read. The traps are that `ret` needs a return address, calls out will break, and you have to map enough memory.
+Emulation means building a virtual CPU, loading byte code, setting registers and memory, running, and reading the result. Unicorn is pure CPU emulation with no OS, so it fits self-contained computation functions, and its model is always the same four steps, namely create the machine, map and write memory, set registers, run and read. The traps are that `ret` needs a return address, calls out will break, and you have to map enough memory.
 
 Qiling adds an OS/syscall layer to run whole binaries, and Speakeasy specializes in shellcode and Windows malware. Since there's no real debugger, emulation gets past most anti-debug.

@@ -8,7 +8,7 @@ categories: ["Technique Reverse", "Part 06 · Java, Kotlin and Android"]
 tags: [reverse-engineering, android, java]
 render_with_liquid: false
 ---
-You open the APK in JADX, look for the license check function, and it's one line: `public native boolean checkLicense(String s);`. No function body to read. The real logic is in a native library, `lib/arm64-v8a/libcheck.so`, and JADX can't help there because that's ARM64 machine code, not Java bytecode. It's a very common way to make an Android app harder to reverse: whatever matters gets written in C/C++.
+You open the APK in JADX, look for the license check function, and it's one line, `public native boolean checkLicense(String s);`. No function body to read. The real logic is in a native library, `lib/arm64-v8a/libcheck.so`, and JADX can't help there because that's ARM64 machine code, not Java bytecode. It's a very common way to make an Android app harder to reverse, since whatever matters gets written in C/C++.
 
 You already learned ARM64 in [Lesson 1.9](/posts/re-1-9-arm-arm64-basics-people-who-already/). What's left is bridging from the Java method to the right function in the .so file.
 
@@ -16,7 +16,7 @@ You already learned ARM64 in [Lesson 1.9](/posts/re-1-9-arm-arm64-basics-people-
 
 ![JNI bridging from Java to a native function in a .so file](/assets/img/re/part-06/jni-bridge.svg)
 
-JNI (Java Native Interface) is the mechanism that lets Java call C/C++ code. A Java class loads the library with `System.loadLibrary("check")`, which loads `libcheck.so`. The method is then declared `native` with no body: `public native boolean checkLicense(String s);`. Inside `libcheck.so` there's a C function that implements that method.
+JNI (Java Native Interface) is the mechanism that lets Java call C/C++ code. A Java class loads the library with `System.loadLibrary("check")`, which loads `libcheck.so`. The method is then declared `native` with no body, as in `public native boolean checkLicense(String s);`. Inside `libcheck.so` there's a C function that implements that method.
 
 When Java calls `checkLicense`, the runtime finds the matching native function and jumps in. Your job is to find that function in the .so file.
 
@@ -57,7 +57,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
 
 Now the real function can have any name (for example `sub_1234`), and there's no `Java_` to search for. Find `JNI_OnLoad` in the .so (it's always an export if the app uses this approach), read the code in it, and find the `RegisterNatives` call. `RegisterNatives` takes an array of `JNINativeMethod` structs, each made of a pointer to the method name, a pointer to the signature string, and a pointer to the implementing function. Reading that array tells you which function the `checkLicense` method maps to.
 
-To read JNI signatures: `(Ljava/lang/String;)Z` means takes a String, returns boolean (`Z`). Type table: `Z`=boolean, `I`=int, `J`=long, `[`=array, `L...;`=object.
+To read JNI signatures, `(Ljava/lang/String;)Z` means takes a String, returns boolean (`Z`). The type table is `Z`=boolean, `I`=int, `J`=long, `[`=array, `L...;`=object.
 
 ## The first two parameters belong to JNI
 
@@ -78,7 +78,7 @@ An APK is a ZIP file, so extract it and take `lib/arm64-v8a/lib<name>.so` (prefe
 ## Key takeaways
 A Java method declared `native` means the logic lives in a `.so` file, which JADX can't read. JNI functions follow the naming convention `Java_package_Class_method`, so search for the string `Java_` in the .so. If you don't see it, look for `JNI_OnLoad` and read `RegisterNatives` to see which function the method maps to.
 
-Every JNI function has two hidden leading parameters, `JNIEnv* env` (x0) and `jobject thiz` (x1), and real parameters start at x2. Read JNI signatures with the type table: `Z` boolean, `I` int, `L...;` object, `[` array. Analyzing the .so is ordinary ARM64 reversing, so see Lesson 1.9 again.
+Every JNI function has two hidden leading parameters, `JNIEnv* env` (x0) and `jobject thiz` (x1), and real parameters start at x2. Read JNI signatures with the type table, `Z` boolean, `I` int, `L...;` object, `[` array. Analyzing the .so is ordinary ARM64 reversing, so see Lesson 1.9 again.
 
 ## Lab
 
@@ -86,7 +86,7 @@ The goal is to practice bridging from a `native` method in Java to the exact fun
 
 Open the APK in JADX and find a class with a method declared `native`. Write down the package, the class name, the method name and the parameter and return types. Unpack the APK (rename it to .zip or use `unzip`), go to `lib/arm64-v8a/` and take the `.so` whose name matches the string in `System.loadLibrary`. Drag that `.so` into Ghidra and run auto-analysis.
 
-For the first way, in the Symbol Tree or the Functions list, filter on the string `Java_`. Find the function matching the method from the first step and confirm the name follows the convention `Java_<package>_<class>_<method>`. If you don't see a `Java_` function for that method, switch to the second way: find the export `JNI_OnLoad`, read the code, find the call to `RegisterNatives`, and read the `JNINativeMethod` array to learn which function the method maps to.
+For the first way, in the Symbol Tree or the Functions list, filter on the string `Java_`. Find the function matching the method from the first step and confirm the name follows the convention `Java_<package>_<class>_<method>`. If you don't see a `Java_` function for that method, switch to the second way. Find the export `JNI_OnLoad`, read the code, find the call to `RegisterNatives`, and read the `JNINativeMethod` array to learn which function the method maps to.
 
 Then open the native function you found in the decompiler. Work out which register your string parameter is in (remember to skip the first two JNI parameters), and find the call to `GetStringUTFChars` to see where it starts processing the input. To compare, `native-lib.c` is a small JNI example in C that shows both naming schemes, with build instructions for the Android NDK in its header comment. Read it to see what pattern the original code produces before you go looking in someone else's `.so`.
 
@@ -132,7 +132,7 @@ For the first way, drag `libcheck.so` into Ghidra and let auto-analysis run. Ope
 Java_com_example_app_Native_checkLicense
 ```
 
-The name gives it away: package `com.example.app`, class `Native`, method `checkLicense`. Open the function and the decompiler shows roughly this:
+The name gives it away, with package `com.example.app`, class `Native`, method `checkLicense`. Open the function and the decompiler shows roughly this:
 
 ```c
 jboolean Java_com_example_app_Native_checkLicense(JNIEnv *env, jobject thiz, jstring s) {
@@ -145,7 +145,7 @@ jboolean Java_com_example_app_Native_checkLicense(JNIEnv *env, jobject thiz, jst
 
 The compared string `JNI-DEMO-2024` is the valid license, sitting right in the native code. Remember that `s` is in `x2`, because the first two parameters are `env` in x0 and `thiz` in x1.
 
-For the second way, the method `secretAdd` in the example has no `Java_..._secretAdd` function in the `.so`, so filtering on `Java_` finds nothing. Switch to the export `JNI_OnLoad`, open it and read down to the call to `RegisterNatives`. Its third parameter is a pointer to the `JNINativeMethod` array. Follow that pointer and you see three fields: a pointer to the string `"secretAdd"`, a pointer to the signature string `"(II)I"` (takes two ints, returns an int), and a function pointer that points to `sub_secret` (a name Ghidra assigns itself, for example `FUN_00001234`). Rename `FUN_00001234` to `secretAdd_impl` for convenience and open it. The logic is `(a ^ 0x5A) + (b ^ 0x5A)`, and the two int parameters `a` and `b` are in `x2` and `x3` (after env and thiz).
+For the second way, the method `secretAdd` in the example has no `Java_..._secretAdd` function in the `.so`, so filtering on `Java_` finds nothing. Switch to the export `JNI_OnLoad`, open it and read down to the call to `RegisterNatives`. Its third parameter is a pointer to the `JNINativeMethod` array. Follow that pointer and you see three fields, a pointer to the string `"secretAdd"`, a pointer to the signature string `"(II)I"` (takes two ints, returns an int), and a function pointer that points to `sub_secret` (a name Ghidra assigns itself, for example `FUN_00001234`). Rename `FUN_00001234` to `secretAdd_impl` for convenience and open it. The logic is `(a ^ 0x5A) + (b ^ 0x5A)`, and the two int parameters `a` and `b` are in `x2` and `x3` (after env and thiz).
 
 If Ghidra hasn't assigned the right types inside the native function, apply the prototype `(JNIEnv*, jobject, ...)` yourself so the first two parameters disappear from the logic. The call to `GetStringUTFChars` shows up as loading a function pointer from the `env` table (an `ldr` from an offset in the `JNINativeInterface` struct pointed to by x0) followed by `blr`. That's where the input string is turned into a `char*` for processing, so it's a good reference point to start reading the algorithm from.
 

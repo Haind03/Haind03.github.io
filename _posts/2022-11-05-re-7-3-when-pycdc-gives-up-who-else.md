@@ -41,7 +41,7 @@ Be careful though. Try running uncompyle6 (latest version 3.9.3) on a `.pyc` com
 
 It doesn't even try. uncompyle6 wasn't written to understand 3.11 bytecode, so it refuses. When you see this, don't panic, you just picked the wrong tool. For that 3.11 file, go to pycdc or PyLingual.
 
-One nice thing is that uncompyle6 still prints a useful header before giving up: the bytecode version, compile time, original source file name and size. That's free triage info.
+One nice thing is that uncompyle6 still prints a useful header before giving up, which includes the bytecode version, compile time, original source file name and size. That's free triage info.
 
 ## PyLingual
 
@@ -111,9 +111,9 @@ def check(pw):
       COMPARE_OP    2 (==)
 ```
 
-It's not as hard as it looks. `co_consts` shows the two important constants right away: the string `'r3v3rs3'` and the number `1000`. `COMPARE_OP 3 (!=)` compares the length with `10`, `FOR_ITER` is the accumulating loop, and `COMPARE_OP 2 (==)` compares the total with `1000`. From `co_consts` and a few `COMPARE_OP` instructions you've worked out the checking rule without any decompiler. Python bytecode is probably the easiest bytecode to read.
+It's not as hard as it looks. `co_consts` shows the two important constants right away, which are the string `'r3v3rs3'` and the number `1000`. `COMPARE_OP 3 (!=)` compares the length with `10`, `FOR_ITER` is the accumulating loop, and `COMPARE_OP 2 (==)` compares the total with `1000`. From `co_consts` and a few `COMPARE_OP` instructions you've worked out the checking rule without any decompiler. Python bytecode is probably the easiest bytecode to read.
 
-One more tip: print `code.co_consts` and `code.co_names` before running dis. Constants and function or variable names often give the answer faster than reading all the bytecode.
+One more tip is to print `code.co_consts` and `code.co_names` before running dis. Constants and function or variable names often give the answer faster than reading all the bytecode.
 
 ## Decompiler choice by version
 
@@ -127,7 +127,7 @@ First determine the version from the magic number ([Lesson 7.1](/posts/re-7-1-py
 | Python 3.10 to 3.12 | pycdc / PyLingual | manual dis/marshal |
 | Very new (3.13+) | PyLingual | pydisasm / dis |
 
-This table will go out of date as new tools come out. The approach stays the same: know the version, try a few tools, read the bytecode when stuck.
+This table will go out of date as new tools come out. The approach stays the same, which is to know the version, try a few tools, read the bytecode when stuck.
 
 ## Lab
 
@@ -199,7 +199,7 @@ The real result is this.
 # Size of source mod 2**32: 185 bytes
 ```
 
-uncompyle6 (the latest version, 3.9.3) doesn't support 3.11 bytecode, so it refuses outright. But look at the header: it still reports the bytecode version, the source file name `secret.py`, the compile time and the source size. That's free triage even when decompilation fails.
+uncompyle6 (the latest version, 3.9.3) doesn't support 3.11 bytecode, so it refuses outright. But the header still reports the bytecode version, the source file name `secret.py`, the compile time and the source size. That's free triage even when decompilation fails.
 
 With the same file, pycdc (which is independent of the runtime) has a better chance than uncompyle6 on 3.11, although its 3.11 support still isn't perfect. If pycdc also gives an incomplete result, move on to PyLingual or read the bytecode.
 
@@ -216,7 +216,7 @@ When the tools give up, `marshal` plus `dis` still works, using the snippet from
       ... startswith(key[:3]) ...
 ```
 
-`co_consts` alone gives you three clues: the string `'r3v3rs3'`, the number `10` and the number `1000`. Together with the `COMPARE_OP` instructions, the rule `check` enforces has three parts. The length must be exactly 10 characters (`COMPARE_OP != 10`, and if it's wrong the function returns False). The sum of the ASCII codes of all characters must equal 1000 (the `FOR_ITER` loop adds `ord(c)`, then `COMPARE_OP == 1000`). And the password must start with `key[:3]`, the first three characters of `'r3v3rs3'`, which is `"r3v"`.
+`co_consts` alone gives you three clues, which are the string `'r3v3rs3'`, the number `10` and the number `1000`. Together with the `COMPARE_OP` instructions, the rule `check` enforces has three parts. The length must be exactly 10 characters (`COMPARE_OP != 10`, and if it's wrong the function returns False). The sum of the ASCII codes of all characters must equal 1000 (the `FOR_ITER` loop adds `ord(c)`, then `COMPARE_OP == 1000`). And the password must start with `key[:3]`, the first three characters of `'r3v3rs3'`, which is `"r3v"`.
 
 There's no single valid password. Any 10-character string that starts with `r3v` and has an ASCII sum of 1000 passes. One example, verified by actually running it, is below.
 
@@ -236,4 +236,4 @@ A few notes. A decompiler refusing doesn't mean you're stuck, because bytecode c
 ## Key takeaways
 No decompiler wins on every version, because Python bytecode keeps changing. uncompyle6 is strong on Python 2.x through 3.8 and decompyle3 covers 3.7 through 3.9 better, but both refuse bytecode that's too new (we saw it reject the 3.11 file). pycdc is runtime-independent, and PyLingual (web, ML) fits newer Python.
 
-The fallback always works: `marshal` reads the code object and `dis` prints the bytecode, and `co_consts` and `co_names` often expose the answer. Determine the version from the magic number first, then choose the tool.
+The fallback always works because `marshal` reads the code object and `dis` prints the bytecode, and `co_consts` and `co_names` often expose the answer. Determine the version from the magic number first, then choose the tool.

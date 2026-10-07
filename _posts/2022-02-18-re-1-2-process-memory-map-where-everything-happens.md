@@ -54,7 +54,7 @@ A PE or ELF file is split into sections, and when it's loaded each section becom
 
 ## Stack
 
-The stack is the region to understand best, because almost every function uses it. It's last in, first out (LIFO): `push` puts things on and `pop` takes them off. On x86/x64 the stack grows down, so a push makes the top pointer (rsp) decrease. It feels backwards, but just remember it. Every function call builds a block called a stack frame to hold the return address (pushed by `call`), the local variables, and sometimes parameters. When the function does `ret`, the frame is dropped and the stack shrinks back.
+The stack is the region to understand best, because almost every function uses it. It's last in, first out (LIFO), so `push` puts things on and `pop` takes them off. On x86/x64 the stack grows down, so a push makes the top pointer (rsp) decrease. It feels backwards, but just remember it. Every function call builds a block called a stack frame to hold the return address (pushed by `call`), the local variables, and sometimes parameters. When the function does `ret`, the frame is dropped and the stack shrinks back.
 
 Since locals sit on the stack, in assembly you see them as `[rbp-4]`, `[rbp-8]` (relative to the base pointer) or `[rsp+8]` (relative to the top of the stack). When IDA names things `var_4`, `var_8`, it's naming these locals. Lesson [1.4](/posts/re-1-4-x86-x64-assembly-2-stack-frames/) goes through the stack frame in detail.
 
@@ -66,13 +66,13 @@ When a program needs memory whose size is only known at runtime (how many bytes 
 
 ## ASLR
 
-It used to be that a program always loaded at the same address, for example `0x400000`. Now the OS uses ASLR (Address Space Layout Randomization): each run, code and libraries are placed at different random addresses, so they're harder for an attacker to guess.
+It used to be that a program always loaded at the same address, for example `0x400000`. Now the OS uses ASLR (Address Space Layout Randomization), which places code and libraries are placed at different random addresses, so they're harder for an attacker to guess.
 
 This means the address you see in IDA (a static address, based on the default base) differs from the real address in the debugger at runtime. To match the two, use offsets relative to the module base. x64dbg has a "follow in disassembler" button and a rebase feature to help sync them. Don't panic when the address in IDA is `0x401500` and in the debugger it's `0x7FF6xx401500`. The tail `401500` is the part to compare.
 
 ## Access rights
 
-Each memory region has permissions: R (read), W (write), X (execute). They tell you the intent. R-X is normal code and RW- is normal data. RWX is both writable and executable. It's rare in clean software but common in malware and packers, because they write decrypted code there and then jump to it. If you see an RWX region in the Memory Map, pay attention.
+Each memory region has permissions, R (read), W (write), X (execute). They tell you the intent. R-X is normal code and RW- is normal data. RWX is both writable and executable. It's rare in clean software but common in malware and packers, because they write decrypted code there and then jump to it. If you see an RWX region in the Memory Map, pay attention.
 
 ## Key takeaways
 Every process has its own isolated virtual address space, and the addresses you see are virtual. The layout is code (.text), data (.data/.bss/.rdata), heap (grows up), stack (grows down), and libraries. The stack is LIFO, grows down, and holds locals and the return address, with locals showing up as `[rbp-x]`. The heap is allocated at runtime and you have to free it yourself.

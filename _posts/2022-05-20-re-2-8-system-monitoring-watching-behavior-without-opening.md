@@ -8,15 +8,15 @@ categories: ["Technique Reverse", "Part 02 · The Toolkit"]
 tags: [reverse-engineering, tools]
 render_with_liquid: false
 ---
-A lot of the time you can tell what a program is doing without reading a single line of assembly. You just watch where it touches the system: which files it creates, which registry keys it writes, which server it calls, what child processes it spawns. This is called behavioral analysis, and it's often the first dynamic step before you decide whether you need to sit down and debug in detail.
+A lot of the time you can tell what a program is doing without reading a single line of assembly. You just watch where it touches the system, such as which files it creates, which registry keys it writes, which server it calls, what child processes it spawns. This is called behavioral analysis, and it's often the first dynamic step before you decide whether you need to sit down and debug in detail.
 
 This lesson is the toolkit for that. None of the tools are hard to use. The hard part is reading the large number of events they log.
 
 ## Procmon
 
-Process Monitor (Procmon, from Sysinternals) records nearly every interaction between processes and the operating system in real time: file operations, registry, process creation/exit, basic network activity, and threads. Run it for a few seconds and you have tens of thousands of lines, so the real skill is filtering.
+Process Monitor (Procmon, from Sysinternals) records nearly every interaction between processes and the operating system in real time, including file operations, registry, process creation/exit, basic network activity, and threads. Run it for a few seconds and you have tens of thousands of lines, so the real skill is filtering.
 
-My usual routine is to open Procmon, turn on capture, run the target program, then turn capture off right away so I don't drown. Filter by process first: `Process Name is <name>.exe then Include`. That shrinks the sea of events to what you need. Then filter by operation type with the toolbar buttons (file system, registry, network, process/thread), so if you want to see what files it writes, you only turn on file system. The columns worth looking at are Operation (e.g. `CreateFile`, `RegSetValue`, `WriteFile`), Path (which file or key), Result (`SUCCESS` or `NAME NOT FOUND`), and Detail.
+My usual routine is to open Procmon, turn on capture, run the target program, then turn capture off right away so I don't drown. Filter by process first, for example `Process Name is <name>.exe then Include`. That shrinks the sea of events to what you need. Then filter by operation type with the toolbar buttons (file system, registry, network, process/thread), so if you want to see what files it writes, you only turn on file system. The columns worth looking at are Operation (e.g. `CreateFile`, `RegSetValue`, `WriteFile`), Path (which file or key), Result (`SUCCESS` or `NAME NOT FOUND`), and Detail.
 
 A few patterns you can read without disassembling. A series of `RegSetValue` into `...\CurrentVersion\Run` means the program is installing persistence, so it runs again after the machine boots. `CreateFile` then `WriteFile` into `%TEMP%` then `Process Create` of the file it just wrote is the classic sign of a dropper. And `RegQueryValue` on keys like `...\VMware` or `...\VirtualBox` means it's checking whether it's running in a virtual machine (anti-VM, covered in Part 15).
 
@@ -36,17 +36,17 @@ Process Explorer is also from Sysinternals. It's lighter than Process Hacker and
 
 ## API Monitor
 
-Procmon only sees interactions at the operating system level. API Monitor gets closer to the code: it hooks and records Win32 API calls with the real parameters and return values. You pick the API groups you want to follow (file, registry, memory, crypto, network...), run the program, and then read things like `CreateFileW(L"C:\\Users\\...\\secret.dat", GENERIC_READ, ...)`, which gives you the full file name right away. You might also see `CryptEncrypt(...)` or `VirtualAlloc(..., PAGE_EXECUTE_READWRITE)`, which allocates memory that's both writable and executable. That's a common sign of suspicious activity when code is preparing to run a payload.
+Procmon only sees interactions at the operating system level. API Monitor gets closer to the code. It hooks and records Win32 API calls with the real parameters and return values. You pick the API groups you want to follow (file, registry, memory, crypto, network...), run the program, and then read things like `CreateFileW(L"C:\\Users\\...\\secret.dat", GENERIC_READ, ...)`, which gives you the full file name right away. You might also see `CryptEncrypt(...)` or `VirtualAlloc(..., PAGE_EXECUTE_READWRITE)`, which allocates memory that's both writable and executable. That's a common sign of suspicious activity when code is preparing to run a payload.
 
 The good part is seeing parameters in a readable form. The bad part is that a lot of malware evades its hooks, or calls the Native API/syscalls directly to go around them (see lesson 1.12). When API Monitor is suspiciously silent, that silence is itself a clue.
 
 ## Autoruns
 
-Autoruns lists nearly every spot where something can auto-start on Windows: Run keys, scheduled tasks, services, drivers, Explorer plugins, and dozens of other places you wouldn't think of. Compare Autoruns before and after running a sample and you see what it planted to survive the next boot. There's an option to hide entries signed by Microsoft to cut down the noise.
+Autoruns lists nearly every spot where something can auto-start on Windows, such as Run keys, scheduled tasks, services, drivers, Explorer plugins, and dozens of other places you wouldn't think of. Compare Autoruns before and after running a sample and you see what it planted to survive the next boot. There's an option to hide entries signed by Microsoft to cut down the noise.
 
 ## Wireshark
 
-When a program talks to the outside, Wireshark captures every packet. You see which domain it resolves (DNS), which IP and port it connects to, and if it's not encrypted, even the contents. For malware, this is how you find the command-and-control (C2) server and understand the protocol. Set up the lab network correctly: you usually run in a simulated network (INetSim/FakeNet) so the sample thinks it reached the internet while the packets go nowhere, see lesson 0.3.
+When a program talks to the outside, Wireshark captures every packet. You see which domain it resolves (DNS), which IP and port it connects to, and if it's not encrypted, even the contents. For malware, this is how you find the command-and-control (C2) server and understand the protocol. Set up the lab network correctly. You usually run in a simulated network (INetSim/FakeNet) so the sample thinks it reached the internet while the packets go nowhere, see lesson 0.3.
 
 ## On Linux: strace and ltrace
 
@@ -60,7 +60,7 @@ No single tool gives you the full answer, but together they do. Procmon tells yo
 
 Run the sample once with all of this turned on and you have a behavior profile before touching a line of assembly. From that profile you decide which spots are worth debugging in detail. It's the same triage, static, dynamic idea from lesson 0.4, except the dynamic part is done by observation instead of a debugger.
 
-One reminder: when the target is real malware, everything in this lesson has to run in an isolated VM per [Lesson 0.3](/posts/re-0-3-set-up-safe-lab-before-touching/). Turning on Procmon doesn't make you any safer, the program still really runs.
+One reminder is that when the target is real malware, everything in this lesson has to run in an isolated VM per [Lesson 0.3](/posts/re-0-3-set-up-safe-lab-before-touching/). Turning on Procmon doesn't make you any safer, the program still really runs.
 
 ## Lab
 
@@ -104,7 +104,7 @@ Two questions to think about. If `watchme` wrote the file and then ran it, which
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>
 
-Without a filter, a few seconds of `watchme.exe` can produce anywhere from a few thousand to tens of thousands of lines, mostly the DLL loader and the CRT touching all sorts of things at startup. After adding `Process Name is watchme.exe` the count drops to a few hundred. That's why filtering by process name comes first: it cuts out the noise from other processes and keeps only your target.
+Without a filter, a few seconds of `watchme.exe` can produce anywhere from a few thousand to tens of thousands of lines, mostly the DLL loader and the CRT touching all sorts of things at startup. After adding `Process Name is watchme.exe` the count drops to a few hundred. That's why filtering by process name comes first, because it cuts out the noise from other processes and keeps only your target.
 
 With File System enabled on its own, you see a sequence along these lines:
 
@@ -136,7 +136,7 @@ write(3, "hello from watchme\n", 19)   = 19
 
 These are the exact system calls that open and write the file, with the `O_CREAT|O_TRUNC` flags equivalent to `CREATE_ALWAYS` on Windows. It's the Linux version of what Procmon captured, just at the rawer syscall level.
 
-For the questions: if `watchme` wrote the file and then executed it, the pattern of `CreateFile` and `WriteFile` into TEMP followed by a `Process Create` of the file it just wrote is the classic sign of a dropper, a component that drops a payload to disk and runs it. Seeing that chain in Procmon is suspicious even before you know what the payload contains. Filtering by process is the first step because Procmon records every process on the machine at once. Without a filter, your target's events are buried in tens of thousands of lines from system processes, while a process name filter narrows things to what you want to see.
+For the questions, if `watchme` wrote the file and then executed it, the pattern of `CreateFile` and `WriteFile` into TEMP followed by a `Process Create` of the file it just wrote is the classic sign of a dropper, a component that drops a payload to disk and runs it. Seeing that chain in Procmon is suspicious even before you know what the payload contains. Filtering by process is the first step because Procmon records every process on the machine at once. Without a filter, your target's events are buried in tens of thousands of lines from system processes, while a process name filter narrows things to what you want to see.
 
 </details>
 

@@ -9,7 +9,7 @@ tags: [reverse-engineering, resources]
 render_with_liquid: false
 ---
 > Every technique in the series, grouped by topic, with when to use it and the matching lesson.
-> Lesson notation: for example `15.5` = Part 15, Lesson 5 (see the [README](/technique-reverse/)).
+> In the lesson notation, `15.5` = Part 15, Lesson 5 (see the [README](/technique-reverse/)).
 
 ## A. Static analysis
 Don't run the file, just read.
@@ -136,4 +136,4 @@ These are covered so you understand the mechanism, to analyze and defend.
 ---
 
 ### Suggested skill path
-Start with basic static analysis (A) until you can read disassembly and pseudocode, then move to basic dynamic analysis (B) and get comfortable with x64dbg/GDB. Pick one managed language (.NET or Java) to see results quickly, then take on native C/C++. Unpacking and anti-reverse (D, E) come next, and they're the hard part for most people. After that comes automation (H) with scripting, emulation and symbolic execution. Finally, specialize in one direction: malware, exploit/vuln research, or games/mobile.
+Start with basic static analysis (A) until you can read disassembly and pseudocode, then move to basic dynamic analysis (B) and get comfortable with x64dbg/GDB. Pick one managed language (.NET or Java) to see results quickly, then take on native C/C++. Unpacking and anti-reverse (D, E) come next, and they're the hard part for most people. After that comes automation (H) with scripting, emulation and symbolic execution. Finally, specialize in one direction, either malware, exploit/vuln research, or games/mobile.

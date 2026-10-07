@@ -34,7 +34,7 @@ The result is a standalone PE file, and the Windows loader can resolve its impor
 
 ## Reading the Get Imports result
 
-After Get Imports, Scylla shows a tree: each DLL and its functions. Watch for lines marked red or "not found". Those are pointers in the IAT that Scylla couldn't map back to any function. There are a few possible causes.
+After Get Imports, Scylla shows a tree of each DLL and its functions. Watch for lines marked red or "not found". Those are pointers in the IAT that Scylla couldn't map back to any function. There are a few possible causes.
 
 One is that IAT Autosearch grabbed too much, so the region it guessed as the IAT also includes data that isn't import pointers. Narrow the start or the size. Another is redirected imports. Some protectors don't let the IAT point straight at the DLL but at an intermediate stub of their own (an import-hiding thunk), and that stub then jumps to the real function. Scylla sees a pointer into the packer's region rather than into user32/kernel32, so it gives up. Scylla has a "Trace redirected imports" option that tries to walk through the stub, but with a well-hidden IAT you have to fix it by hand or use another tool.
 
@@ -86,7 +86,7 @@ Three questions to think about. If you skip Fix Dump and run the raw Dump file d
 
 Try it yourself before reading this.
 
-The full workflow. Starting from the OEP: from Lab 14.2, after the ESP trick and the tail jump, x64dbg stops at the first instruction of the original code. Don't press F9 again, since Scylla needs the process alive and standing still here. Open Scylla and select the process: a standalone Scylla needs you to pick it from the dropdown at the top, while the plugin inside x64dbg is already attached to the process being debugged. Set the OEP field to the current RIP/EIP address, copying it from the current line in x64dbg, since this becomes the entry point of the new file.
+The full workflow starts from the OEP. From Lab 14.2, after the ESP trick and the tail jump, x64dbg stops at the first instruction of the original code. Don't press F9 again, since Scylla needs the process alive and standing still here. Open Scylla and select the process. A standalone Scylla needs you to pick it from the dropdown at the top, while the plugin inside x64dbg is already attached to the process being debugged. Set the OEP field to the current RIP/EIP address, copying it from the current line in x64dbg, since this becomes the entry point of the new file.
 
 Run IAT Autosearch. Scylla scans and reports a starting address (VA) and an estimated IAT size, and Advanced IAT Autosearch scans more broadly if the normal pass misses something. Get Imports then shows the DLL and function tree, where each green line is a valid import that resolved correctly and each red line is a pointer that didn't resolve.
 
@@ -94,11 +94,11 @@ Cleaning up. Right-click the red entries and choose "Cut thunk(s)" to remove the
 
 Dump the whole module to `file_dump.exe`, then run Fix Dump and select that file. Scylla adds a `.scy` section holding a new import directory, patches the header (entry point set to the OEP, the Import Directory RVA pointing at the new section), and writes out `file_dump_SCY.exe`. Running `file_dump_SCY.exe` should work like the original.
 
-On running the raw dump without Fix Dump: the dump has an IAT filled with the real addresses from that one run, but no import directory for the loader to resolve against. On the next run, ASLR places the DLLs at different base addresses, so the old addresses become garbage, the program calls into the wrong region, and it crashes almost immediately. Fix Dump rebuilds the import table so the loader can resolve it properly.
+When you run the raw dump without Fix Dump, the dump has an IAT filled with the real addresses from that one run, but no import directory for the loader to resolve against. On the next run, ASLR places the DLLs at different base addresses, so the old addresses become garbage, the program calls into the wrong region, and it crashes almost immediately. Fix Dump rebuilds the import table so the loader can resolve it properly.
 
-On finding the real IAT boundaries when Autosearch grabs too much: go into the unpacked code in x64dbg and find an API call of the form `call [address]` or `jmp [address]`. That `address` is one IAT slot. Follow it in the dump, scroll up until the run of pointers into DLLs ends (you hit a zero or non-pointer data), which marks the upper boundary, and scroll down the same way for the lower boundary. Enter the exact start and size into Scylla.
+To find the real IAT boundaries when Autosearch grabs too much, go into the unpacked code in x64dbg and find an API call of the form `call [address]` or `jmp [address]`. That `address` is one IAT slot. Follow it in the dump, scroll up until the run of pointers into DLLs ends (you hit a zero or non-pointer data), which marks the upper boundary, and scroll down the same way for the lower boundary. Enter the exact start and size into Scylla.
 
-On entries pointing into the packer's own region instead of kernel32 or user32: that's a redirected import, a form of IAT obfuscation. The protector doesn't let the IAT point straight at the real API function, instead pointing at its own stub, which then jumps to the real function. The purpose is to hide the API list from an analyst. Scylla sees the pointer sitting inside the packer's region and doesn't know what function it is. You have to trace through the stub (Scylla has an option for this), or in tricky cases, recover each thunk manually.
+Entries pointing into the packer's own region instead of kernel32 or user32 are a redirected import, a form of IAT obfuscation. The protector doesn't let the IAT point straight at the real API function, instead pointing at its own stub, which then jumps to the real function. The purpose is to hide the API list from an analyst. Scylla sees the pointer sitting inside the packer's region and doesn't know what function it is. You have to trace through the stub (Scylla has an option for this), or in tricky cases, recover each thunk manually.
 
 The Scylla workflow above follows the tool's standard steps. In practice on Windows, the exact OEP and IAT boundaries depend on the file you're working with.
 

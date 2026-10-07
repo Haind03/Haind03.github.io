@@ -21,7 +21,7 @@ rax rbx rcx rdx rsi rdi rbp rsp
 r8  r9  r10 r11 r12 r13 r14 r15
 ```
 
-One thing that confuses beginners: the same register has several names depending on the size you use. Take rax as an example:
+One thing that confuses beginners is that the same register has several names depending on the size you use. Take rax as an example:
 
 ```
 rax  = 64 bit (the whole thing)
@@ -109,7 +109,7 @@ jl  somewhere      ; jump if eax < 10 (signed)
 ja  / jb           ; above / below (unsigned)
 ```
 
-Remember this: a `cmp`/`test` pair plus the `j*` right after it is one `if` statement in the source. Wherever you find the pair, you've found a branch. In a crackme, the `cmp` right before "Wrong password" gets printed is usually where the serial is compared.
+Remember that a `cmp`/`test` pair plus the `j*` right after it is one `if` statement in the source. Wherever you find the pair, you've found a branch. In a crackme, the `cmp` right before "Wrong password" gets printed is usually where the serial is compared.
 
 `jmp` (unconditional) always jumps, like `goto`.
 
@@ -160,4 +160,4 @@ int check_password() {
 This function only checks whether the input string is exactly 8 characters. You just read assembly and turned it into logic. That's reversing. Get used to the `cmp`/`jne` pair and remember that rax is the return value, and that's most of it.
 
 ## Key takeaways
-One register has several names by size: `rax`(64)/`eax`(32)/`ax`(16)/`al`(8) are the same thing. rax is the return value and rsp is the top of the stack, with the first parameters in `rcx rdx r8 r9` on Windows and `rdi rsi rdx rcx r8 r9` on Linux. `[...]` means memory access while no brackets means the value itself, and `lea` computes an address or does arithmetic without reading memory. `xor eax, eax` means set to 0. A `cmp`/`test` pair plus `j*` is one `if` statement, which is how you read logic.
+One register has several names by size, and `rax`(64)/`eax`(32)/`ax`(16)/`al`(8) are the same thing. rax is the return value and rsp is the top of the stack, with the first parameters in `rcx rdx r8 r9` on Windows and `rdi rsi rdx rcx r8 r9` on Linux. `[...]` means memory access while no brackets means the value itself, and `lea` computes an address or does arithmetic without reading memory. `xor eax, eax` means set to 0. A `cmp`/`test` pair plus `j*` is one `if` statement, which is how you read logic.

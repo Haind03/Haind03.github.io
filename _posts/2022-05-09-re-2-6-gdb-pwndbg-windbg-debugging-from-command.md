@@ -12,7 +12,7 @@ x64dbg in the last lesson is a GUI where you just click. But when you move to Li
 
 ## Why use a CLI debugger at all
 
-On a Linux server or inside a container there's usually no display, just a terminal. GDB can be scripted: write a command file, run it in bulk, extract values automatically, which a GUI doesn't handle well. And WinDbg is nearly the only tool for debugging the Windows kernel and for Time Travel Debugging, which x64dbg doesn't have.
+On a Linux server or inside a container there's usually no display, just a terminal. GDB can be scripted, so you write a command file, run it in bulk, and extract values automatically, which a GUI doesn't handle well. And WinDbg is nearly the only tool for debugging the Windows kernel and for Time Travel Debugging, which x64dbg doesn't have.
 
 The CLI isn't a step backward. It's a different tool for a different problem.
 
@@ -61,7 +61,7 @@ x/s 0x404040            # read a string (s) at an address
 x/4xb $rdi              # view 4 bytes (b) in hex at the address rdi points to
 ```
 
-The `x/` syntax reads as: the count, then the format (x hex, d decimal, i instruction, s string), then the size (b byte, h 2 bytes, w 4 bytes, g 8 bytes). Remember that and you can read anything in memory.
+The `x/` syntax reads as the count, then the format (x hex, d decimal, i instruction, s string), then the size (b byte, h 2 bytes, w 4 bytes, g 8 bytes). Remember that and you can read anything in memory.
 
 ### Editing to change the flow
 
@@ -78,7 +78,7 @@ Type `Ctrl+X` then `A`, or run `gdb -tui`, and you get a split-pane interface sh
 
 ## pwndbg and GEF
 
-Bare GDB doesn't show you the stack, heap and registers when it stops. Two extensions fix that: pwndbg and GEF. Install one of them (not both), and from then on every time GDB stops it prints the full context: registers, a few instructions around the pointer, the stack, the flags.
+Bare GDB doesn't show you the stack, heap and registers when it stops. Two extensions fix that, pwndbg and GEF. Install one of them (not both), and from then on every time GDB stops it prints the full context, which is registers, a few instructions around the pointer, the stack, the flags.
 
 More useful commands:
 
@@ -111,7 +111,7 @@ The command style is like GDB but the notation is different:
 | `!peb` | Print the PEB structure, handy for anti-debug |
 | `lm` | List loaded modules |
 
-The `module!function` syntax is handy: set a breakpoint by API function name without knowing the address, and WinDbg looks it up through symbols. Remember to configure Microsoft's symbol server to get full function names.
+The `module!function` syntax is handy, since you can set a breakpoint by API function name without knowing the address, and WinDbg looks it up through symbols. Remember to configure Microsoft's symbol server to get full function names.
 
 ## CLI or GUI
 
@@ -132,7 +132,7 @@ Enter password: abc
 Wrong password.
 ```
 
-The rules are simple: don't open `login.c`, and don't guess the password by eye. Use only GDB. Load the program into GDB and set the Intel syntax with `set disassembly-flavor intel`. Set a breakpoint at the function `check_password`, run, type any password, and let the program stop at the start of the function. The function receives the string you typed, so work out which register holds the first parameter on Linux x86-64 and read it with the `x` command. Inside the function there's a call to `strcmp`. Set a breakpoint there, run to it, and read both arguments of `strcmp`. One of them is the correct password, so write it down. Then quit and run again, this time typing a wrong password, but use GDB to change the return value of `check_password` (which register holds it?) so the program still prints "Correct!". For an extra challenge, rebuild without `-no-pie`, watch the addresses change on each run (ASLR), and use `vmmap` to see the real base.
+The rules are simple. Don't open `login.c`, and don't guess the password by eye. Use only GDB. Load the program into GDB and set the Intel syntax with `set disassembly-flavor intel`. Set a breakpoint at the function `check_password`, run, type any password, and let the program stop at the start of the function. The function receives the string you typed, so work out which register holds the first parameter on Linux x86-64 and read it with the `x` command. Inside the function there's a call to `strcmp`. Set a breakpoint there, run to it, and read both arguments of `strcmp`. One of them is the correct password, so write it down. Then quit and run again, this time typing a wrong password, but use GDB to change the return value of `check_password` (which register holds it?) so the program still prints "Correct!". For an extra challenge, rebuild without `-no-pie`, watch the addresses change on each run (ASLR), and use `vmmap` to see the real base.
 
 Some hints. For the first parameter on System V x86-64, see [Lesson 1.4](/posts/re-1-4-x86-x64-assembly-2-stack-frames/). To read a string at the address in a register, use `x/s $reg`. The return value is in `rax`, and to change it at the right moment, break where the function is about to `ret`, or use `finish` and then `set $rax=1` before `main` checks it. Try it yourself before opening the solution.
 
@@ -187,7 +187,7 @@ Breakpoint 2, __strcmp_avx2 ()
 0x402004:       "r3v3rs3_m3"     <- the correct password, exposed
 ```
 
-The correct password is `r3v3rs3_m3`. No need to read the source, you only look at the second argument of `strcmp`. It's an old trick: a comparison function almost always has the secret value right next to the user's input. If GDB stops inside libc's optimized strcmp (`__strcmp_avx2`) and it looks confusing, just read `rdi` and `rsi` as above, the two strings are still there.
+The correct password is `r3v3rs3_m3`. No need to read the source, you only look at the second argument of `strcmp`. It's an old trick, since a comparison function almost always has the secret value right next to the user's input. If GDB stops inside libc's optimized strcmp (`__strcmp_avx2`) and it looks confusing, just read `rdi` and `rsi` as above, the two strings are still there.
 
 Another way is to read the secret variable directly. Because the build has `-g`, you can print it:
 
@@ -219,7 +219,7 @@ Value returned is $1 = 0
 Correct! Welcome.
 ```
 
-The program prints "Correct!" even though we typed the wrong password, because `main` only looks at `rax`. This is runtime patching: you don't change the password, you change the result of the check.
+The program prints "Correct!" even though we typed the wrong password, because `main` only looks at `rax`. This is runtime patching. You don't change the password, you change the result of the check.
 
 ### Task 6: ASLR
 
@@ -235,11 +235,11 @@ gdb ./login_pie
 
 Run `r` several times and the real breakpoint address differs because of ASLR. The offset relative to the module base stays fixed, as [Lesson 1.2](/posts/re-1-2-process-memory-map-where-everything-happens/) said. GDB rebases breakpoints by function name on its own, so you rarely have to compute by hand. That's an advantage of setting breakpoints by name rather than by hard-coded address.
 
-Summary: arguments are read in System V register order, `rdi, rsi, rdx, rcx, r8, r9`. The return value is in `rax` and can be changed at runtime to alter the flow. Comparison functions often leak the secret in the neighboring argument, and this needs no symbols. Breakpoints by function name handle ASLR better than hard-coded addresses.
+In summary, arguments are read in System V register order, `rdi, rsi, rdx, rcx, r8, r9`. The return value is in `rax` and can be changed at runtime to alter the flow. Comparison functions often leak the secret in the neighboring argument, and this needs no symbols. Breakpoints by function name handle ASLR better than hard-coded addresses.
 
 </details>
 
 ## Key takeaways
 In GDB, remember `set disassembly-flavor intel` right at the start. The core command set is `b`, `r`, `c`, `si`/`ni`, `finish`, `info registers`, `x/`, and `set`. The formula is `x/<count><format><size>`, so `x/16xg $rsp` is 16 8-byte hex values at the stack.
 
-Install pwndbg (or GEF) so GDB shows context automatically, and use `vmmap` and `telescope`. WinDbg is for kernel-mode and Time Travel Debugging, two things x64dbg doesn't have, and its breakpoints go by `module!function` once you turn on Microsoft's symbol server. Pick the tool by the problem: x64dbg for Windows user-mode, GDB for Linux, WinDbg for kernel/TTD.
+Install pwndbg (or GEF) so GDB shows context automatically, and use `vmmap` and `telescope`. WinDbg is for kernel-mode and Time Travel Debugging, two things x64dbg doesn't have, and its breakpoints go by `module!function` once you turn on Microsoft's symbol server. Pick the tool by the problem, x64dbg for Windows user-mode, GDB for Linux, WinDbg for kernel/TTD.

@@ -40,7 +40,7 @@ In practice I often run GoReSym to get the JSON (stable, doesn't depend on the I
 
 ## Strings in Go
 
-Even after you have the function names, strings still trip you up. A Go string doesn't end with a 0 byte like in C. It's a two-field struct: a pointer to the data and a length. Constant strings also get merged into one big contiguous block in `.rodata`, with no separators.
+Even after you have the function names, strings still trip you up. A Go string doesn't end with a 0 byte like in C. It's a two-field struct holding a pointer to the data and a length. Constant strings also get merged into one big contiguous block in `.rodata`, with no separators.
 
 So the default Strings window of IDA/Ghidra shows the whole stuck-together block as one huge meaningless string. GolangAnalyzerExtension and Go scripts handle this, cutting each string correctly by its length. Without a tool, you have to look at how the code loads the (pointer, length) pair to find the real string boundaries.
 
@@ -89,16 +89,16 @@ Open `demo_go_stripped` in Ghidra, run auto-analysis and open the Functions wind
 GoReSym -t -d -p demo_go_stripped > syms.json
 ```
 
-Open `syms.json` and look for `validateLicense` and `main.main`. Did GoReSym recover them even though the binary is stripped? Read the build info part of the JSON too: what Go version is it, and is it above or below 1.17 (the point where the calling convention changed)? Then load the symbols into Ghidra, either with a script that imports the JSON and renames by address, or with GolangAnalyzerExtension. Reopen the Functions window and check whether `main.validateLicense` shows up now. Finally compare how long it took you to find the license check function before and after having the symbols.
+Open `syms.json` and look for `validateLicense` and `main.main`. Did GoReSym recover them even though the binary is stripped? Read the build info part of the JSON too to see what Go version it is, and whether it is above or below 1.17 (the point where the calling convention changed). Then load the symbols into Ghidra, either with a script that imports the JSON and renames by address, or with GolangAnalyzerExtension. Reopen the Functions window and check whether `main.validateLicense` shows up now. Finally compare how long it took you to find the license check function before and after having the symbols.
 
-Two questions to think about. Why does stripping with `-s -w` still fail to hide function names from GoReSym? And if an attacker really wanted to hide Go function names, what would they have to break, and why is that risky (hint: panics and stack traces)?
+There are two questions to think about. Why does stripping with `-s -w` still fail to hide function names from GoReSym? And if an attacker really wanted to hide Go function names, what would they have to break, and why is that risky (hint, panics and stack traces)?
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>
 
 This writeup describes the procedure and the typical results. The exact numbers (the function count) will differ with the Go version you use, but the shape of the result is as described.
 
-After auto-analysis, the Functions window of a stripped Go binary looks messy: thousands of entries, most of them `FUN_00xxxxxx`. Ghidra can't recover the names because the ELF/PE symbol table was wiped by `-s -w`. Searching for `main.main` by name finds nothing, so you're left feeling your way by strings or from the entry point, which is very slow. The binary appears to have lost all its information, but it didn't. The information is still in pclntab, and Ghidra just doesn't read it for Go by default.
+After auto-analysis, the Functions window of a stripped Go binary looks messy, with thousands of entries, most of them `FUN_00xxxxxx`. Ghidra can't recover the names because the ELF/PE symbol table was wiped by `-s -w`. Searching for `main.main` by name finds nothing, so you're left feeling your way by strings or from the entry point, which is very slow. The binary appears to have lost all its information, but it didn't. The information is still in pclntab, and Ghidra just doesn't read it for Go by default.
 
 Then GoReSym gets the names back:
 
@@ -117,9 +117,9 @@ In `syms.json` you find both `main.validateLicense` and `main.main` with their a
 }
 ```
 
-The build info section of the JSON states the Go version, for example `"Version": "go1.21.3"`. That's above 1.17, so the binary uses the register-based calling convention (ABIInternal): arguments go into rax, rbx, rcx, rdi, rsi and so on instead of sitting on the stack. You need to know this to read the parameters of `validateLicense` correctly.
+The build info section of the JSON states the Go version, for example `"Version": "go1.21.3"`. That's above 1.17, so the binary uses the register-based calling convention (ABIInternal), so arguments go into rax, rbx, rcx, rdi, rsi and so on instead of sitting on the stack. You need to know this to read the parameters of `validateLicense` correctly.
 
-To load the symbols into Ghidra there are two routes. You can install GolangAnalyzerExtension and re-analyze, and it applies names and builds types by itself. Or you can write a Ghidra script that reads `syms.json` and, for each entry, calls `createFunction` and `setName` at the `Start` address. After loading, reopen the Functions window and `main.validateLicense` and `main.main` have their names. Double-click `main.validateLicense` and the decompiler gives clear logic: it checks `len(key) == 16` and that the first character is `G`.
+To load the symbols into Ghidra there are two routes, and you can install GolangAnalyzerExtension and re-analyze, and it applies names and builds types by itself. Or you can write a Ghidra script that reads `syms.json` and, for each entry, calls `createFunction` and `setName` at the `Start` address. After loading, reopen the Functions window and `main.validateLicense` and `main.main` have their names. Double-click `main.validateLicense` and the decompiler gives clear logic that checks `len(key) == 16` and that the first character is `G`.
 
 For the comparison, before the symbols you have to trace from the entry point through the runtime init, which is easy to get lost in and takes minutes or even a whole session. After the symbols, you type `main.` into the Functions filter, see every function the author wrote, and go straight to `validateLicense` in seconds.
 

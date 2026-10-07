@@ -8,7 +8,7 @@ categories: ["Technique Reverse", "Part 03 · C"]
 tags: [reverse-engineering, c]
 render_with_liquid: false
 ---
-C code revolves around four things: variables, pointers, arrays, strings. The compiler turns all of them into similar-looking memory accesses, so at a glance they're easy to mix up. But each has its own pattern in assembly. Learn to recognize them and you can read most C code without the source.
+C code revolves around four things, variables, pointers, arrays and strings. The compiler turns all of them into similar-looking memory accesses, so at a glance they're easy to mix up. But each has its own pattern in assembly. Learn to recognize them and you can read most C code without the source.
 
 All the asm below is real output of `gcc -O0` on the file `datatypes.c`, Intel syntax, System V (Linux). On Windows the order of parameter registers is different (rcx, rdx...) but the idea is identical.
 
@@ -39,7 +39,7 @@ So `[rbp-x]` is local, and `[rip+x]` (or an absolute address in .data/.bss) is g
 
 ![Pointers and arrays in memory](/assets/img/re/part-03/pointers-arrays.svg)
 
-A pointer is a variable whose value is an address. What confuses beginners is the dereference step, taking the value at that address. In assembly, a dereference is always two steps: load the pointer into a register, then access through that register's brackets.
+A pointer is a variable whose value is an address. What confuses beginners is the dereference step, taking the value at that address. In assembly, a dereference is always two steps, load the pointer into a register, then access through that register's brackets.
 
 Look at the function `my_strlen`:
 
@@ -88,7 +88,7 @@ IDA/Ghidra often recognize it and show `arr[i]`, but when they guess the type wr
 
 A C string has no length field. It's an array of `char` ending with a `0x00` byte (the null terminator). So every string operation is a loop that runs until it hits a 0 byte. Know that pattern well.
 
-Look back at `my_strlen`: the loop reads each byte (`movzx eax, BYTE PTR [rax]`), `test al, al` asks whether it's 0 yet, and if not it advances the pointer (`add QWORD PTR [rbp-0x18], 1`) and counts one more. "Read a byte, then test al, al", repeated, is the signature of string handling.
+Look back at `my_strlen`, where the loop reads each byte (`movzx eax, BYTE PTR [rax]`), `test al, al` asks whether it's 0 yet, and if not it advances the pointer (`add QWORD PTR [rbp-0x18], 1`) and counts one more. "Read a byte, then test al, al", repeated, is the signature of string handling.
 
 There are a few variants. Comparing two strings has two pointers advancing together, comparing each pair of bytes and exiting when they differ. That's the core of `strcmp`, and where passwords often get compared. Copying a string (`strcpy`) reads a byte from the source, writes it to the destination, and stops at 0. String literals sit in `.rdata`/`.rodata`, accessed via `lea rax, [rip+offset]`, and objdump and IDA show the string content directly, so the Strings window leads you to where it's used.
 
@@ -98,7 +98,7 @@ In a crackme, look for the loop "read a byte, test, jump" next to a string liter
 
 When the data types are right, IDA/Ghidra pseudocode reads like real C. When it guesses wrong (for example shows a pointer as `int`), you set the type yourself. In IDA, put the cursor on the variable and press `Y` to edit the type, or `N` to rename. In Ghidra, `Ctrl+L` retypes and `L` renames.
 
-Every time you change a variable to `char *` or `int[5]`, the decompiler updates every place that uses it and the whole function clears up. That's the normal loop: read, guess the type, set the type, read again.
+Every time you change a variable to `char *` or `int[5]`, the decompiler updates every place that uses it and the whole function clears up. That's the normal loop of read, guess the type, set the type, read again.
 
 ## Lab
 
@@ -120,7 +120,7 @@ Or with MSVC:
 cl /Od /Zi datatypes.c
 ```
 
-Open the binary in IDA or Ghidra, run auto-analysis, and answer the following function by function. In `main`, which instructions read and write the globals `g_initialized` and `g_zero`, what kind of addressing do they use (hint: RIP-relative), and where does the local variable `local` sit relative to `rbp`? In `my_strlen`, find the two instructions that dereference the pointer `*s` and explain why it takes two steps, then mark the loop that walks the string and the instruction that checks for the null terminator. In `sum_array`, find the formula that computes the address of `arr[i]`, read off the scale, and say what element size it implies. In `retarget`, find the instruction that performs `*pp = newtarget` and explain why this is a pointer to a pointer. Finally, rename and retype a few variables in the decompiler (`N` and `Y` in IDA, `L` and `Ctrl+L` in Ghidra) and watch how the pseudocode changes.
+Open the binary in IDA or Ghidra, run auto-analysis, and answer the following function by function. In `main`, which instructions read and write the globals `g_initialized` and `g_zero`, what kind of addressing do they use (the hint is RIP-relative), and where does the local variable `local` sit relative to `rbp`? In `my_strlen`, find the two instructions that dereference the pointer `*s` and explain why it takes two steps, then mark the loop that walks the string and the instruction that checks for the null terminator. In `sum_array`, find the formula that computes the address of `arr[i]`, read off the scale, and say what element size it implies. In `retarget`, find the instruction that performs `*pp = newtarget` and explain why this is a pointer to a pointer. Finally, rename and retype a few variables in the decompiler (`N` and `Y` in IDA, `L` and `Ctrl+L` in Ghidra) and watch how the pseudocode changes.
 
 Two things to think about afterwards. If the binary were stripped, could you still tell globals from locals, and based on what? And if you rebuild with `-O2`, does the compiler keep the dereference steps separate?
 
@@ -190,7 +190,7 @@ The string loop in `my_strlen`:
 
 `test al, al` followed by `jne` is the null terminator check, and it's the common signature of every C string-processing loop.
 
-On the two questions: a stripped binary still lets you tell the two kinds apart, because you go by the access pattern (RIP-relative or a fixed .data address versus `[rbp-x]`) and not by symbol names. With `-O2` the compiler often merges steps (for example `movzx eax, BYTE PTR [rdi]` directly, dropping the intermediate variable) and sometimes vectorizes or unrolls the string loop. That's harder to read, but the `index*scale` array formula and the null-check pattern are still there.
+On the two questions, a stripped binary still lets you tell the two kinds apart, because you go by the access pattern (RIP-relative or a fixed .data address versus `[rbp-x]`) and not by symbol names. With `-O2` the compiler often merges steps (for example `movzx eax, BYTE PTR [rdi]` directly, dropping the intermediate variable) and sometimes vectorizes or unrolls the string loop. That's harder to read, but the `index*scale` array formula and the null-check pattern are still there.
 
 </details>
 

@@ -8,7 +8,7 @@ categories: ["Technique Reverse", "Part 16 · Crypto and Algorithms"]
 tags: [reverse-engineering, crypto]
 render_with_liquid: false
 ---
-These are the three data transformations I run into most when taking apart crackmes and malware: XOR, RC4, and Base64 with a shuffled alphabet. They cover most of the cases where a string looks like garbage. All three can be recognized by eye and reversed with a few lines of Python. This lesson shows how to spot them and write the decoder.
+These are the three data transformations I run into most when taking apart crackmes and malware, which are XOR, RC4, and Base64 with a shuffled alphabet. They cover most of the cases where a string looks like garbage. All three can be recognized by eye and reversed with a few lines of Python. This lesson shows how to spot them and write the decoder.
 
 ## XOR
 
@@ -42,7 +42,7 @@ Do the first few bytes and the key shows up. If the key is short and repeats, yo
 
 RC4 is a stream cipher often seen in malware because it's compact and needs no library. It has no distinctive constants like AES or SHA, so findcrypt can't catch it. You recognize it by its structure, which is easy to spot once you know it.
 
-First, a 256-byte array (S-box) is initialized with 0, 1, 2, ..., 255. A loop doing `S[i] = i` 256 times is the first sign. Second comes the KSA loop (Key Scheduling), a 256-iteration loop that permutes S based on the key: `j = (j + S[i] + key[i % keylen]) & 0xFF; swap(S[i], S[j])`. Third is the PRGA loop (keystream generation): `i = (i+1) & 0xFF; j = (j + S[i]) & 0xFF; swap; k = S[(S[i]+S[j]) & 0xFF]` and then XOR k with the data.
+First, a 256-byte array (S-box) is initialized with 0, 1, 2, ..., 255. A loop doing `S[i] = i` 256 times is the first sign. Second comes the KSA loop (Key Scheduling), a 256-iteration loop that permutes S based on the key, written as `j = (j + S[i] + key[i % keylen]) & 0xFF; swap(S[i], S[j])`. Third is the PRGA loop (keystream generation), written as `i = (i+1) & 0xFF; j = (j + S[i]) & 0xFF; swap; k = S[(S[i]+S[j]) & 0xFF]` and then XOR k with the data.
 
 A sequentially initialized 256 array, then swaps with AND 0xFF (mod 256) all over, is RC4. RC4 is symmetric, so you only need the key to decrypt (usually near the KSA section, or a hardcoded string in the binary). Copy the algorithm into Python, pass in the key, run it.
 

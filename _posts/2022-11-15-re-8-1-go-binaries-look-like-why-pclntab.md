@@ -8,7 +8,7 @@ categories: ["Technique Reverse", "Part 08 · Go"]
 tags: [reverse-engineering, golang]
 render_with_liquid: false
 ---
-The first time you open a Go binary in IDA, it's confusing: tens of thousands of functions, most named `runtime.*`, and a tiny hello world that weighs almost 2 MB. But Go is much easier than a stripped C++ binary, because Go puts a table of function names into the binary. This lesson shows how to recognize a Go binary and use that table.
+The first time you open a Go binary in IDA, it's confusing because there are tens of thousands of functions, most named `runtime.*`, and a tiny hello world that weighs almost 2 MB. But Go is much easier than a stripped C++ binary, because Go puts a table of function names into the binary. This lesson shows how to recognize a Go binary and use that table.
 
 All the numbers and asm below come from a binary built with Go 1.22.0 on Linux x64, and if you redo it in the lab you'll get something similar.
 
@@ -53,7 +53,7 @@ Lesson [8.2](/posts/re-8-2-recovering-function-names-types-go-binaries/) uses Go
 
 ## Recognizing a Go binary
 
-Before working on it, make sure it's Go. A few signs are checkable in seconds. One is size: a small CLI that weighs 1 to 5 MB is suspicious. Another is the build info string. Go embeds a version line, and you can run the official command:
+Before working on it, make sure it's Go. A few signs are checkable in seconds. One is size, since a small CLI that weighs 1 to 5 MB is suspicious. Another is the build info string. Go embeds a version line, and you can run the official command:
 
 ```
 go version hello        ->  hello: go1.22.0
@@ -83,7 +83,7 @@ TEXT main.add(SB)
 
 `a` arrives in `AX` (that is RAX), `b` in `BX` (RBX), and the result is also returned in `AX`. If you apply the System V rule (`a` in RDI) you'll misread everything. Always check which Go version the binary was built with, then apply the right ABI. Newer IDA and Ghidra recognize the Go ABI, but with older versions you have to know it yourself.
 
-A syntax note: `go tool objdump` uses the Plan 9 form (`AX`, `MOVQ`), while IDA/Ghidra show Intel (`rax`, `mov`). Same thing, different names.
+A syntax note is that `go tool objdump` uses the Plan 9 form (`AX`, `MOVQ`), while IDA/Ghidra show Intel (`rax`, `mov`). Same thing, different names.
 
 ## What Go leaves in the code
 
@@ -91,7 +91,7 @@ A few patterns show up a lot and are covered in detail in [Lesson 8.3](/posts/re
 
 ## Lab
 
-In this lab you recognize and dissect a Go binary yourself, and check the points from this lesson: size, build info, pclntab and the register ABI. You need the Go toolchain (check with `go version`). The source is `main.go`, which defines a small non-inlined `add` function and prints a greeting.
+In this lab you recognize and dissect a Go binary yourself, and check the points from this lesson, which are size, build info, pclntab and the register ABI. You need the Go toolchain (check with `go version`). The source is `main.go`, which defines a small non-inlined `add` function and prints a greeting.
 
 Start by building `hello` from `main.go`, then build a C hello world with gcc and compare the two sizes. Explain why the Go binary is hundreds of times bigger. Next read the build info with `go version hello` and `go version -m hello`, and note the Go version, GOARCH and GOOS. Try again with `strings hello | grep '^go1\.'` to see how you would do it without a toolchain.
 
@@ -186,13 +186,13 @@ TEXT main.add(SB)
     RET                    ; returned in AX
 ```
 
-So `a` arrives in `AX` (RAX), `b` in `BX` (RBX), and the result goes back in `AX`. That's quite different from System V in C, where the first parameter is in RDI and the second in RSI. Go 1.17 and later use their own register order: `RAX, RBX, RCX, RDI, RSI, R8, R9, R10, R11`.
+So `a` arrives in `AX` (RAX), `b` in `BX` (RBX), and the result goes back in `AX`. That's quite different from System V in C, where the first parameter is in RDI and the second in RSI. Go 1.17 and later use their own register order, `RAX, RBX, RCX, RDI, RSI, R8, R9, R10, R11`.
 
 A stripped Go binary is easier than a stripped C one because pclntab is a function name table embedded for printing stack traces, and `-s -w` doesn't remove it. A stripped C binary loses all its names. To get the names back, use GoReSym or an IDA or Ghidra plugin that reads pclntab, and they rename thousands of functions automatically. That's the subject of Lesson 8.2.
 
 </details>
 
 ## Key takeaways
-Go binaries are big because of static linking plus the bundled runtime and GC, so don't read the `runtime.*` functions and focus on `main.*`. pclntab is an embedded function name table that survives strip, so Go is almost never truly stripped, and tools recover names from it (Lesson 8.2). The pclntab magic tells you the Go version: `f1 ff ff ff` is Go 1.20+.
+Go binaries are big because of static linking plus the bundled runtime and GC, so don't read the `runtime.*` functions and focus on `main.*`. pclntab is an embedded function name table that survives strip, so Go is almost never truly stripped, and tools recover names from it (Lesson 8.2). The pclntab magic tells you the Go version, as `f1 ff ff ff` is Go 1.20+.
 
-Recognize Go by size, build info (`go version -m`), and `runtime.`/`go1.x` strings. The calling convention changes by version: before 1.17 it goes through the stack, and from 1.17 through registers but in the order `RAX, RBX, RCX, RDI, RSI...`, different from System V, with the return in AX.
+Recognize Go by size, build info (`go version -m`), and `runtime.`/`go1.x` strings. The calling convention changes by version, as before 1.17 it goes through the stack, and from 1.17 through registers but in the order `RAX, RBX, RCX, RDI, RSI...`, different from System V, with the return in AX.

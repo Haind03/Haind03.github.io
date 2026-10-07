@@ -18,11 +18,11 @@ Frida puts an engine called gum into the target process, and that engine runs yo
 
 There are two ways to get the script in. With attach, you attach to an already running process, which is useful when the program has started and you want to look in from the middle. With spawn, Frida launches the program itself in a suspended state, loads the script, and only then lets it run. That's useful when you need to hook something that happens very early (before main, in an init function).
 
-The command-line tools you'll type a lot: `frida-ps -U` lists processes (the `-U` flag is for a USB device like Android, drop it for the local machine). `frida -l hook.js -f ./target` spawns `target` and loads `hook.js`, while `frida -l hook.js target` attaches to the process named `target`. `frida-trace` generates hooks automatically (covered at the end).
+The command-line tools you'll type a lot are `frida-ps -U`, which lists processes (the `-U` flag is for a USB device like Android, drop it for the local machine). `frida -l hook.js -f ./target` spawns `target` and loads `hook.js`, while `frida -l hook.js target` attaches to the process named `target`. `frida-trace` generates hooks automatically (covered at the end).
 
 ## Interceptor
 
-Almost all of your hooking goes through `Interceptor.attach`. It takes a function address and two callbacks: `onEnter` runs on entering the function (you can read the parameters now), `onLeave` runs when the function is about to return (you can read and change the return value now).
+Almost all of your hooking goes through `Interceptor.attach`. It takes a function address and two callbacks. `onEnter` runs on entering the function (you can read the parameters now), `onLeave` runs when the function is about to return (you can read and change the return value now).
 
 To find the function address, if the function is exported (like system APIs), use the name:
 
@@ -43,7 +43,7 @@ Interceptor.attach(pCreateFileW, {
 });
 ```
 
-A few things in that snippet. `args` is the parameter array, and Frida handles the calling convention for you: `args[0]` is the first parameter whether it's in rcx on Windows or rdi on Linux, so the same script runs cross-platform. Each `args[i]` is a `NativePointer`, so you have to interpret it yourself: `.readUtf16String()` for Windows wide strings, `.readCString()` for C strings, `.toInt32()` for numbers. And `this` is shared between `onEnter` and `onLeave`, so save values in onEnter to reuse in onLeave (like `this.name`).
+A few things in that snippet. `args` is the parameter array, and Frida handles the calling convention for you, so `args[0]` is the first parameter whether it's in rcx on Windows or rdi on Linux, so the same script runs cross-platform. Each `args[i]` is a `NativePointer`, so you have to interpret it yourself, using `.readUtf16String()` for Windows wide strings, `.readCString()` for C strings, `.toInt32()` for numbers. And `this` is shared between `onEnter` and `onLeave`, so save values in onEnter to reuse in onLeave (like `this.name`).
 
 ### Changing parameters and return values
 
@@ -161,7 +161,7 @@ Some questions to think about. Why does hooking `strcmp` in libc catch the passw
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>
 
-The target `target.c` compares the input with the string `Fr1da_H00k_Me` using `strcmp`: entering `Fr1da_H00k_Me` prints `Correct!` and entering anything else prints `Nope.`.
+The target `target.c` compares the input with the string `Fr1da_H00k_Me` using `strcmp`, and entering `Fr1da_H00k_Me` prints `Correct!` and entering anything else prints `Nope.`.
 
 To reveal the password through the `strcmp` hook, run:
 
@@ -187,7 +187,7 @@ onLeave(retval) {
 
 `strcmp` returns 0 when the two strings match. Forcing every call to return 0 makes `if (strcmp(...) == 0)` always true, so whatever you enter prints `Correct!`. That passes the check without the answer.
 
-On the questions, the hook catches the comparison without needing `main` because the comparison goes through libc's `strcmp`, a common exported point, and Frida hooks by export name, independent of the author's code. If the program wrote its own comparison loop, hooking `strcmp` would miss it because there is no `strcmp` call. Then you have to find the program's own compare function (read it statically in Ghidra or IDA to get an address, for example `0x401234`) and use `Interceptor.attach(ptr("0x401234"), ...)`, or hook at a higher level such as the function that reads the input. Forcing `retval` doesn't reveal the real password: it only makes the program believe it matched, and you still don't know the password. When the goal is just to get past the check, forcing `retval` is enough and the fastest. When you need the password itself (for example to solve a later layer that uses the password as a key) you have to get the real value as in the first step.
+On the questions, the hook catches the comparison without needing `main` because the comparison goes through libc's `strcmp`, a common exported point, and Frida hooks by export name, independent of the author's code. If the program wrote its own comparison loop, hooking `strcmp` would miss it because there is no `strcmp` call. Then you have to find the program's own compare function (read it statically in Ghidra or IDA to get an address, for example `0x401234`) and use `Interceptor.attach(ptr("0x401234"), ...)`, or hook at a higher level such as the function that reads the input. Forcing `retval` doesn't reveal the real password, it only makes the program believe it matched, and you still don't know the password. When the goal is just to get past the check, forcing `retval` is enough and the fastest. When you need the password itself (for example to solve a later layer that uses the password as a key) you have to get the real value as in the first step.
 
 The Frida output lines above are representative samples that follow Frida's standard behavior, so your own output will differ in the details.
 

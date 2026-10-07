@@ -53,7 +53,7 @@ A struct has a constant offset, and each field can be a different type. You see 
 mov eax, [rsi+8]       ; some_struct->field_at_8
 ```
 
-Quick rule: multiplication by an index (`*4`, `*8`) means array, while adding fixed constants with fields of different types means struct. An array of structs combines both: `[base + index*sizeof_struct + field_offset]`, for example `[rsi + rcx*32 + 4]` is `players[rcx].score` when the struct is 32 bytes wide.
+The quick rule is that multiplication by an index (`*4`, `*8`) means array, while adding fixed constants with fields of different types means struct. An array of structs combines both, `[base + index*sizeof_struct + field_offset]`, for example `[rsi + rcx*32 + 4]` is `players[rcx].score` when the struct is 32 bytes wide.
 
 ## Padding and alignment
 
@@ -87,7 +87,7 @@ If you don't know yet what's in the struct, add fields as you go. Each time you 
 
 ## Recovering a struct in Ghidra
 
-The operations are similar but different. Open the Data Type Manager (the window at the bottom right), right-click the program's archive, and choose New > Structure. Add each field with a type and name, or use "Auto Create Structure": in the Decompiler, right-click the pointer variable and choose Auto Fill in Structure / Auto Create Structure, and Ghidra looks at the accesses and builds a draft struct. Then assign the pointer type to the variable (right-click > Retype Variable, or Ctrl+L) and Ghidra updates the pseudocode. Refine the field names in the Data Type Manager, and every place that uses the struct updates.
+The operations are similar but different. Open the Data Type Manager (the window at the bottom right), right-click the program's archive, and choose New > Structure. Add each field with a type and name, or use "Auto Create Structure". In the Decompiler, right-click the pointer variable and choose Auto Fill in Structure / Auto Create Structure, and Ghidra looks at the accesses and builds a draft struct. Then assign the pointer type to the variable (right-click > Retype Variable, or Ctrl+L) and Ghidra updates the pseudocode. Refine the field names in the Data Type Manager, and every place that uses the struct updates.
 
 Auto Create Structure in Ghidra works fairly well on optimized code, while IDA is faster if you type C declarations. Either is fine. Whenever a pointer is accessed at several fixed offsets, build a struct right away.
 
@@ -124,7 +124,7 @@ cl /Od /Zi inventory.c
 gcc -O0 -g -o inventory.exe inventory.c
 ```
 
-Open the binary in your tool and run auto-analysis. Find the two functions `update_player` and `print_player`. If the binary is stripped, start from the format string in `print_player` (the one containing `id=`, `score=` and so on) and follow the xref back. Read the pseudocode of `update_player` before assigning any struct and write down every offset accessed on the first pointer parameter. Then rebuild `struct Player` in the tool, inferring each field's type from how it is used: a 4-byte read is an int, a 1-byte access is a char, and use with a double instruction means a double. Assign `Player *` to the parameter of both `update_player` and `print_player` and read the pseudocode again. Finally, check `sizeof` and the offsets against your layout, paying attention to the padding.
+Open the binary in your tool and run auto-analysis. Find the two functions `update_player` and `print_player`. If the binary is stripped, start from the format string in `print_player` (the one containing `id=`, `score=` and so on) and follow the xref back. Read the pseudocode of `update_player` before assigning any struct and write down every offset accessed on the first pointer parameter. Then rebuild `struct Player` in the tool, inferring each field's type from how it is used. A 4-byte read is an int, a 1-byte access is a char, and use with a double instruction means a double. Assign `Player *` to the parameter of both `update_player` and `print_player` and read the pseudocode again. Finally, check `sizeof` and the offsets against your layout, paying attention to the padding.
 
 Some questions to think about. Why does `score` sit at offset 8 and not 5, even though `rank` takes only 1 byte? Why is `sizeof(struct Player)` 48 and not the sum of the fields (4+1+4+16+8+4 = 37)? And which field gets the most padding in front of it, and why?
 
@@ -154,7 +154,7 @@ Build the struct yourself before reading this. The real layout of `struct Player
 
 `sizeof(struct Player)` is 48.
 
-On the padding: `rank` at offset 4 takes only 1 byte (up to offset 5). But `score` is an `int` and needs an address divisible by 4, so the compiler inserts 3 padding bytes (offsets 5, 6, 7) to push `score` to offset 8. That is why the accesses jump from `+4` to `+8`. `name[16]` ends at offset 28. `balance` is a `double` and needs 8-byte alignment, so 4 padding bytes (offsets 28 to 31) put `balance` at offset 32. The whole struct must have a size divisible by the largest alignment inside it (8, because of the `double`), so after `level` (which ends at offset 44) another 4 bytes bring the total to 48. The fields actually in use add up to 37 bytes, but with padding the struct takes 48, which newcomers often miscount when rebuilding a struct. The most padding in front of a field is at `score` (3 bytes) and `balance` (4 bytes), and `balance` gets the largest gap.
+On the padding, `rank` at offset 4 takes only 1 byte (up to offset 5). But `score` is an `int` and needs an address divisible by 4, so the compiler inserts 3 padding bytes (offsets 5, 6, 7) to push `score` to offset 8. That is why the accesses jump from `+4` to `+8`. `name[16]` ends at offset 28. `balance` is a `double` and needs 8-byte alignment, so 4 padding bytes (offsets 28 to 31) put `balance` at offset 32. The whole struct must have a size divisible by the largest alignment inside it (8, because of the `double`), so after `level` (which ends at offset 44) another 4 bytes bring the total to 48. The fields actually in use add up to 37 bytes, but with padding the struct takes 48, which newcomers often miscount when rebuilding a struct. The most padding in front of a field is at `score` (3 bytes) and `balance` (4 bytes), and `balance` gets the largest gap.
 
 The `update_player` pseudocode before assigning the struct (as IDA might show it, with variable names that can differ) is:
 

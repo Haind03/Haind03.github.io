@@ -8,19 +8,19 @@ categories: ["Technique Reverse", "Part 15 · Anti-Reversing and Bypasses"]
 tags: [reverse-engineering, anti-debug]
 render_with_liquid: false
 ---
-The previous three lessons covered anti-debug: how a program knows it's being debugged. This lesson covers tricks aimed at three specific things you often do: attach a debugger to a running process, dump memory to a file, and hook APIs. Each one blocks a different tool, so you need to understand each separately to undo it.
+The previous three lessons covered anti-debug, meaning how a program knows it's being debugged. This lesson covers tricks aimed at three specific things you often do, which are to attach a debugger to a running process, dump memory to a file, and hook APIs. Each one blocks a different tool, so you need to understand each separately to undo it.
 
-Like every lesson in this part, this is from the analyst's point of view: understand the mechanism so you can recognize it and get past it in your own samples, not so you can put it into other people's software.
+Like every lesson in this part, this is from the analyst's point of view, so understand the mechanism so you can recognize it and get past it in your own samples, not so you can put it into other people's software.
 
 ## Anti-attach
 
-Normally there are two ways to get a debugger into a program: run it from the debugger from the start (spawn), or let it run and attach later. Anti-attach targets the second way.
+Normally there are two ways to get a debugger into a program, either to run it from the debugger from the start (spawn), or to let it run and attach later. Anti-attach targets the second way.
 
-The most classic trick relies on a Windows limitation: a process can have only one debugger at a time. If the program debugs itself (or spawns a child process and lets the child debug the parent), the debugger slot is already taken. Your real debugger gets refused with an error like "a debugger is already attached". Self-debugging was covered in [Lesson 15.4](/posts/re-15-4-advanced-anti-debug-self-debug-tls/), here it serves the anti-attach purpose.
+The most classic trick relies on a Windows limitation, that a process can have only one debugger at a time. If the program debugs itself (or spawns a child process and lets the child debug the parent), the debugger slot is already taken. Your real debugger gets refused with an error like "a debugger is already attached". Self-debugging was covered in [Lesson 15.4](/posts/re-15-4-advanced-anti-debug-self-debug-tls/), here it serves the anti-attach purpose.
 
 The second way is subtler. When Windows attaches a debugger, it calls `DbgUiRemoteBreakin` in `ntdll` to create a breakin thread in the target process. The program can patch this function (overwrite the start of it with a call to `ExitProcess` or a `ret` that breaks the logic), and then every time someone tries to attach, the process exits instead of stopping for you. Same with `DbgBreakPoint`.
 
-The third way is simple but annoying: periodic checks. A background thread re-runs all the anti-debug checks from the previous three lessons (BeingDebugged, NtQueryInformationProcess...) every few seconds. You attach cleanly, and a few seconds later it detects you and exits.
+The third way is simple but annoying, periodic checks. A background thread re-runs all the anti-debug checks from the previous three lessons (BeingDebugged, NtQueryInformationProcess...) every few seconds. You attach cleanly, and a few seconds later it detects you and exits.
 
 The general way around anti-attach is to attach early, or not attach at all. If you can, run the program straight from the debugger (spawn) instead of attaching later, and then the debugger slot is yours before the anti-attach code runs. To disable the periodic check loop, find the thread doing it and patch the check function to return "no debugger", or use ScyllaHide/TitanHide to hide the debugger entirely (see [Lesson 15.9](/technique-reverse/)). If `DbgUiRemoteBreakin` was patched, restore it to its original in memory before attaching.
 
@@ -30,21 +30,21 @@ When you unpack a sample by running to the OEP and dumping memory (the workflow 
 
 A few tricks are common. After the loader has finished loading and no longer needs the header, the program can wipe the MZ and PE signatures by overwriting the two bytes `4D 5A` ("MZ") at the start and the `50 45` ("PE") signature with zeros or junk, and a dump tool scanning memory no longer sees a valid PE to anchor on. It can also falsify SizeOfImage by changing that field in the Optional Header to a huge or too-small value, so the dump tool trusts it and dumps too little, or overflows into junk regions. Modifying the section count, virtual addresses and raw sizes smears the section table so rebuilding the file gets the layout wrong. Finally, the important code can be kept in dynamically allocated regions (VirtualAlloc) that don't belong to the main image, so a normal image dump misses it.
 
-Anti-dump isn't hard to recognize: you dump a file, open it in PE-bear or CFF Explorer and it reports a broken header, or the dumped file doesn't run even though you're sure you reached the right OEP.
+Anti-dump isn't hard to recognize. You dump a file, open it in PE-bear or CFF Explorer and it reports a broken header, or the dumped file doesn't run even though you're sure you reached the right OEP.
 
-To get around it, you can rebuild the header by hand. You know the ImageBase (from the Memory Map in the debugger) and you know what the original PE header looks like, so copy back the two MZ bytes and the PE signature, and fix SizeOfImage to the correct value. Scylla has a rebuild option that helps with this. You can also dump earlier: if the header-wiping code runs after the OEP, put a breakpoint right at the OEP and dump before it gets a chance to break things. With some packers the original header is still somewhere in memory before being overwritten, or you can patch the branch that does the wiping (NOP it out) and only then let it continue. PE-sieve also often handles many broken-header cases on its own when dumping an unpacked module.
+To get around it, you can rebuild the header by hand. You know the ImageBase (from the Memory Map in the debugger) and you know what the original PE header looks like, so copy back the two MZ bytes and the PE signature, and fix SizeOfImage to the correct value. Scylla has a rebuild option that helps with this. You can also dump earlier. If the header-wiping code runs after the OEP, put a breakpoint right at the OEP and dump before it gets a chance to break things. With some packers the original header is still somewhere in memory before being overwritten, or you can patch the branch that does the wiping (NOP it out) and only then let it continue. PE-sieve also often handles many broken-header cases on its own when dumping an unpacked module.
 
 ## Anti-hook
 
 When you hook an API with an inline hook (Detours, MinHook), or when Frida or an EDR attaches, the most common way is to overwrite the first few bytes of the function (the prologue) with a `jmp` instruction that jumps to your code. Anti-hook checks whether the starts of important functions are still intact.
 
-The simplest mechanism is comparing the prologue to the expected value. The program knows which bytes `NtProtectVirtualMemory` or `VirtualProtect` normally start with, reads the first few bytes of the function at runtime, and if it sees a strange `jmp` (`E9 ...`) or `push/ret` it knows it's hooked. A subtler way is comparing to a clean copy on disk: it reads the `ntdll.dll` file from disk itself, maps a clean copy, and compares the prologue bytes one by one between the in-memory copy (possibly hooked) and the clean copy. A difference means a hook. Some samples also compare `kernel32` calling down into `ntdll` to detect which layer the hook sits at.
+The simplest mechanism is comparing the prologue to the expected value. The program knows which bytes `NtProtectVirtualMemory` or `VirtualProtect` normally start with, reads the first few bytes of the function at runtime, and if it sees a strange `jmp` (`E9 ...`) or `push/ret` it knows it's hooked. A subtler way is comparing to a clean copy on disk, where it reads the `ntdll.dll` file from disk itself, maps a clean copy, and compares the prologue bytes one by one between the in-memory copy (possibly hooked) and the clean copy. A difference means a hook. Some samples also compare `kernel32` calling down into `ntdll` to detect which layer the hook sits at.
 
 This is how a lot of malware detects EDR, and also how a program detects Frida attached.
 
-To get around it, hook more quietly. Instead of an inline hook overwriting the prologue, use a hardware breakpoint (registers DR0 to DR3) to catch the call without modifying a single byte of code. There's nothing to compare, so prologue-check anti-hook doesn't see it. You can also hook deeper than the checked layer: if it only checks the `kernel32` prologue, hook at the `ntdll` layer, or the other way round. Another option is to find the function that compares prologues and patch it to always report "clean". Restoring the prologue before the check and hooking again after is more complicated and rarely used.
+To get around it, hook more quietly. Instead of an inline hook overwriting the prologue, use a hardware breakpoint (registers DR0 to DR3) to catch the call without modifying a single byte of code. There's nothing to compare, so prologue-check anti-hook doesn't see it. You can also hook deeper than the checked layer. If it only checks the `kernel32` prologue, hook at the `ntdll` layer, or the other way round. Another option is to find the function that compares prologues and patch it to always report "clean". Restoring the prologue before the check and hooking again after is more complicated and rarely used.
 
-This is why RE people like hardware breakpoints: they leave no trace in the code.
+This is why RE people like hardware breakpoints because they leave no trace in the code.
 
 ## These three often come together
 
@@ -68,7 +68,7 @@ First, observe the anti-dump. Run `antidump.exe` and note the ImageBase it print
 
 Second, rebuild the header. In x64dbg, attach to the process while it waits for Enter and go to the ImageBase region. Restore the first two bytes to `4D 5A`, and at the `e_lfanew` offset (read the dword at `ImageBase+0x3C`) restore `50 45` ("PE"). Dump again with Scylla. This time the header is valid and the dump can be rebuilt. If you run out of time, increase the wait in the source or set a breakpoint right before `wipe_pe_header`.
 
-Third, think about anti-attach. Suppose the program also had a background thread that every 3 seconds checks `IsDebuggerPresent` and calls `ExitProcess` when it sees a debugger. What happens when you attach in the second exercise, and how could you avoid it? A hint: spawn instead of attach, or use ScyllaHide.
+Third, think about anti-attach. Suppose the program also had a background thread that every 3 seconds checks `IsDebuggerPresent` and calls `ExitProcess` when it sees a debugger. What happens when you attach in the second exercise, and how could you avoid it? A hint is to spawn instead of attach, or use ScyllaHide.
 
 Fourth, think about anti-hook. Suppose a program reads the first 5 bytes of `VirtualProtect` in memory and compares them with the first 5 bytes of the same function read from `C:\Windows\System32\kernel32.dll` on disk. If you inline-hook `VirtualProtect` with Detours, it detects that immediately. Which kind of hook is not caught by this prologue comparison?
 

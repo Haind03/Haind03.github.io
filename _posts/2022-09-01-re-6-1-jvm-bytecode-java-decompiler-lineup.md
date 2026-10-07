@@ -8,7 +8,7 @@ categories: ["Technique Reverse", "Part 06 · Java, Kotlin and Android"]
 tags: [reverse-engineering, android, java]
 render_with_liquid: false
 ---
-If the C/C++ part left you annoyed that all the variable names are gone, Java is easier. A Java `.class` file keeps almost everything: class names, method names, field names, data types. Drop a `.jar` into JADX and you get Java code that reads almost like the original. Java, like .NET, doesn't compile straight to machine code. It stops at an intermediate layer called bytecode. This lesson explains that layer and the tools that turn it back into Java.
+If the C/C++ part left you annoyed that all the variable names are gone, Java is easier. A Java `.class` file keeps almost everything, including class names, method names, field names and data types. Drop a `.jar` into JADX and you get Java code that reads almost like the original. Java, like .NET, doesn't compile straight to machine code. It stops at an intermediate layer called bytecode. This lesson explains that layer and the tools that turn it back into Java.
 
 ## Why .class is easy to read
 
@@ -126,7 +126,7 @@ jar cf Hello.jar Hello.class
 
 Open `Hello.jar` in JADX-GUI (or run `java -jar cfr.jar Hello.class`) and compare the decompiled code with the original `Hello.java`.
 
-Answer four questions along the way. In the `checkPass` bytecode, which instructions correspond to `s.length() == 8` and which to `s.equals(...)`? What password does `checkPass` accept, and where in the bytecode can you find it without running the program? How faithfully did JADX rebuild the source, and were local variable names lost? And if you like, open the same file with two different decompilers (JADX and CFR): do they give different results? Try it yourself before opening the solution.
+Answer four questions along the way. In the `checkPass` bytecode, which instructions correspond to `s.length() == 8` and which to `s.equals(...)`? What password does `checkPass` accept, and where in the bytecode can you find it without running the program? How faithfully did JADX rebuild the source, and were local variable names lost? And if you like, open the same file with two different decompilers (JADX and CFR) and check whether they give different results. Try it yourself before opening the solution.
 
 <div class="lab-box">
 <div class="lab-head"><b>LAB 6.1</b>source files</div>
@@ -170,9 +170,9 @@ and its bytecode is:
 23: ireturn
 ```
 
-`s.length() == 8` is the instructions at offsets 1 to 6 (`invokevirtual length`, `bipush 8`, `if_icmpne`), and `s.equals("JavaRev!")` is offsets 10 to 15 (`ldc`, `invokevirtual equals`, `ifeq`). The `&&` operator shows up as short-circuiting: both failing branches jump to `22` (return false).
+`s.length() == 8` is the instructions at offsets 1 to 6 (`invokevirtual length`, `bipush 8`, `if_icmpne`), and `s.equals("JavaRev!")` is offsets 10 to 15 (`ldc`, `invokevirtual equals`, `ifeq`). The `&&` operator shows up as short-circuiting, where both failing branches jump to `22` (return false).
 
-The password is `JavaRev!`, exactly 8 characters, which also satisfies the `length() == 8` condition. You can find it without running anything: the `ldc "JavaRev!"` instruction at offset 10 loads the constant string directly, and in `javap -v` it sits in the constant pool:
+The password is `JavaRev!`, exactly 8 characters, which also satisfies the `length() == 8` condition. You can find it without running anything, since the `ldc "JavaRev!"` instruction at offset 10 loads the constant string directly, and in `javap -v` it sits in the constant pool:
 
 ```
 #13 = String             #14            // JavaRev!
@@ -190,6 +190,6 @@ The decompiler comparison describes standard JADX and CFR behavior, and the exac
 </details>
 
 ## Key takeaways
-Java compiles to JVM bytecode (not machine code), so `.class` keeps method, field and type names intact. The JVM is stack-based: operands get pushed onto the stack and instructions pop them to process. The constant pool holds every string and referenced name, so reading it shows you all the clues, and `javap -c` shows the bytecode, where the instruction prefix (`i` for int, `a` for reference) tells you the type.
+Java compiles to JVM bytecode (not machine code), so `.class` keeps method, field and type names intact. The JVM is stack-based, so operands get pushed onto the stack and instructions pop them to process. The constant pool holds every string and referenced name, so reading it shows you all the clues, and `javap -c` shows the bytecode, where the instruction prefix (`i` for int, `a` for reference) tells you the type.
 
 The main decompilers are JADX (the default), CFR, Vineflower and Procyon, with Recaf for editing. If a translation looks odd, switch tools. Android uses DEX (register-based), but JADX handles it all, see Lesson 6.2.

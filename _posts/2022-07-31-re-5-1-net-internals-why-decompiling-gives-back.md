@@ -8,7 +8,7 @@ categories: ["Technique Reverse", "Part 05 · C# and .NET"]
 tags: [reverse-engineering, dotnet]
 render_with_liquid: false
 ---
-After several parts of working with native assembly, this part is a lot easier. Open a .NET file in dnSpy or ILSpy and you usually get C# that reads almost exactly like what the author wrote: the right class names, method names and variable names. Comments are gone but the structure is intact. Why is native such a mess while .NET is so readable? The answer explains the approach for this whole part.
+After several parts of working with native assembly, this part is a lot easier. Open a .NET file in dnSpy or ILSpy and you usually get C# that reads almost exactly like what the author wrote, with the right class names, method names and variable names. Comments are gone but the structure is intact. Why is native such a mess while .NET is so readable? The answer explains the approach for this whole part.
 
 ## A .NET program doesn't contain machine code
 
@@ -32,7 +32,7 @@ What's on disk is IL, not machine code, and IL is at a much higher level than as
 
 The CLR (Common Language Runtime) is the virtual machine that runs .NET programs, like the JVM for Java. It loads assemblies, JITs, manages memory (the garbage collector), and does type safety checks. Code running on the CLR is called managed code.
 
-An assembly is the unit of deployment: an `.exe` or `.dll` file. It's still a valid PE file (see [Lesson 1.7](/posts/re-1-7-pe-format-anatomy-windows-exe/) again), but the code isn't in a `.text` section holding x86. There's a CLI header pointing to the IL and metadata streams. That's why DIE opening a .NET file still reports PE, but adds ".NET".
+An assembly is the unit of deployment, an `.exe` or `.dll` file. It's still a valid PE file (see [Lesson 1.7](/posts/re-1-7-pe-format-anatomy-windows-exe/) again), but the code isn't in a `.text` section holding x86. There's a CLI header pointing to the IL and metadata streams. That's why DIE opening a .NET file still reports PE, but adds ".NET".
 
 IL is stack-based bytecode. Instead of operating on registers like x86, it pushes operands onto an evaluation stack and pops them off. For example `a + b` becomes "push a, push b, add". This abstract, information-rich form is what lets the decompiler rebuild the original expressions.
 
@@ -83,7 +83,7 @@ They all read the same thing, the IL and metadata in the assembly. They differ i
 
 ## Lab
 
-The goal is to confirm by hand what this lesson says: a .NET file contains IL and metadata that keeps names, so it decompiles to something very close to the source. You don't strictly need the dotnet SDK. If you don't have it, use any .NET files you already have as samples. The tools are DIE (Detect It Easy), ILSpy and dnSpy.
+The goal is to confirm by hand what this lesson says, which is that a .NET file contains IL and metadata that keeps names, so it decompiles to something very close to the source. You don't strictly need the dotnet SDK. If you don't have it, use any .NET files you already have as samples. The tools are DIE (Detect It Easy), ILSpy and dnSpy.
 
 First recognize .NET with DIE. Drag `ILSpy.dll` (or `dnSpy.exe`) into DIE and confirm it reports a PE with an extra .NET / CLR label, and note which runtime it names (.NET Framework or modern .NET). Why is it still a PE, yet the code isn't in the `.text` section the way it would be in a plain C exe?
 
@@ -103,7 +103,7 @@ dotnet build -c Debug
 
 Open the resulting DLL (in `bin/Debug/netX/Hello5x.dll`) in ILSpy, find the method `Calculator.Add`, look at its IL and compare. Switch `SumTo` to IL and see how the `for` loop turns into a conditional jump.
 
-Two questions to think about. If an assembly is obfuscated so that every name becomes `a`, `b`, `c`, which part of the file is touched, the IL or the metadata (hint: both kinds of names live in the metadata)? And why can dnSpy edit code while ILSpy can't (see Lessons 5.2 and 5.4)?
+Two questions to think about. If an assembly is obfuscated so that every name becomes `a`, `b`, `c`, which part of the file is touched, the IL or the metadata (the hint is that both kinds of names live in the metadata)? And why can dnSpy edit code while ILSpy can't (see Lessons 5.2 and 5.4)?
 
 <div class="lab-box">
 <div class="lab-head"><b>LAB 5.1</b>source files</div>
@@ -117,7 +117,7 @@ Two questions to think about. If an assembly is obfuscated so that every name be
 
 DIE reports the file is a PE, and it also recognizes the CLI header and attaches a label like `.NET` with the runtime version (for example `.NET Framework(v4.0...)` or `.NET(v8...)`). It can do that because the Optional header of a PE has a Data Directory called COM Descriptor (`IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR`, the 14th entry) that points to the CLI header, and native files normally leave this entry empty.
 
-As for why it's a PE and yet the code isn't in the normal `.text`: the Windows loader still loads the file as an ordinary PE, but the entry point is only a small stub that jumps into the CLR. The real code is IL, living in the streams (`#~`, `#Strings`, `#US`, `#Blob`) that the CLI header points to, and only the CLR understands it. The section holding them is usually named `.text`, but its content is IL plus metadata, not x86.
+As for why it's a PE and yet the code isn't in the normal `.text`, the answer is that the Windows loader still loads the file as an ordinary PE, but the entry point is only a small stub that jumps into the CLR. The real code is IL, living in the streams (`#~`, `#Strings`, `#US`, `#Blob`) that the CLI header points to, and only the CLR understands it. The section holding them is usually named `.text`, but its content is IL plus metadata, not x86.
 
 When you open `ICSharpCode.Decompiler.dll` (or any .NET DLL), the tree on the left shows namespaces, classes and methods with their original names. That's direct evidence that metadata keeps names. Switch to IL mode and a simple property getter looks like this:
 

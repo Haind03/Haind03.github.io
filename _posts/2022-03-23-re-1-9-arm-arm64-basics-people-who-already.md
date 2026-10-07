@@ -12,9 +12,9 @@ If you plan to reverse Android apps, iOS apps, or firmware for routers and camer
 
 ## RISC vs CISC
 
-x86 is CISC (Complex Instruction Set): one instruction can do a lot, for example `add eax, [rbx+rcx*4]` computes an address, reads memory, and adds, all in one instruction.
+x86 is CISC (Complex Instruction Set), so one instruction can do a lot, for example `add eax, [rbx+rcx*4]` computes an address, reads memory, and adds, all in one instruction.
 
-ARM is RISC (Reduced Instruction Set): each instruction does one simple thing, instructions have a fixed length (4 bytes on ARM64), and arithmetic instructions only work on registers, they don't touch memory directly. To add a value in memory, you load it into a register, add, then store it back. Three instructions instead of one.
+ARM is RISC (Reduced Instruction Set), so each instruction does one simple thing, instructions have a fixed length (4 bytes on ARM64), and arithmetic instructions only work on registers, they don't touch memory directly. To add a value in memory, you load it into a register, add, then store it back. Three instructions instead of one.
 
 So ARM64 code is usually longer than x86 in instruction count, but each instruction is simple to read. You'll see lots of `ldr`/`str` pairs around the computation.
 
@@ -27,7 +27,7 @@ x0  x1  x2  ... x30     (64 bit)
 w0  w1  w2  ... w30     (low 32 bits of the matching x)
 ```
 
-Same idea as `rax`/`eax` on x86: `x0` is 64 bits, `w0` is the low 32 bits of the same register. If `w0` and `x0` both appear in one function, it's the same register at a different width.
+Same idea as `rax`/`eax` on x86. `x0` is 64 bits, `w0` is the low 32 bits of the same register. If `w0` and `x0` both appear in one function, it's the same register at a different width.
 
 A few registers have conventional roles worth remembering:
 
@@ -40,11 +40,11 @@ A few registers have conventional roles worth remembering:
 | `sp` | Stack pointer, like rsp |
 | `pc` | Program counter, like rip |
 
-x86 people usually trip on this first: parameters are in `x0..x7`, not `rcx rdx` or whatever, and the return value is in `x0`, not rax. To read an ARM64 function call, look at `x0, x1, x2...` for the parameters.
+x86 people usually trip on this first. Parameters are in `x0..x7`, not `rcx rdx` or whatever, and the return value is in `x0`, not rax. To read an ARM64 function call, look at `x0, x1, x2...` for the parameters.
 
 ## lr, the biggest difference
 
-On x86, the `call` instruction pushes the return address onto the stack, and `ret` pops it off. ARM does it differently: the call instruction `bl` (branch with link) saves the return address into the lr register (x30), without touching the stack.
+On x86, the `call` instruction pushes the return address onto the stack, and `ret` pops it off. ARM does it differently. The call instruction `bl` (branch with link) saves the return address into the lr register (x30), without touching the stack.
 
 For a leaf function (one that doesn't call other functions), the return address stays in lr and no stack is needed. `ret` simply jumps to the address in lr.
 
@@ -72,7 +72,7 @@ sub  x0, x1, #8      ; x0 = x1 - 8
 cmp  x0, #10         ; compare, set flags  (same as x86)
 ```
 
-ARM uses three operands: `add x0, x1, x2` is `x0 = x1 + x2`, and the destination is separate from the sources. On x86 `add eax, ebx` is `eax += ebx`, so the destination is also a source.
+ARM uses three operands, so `add x0, x1, x2` is `x0 = x1 + x2`, and the destination is separate from the sources. On x86 `add eax, ebx` is `eax += ebx`, so the destination is also a source.
 
 Memory access is separate, through `ldr`/`str`:
 
@@ -98,7 +98,7 @@ blr  x8              ; call the function at the address in x8 (indirect call)
 ret                  ; return (jump to lr)
 ```
 
-`cbz`/`cbnz` only exist on ARM: compare with 0 and jump in one instruction. Read `cbz x0, somewhere` as "if x0 equals 0, jump", there's no cmp before it.
+`cbz`/`cbnz` only exist on ARM and compare with 0 and jump in one instruction. Read `cbz x0, somewhere` as "if x0 equals 0, jump", there's no cmp before it.
 
 ## Reading a real snippet
 
@@ -131,11 +131,11 @@ The logic is the same as the x86 version. The differences are `w0` instead of `e
 
 ## 32-bit ARM and Thumb mode
 
-On older devices and a lot of firmware, you'll meet 32-bit ARM (AArch32), where the registers are `r0..r15` (r13=sp, r14=lr, r15=pc). It also has two instruction encoding modes: ARM (4-byte instructions) and Thumb (2 or 4-byte instructions, more compact, often used to save memory). One binary can mix both, and the mode switches via the lowest bit of the function address (odd = Thumb). Disassemblers often guess wrong here, so if ARM32 code decodes into garbage, try forcing Thumb, or the other way around. Details are in the firmware lessons in Part 18.
+On older devices and a lot of firmware, you'll meet 32-bit ARM (AArch32), where the registers are `r0..r15` (r13=sp, r14=lr, r15=pc). It also has two instruction encoding modes, ARM (4-byte instructions) and Thumb (2 or 4-byte instructions, more compact, often used to save memory). One binary can mix both, and the mode switches via the lowest bit of the function address (odd = Thumb). Disassemblers often guess wrong here, so if ARM32 code decodes into garbage, try forcing Thumb, or the other way around. Details are in the firmware lessons in Part 18.
 
 ## Lab
 
-The goal is to see the ideas from this lesson in real assembly: parameters arriving in `x0..x7`, the result leaving in `x0`, and the `stp x29, x30` pattern in the prologue of a function that calls another function. I'd build `arm_demo.c` yourself. On Ubuntu or WSL you need an ARM64 cross-compiler, then you compile statically and disassemble:
+The goal is to see the ideas from this lesson in real assembly, such as parameters arriving in `x0..x7`, the result leaving in `x0`, and the `stp x29, x30` pattern in the prologue of a function that calls another function. I'd build `arm_demo.c` yourself. On Ubuntu or WSL you need an ARM64 cross-compiler, then you compile statically and disassemble:
 
 ```
 sudo apt install gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu
@@ -147,7 +147,7 @@ If you also want to run it, install `qemu-user` and start it with `qemu-aarch64 
 
 Once you have the disassembly, find `add3` and confirm that the three parameters come in through `x0/w0`, `x1/w1` and `x2/w2` and that the final result sits in `w0`. Then find `is_eight`, locate the `cmp` against 8 and the jump after it, and decide whether it is `b.ne` or `cbz`/`cbnz`, and why the compiler picked that one. Next look at `check` and confirm it opens with `stp x29, x30, [sp, ...]` to save lr because it calls `strlen` and `is_eight`, while `add3` and `is_eight` are leaf functions and do not need to. Finally count the `ldr`/`str` instructions and ask yourself why ARM needs them when x86 folds the memory access into the arithmetic instruction.
 
-If you cannot install the toolchain, there is a second route: translate this ARM64 snippet back into C. As a hint, 0x61 is `'a'`, 0x7a is `'z'`, and 0x20 is the distance between upper and lower case in ASCII.
+If you cannot install the toolchain, there is a second route, which is to translate this ARM64 snippet back into C. As a hint, 0x61 is `'a'`, 0x7a is `'z'`, and 0x20 is the distance between upper and lower case in ASCII.
 
 ```asm
 0000000000000730 <mystery>:
@@ -169,7 +169,7 @@ If you cannot install the toolchain, there is a second route: translate this ARM
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>
 
-Route 1: going through the functions one by one. The exact output changes with the gcc version, but at `-O0` you will see these patterns.
+Route 1 is going through the functions one by one. The exact output changes with the gcc version, but at `-O0` you will see these patterns.
 
 `add3` is a leaf function:
 
@@ -188,7 +188,7 @@ Route 1: going through the functions one by one. The exact output changes with t
     ret                        ; the result is in w0
 ```
 
-The three parameters enter in `w0, w1, w2`, which are just `x0, x1, x2` seen as 32 bits, so this is the `x0..x7` convention. The final result is in `w0`, which is the return value. There is no `stp x29, x30` because this is a leaf function: it calls nothing, so it never has to save `lr`. The many `ldr`/`str` instructions come from `-O0` pushing everything to the stack and loading it back. With `-O2` they vanish and the math happens directly in registers.
+The three parameters enter in `w0, w1, w2`, which are just `x0, x1, x2` seen as 32 bits, so this is the `x0..x7` convention. The final result is in `w0`, which is the return value. There is no `stp x29, x30` because this is a leaf function that calls nothing, so it never has to save `lr`. The many `ldr`/`str` instructions come from `-O0` pushing everything to the stack and loading it back. With `-O2` they vanish and the math happens directly in registers.
 
 `is_eight` is also a leaf function:
 
@@ -220,11 +220,11 @@ There is a `cmp w0, #8`, matching `n != 8` in the source. The jump is usually `b
     ret
 ```
 
-This shows the rule from the lesson: any function that calls another (`bl`) gets its `lr` overwritten, so it must save `lr` on the stack in the prologue and restore it in the epilogue. `add3` and `is_eight` have no `stp x29, x30` line at all.
+This shows the rule from the lesson, which is that any function that calls another (`bl`) gets its `lr` overwritten, so it must save `lr` on the stack in the prologue and restore it in the epilogue. `add3` and `is_eight` have no `stp x29, x30` line at all.
 
 As for `ldr`/`str`, ARM is RISC, so arithmetic instructions only work on registers. To add a value that lives in memory you first `ldr` it into a register, add, and `str` it back if you need to store it. x86 (CISC) lets you write `add eax, [mem]` and do it all in one instruction, which is why x86 code is shorter in instruction count.
 
-Route 2: translating `mystery`.
+Route 2 is translating `mystery`.
 
 ```asm
   cmp   w0, #0x61        ; compare w0 with 'a' (0x61)
@@ -245,11 +245,11 @@ int mystery(int c) {
 }
 ```
 
-This is a hand-written `toupper`: if the character is lower case it becomes upper case (the 0x20 difference in ASCII), otherwise it is left alone. You recognize it from three landmarks: 0x61 is `'a'`, 0x7a is `'z'`, and subtracting 0x20 is the upper/lower case flip from Lesson 1.1.
+This is a hand-written `toupper`. If the character is lower case it becomes upper case (the 0x20 difference in ASCII), otherwise it is left alone. You recognize it from three landmarks. 0x61 is `'a'`, 0x7a is `'z'`, and subtracting 0x20 is the upper/lower case flip from Lesson 1.1.
 
 </details>
 
 ## Key takeaways
-ARM is RISC: simple fixed-length instructions, arithmetic only on registers, and memory access has to go through `ldr`/`str`. The registers are `x0..x30` (64 bit) and `w0..w30` (low 32 bits), with parameters in `x0..x7` and the return in `x0`.
+ARM is RISC, with simple fixed-length instructions, arithmetic only on registers, and memory access has to go through `ldr`/`str`. The registers are `x0..x30` (64 bit) and `w0..w30` (low 32 bits), with parameters in `x0..x7` and the return in `x0`.
 
 `bl` saves the return address into `lr` (x30) instead of pushing to the stack like `call`, so non-leaf functions must save lr to the stack in the prologue (`stp x29, x30, [sp,...]`). For a quick mapping, `mov`/`ldr`/`str` handle data, `add`/`sub`/`cmp` handle arithmetic, and `b`/`b.eq`/`cbz`/`bl`/`ret` handle branching and calls. ARM32 has ARM and Thumb modes mixed together, so watch out for the disassembler guessing the wrong mode.

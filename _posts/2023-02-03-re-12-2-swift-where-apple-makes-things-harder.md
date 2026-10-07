@@ -12,7 +12,7 @@ The previous lesson on Objective-C was the easy one. In ObjC every method goes t
 
 ## Recognizing a Swift binary
 
-First make sure it's Swift. A few signs you can spot quickly: symbols start with `$s` or `_$s` (Swift 4.2 onward, older versions use `_T`), there are `__swift5_types`, `__swift5_proto`, `__swift5_fieldmd` sections in the Mach-O (see them with `otool -l` or in IDA/Ghidra), it links to `libswiftCore.dylib`, and there are scattered calls to `swift_retain`, `swift_release`, `swift_allocObject`.
+First make sure it's Swift. A few signs you can spot quickly are that symbols start with `$s` or `_$s` (Swift 4.2 onward, older versions use `_T`), there are `__swift5_types`, `__swift5_proto`, `__swift5_fieldmd` sections in the Mach-O (see them with `otool -l` or in IDA/Ghidra), it links to `libswiftCore.dylib`, and there are scattered calls to `swift_retain`, `swift_release`, `swift_allocObject`.
 
 If you see these, it's Swift, not plain C or ObjC.
 
@@ -40,7 +40,7 @@ Demo.Validator.check(input: Swift.String) -> Swift.Bool
 
 This is the `check` method of the class `Validator` in module `Demo`, taking a `String` and returning a `Bool`. Newer IDA and Ghidra also demangle Swift symbols on their own in the function window, but when you meet a stray string in a log or in strings, `swift demangle` is the fastest.
 
-A few rules for a quick guess: a trailing `C` on a name means class, `V` is struct, `F` is function, `S S` is `Swift.String`, `S b` is `Swift.Bool`, `S i` is `Int`. No need to memorize them, just recognize them so you don't panic.
+A few rules for a quick guess are that a trailing `C` on a name means class, `V` is struct, `F` is function, `S S` is `Swift.String`, `S b` is `Swift.Bool`, `S i` is `Int`. No need to memorize them, just recognize them so you don't panic.
 
 ## Why Swift is harder than Objective-C
 
@@ -88,7 +88,7 @@ otool -L binary | grep swift
 nm binary | grep '\$s' | head
 ```
 
-Next, filter out the ARC noise. Open the binary in Hopper, IDA or Ghidra, pick one of the author's functions and count the calls to `swift_retain` and `swift_release`. Practice reading the function by skipping them and looking only at comparisons and named calls. After that, find a witness table: look for a function that calls a method through a protocol. You'll see an instruction that loads a table of pointers followed by `call [reg+offset]`, just like a C++ vtable. Write down the offset and guess which method it corresponds to. If the binary also has an `@objc` part, look for `objc_msgSend` and compare, deciding which part is easier to read and why.
+Next, filter out the ARC noise. Open the binary in Hopper, IDA or Ghidra, pick one of the author's functions and count the calls to `swift_retain` and `swift_release`. Practice reading the function by skipping them and looking only at comparisons and named calls. After that, find a witness table. Look for a function that calls a method through a protocol. You'll see an instruction that loads a table of pointers followed by `call [reg+offset]`, just like a C++ vtable. Write down the offset and guess which method it corresponds to. If the binary also has an `@objc` part, look for `objc_msgSend` and compare, deciding which part is easier to read and why.
 
 If you have Xcode, you can create a sample yourself.
 
@@ -117,9 +117,9 @@ The second, `$s4Demo4UserV4nameSSvg`, demangles to `Demo.User.name.getter : Swif
 
 The third, `$ss27_finalizeUninitializedArrayySayxGABnlF`, demangles to `Swift._finalizeUninitializedArray<A>(_: __owned Swift.Array<A>) -> Swift.Array<A>`. It's an internal stdlib function (module `s` = Swift), generic (`l`), related to array initialization. You meet this kind a lot when reading code with array literals, and you can treat it as stdlib boilerplate.
 
-For reading these: `C` = class, `V` = struct, `O` = enum, `F` = function, `vg` and `vs` = getter and setter, `SS` = String, `Sb` = Bool, `Si` = Int.
+For reading these, `C` = class, `V` = struct, `O` = enum, `F` = function, `vg` and `vs` = getter and setter, `SS` = String, `Sb` = Bool, `Si` = Int.
 
-To recognize a Swift binary: `otool -l` shows the sections `__swift5_types`, `__swift5_proto` and `__swift5_fieldmd`. `otool -L` shows `/usr/lib/swift/libswiftCore.dylib`. `nm` shows a lot of `$s...` symbols. If you only see `__objc_*` and no `__swift5_*`, it's pure ObjC and you should go back to Lesson 12.1.
+To recognize a Swift binary, `otool -l` shows the sections `__swift5_types`, `__swift5_proto` and `__swift5_fieldmd`. `otool -L` shows `/usr/lib/swift/libswiftCore.dylib`. `nm` shows a lot of `$s...` symbols. If you only see `__objc_*` and no `__swift5_*`, it's pure ObjC and you should go back to Lesson 12.1.
 
 For filtering ARC, a small decompiled Swift function often interleaves things like this.
 
@@ -139,7 +139,7 @@ mov  rax, [rbx+0x8]   ; load the witness table pointer
 call [rax+0x10]       ; call the 3rd slot in the table
 ```
 
-It's like the C++ vtable in Lesson 4.2: `call [reg+offset]` with the offset telling you the slot. Rebuild the table by looking at the function pointers the witness table points to (IDA and Ghidra have often already named them if they could read `__swift5_proto`).
+It's like the C++ vtable in Lesson 4.2, with `call [reg+offset]` and the offset telling you the slot. Rebuild the table by looking at the function pointers the witness table points to (IDA and Ghidra have often already named them if they could read `__swift5_proto`).
 
 Compared with ObjC, the `@objc` part goes through `objc_msgSend(receiver, selector, ...)`, and by reading the selector (the second parameter, usually a pointer to a string in `__objc_methname`) you know which method is being called, as in Lesson 12.1. Pure Swift has no such reference point, so you rely on the demangled symbols and witness tables. With a hybrid app, work on the `@objc` part first, because it's cheaper.
 

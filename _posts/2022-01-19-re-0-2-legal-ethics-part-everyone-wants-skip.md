@@ -38,7 +38,7 @@ If you find a vulnerability, report it. Don't sell it on the black market and do
 
 ## Where this series stands
 
-All the hands-on lessons in this series use one of three things, no exceptions: crackmes and CTF binaries made by me or the community for learning, small programs we write ourselves and then reverse, or public malware samples used in an isolated lab for defensive purposes.
+All the hands-on lessons in this series use one of three things, no exceptions, which are crackmes and CTF binaries made by me or the community for learning, small programs we write ourselves and then reverse, or public malware samples used in an isolated lab for defensive purposes.
 
 No lesson teaches how to crack a specific commercial product. If you plan to use these skills to crack commercial software, the rest of the series isn't for you, and I can't help you when something goes wrong.
 

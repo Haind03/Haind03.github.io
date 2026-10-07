@@ -12,7 +12,7 @@ The PEB is a data structure you'll keep running into in Windows code, especially
 
 ## TEB and PEB
 
-Every thread has a TEB (Thread Environment Block) and every process has one PEB (Process Environment Block). The OS builds both in process memory and stores information about the process there: where it's running, which DLLs are loaded, whether it's being debugged, the environment variables.
+Every thread has a TEB (Thread Environment Block) and every process has one PEB (Process Environment Block). The OS builds both in process memory and stores information about the process there, such as where it's running, which DLLs are loaded, whether it's being debugged and the environment variables.
 
 What matters for reversing is that you can reach them without any API call. The CPU keeps a pointer to the TEB in a segment register:
 
@@ -67,7 +67,7 @@ This makes the mutex name a good IOC (indicator of compromise). When you see `Cr
 
 ## Access tokens
 
-Every process carries an access token with its identity and rights: which user it runs as, which groups it belongs to, which privileges it has. One example is `SeDebugPrivilege`, which lets a process open other processes to read and write memory, and injection depends on it. When you reverse a sample that tries to escalate privileges, you'll see `OpenProcessToken` and `AdjustTokenPrivileges` used to enable `SeDebugPrivilege`. That combination means it's getting ready to touch another process.
+Every process carries an access token with its identity and rights, including which user it runs as, which groups it belongs to and which privileges it has. One example is `SeDebugPrivilege`, which lets a process open other processes to read and write memory, and injection depends on it. When you reverse a sample that tries to escalate privileges, you'll see `OpenProcessToken` and `AdjustTokenPrivileges` used to enable `SeDebugPrivilege`. That combination means it's getting ready to touch another process.
 
 ## Lab
 
@@ -85,7 +85,7 @@ Next, `NtGlobalFlag` sits at offset +0xBC on x64. In the Dump window jump to `pe
 
 Finally, handles and mutexes. Open Process Hacker and pick a process, ideally an app with a lot of open files or an offline game. Double-click it, go to the Handles tab and filter by type. `File` shows the open files, `Mutant` is the mutex (note the names, since in malware analysis they're IOCs), and `Key` shows registry keys. See if you can guess what the process is doing from this list alone, before reading any code.
 
-When you're done you should have four things written down: the PEB address of the process you inspected, the value of `BeingDebugged` before and after the edit, the value of `NtGlobalFlag` while debugging, and one mutex name you found.
+When you're done you should have four things written down, the PEB address of the process you inspected, the value of `BeingDebugged` before and after the edit, the value of `NtGlobalFlag` while debugging, and one mutex name you found.
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>
@@ -100,11 +100,11 @@ Try it yourself first. These are the PEB offsets you'll use most often on x64.
 | +0x0BC | NtGlobalFlag | flags, equals 0x70 when debugged (heap debug bits) |
 | +0x0F0 | HeapSegmentReserve | related to heap flags |
 
-On x86 the offsets differ: BeingDebugged is +0x2, NtGlobalFlag is +0x68 and Ldr is +0x0C.
+On x86 the offsets differ, with BeingDebugged at +0x2, NtGlobalFlag at +0x68 and Ldr at +0x0C.
 
-For the first task, after `dump peb()` the Dump window points at the start of the PEB. The third byte (offset +2) is `BeingDebugged`, and because you're debugging it reads `01`. After you set it to `00`, any call to `IsDebuggerPresent` reads this byte and returns 0, meaning no debugger. Anti-anti-debug plugins such as ScyllaHide work the same way: they keep this byte at 0 automatically and also patch `NtGlobalFlag` and many other checks. Lesson 15.9 covers it in detail.
+For the first task, after `dump peb()` the Dump window points at the start of the PEB. The third byte (offset +2) is `BeingDebugged`, and because you're debugging it reads `01`. After you set it to `00`, any call to `IsDebuggerPresent` reads this byte and returns 0, meaning no debugger. Anti-anti-debug plugins such as ScyllaHide work the same way, since they keep this byte at 0 automatically and also patch `NtGlobalFlag` and many other checks. Lesson 15.9 covers it in detail.
 
-For the second task, `NtGlobalFlag` is at `peb()+0xBC`. The value `0x70` is three bits: `FLG_HEAP_ENABLE_TAIL_CHECK` (0x10), `FLG_HEAP_ENABLE_FREE_CHECK` (0x20) and `FLG_HEAP_VALIDATE_PARAMETERS` (0x40). Outside a debugger all three are off, so the value is 0. Malware compares `NtGlobalFlag & 0x70` against 0 and assumes a debugger when it isn't zero. The bypass is to force the field back to 0.
+For the second task, `NtGlobalFlag` is at `peb()+0xBC`. The value `0x70` is three bits, `FLG_HEAP_ENABLE_TAIL_CHECK` (0x10), `FLG_HEAP_ENABLE_FREE_CHECK` (0x20) and `FLG_HEAP_VALIDATE_PARAMETERS` (0x40). Outside a debugger all three are off, so the value is 0. Malware compares `NtGlobalFlag & 0x70` against 0 and assumes a debugger when it isn't zero. The bypass is to force the field back to 0.
 
 For the third task, the `File` type in the Handles tab shows which files the process has open, so you can tell where it reads and writes. A `Mutant` (mutex) with a strange fixed name, like a GUID or a meaningless string, is worth writing down when you analyze malware, since many known families are recognized by their mutex name alone. The `Key` type shows registry keys, which is often where persistence gets installed.
 

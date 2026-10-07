@@ -8,9 +8,9 @@ categories: ["Technique Reverse", "Part 15 · Anti-Reversing and Bypasses"]
 tags: [reverse-engineering, anti-debug]
 render_with_liquid: false
 ---
-The earlier anti-debug lessons were about getting past the debugger at runtime. This one targets the static step: making IDA, Ghidra or objdump decode many wrong instructions the moment you open the file, while the CPU still runs the code correctly. You read the pseudocode, think it's the real logic, and it turns out to be garbage. Once you know these tricks you stop trusting the disassembler's output blindly.
+The earlier anti-debug lessons were about getting past the debugger at runtime. This one targets the static step, making IDA, Ghidra or objdump decode many wrong instructions the moment you open the file, while the CPU still runs the code correctly. You read the pseudocode, think it's the real logic, and it turns out to be garbage. Once you know these tricks you stop trusting the disassembler's output blindly.
 
-Every trick rests on one fact: x86 has variable-length instructions, so a byte can be the start of one instruction and also the middle of another. Fool the disassembler about where an instruction begins and everything after it is decoded wrong.
+Every trick rests on one fact, that x86 has variable-length instructions, so a byte can be the start of one instruction and also the middle of another. Fool the disassembler about where an instruction begins and everything after it is decoded wrong.
 
 ## Two ways to disassemble, two weak points
 
@@ -67,7 +67,7 @@ A condition whose result is always fixed (for example `x*x >= 0` is always true)
 
 ## Self-modifying code (SMC)
 
-Code that modifies itself at runtime. On disk (and in IDA's static view) that stretch is a meaningless or encrypted byte sequence. Only at runtime does a stub overwrite it with real instructions and then execute them. Statically you see garbage, because the real code doesn't exist yet. Signs: a loop that writes into the `.text` region (which should only be read and executed), or a section that is both writable and executable (W+X). With SMC, static analysis is almost helpless. You have to run dynamically until after it has modified itself and only then dump it to read. This is also the core mechanism of packers ([Lesson 14.1](/posts/re-14-1-packers-work-spot-one/)).
+Code that modifies itself at runtime. On disk (and in IDA's static view) that stretch is a meaningless or encrypted byte sequence. Only at runtime does a stub overwrite it with real instructions and then execute them. Statically you see garbage, because the real code doesn't exist yet. Signs include a loop that writes into the `.text` region (which should only be read and executed), or a section that is both writable and executable (W+X). With SMC, static analysis is almost helpless. You have to run dynamically until after it has modified itself and only then dump it to read. This is also the core mechanism of packers ([Lesson 14.1](/posts/re-14-1-packers-work-spot-one/)).
 
 ## How to handle it
 
@@ -87,7 +87,7 @@ For the first sequence, `EB 01 E8 B8 2A 00 00 00 C3`, decode it by hand the way 
 
 For the second sequence, `31 C0 EB FF C0 48 FF C0 C3`, decode it from the start and see what instructions you get. Where does `EB FF` point to? Decode again starting from that byte and find the two instructions the disassembler missed. What is the real return value?
 
-In IDA, describe the steps you'd take to fix the display: which key undefines the wrong decoding, and which key makes code at the correct offset.
+In IDA, describe the steps you'd take to fix the display, including which key undefines the wrong decoding and which key makes code at the correct offset.
 
 Two questions to think about. Why does running it dynamically (single-stepping in x64dbg) always give the correct flow even when IDA draws it wrong? And between linear sweep and recursive descent, which is more easily fooled by an overlapping instruction, and why?
 
@@ -120,7 +120,7 @@ B8 2A 00 00 00   mov eax, 0x2A       ; eax = 42
 C3               ret
 ```
 
-The function returns 42. The junk byte is `E8` (the opcode for CALL rel32). The CPU never runs it, so patching it to `0x90` (nop) is harmless, and after that patch the disassembler decodes it correctly: `jmp short +1`, then `nop`, then `mov eax, 0x2A`, then `ret`. The flow doesn't change, it's just cleaner for a human to read.
+The function returns 42. The junk byte is `E8` (the opcode for CALL rel32). The CPU never runs it, so patching it to `0x90` (nop) is harmless, and after that patch the disassembler decodes it correctly as `jmp short +1`, then `nop`, then `mov eax, 0x2A`, then `ret`. The flow doesn't change, it's just cleaner for a human to read.
 
 The overlapping instruction sequence, `31 C0 EB FF C0 48 FF C0 C3`. Decoding from the start, the way a disassembler locks onto it:
 
@@ -137,7 +137,7 @@ FF C0            inc eax             ; eax = 1
 C3               ret
 ```
 
-The disassembler misses both `inc` instructions. The byte `FF` plays two roles: the tail of `jmp short -1` and the head of `inc eax`. The real return value is 2.
+The disassembler misses both `inc` instructions. The byte `FF` plays two roles, as the tail of `jmp short -1` and the head of `inc eax`. The real return value is 2.
 
 Fixing it in IDA. Put the cursor on the wrongly decoded section and press `U` (Undefine) to clear the wrong code definition. Put the cursor exactly at the offset where the real instruction begins (the byte `B8` in the first sequence, or the byte `FF` in the second, found from the dynamic run), then press `C` (make Code) so IDA decodes again from the correct point. For the junk byte, you can press `D` to force it to show as data (`db 0E8h`) so it stops throwing things off, or patch it to a `nop`.
 
@@ -150,4 +150,4 @@ Why is linear sweep easier to fool? It decodes blindly in sequence without follo
 ## Key takeaways
 x86 is variable-length, so a byte can be in the middle of one instruction and the start of another, and every trick here comes from that. A junk byte after `jmp` is never run by the CPU but shifts the disassembler, so patch it to `nop`. Overlapping instructions give the same byte sequence two meanings depending on the offset, because the CPU jumps into the middle of an instruction. `push addr; ret` hides the jump target from recursive descent.
 
-With SMC the real code only appears at runtime and static analysis shows garbage, so you have to dump dynamically. The dynamic step is the referee: single-step to see the real flow, then undefine and make code again in IDA.
+With SMC the real code only appears at runtime and static analysis shows garbage, so you have to dump dynamically. The dynamic step is the referee. Single-step to see the real flow, then undefine and make code again in IDA.

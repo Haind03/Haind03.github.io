@@ -8,9 +8,9 @@ categories: ["Technique Reverse", "Part 17 · Patching, Hooking, Injection"]
 tags: [reverse-engineering, frida, hooking]
 render_with_liquid: false
 ---
-DLL injection is when one process forces another process to load and run its code. Legit software uses it now and then too (game overlays, accessibility tools, EDR), but malware uses it all the time: to run hidden inside a legitimate process like `explorer.exe`, dodge allowlists, and be hard to kill.
+DLL injection is when one process forces another process to load and run its code. Legit software uses it now and then too (game overlays, accessibility tools, EDR), but malware uses it all the time to run hidden inside a legitimate process like `explorer.exe`, dodge allowlists, and be hard to kill.
 
-This lesson doesn't teach you to write an injector. The goal is the opposite: when you're dissecting a sample or looking at a suspicious process, you should be able to say "this is CreateRemoteThread injection" or "this is manual mapping", know where to set breakpoints, and know which tool will show it. This is standard analyst knowledge, from the defender's side.
+This lesson doesn't teach you to write an injector. The goal is the opposite. When you're dissecting a sample or looking at a suspicious process, you should be able to say "this is CreateRemoteThread injection" or "this is manual mapping", know where to set breakpoints, and know which tool will show it. This is standard analyst knowledge, from the defender's side.
 
 ## A common frame for reading every injection technique
 
@@ -61,15 +61,15 @@ PE-sieve and HollowsHunter were built to catch this kind. They scan each memory 
 
 ## 5. Reflective DLL loading
 
-Same idea as manual mapping but pushed further: the DLL loads itself. The DLL contains a special bootstrap function (a reflective loader) that can map itself into memory from a buffer, with no file on disk and no `LoadLibrary`.
+Same idea as manual mapping but pushed further, where the DLL loads itself. The DLL contains a special bootstrap function (a reflective loader) that can map itself into memory from a buffer, with no file on disk and no `LoadLibrary`.
 
 The shellcode in the buffer finds the addresses of the APIs it needs (parsing the PEB to find `kernel32`, walking the export table to get `LoadLibraryA`/`GetProcAddress`), then does the loader's work itself. Since the DLL never sat on disk, static analysis of a file has almost nothing to work with.
 
-The tells are like manual mapping (unbacked RX/RWX region, PE in private memory), plus the code parsing the PEB itself to resolve APIs (a pattern you've met in the anti-analysis lessons). Metasploit and Cobalt Strike use it widely, so their traces are well documented in threat intel material. PE-sieve is still the best detection tool here. Behavior monitoring also works well for EDR: a process suddenly allocating an RWX region and then running code in it is a strong indicator.
+The tells are like manual mapping (unbacked RX/RWX region, PE in private memory), plus the code parsing the PEB itself to resolve APIs (a pattern you've met in the anti-analysis lessons). Metasploit and Cobalt Strike use it widely, so their traces are well documented in threat intel material. PE-sieve is still the best detection tool here. Behavior monitoring also works well for EDR, since a process suddenly allocating an RWX region and then running code in it is a strong indicator.
 
 ## Analysis workflow when you suspect injection
 
-Start by triaging the live process: in Process Hacker, look at Modules (strange DLLs) and Memory (private RX/RWX regions, unbacked). Then run PE-sieve/HollowsHunter on the suspect process, which dumps the implanted modules so you can open them in IDA/Ghidra. Next, do dynamic monitoring with Procmon filtered by process, watching for `Load Image` of strange paths and registry operations (AppInit, IFEO).
+Start by triaging the live process. In Process Hacker, look at Modules (strange DLLs) and Memory (private RX/RWX regions, unbacked). Then run PE-sieve/HollowsHunter on the suspect process, which dumps the implanted modules so you can open them in IDA/Ghidra. Next, do dynamic monitoring with Procmon filtered by process, watching for `Load Image` of strange paths and registry operations (AppInit, IFEO).
 
 If you have the injector sample, set breakpoints at the API chain in each item above and read the parameters (see [Lesson 1.13](/posts/re-1-13-recognizing-windows-apis-when-reversing-reading/)) to know where it injects and how. Finally, dump the injected payload and analyze it as a standalone module.
 
@@ -77,13 +77,13 @@ Shellcode injection, APC injection, thread hijacking and process hollowing (vari
 
 ## Lab
 
-This lab trains a blue-team/analyst skill: recognizing that a process has been injected into and working out which technique was used. There's no injector to write here, only observation and detection. You need Windows (a VM, following Lesson 0.3 if you're using a real sample), Process Hacker or System Informer, PE-sieve and HollowsHunter (from hasherezade's GitHub), and Procmon and Autoruns from Sysinternals. For a safe suspicious process to practice on, use a sample from an authorized malware lab, a legitimate game overlay app (these also use injection), or a public sample from MalwareBazaar run inside an isolated VM.
+This lab trains a blue-team/analyst skill, recognizing that a process has been injected into and working out which technique was used. There's no injector to write here, only observation and detection. You need Windows (a VM, following Lesson 0.3 if you're using a real sample), Process Hacker or System Informer, PE-sieve and HollowsHunter (from hasherezade's GitHub), and Procmon and Autoruns from Sysinternals. For a safe suspicious process to practice on, use a sample from an authorized malware lab, a legitimate game overlay app (these also use injection), or a public sample from MalwareBazaar run inside an isolated VM.
 
 Start by inspecting modules. Open a process in Process Hacker's Modules tab and list any DLL sitting at an unusual path, such as temp, AppData, or a randomized name. Then inspect threads, in the Threads tab, looking for one whose start address points into `kernel32!LoadLibraryW` or into a memory region that doesn't belong to any module, since that's a sign of CreateRemoteThread injection. Next inspect memory, in the Memory tab, looking for a `Private` region whose protection includes `Execute` (RX/RWX) and whose Use column isn't tied to any module file, which is suspicious for manual mapping or reflective loading.
 
 Run PE-sieve with `pe-sieve.exe /pid <PID>` and read its report, which lists implanted or patched modules and dumps them to a folder, then open the dumped file in Ghidra or IDA. Scan registry autoload points with Autoruns, checking the AppInit tab and other autoload entries for any unfamiliar DLL configured to load system-wide.
 
-Finally, pull the signals together: based on what you found, decide which of the five techniques from the lesson was used, and write down your reasoning.
+Finally, pull the signals together. Based on what you found, decide which of the five techniques from the lesson was used, and write down your reasoning.
 
 Three questions worth thinking through. Why is manual mapping harder to detect than LoadLibrary injection just by looking at the module list? What does a private, RWX memory region with no backing module tell you? And if a DLL never touched disk at all, what static tool still lets you get its code for analysis?
 
@@ -104,15 +104,15 @@ A signal and detection table:
 | Manual mapping | Parsing the PE itself, mapping sections, applying relocations, resolving the IAT, calling DllMain | An executable PRIVATE region with no backing module; a PE-shaped layout sitting in private memory; absent from the module list | PE-sieve, HollowsHunter |
 | Reflective DLL loading | The DLL maps itself from a buffer and resolves APIs itself via the PEB | Same as manual mapping plus code that parses the PEB to find APIs; never touches disk | PE-sieve, monitoring for RWX allocation followed by execution |
 
-On inspecting modules: a legitimate DLL usually sits in `C:\Windows\System32` or the app's own install folder. A DLL in `%TEMP%`, `%APPDATA%`, or with a randomized name is suspicious enough to point at LoadLibrary-based injection.
+On inspecting modules, a legitimate DLL usually sits in `C:\Windows\System32` or the app's own install folder. A DLL in `%TEMP%`, `%APPDATA%`, or with a randomized name is suspicious enough to point at LoadLibrary-based injection.
 
-On inspecting threads: a thread created by injection usually has a start address of `LoadLibraryW` (the classic CreateRemoteThread pattern) or points into a memory region not mapped to any module (a shellcode or reflective pattern). A legitimate thread's start address sits inside a known module.
+On inspecting threads, a thread created by injection usually has a start address of `LoadLibraryW` (the classic CreateRemoteThread pattern) or points into a memory region not mapped to any module (a shellcode or reflective pattern). A legitimate thread's start address sits inside a known module.
 
-On inspecting memory: a `MEM_PRIVATE` region with `PAGE_EXECUTE_READWRITE` or `PAGE_EXECUTE_READ` that isn't tied to any file is a sign of code placed into memory outside the normal loader path. Legitimate code almost always lives in a `MEM_IMAGE` region, backed by a module file, and is read plus execute only.
+On inspecting memory, a `MEM_PRIVATE` region with `PAGE_EXECUTE_READWRITE` or `PAGE_EXECUTE_READ` that isn't tied to any file is a sign of code placed into memory outside the normal loader path. Legitimate code almost always lives in a `MEM_IMAGE` region, backed by a module file, and is read plus execute only.
 
-On the PE-sieve report: it classifies each module as clean, hooked, replaced, or implanted, and dumps the suspicious ones, and the dumped file opens in IDA or Ghidra to read the payload.
+On the PE-sieve report, it classifies each module as clean, hooked, replaced, or implanted, and dumps the suspicious ones, and the dumped file opens in IDA or Ghidra to read the payload.
 
-On the registry scan: Autoruns gathers every autoload point. A non-empty AppInit_DLLs is suspicious, and it's worth also checking IFEO Debugger entries and COM/Netsh helper DLLs.
+On the registry scan, Autoruns gathers every autoload point. A non-empty AppInit_DLLs is suspicious, and it's worth also checking IFEO Debugger entries and COM/Netsh helper DLLs.
 
 Pulling it together, the reasoning goes like this. A DLL on disk plus a LoadLibraryW thread points to CreateRemoteThread injection. The same DLL across multiple GUI processes points to SetWindowsHookEx. A DLL loading everywhere plus a populated AppInit registry value points to AppInit_DLLs. Executable private code with no module and a PE-sieve report of implanted content points to manual mapping or reflective loading, distinguished by whether the code resolves its own APIs by parsing the PEB.
 

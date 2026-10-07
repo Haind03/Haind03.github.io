@@ -8,7 +8,7 @@ categories: ["Technique Reverse", "Part 17 · Patching, Hooking, Injection"]
 tags: [reverse-engineering, frida, hooking]
 render_with_liquid: false
 ---
-On Windows you hook with Detours, IAT or inline hooks (lesson [17.3](/posts/re-17-3-hooking-windows-iat-hooks-inline-hooks/)). On Linux and macOS there's a simpler way built into the OS loader: you tell it to load your library before the standard library, and your function overrides the libc function. No overwriting bytes, no code cave, just an environment variable. This lesson uses it to expose the password of a crackme, and also covers ptrace, the mechanism behind every Linux debugger.
+On Windows you hook with Detours, IAT or inline hooks (lesson [17.3](/posts/re-17-3-hooking-windows-iat-hooks-inline-hooks/)). On Linux and macOS there's a simpler way built into the OS loader, where you tell it to load your library before the standard library, and your function overrides the libc function. No overwriting bytes, no code cave, just an environment variable. This lesson uses it to expose the password of a crackme, and also covers ptrace, the mechanism behind every Linux debugger.
 
 ## LD_PRELOAD
 
@@ -48,7 +48,7 @@ I log to `stderr` and not `stdout` so the hook's output doesn't mix into the pro
 
 ## ptrace
 
-`gdb`, `strace`, `ltrace` all stand on a single syscall: `ptrace`. A process calls `ptrace(PTRACE_ATTACH, pid, ...)` to attach to another process, then reads/writes registers and memory, sets breakpoints, steps. This explains two things.
+`gdb`, `strace`, `ltrace` all stand on a single syscall, which is `ptrace`. A process calls `ptrace(PTRACE_ATTACH, pid, ...)` to attach to another process, then reads/writes registers and memory, sets breakpoints, steps. This explains two things.
 
 First, `strace ./prog` shows every syscall the program makes (open, read, write, connect), and `ltrace ./prog` shows every library call (like LD_PRELOAD but seeing everything). These two commands are the fastest dynamic triage on Linux, and I run them before opening a disassembler.
 
@@ -70,7 +70,7 @@ long ptrace(int request, ...) { return 0; }
 
 ## DYLD_INSERT_LIBRARIES: the macOS version
 
-macOS has an equivalent mechanism called `DYLD_INSERT_LIBRARIES` (dyld is macOS's dynamic linker). The idea is the same: insert a dylib that loads first to override functions. The overriding function has to be marked so dyld knows to replace it (interpose), through an `__interpose` section instead of just defining the same name.
+macOS has an equivalent mechanism called `DYLD_INSERT_LIBRARIES` (dyld is macOS's dynamic linker). The idea is the same, which is to insert a dylib that loads first to override functions. The overriding function has to be marked so dyld knows to replace it (interpose), through an `__interpose` section instead of just defining the same name.
 
 The big difference is System Integrity Protection (SIP). Modern macOS blocks `DYLD_INSERT_LIBRARIES` for system processes and binaries with hardened runtime, so it only works on your own binaries or binaries that aren't hardened. That's why on macOS people often switch to Frida (lesson [17.2](/posts/re-17-2-frida-full-inspecting-modifying-program-while/)).
 
@@ -97,7 +97,7 @@ echo "wrongpass" | LD_PRELOAD=./hook.so ./crackme
 
 The line `[hook] strcmp("wrongpass", "...")` shows the second operand, which is the password. Enter the password you found to confirm it prints "Correct!".
 
-Now think: if the crackme didn't use `strcmp` and instead wrote its own loop comparing byte by byte, would an LD_PRELOAD hook on `strcmp` still work? As an advanced step, write a `ptrace` hook that always returns 0 to see how to neutralize a ptrace-based anti-debug check on Linux. Keep in mind that a hook only catches functions called through the dynamic library (the PLT), not static or inline functions, and that the log goes to stderr so it doesn't mix with the program's output.
+Now think about this case. If the crackme didn't use `strcmp` and instead wrote its own loop comparing byte by byte, would an LD_PRELOAD hook on `strcmp` still work? As an advanced step, write a `ptrace` hook that always returns 0 to see how to neutralize a ptrace-based anti-debug check on Linux. Keep in mind that a hook only catches functions called through the dynamic library (the PLT), not static or inline functions, and that the log goes to stderr so it doesn't mix with the program's output.
 
 <div class="lab-box">
 <div class="lab-head"><b>LAB 17.6</b>source files</div>

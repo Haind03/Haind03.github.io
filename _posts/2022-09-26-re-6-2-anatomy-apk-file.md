@@ -36,11 +36,11 @@ Not everything is equally worth looking at. When I triage, I look at AndroidMani
 
 ## AndroidManifest.xml
 
-The manifest is the app's declaration: which components it has, which permissions it asks for, and most useful for a reverser, which screen runs first.
+The manifest is the app's declaration of which components it has, which permissions it asks for, and most useful for a reverser, which screen runs first.
 
-One catch: the manifest in an APK isn't plain-text XML but binary XML (AXML), and opening it in a text editor gives garbage. You need a decoding tool. Drag the APK into JADX and it shows the manifest in readable form, or run `apktool d app.apk` and apktool decodes the manifest and resources into text.
+One catch is that the manifest in an APK isn't plain-text XML but binary XML (AXML), and opening it in a text editor gives garbage. You need a decoding tool. Drag the APK into JADX and it shows the manifest in readable form, or run `apktool d app.apk` and apktool decodes the manifest and resources into text.
 
-First look for the launcher activity, which is the activity with an intent-filter containing `android.intent.action.MAIN` and `android.intent.category.LAUNCHER`. This is the opening screen, where you start following the flow. Next is the application class (the `android:name` attribute in the `<application>` tag). If there is one, it runs even before the first activity, and many apps put initialization and even anti-analysis here. Then the permissions. `<uses-permission>` tells what the app touches (internet, SMS, contacts, location), so the list gives you a quick idea of what type of app it is, like reading the imports of a PE. Finally the exported components: a component with `android:exported="true"` can be called from outside, which is worth noting when assessing security.
+First look for the launcher activity, which is the activity with an intent-filter containing `android.intent.action.MAIN` and `android.intent.category.LAUNCHER`. This is the opening screen, where you start following the flow. Next is the application class (the `android:name` attribute in the `<application>` tag). If there is one, it runs even before the first activity, and many apps put initialization and even anti-analysis here. Then the permissions. `<uses-permission>` tells what the app touches (internet, SMS, contacts, location), so the list gives you a quick idea of what type of app it is, like reading the imports of a PE. Finally the exported components, where a component with `android:exported="true"` can be called from outside, which is worth noting when assessing security.
 
 ## classes.dex
 
@@ -52,17 +52,17 @@ You rarely read raw DEX. Usually a decompiler (JADX, CFR...) rebuilds the DEX in
 
 ### Multidex
 
-A single DEX file has a historical limit of about 65536 methods (the limit of the 16-bit method reference index). Large apps get past it with multidex: `classes.dex`, `classes2.dex`, `classes3.dex`... The code may be scattered across several dex files, so don't only look at the first one. JADX merges them all so you usually don't need to worry, but with apktool you have to pay attention.
+A single DEX file has a historical limit of about 65536 methods (the limit of the 16-bit method reference index). Large apps get past it with multidex, using `classes.dex`, `classes2.dex`, `classes3.dex`... The code may be scattered across several dex files, so don't only look at the first one. JADX merges them all so you usually don't need to worry, but with apktool you have to pay attention.
 
 ## lib/
 
-The `lib/` folder holds native libraries as `.so` (ELF shared objects, like Linux), split by CPU architecture (ABI): `arm64-v8a` for today's 64-bit phones, `armeabi-v7a` for older devices, `x86_64` for emulators.
+The `lib/` folder holds native libraries as `.so` (ELF shared objects, like Linux), split by CPU architecture (ABI), with `arm64-v8a` for today's 64-bit phones, `armeabi-v7a` for older devices, `x86_64` for emulators.
 
 Sensitive logic (license checks, encryption, anti-cheat, the core of a game) is often written in C/C++ through JNI and put in a `.so` because it's much harder to read than Java. An app with a large `.so` may have its interesting part in native and not in Java. Then you take the `.so` to IDA or Ghidra and reverse it like a normal ARM binary (see Lesson 1.9 on ARM64). The bridge from Java down into native is JNI, the topic of Lesson 6.7.
 
 ## assets/ and resources
 
-`assets/` holds raw files the app reads at runtime: configuration, machine learning models, scripts, sometimes even a secondary dex/so that gets loaded dynamically (a sign of a packer, see Lesson 6.8). `res/` and `resources.arsc` hold UI resources and strings, and `res/values/strings.xml` often contains URLs, keys and error messages that are useful for tracing.
+`assets/` holds raw files the app reads at runtime, such as configuration, machine learning models, scripts, sometimes even a secondary dex/so that gets loaded dynamically (a sign of a packer, see Lesson 6.8). `res/` and `resources.arsc` hold UI resources and strings, and `res/values/strings.xml` often contains URLs, keys and error messages that are useful for tracing.
 
 ## META-INF
 
@@ -72,9 +72,9 @@ Sensitive logic (license checks, encryption, anti-cheat, the core of a game) is 
 
 The task is to dissect the structure of an APK, so you get comfortable with the layout and can read AndroidManifest to find entry points before reading code. You need any APK, either a free app from a legitimate source or one you build yourself in Android Studio, and it doesn't have to be complex. For tools, JADX or apktool and a ZIP extractor such as 7-Zip will do, and optionally `aapt`/`aapt2` from the Android SDK to read the manifest quickly from the command line.
 
-First view the APK as a ZIP. Copy the file and change the `.apk` extension to `.zip` (or open it straight in 7-Zip), list the top-level entries, and compare them with the diagram in the lesson: find AndroidManifest.xml, classes.dex, resources.arsc, res/, lib/, assets/ and META-INF/. Count the dex files too, and note whether the app uses multidex (is there a classes2.dex, classes3.dex and so on?).
+First view the APK as a ZIP. Copy the file and change the `.apk` extension to `.zip` (or open it straight in 7-Zip), list the top-level entries, and compare them with the diagram in the lesson, and find AndroidManifest.xml, classes.dex, resources.arsc, res/, lib/, assets/ and META-INF/. Count the dex files too, and note whether the app uses multidex (is there a classes2.dex, classes3.dex and so on?).
 
-Then read AndroidManifest. Drag the APK into JADX, open the Resources section and find AndroidManifest.xml (JADX decodes the binary XML itself), or run `apktool d app.apk` and open the decoded manifest. Find the launcher activity, the activity whose intent-filter has `action.MAIN` plus `category.LAUNCHER`, and write down the full class name. Check whether there is a custom application class (the `android:name` attribute on the `<application>` tag). List the permissions (`uses-permission`) and guess from them what kind of app it is. Next go into the `lib/` folder: which ABIs are there, and is any `.so` file notably large? If so, note its name so you can load it into IDA or Ghidra later. Finally look through `assets/` for anything that resembles a secondary dex or so, an encrypted file, or a suspicious config.
+Then read AndroidManifest. Drag the APK into JADX, open the Resources section and find AndroidManifest.xml (JADX decodes the binary XML itself), or run `apktool d app.apk` and open the decoded manifest. Find the launcher activity, the activity whose intent-filter has `action.MAIN` plus `category.LAUNCHER`, and write down the full class name. Check whether there is a custom application class (the `android:name` attribute on the `<application>` tag). List the permissions (`uses-permission`) and guess from them what kind of app it is. Next go into the `lib/` folder and check which ABIs are there and whether any `.so` file is notably large. If so, note its name so you can load it into IDA or Ghidra later. Finally look through `assets/` for anything that resembles a secondary dex or so, an encrypted file, or a suspicious config.
 
 Some questions to think about. Why does reading the manifest first save more time than opening classes.dex directly? What does it suggest when an app has very little Java code but one very large `.so` file? And why can't you open AndroidManifest.xml directly in Notepad? When you're done, compare with the solution.
 

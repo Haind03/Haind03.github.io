@@ -18,7 +18,7 @@ This is the first thing that trips up people used to C. In C a string ends with 
 
 In the data section this means strings are glued together into one long block with no separators. For example you might see `"errorinvalid inputpassword"` in one run. That's three strings, `"error"`, `"invalid input"` and `"password"`, joined together. The boundaries are in the code. Each time a string is used, the compiler loads both the pointer (pointing into the middle of the block) and a length constant. To find where a string stops, look for the length, usually a constant `mov` right next to the instruction that loads the pointer.
 
-A full `String` has three fields: pointer, length and capacity (the allocated space), 24 bytes on a 64-bit system. A `&str` is just pointer plus length, 16 bytes, because it only borrows the data.
+A full `String` has three fields, namely pointer, length and capacity (the allocated space), 24 bytes on a 64-bit system. A `&str` is just pointer plus length, 16 bytes, because it only borrows the data.
 
 ```asm
 ; load a &str: lea the pointer, then load the length as a constant
@@ -44,7 +44,7 @@ let sum: u32 = data.iter().map(|x| x * 2).filter(|x| x > &10).sum();
 
 You'd expect the binary to have separate functions for `map`, `filter` and `sum`. It doesn't. The compiler inlines the whole iterator chain into one flat loop, where each element is doubled, compared to 10 and accumulated in the same loop body. The `map`/`filter`/`sum` structure is gone.
 
-So don't look for a `map` or `filter` function, they don't exist as separate functions. Read the loop body and work out the steps yourself: each iteration it doubles (the `map`), then a branch skips if less than 10 (the `filter`), then it adds into an accumulator (the `sum`). The decompiler (Ghidra, Hex-Rays) usually gives a big `for` loop with many nested `if`s, and you translate that back to the original iterator idea.
+So don't look for a `map` or `filter` function, they don't exist as separate functions. Read the loop body and work out the steps yourself. Each iteration it doubles (the `map`), then a branch skips if less than 10 (the `filter`), then it adds into an accumulator (the `sum`). The decompiler (Ghidra, Hex-Rays) usually gives a big `for` loop with many nested `if`s, and you translate that back to the original iterator idea.
 
 With Rust you reverse at the level of what the loop does, not which function is called, because there are almost no function calls left.
 
@@ -54,7 +54,7 @@ Rust has no `null`. It uses `Option<T>` (`Some` or `None`) and `Result<T, E>` (`
 
 ## Trait objects: vtable in a fat pointer
 
-If you read [Lesson 4.2](/posts/re-4-2-classes-vtables-inheritance-rtti-rebuilding-class/) on C++ vtables, Rust's trait objects are similar with one difference. C++ puts the vtable pointer at the start of the object. Rust keeps it separate: a trait object (`&dyn Trait`, `Box<dyn Trait>`) is a fat pointer, two pointers traveling together, one to the data and one to the vtable.
+If you read [Lesson 4.2](/posts/re-4-2-classes-vtables-inheritance-rtti-rebuilding-class/) on C++ vtables, Rust's trait objects are similar with one difference. C++ puts the vtable pointer at the start of the object. Rust keeps it separate. A trait object (`&dyn Trait`, `Box<dyn Trait>`) is a fat pointer, two pointers traveling together, one to the data and one to the vtable.
 
 A method call through a trait looks like:
 
@@ -126,9 +126,9 @@ for i in 0..len:
 return acc
 ```
 
-The three original iterator layers become three operations in the same loop body: the parity check (`filter`), the doubling (`map`) and the addition to `acc` (`sum`). That's zero-cost abstraction: a nice abstraction in the source, zero cost in the binary, and no trace left for the reverser either. For the array `[1..8]` the even numbers 2, 4, 6, 8 double to 4, 8, 12, 16 and the sum is 40.
+The three original iterator layers become three operations in the same loop body, namely the parity check (`filter`), the doubling (`map`) and the addition to `acc` (`sum`). That's zero-cost abstraction, which is a nice abstraction in the source, zero cost in the binary, and no trace left for the reverser either. For the array `[1..8]` the even numbers 2, 4, 6, 8 double to 4, 8, 12, 16 and the sum is 40.
 
-Trait objects are fat pointers. `Vec<Box<dyn Greeter>>` holds fat pointers, each element being two pointers: one to the object data and one to the vtable of the matching impl (`Vietnamese` or `English`). The call `g.greet()` becomes this.
+Trait objects are fat pointers. `Vec<Box<dyn Greeter>>` holds fat pointers, each element being two pointers, one to the object data and one to the vtable of the matching impl (`Vietnamese` or `English`). The call `g.greet()` becomes this.
 
 ```asm
 mov  rdi, [data_ptr]       ; self
@@ -141,7 +141,7 @@ The `rust_demo_debug` build (no `-O`) keeps more iterator functions as separate 
 
 If the program has a panic branch (for example an out-of-bounds array access), you'll see a string like `src/main.rs` with a line number. For external crates, the path even shows the crate name and version under `.cargo/registry/...`.
 
-On the questions: there's no string ending in `0` because Rust uses an explicit length rather than a null terminator like C. And traces of `serde` live in the mangled symbols (`_ZN5serde...` if the binary isn't stripped) and in panic or registry paths if present.
+On the questions, there's no string ending in `0` because Rust uses an explicit length rather than a null terminator like C. And traces of `serde` live in the mangled symbols (`_ZN5serde...` if the binary isn't stripped) and in panic or registry paths if present.
 
 </details>
 

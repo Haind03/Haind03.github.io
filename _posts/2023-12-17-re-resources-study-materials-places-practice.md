@@ -34,9 +34,9 @@ TryHackMe's Reverse Engineering track and HackTheBox Academy come with step-by-s
 
 ## YouTube channels and blogs
 
-Channels: stacksmashing, LiveOverflow, OALabs, MalwareTech, John Hammond, GuidedHacking (games), and HackerSploit.
+Channels include stacksmashing, LiveOverflow, OALabs, MalwareTech, John Hammond, GuidedHacking (games), and HackerSploit.
 
-Blogs and sites: OALabs, the Hex-Rays blog, the Binary Ninja blog, 0x00sec, and tuts4you (a long-running RE forum with lots of unpacking tutorials). Flare-On writeups from past years are very good for learning, since fireeye/mandiant publishes official solutions after each season.
+Blogs and sites include OALabs, the Hex-Rays blog, the Binary Ninja blog, 0x00sec, and tuts4you (a long-running RE forum with lots of unpacking tutorials). Flare-On writeups from past years are very good for learning, since fireeye/mandiant publishes official solutions after each season.
 
 ## Places to practice
 

@@ -8,7 +8,7 @@ categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
-In lesson [1.10](/posts/re-1-10-windows-internals-1-win32-api-dlls/) you saw that the API list shows what a program intends to do. In lesson [1.4](/posts/re-1-4-x86-x64-assembly-2-stack-frames/) you learned where parameters get passed. This lesson combines the two: look at any API call in a disassembly or debugger and read off which file it's opening, which registry key it's writing, where it's connecting.
+In lesson [1.10](/posts/re-1-10-windows-internals-1-win32-api-dlls/) you saw that the API list shows what a program intends to do. In lesson [1.4](/posts/re-1-4-x86-x64-assembly-2-stack-frames/) you learned where parameters get passed. This lesson combines the two, so you can look at any API call in a disassembly or debugger and read off which file it's opening, which registry key it's writing, where it's connecting.
 
 You'll do this a few hundred times every reversing session.
 
@@ -72,7 +72,7 @@ Values like `0x80000000`, `3`, `0x80` are constants predefined in the Windows SD
 
 You don't have to look things up by hand every time. When IDA or Ghidra recognizes a call as a known API, they annotate it for you.
 
-In IDA, enable the right type library and it shows parameter names next to the setup instructions, like `; lpFileName`. The decompiler (F5) even merges the call into a single line of C: `CreateFileW(L"config.ini", 0x80000000, 1, 0, 3, 0x80, 0)`. In Ghidra, the decompiler applies the prototype from its own data, and you may have to apply the right signature if it doesn't recognize the function. Once that's done, the pseudocode shows clear parameter names. Both can turn constants into names (enums) if you assign the right type to that parameter, and seeing `3` become `OPEN_EXISTING` makes reading much faster.
+In IDA, enable the right type library and it shows parameter names next to the setup instructions, like `; lpFileName`. The decompiler (F5) even merges the call into a single line of C, such as `CreateFileW(L"config.ini", 0x80000000, 1, 0, 3, 0x80, 0)`. In Ghidra, the decompiler applies the prototype from its own data, and you may have to apply the right signature if it doesn't recognize the function. Once that's done, the pseudocode shows clear parameter names. Both can turn constants into names (enums) if you assign the right type to that parameter, and seeing `3` become `OPEN_EXISTING` makes reading much faster.
 
 Don't skip the manual reading, though. When you hit a rare API or the tool doesn't recognize it, you still have to look up MSDN yourself and count registers.
 
@@ -88,7 +88,7 @@ bp CreateFileW
 
 When the program calls it, the debugger stops at the start of the function, before it runs. The parameters are still intact in `rcx`, `rdx`, `r8`, `r9` and on the stack. In the register window, right-click `rcx` and choose "Follow in Dump" and you see the file name string. It's the fastest way to find out what the program is opening right now.
 
-API Monitor is more specialized: it catches every API call with the parameters already decoded in a table, so you don't have to read registers manually. It's handy when you want the big picture of what a program touches. It's noisy though, so you need to know how to filter.
+API Monitor is more specialized, since it catches every API call with the parameters already decoded in a table, so you don't have to read registers manually. It's handy when you want the big picture of what a program touches. It's noisy though, so you need to know how to filter.
 
 ## When the API is hidden
 
@@ -102,7 +102,7 @@ You don't need to master these tricks right now. If you think "this program touc
 
 ## Lab
 
-The target is a small C program, `apitarget.c`, that does two clear things: it opens (or creates) a file with `CreateFileW`, writes a line and closes it, then it opens a registry key with `RegOpenKeyExW`. The goal is to practice reading the parameters of an API call in the right Win64 register order, both by hand in x64dbg and with an automatic tool (API Monitor), and then compare the two. The program is harmless and fine to run on a normal machine.
+The target is a small C program, `apitarget.c`, that does two clear things. It opens (or creates) a file with `CreateFileW`, writes a line and closes it, then it opens a registry key with `RegOpenKeyExW`. The goal is to practice reading the parameters of an API call in the right Win64 register order, both by hand in x64dbg and with an automatic tool (API Monitor), and then compare the two. The program is harmless and fine to run on a normal machine.
 
 Build a 64-bit version so it matches the Win64 register order from the lesson. With MSVC, from a Developer Command Prompt:
 
@@ -118,7 +118,7 @@ x86_64-w64-mingw32-gcc -g apitarget.c -o apitarget.exe -ladvapi32
 
 If you build 32-bit instead, the parameters live on the stack under stdcall, so go back to lesson 1.4.
 
-Open `apitarget.exe` in x64dbg and run to the entry point. In the Command box type `bp CreateFileW` and then `bp RegOpenKeyExW`, and press Run (F9). When it stops at `CreateFileW`, read the parameters. `rcx` points to the file name: right-click it, choose Follow in Dump, and read the Unicode string. `rdx` is the desired access, so look the value up on MSDN and work out what GENERIC_WRITE is. `r8` is the share mode. The fifth parameter, `dwCreationDisposition`, is at `[rsp+0x20]`, so read it and look up its meaning. Then keep running to `RegOpenKeyExW` and read `rcx` (the root HKEY, to compare against HKEY_CURRENT_USER) and `rdx` (a pointer to the subkey name, again via Follow in Dump). Finally, run the program under API Monitor (filtering on the advapi32 and kernel32 modules) and compare its automatic output with what you read by hand.
+Open `apitarget.exe` in x64dbg and run to the entry point. In the Command box type `bp CreateFileW` and then `bp RegOpenKeyExW`, and press Run (F9). When it stops at `CreateFileW`, read the parameters. `rcx` points to the file name, so right-click it, choose Follow in Dump, and read the Unicode string. `rdx` is the desired access, so look the value up on MSDN and work out what GENERIC_WRITE is. `r8` is the share mode. The fifth parameter, `dwCreationDisposition`, is at `[rsp+0x20]`, so read it and look up its meaning. Then keep running to `RegOpenKeyExW` and read `rcx` (the root HKEY, to compare against HKEY_CURRENT_USER) and `rdx` (a pointer to the subkey name, again via Follow in Dump). Finally, run the program under API Monitor (filtering on the advapi32 and kernel32 modules) and compare its automatic output with what you read by hand.
 
 Along the way, answer these questions. What is the full name of the file the program opens? Does it open it for reading or writing, and which parameter tells you? Which registry key is opened, under which root HKEY? And where does the return value (`rax`) land after each call, and what does it mean? Answer them all before opening the solution.
 
@@ -160,11 +160,11 @@ LSTATUS RegOpenKeyExW(HKEY hKey, LPCWSTR lpSubKey, DWORD ulOptions, REGSAM samDe
 | `r9` | samDesired | `0x20019` | KEY_READ |
 | `[rsp+0x20]` | phkResult | pointer to an output variable | where the resulting HKEY is stored |
 
-`rax` after the call is an LSTATUS return code, where `0` (ERROR_SUCCESS) means success. To recognize the root HKEY by value: `0x80000000` is HKEY_CLASSES_ROOT, `0x80000001` is HKEY_CURRENT_USER, `0x80000002` is HKEY_LOCAL_MACHINE and `0x80000003` is HKEY_USERS. So the program opens the key `HKEY_CURRENT_USER\Software\Microsoft\Windows` with read access.
+`rax` after the call is an LSTATUS return code, where `0` (ERROR_SUCCESS) means success. To recognize the root HKEY by value, `0x80000000` is HKEY_CLASSES_ROOT, `0x80000001` is HKEY_CURRENT_USER, `0x80000002` is HKEY_LOCAL_MACHINE and `0x80000003` is HKEY_USERS. So the program opens the key `HKEY_CURRENT_USER\Software\Microsoft\Windows` with read access.
 
 API Monitor already shows the function name, each parameter decoded (including constant names like CREATE_ALWAYS and KEY_READ) and the return value, so its output should match the tables above. The only difference is that you do not have to look up the constants yourself. Reading by hand still matters when you meet an unfamiliar API, or cannot use API Monitor (for example against a sample that detects the tool).
 
-Three things to take away. The Win64 order is fixed: `rcx rdx r8 r9`, then `[rsp+0x20]` and upward. Values like `0x80000001`, `0x40000000` and `0x20019` are Windows constants that you look up on MSDN or learn to recognize over time. And reading the parameters right at the start of the function, just after the breakpoint, is the most accurate, because no instruction has had the chance to overwrite the registers yet.
+Three things to take away. The Win64 order is fixed as `rcx rdx r8 r9`, then `[rsp+0x20]` and upward. Values like `0x80000001`, `0x40000000` and `0x20019` are Windows constants that you look up on MSDN or learn to recognize over time. And reading the parameters right at the start of the function, just after the breakpoint, is the most accurate, because no instruction has had the chance to overwrite the registers yet.
 
 </details>
 

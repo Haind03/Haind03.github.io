@@ -8,7 +8,7 @@ categories: ["Technique Reverse", "Part 05 · C# and .NET"]
 tags: [reverse-engineering, dotnet]
 render_with_liquid: false
 ---
-After two whole parts of native assembly, opening a .NET file in dnSpy is a pleasant surprise. You click a method, and instead of many `mov`/`call` lines, the window shows C# almost exactly as the author wrote it: class names, method names, local variable names, even a `foreach` loop. The reason is in lesson [5.1](/posts/re-5-1-net-internals-why-decompiling-gives-back/). .NET compiles to IL with full metadata, so the decompiler can rebuild a lot. This lesson covers the two main tools.
+After two whole parts of native assembly, opening a .NET file in dnSpy is a pleasant surprise. You click a method, and instead of many `mov`/`call` lines, the window shows C# almost exactly as the author wrote it, including class names, method names, local variable names, even a `foreach` loop. The reason is in lesson [5.1](/posts/re-5-1-net-internals-why-decompiling-gives-back/). .NET compiles to IL with full metadata, so the decompiler can rebuild a lot. This lesson covers the two main tools.
 
 Both are free portable downloads, `dnSpy.exe` and `ILSpy.exe`, so there's nothing to install.
 
@@ -34,7 +34,7 @@ MyApp.exe
     Resources
 ```
 
-The tree follows the .NET structure: an assembly contains namespaces, a namespace contains types (class/struct/enum/interface), a type contains methods and fields. Click a method and the decompiler translates it to C# in the right-hand panel.
+The tree follows the .NET structure. An assembly contains namespaces, a namespace contains types (class/struct/enum/interface), a type contains methods and fields. Click a method and the decompiler translates it to C# in the right-hand panel.
 
 A .NET Core apphost `.exe` (for example `dnSpy.exe`) is often just a launcher, and the real code sits in the `.dll` with the same name. If you open the `.exe` and it looks empty, open the matching `.dll`. DIE also points this out in lesson [2.1](/posts/re-2-1-five-minute-triage-die-strings-pe/).
 
@@ -54,7 +54,7 @@ Instead of fumbling through the tree, use search (the Search box in ILSpy, `Ctrl
 
 This feature makes .NET RE much faster than native. Right-click a method, field or type and choose Analyze (in dnSpy) or open the Analyze panel (ILSpy). Used By shows which methods call this method, which is the reverse cross-reference, equivalent to the `X` key in IDA. Uses shows what this method calls. Instantiated By shows where objects of this class are created, and Assigned By / Read By covers fields.
 
-A typical flow: you suspect a method `CheckLicense` is the center. Analyze it, look at Used By to see where it's called from (usually `Main` or a button click), then trace upward to understand the flow. Or go the other way, from the error message string: Analyze the field holding the string to find where it's used. Following Used By/Uses lets you rebuild the program's logic without reading everything.
+A typical flow is that you suspect a method `CheckLicense` is the center. Analyze it, look at Used By to see where it's called from (usually `Main` or a button click), then trace upward to understand the flow. Or go the other way, from the error message string, and analyze the field holding the string to find where it's used. Following Used By/Uses lets you rebuild the program's logic without reading everything.
 
 ## Export the whole project to grep
 
@@ -66,7 +66,7 @@ With the source on disk you can use grep, ripgrep, or your favorite editor for f
 
 The task is to investigate a .NET assembly with ILSpy and dnSpy, and get comfortable with reading, switching to IL, searching and Analyze. You don't need to download anything special, because the .NET DLLs that ship with ILSpy make good samples. You need `ILSpy.exe` and `dnSpy.exe`, and the sample to dissect is `ICSharpCode.Decompiler.dll` from ILSpy's folder, a real and fairly large .NET assembly that's good for practice.
 
-Start by opening the tree. Drag `ICSharpCode.Decompiler.dll` into ILSpy, expand the tree, find the namespace `ICSharpCode.Decompiler`, and list any 3 classes along with one method in each. Next decompile and read: pick a short method and read the C#, then switch the display language to IL (the language box on the toolbar) and compare the two, finding the opcodes `ldstr` (load a string), `call` (call a method) and `ret`. Then search by string. Use the Search box in string/constant mode and type a common English keyword (for example `Error`, `Invalid` or `version`), jump to a result and look at the method that contains it.
+Start by opening the tree. Drag `ICSharpCode.Decompiler.dll` into ILSpy, expand the tree, find the namespace `ICSharpCode.Decompiler`, and list any 3 classes along with one method in each. Next decompile and read. Pick a short method and read the C#, then switch the display language to IL (the language box on the toolbar) and compare the two, finding the opcodes `ldstr` (load a string), `call` (call a method) and `ret`. Then search by string. Use the Search box in string/constant mode and type a common English keyword (for example `Error`, `Invalid` or `version`), jump to a result and look at the method that contains it.
 
 For cross-references, right-click any public method, choose Analyze, and open the **Used By** branch. Note at least two methods that call it, then open **Uses** to see what it calls. After that, open the same file in dnSpy and repeat the search and Analyze steps (`Ctrl+Shift+K` to search, right-click then Analyze), and compare it with ILSpy. Optionally, if you have `ilspycmd` installed (`dotnet tool install -g ilspycmd`), export the whole project:
 
@@ -76,7 +76,7 @@ ilspycmd ICSharpCode.Decompiler.dll -p -o out_decompiler
 
 and then run `grep -r "Invalid" out_decompiler` to see full-text search over exported source.
 
-Two questions to think about. Why does decompiling .NET give readable C# right away, while decompiling a native C file doesn't (hint: metadata, see Lesson 5.1)? And if the class and method names were renamed to `a`, `b`, `c`, would the steps above still work, and which of them would? Try it before opening the solution.
+Two questions to think about. Why does decompiling .NET give readable C# right away, while decompiling a native C file doesn't (think about metadata, see Lesson 5.1)? And if the class and method names were renamed to `a`, `b`, `c`, would the steps above still work, and which of them would? Try it before opening the solution.
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

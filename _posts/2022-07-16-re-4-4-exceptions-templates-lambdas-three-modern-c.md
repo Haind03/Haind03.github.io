@@ -8,7 +8,7 @@ categories: ["Technique Reverse", "Part 04 · C++"]
 tags: [reverse-engineering, cpp]
 render_with_liquid: false
 ---
-By now you can read classes, vtables, and so on. But real C++ code has three more things that make beginners panic in the decompiler: a try/catch block turns into a mess of tables, a small function shows up in five or six near-identical copies, and a simple lambda turns into a whole hidden class. Once you know the mechanism behind them, they're just noise you know how to skip.
+By now you can read classes, vtables, and so on. But real C++ code has three more things that make beginners panic in the decompiler, namely a try/catch block that turns into a mess of tables, a small function that shows up in five or six near-identical copies, and a simple lambda that turns into a whole hidden class. Once you know the mechanism behind them, they're just noise you know how to skip.
 
 ## Templates: one source function, many binary functions
 
@@ -84,17 +84,17 @@ To recognize a lambda when reversing, look for a small struct being built on the
 
 ## Exceptions: the price of try/catch
 
-This is the part that tangles things the most. In the source, try/catch is tidy. In the binary it splits into two parts: the normal running path (happy path) and the machinery that handles an exception, sitting separately, linked through data tables.
+This is the part that tangles things the most. In the source, try/catch is tidy. In the binary it splits into two parts, the normal running path (happy path) and the machinery that handles an exception, sitting separately, linked through data tables.
 
-The two main ABIs differ quite a bit. On Linux with the Itanium C++ ABI, a `throw` makes the runtime call `__cxa_throw`, and then it walks back up the stack (stack unwinding) to find a handler. The information about which handlers this frame has and what needs cleaning up isn't in the code but in dedicated sections: `.eh_frame`, `.gcc_except_table`. The place in code that catches the exception is called a landing pad. In the decompiler you see a function that seems to end at `ret` but still has stray code blocks after it that nobody calls directly. Those are landing pads, which the runtime jumps into during unwinding.
+The two main ABIs differ quite a bit. On Linux with the Itanium C++ ABI, a `throw` makes the runtime call `__cxa_throw`, and then it walks back up the stack (stack unwinding) to find a handler. The information about which handlers this frame has and what needs cleaning up isn't in the code but in dedicated sections, such as `.eh_frame`, `.gcc_except_table`. The place in code that catches the exception is called a landing pad. In the decompiler you see a function that seems to end at `ret` but still has stray code blocks after it that nobody calls directly. Those are landing pads, which the runtime jumps into during unwinding.
 
 On Windows with MSVC, a different mechanism is used, with funclets (sub-functions for catch blocks) and unwind data in `.pdata`/`.xdata`. You'll see pointers to `FuncInfo` tables and `__CxxFrameHandler`, and a related function is `_CxxThrowException`.
 
-What both have in common, for the reverser: try/catch code is cut apart. The try body runs straight, and the catch part sits in a separate block that the main flow doesn't reach with a normal `jmp`, so don't panic when you see orphan code after a function, it's usually a handler. Also don't get lost in the unwind tables unless you really need to. In most cases when reversing a crackme or finding the main logic, you only need to know "this spot can throw, that one catches" and move on. The EH tables rarely hide secrets. A `__cxa_throw` / `_CxxThrowException` call means there's an exception exit from here, and `__cxa_begin_catch` / `__CxxFrameHandler` means you're in the handling area.
+What both have in common, for the reverser, is that try/catch code is cut apart. The try body runs straight, and the catch part sits in a separate block that the main flow doesn't reach with a normal `jmp`, so don't panic when you see orphan code after a function, it's usually a handler. Also don't get lost in the unwind tables unless you really need to. In most cases when reversing a crackme or finding the main logic, you only need to know "this spot can throw, that one catches" and move on. The EH tables rarely hide secrets. A `__cxa_throw` / `_CxxThrowException` call means there's an exception exit from here, and `__cxa_begin_catch` / `__CxxFrameHandler` means you're in the handling area.
 
 ## Putting it together
 
-All three are the compiler generating extra code around the author's real logic. The strategy is the same: recognize them, label them, then focus on the logic. A template is many copies of one function (understand one, infer the family). A lambda is a hidden class (find `operator()` and the capture fields). An exception is code cut apart (the happy path is the main thing, the handler comes later). With these three in mind you can read modern C++ without being put off by the number of functions and the odd blocks.
+All three are the compiler generating extra code around the author's real logic. The strategy is the same, which is to recognize them, label them, then focus on the logic. A template is many copies of one function (understand one, infer the family). A lambda is a hidden class (find `operator()` and the capture fields). An exception is code cut apart (the happy path is the main thing, the handler comes later). With these three in mind you can read modern C++ without being put off by the number of functions and the odd blocks.
 
 ## Lab
 
@@ -127,7 +127,7 @@ div=100
 caught: divide by zero
 ```
 
-Start with the template. List the symbols and look for the two copies of `add_one` with `nm -C modern | grep add_one`. How many functions are there, and why does one template in the source produce several machine functions? Then compare the asm of `add_one<int>` and `add_one<double>` with `objdump -d -M intel -C modern | less`. Which instruction does the int version use to add, and which registers and instructions does the double version use instead? Next the lambda. Find its `operator()` (the name contains `{lambda(int)#1}`, or the mangled form `_ZZ4mainENKUliE_clEi`). In its asm, work out what the first parameter (`rdi` on Linux) is, and what the line `mov edx, [rax]` is reading, relating it to the captured variable `base`. In `main`, find where the lambda object is built: the instructions that write the captured value into an area of the stack before the call are the hidden constructor of the closure.
+Start with the template. List the symbols and look for the two copies of `add_one` with `nm -C modern | grep add_one`. How many functions are there, and why does one template in the source produce several machine functions? Then compare the asm of `add_one<int>` and `add_one<double>` with `objdump -d -M intel -C modern | less`. Which instruction does the int version use to add, and which registers and instructions does the double version use instead? Next the lambda. Find its `operator()` (the name contains `{lambda(int)#1}`, or the mangled form `_ZZ4mainENKUliE_clEi`). In its asm, work out what the first parameter (`rdi` on Linux) is, and what the line `mov edx, [rax]` is reading, relating it to the captured variable `base`. In `main`, find where the lambda object is built. The instructions that write the captured value into an area of the stack before the call are the hidden constructor of the closure.
 
 For the exceptions, find the throw call in `main` or `safe_div`. On Linux look for `__cxa_throw` and `__cxa_allocate_exception`, and with MSVC look for `_CxxThrowException`. Work out where the catch block sits. On Linux, watch for blocks of code after the function's `ret` that the main flow never jumps to, which are landing pads. With MSVC you can also open the binary in PE-bear and find the `.pdata` and `.xdata` sections, which hold the unwind data for exceptions.
 
@@ -176,7 +176,7 @@ _Z7add_oneIdET_S0_:
     ret
 ```
 
-The difference is the data type: int goes through general-purpose registers and `add`, while double goes through `xmm` and `addsd`. The logic `x + 1` is the same, but there are two function bodies.
+The difference is the data type, since int goes through general-purpose registers and `add`, while double goes through `xmm` and `addsd`. The logic `x + 1` is the same, but there are two function bodies.
 
 ### Lambda
 
@@ -193,7 +193,7 @@ main::{lambda(int)#1}::operator()(int) const:   ; _ZZ4mainENKUliE_clEi
     ret
 ```
 
-The first parameter `rdi` is `this`, like in every C++ method (Lesson 4.1). A lambda is callable because it's really the `operator()` method of a hidden struct. The line `mov edx, [rax]` reads the first field of the object, which is the variable `base` captured by value. The capture isn't a local variable anymore but data inside an object. In `main`, before the call, there are instructions that build the object: they compute `base = n*10` and `mov` it into the closure object's stack area. That's the closure's hidden constructor.
+The first parameter `rdi` is `this`, like in every C++ method (Lesson 4.1). A lambda is callable because it's really the `operator()` method of a hidden struct. The line `mov edx, [rax]` reads the first field of the object, which is the variable `base` captured by value. The capture isn't a local variable anymore but data inside an object. In `main`, before the call, there are instructions that build the object, and they compute `base = n*10` and `mov` it into the closure object's stack area. That's the closure's hidden constructor.
 
 ### Exceptions
 
@@ -215,7 +215,7 @@ safe_div:
     ret
 ```
 
-`__cxa_throw` is the point where the exception is thrown. In `main` the `try` block runs straight through, while the `catch` block is compiled into a landing pad: a separate stretch of code that begins with `__cxa_begin_catch`, calls `e.what()` and then `printf`, and ends with `__cxa_end_catch`. The main flow never `jmp`s there, and the runtime jumps in while unwinding the stack. The navigation data for unwinding lives in `.eh_frame` and `.gcc_except_table`, not in the code. You can look at it with:
+`__cxa_throw` is the point where the exception is thrown. In `main` the `try` block runs straight through, while the `catch` block is compiled into a landing pad, which is a separate stretch of code that begins with `__cxa_begin_catch`, calls `e.what()` and then `printf`, and ends with `__cxa_end_catch`. The main flow never `jmp`s there, and the runtime jumps in while unwinding the stack. The navigation data for unwinding lives in `.eh_frame` and `.gcc_except_table`, not in the code. You can look at it with:
 
 ```
 readelf -S modern | grep -E 'eh_frame|except'

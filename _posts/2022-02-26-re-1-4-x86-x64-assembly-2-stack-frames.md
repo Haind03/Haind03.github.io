@@ -20,7 +20,7 @@ When the CPU runs `call 0x401500`, it first pushes the address of the instructio
 
 When the function finishes and hits `ret`, it pops the return address off the stack and jumps there.
 
-That's why the stack is so tied to function calls. Remember from lesson 1.2: the stack grows down, so `push` decreases rsp and `pop` increases rsp.
+That's why the stack is so tied to function calls. Remember from lesson 1.2 that the stack grows down, so `push` decreases rsp and `pop` increases rsp.
 
 ## Prologue and epilogue
 
@@ -42,7 +42,7 @@ The block of stack a function uses (locals, the saved base pointer, the return a
 
 ## Calling convention
 
-A calling convention answers three questions: where parameters get passed (registers or stack), where the return value goes, and who cleans the parameters off the stack after the call (the caller or the callee).
+A calling convention answers three questions, namely where parameters get passed (registers or stack), where the return value goes, and who cleans the parameters off the stack after the call (the caller or the callee).
 
 The rules differ by architecture (32 or 64 bit) and by OS. You don't need to memorize all of them. Be solid on the two most used today, Win64 and System V, and know the old 32-bit ones in outline so old code doesn't confuse you.
 
@@ -50,7 +50,7 @@ The rules differ by architecture (32 or 64 bit) and by OS. You don't need to mem
 
 On 64-bit, parameters go in registers first and only spill to the stack when registers run out. There are two sets of rules.
 
-Microsoft x64 (Win64), used on Windows, passes the first 4 integer/pointer parameters in `rcx`, `rdx`, `r8`, `r9` (in this order). The 5th parameter onward is pushed on the stack, and the return value is in `rax`. There's also shadow space: the caller must reserve 32 bytes (0x20) on the stack right above the return address, even if the function has fewer than 4 parameters. The called function can use it to spill the 4 parameter registers. Seeing `sub rsp, 0x28` or a 0x20 plus something before a series of `call`s is a sign of shadow space. At first it confuses beginners ("why reserve space and not use it"), but once you know the name the question goes away.
+Microsoft x64 (Win64), used on Windows, passes the first 4 integer/pointer parameters in `rcx`, `rdx`, `r8`, `r9` (in this order). The 5th parameter onward is pushed on the stack, and the return value is in `rax`. There's also shadow space, which means the caller must reserve 32 bytes (0x20) on the stack right above the return address, even if the function has fewer than 4 parameters. The called function can use it to spill the 4 parameter registers. Seeing `sub rsp, 0x28` or a 0x20 plus something before a series of `call`s is a sign of shadow space. At first it confuses beginners ("why reserve space and not use it"), but once you know the name the question goes away.
 
 System V AMD64, used on Linux and macOS, passes the first 6 integer/pointer parameters in `rdi`, `rsi`, `rdx`, `rcx`, `r8`, `r9`. The 7th parameter onward goes on the stack, and the return value is in `rax`. There's no shadow space, but there's a 128-byte "red zone" right below rsp that leaf functions can use freely.
 
@@ -86,11 +86,11 @@ A quick way to tell them apart in 32-bit code is to look after the `call`. An `a
 
 ## Reading the stack frame in IDA
 
-IDA does the heavy part for you: it analyzes the frame and gives the slots names. There are two kinds. `var_4`, `var_8`, `var_C`... are local variables, at negative offsets from rbp (`[rbp-4]`, `[rbp-8]`), and the number after `var_` is the offset, e.g. `var_4` is `[rbp-4]`. `arg_0`, `arg_4`, `arg_8`... are parameters passed on the stack (the spill, or on 32-bit), at positive offsets from rbp.
+IDA does the heavy part for you. It analyzes the frame and gives the slots names. There are two kinds. `var_4`, `var_8`, `var_C`... are local variables, at negative offsets from rbp (`[rbp-4]`, `[rbp-8]`), and the number after `var_` is the offset, e.g. `var_4` is `[rbp-4]`. `arg_0`, `arg_4`, `arg_8`... are parameters passed on the stack (the spill, or on 32-bit), at positive offsets from rbp.
 
 When you double-click `var_8` in IDA and rename it to `password_len`, every use of that slot changes with it. That's how you turn a function full of `var_x` into code you can read. When you figure out what a variable is, name it right away.
 
-One easy mistake: in a 64-bit function, parameters arrive through registers (rcx, rdx...) and not the stack, so at the top of the function the compiler usually copies them into stack variables. You'll see things like `mov [rbp-18h], rcx` right after the prologue, which stores parameter 1 in a local slot. Knowing this pattern helps you trace which register the original parameter was in.
+One easy mistake concerns 64-bit functions. Parameters arrive through registers (rcx, rdx...) and not the stack, so at the top of the function the compiler usually copies them into stack variables. You'll see things like `mov [rbp-18h], rcx` right after the prologue, which stores parameter 1 in a local slot. Knowing this pattern helps you trace which register the original parameter was in.
 
 ## Reading a function with parameters
 
@@ -117,7 +117,7 @@ int sum3(int a, int b, int c) {   // a=rcx, b=rdx, c=r8 (Win64)
 }
 ```
 
-That's two things done: you recognized three parameters from rcx/rdx/r8 (so it's Win64), and followed them being added into eax to return. Reading functions is mostly this.
+That's two things done, since you recognized three parameters from rcx/rdx/r8 (so it's Win64), and followed them being added into eax to return. Reading functions is mostly this.
 
 ## Lab
 
@@ -211,11 +211,11 @@ call printf
 
 Parameters go in through rcx/rdx and so on, the result comes out through rax, and rax then becomes a parameter of the next call. Once you can read that flow, you can read how functions connect to each other.
 
-To sum up: parameter 1 is in rcx on Win64 and rdi on System V, so check which system you're on before reading. Win64 has only 4 parameter registers and spills parameter 5 onward to the stack, while System V has 6. The register name (ecx vs rcx) shows the size of the data type. The 0x20 shadow space is Win64 only and isn't a local variable. The return value is always in rax/eax.
+To sum up, parameter 1 is in rcx on Win64 and rdi on System V, so check which system you're on before reading. Win64 has only 4 parameter registers and spills parameter 5 onward to the stack, while System V has 6. The register name (ecx vs rcx) shows the size of the data type. The 0x20 shadow space is Win64 only and isn't a local variable. The return value is always in rax/eax.
 
 </details>
 
 ## Key takeaways
 `call` pushes the return address on the stack then jumps, and `ret` pops it and goes back. The prologue `push rbp; mov rbp, rsp` marks the start of a function and `leave; ret` marks the end. On Win64, parameters 1-4 are in `rcx, rdx, r8, r9` with 32 bytes of shadow space and the return in `rax`. On System V (Linux/macOS), parameters 1-6 are in `rdi, rsi, rdx, rcx, r8, r9` and the return is in `rax`.
 
-On 32-bit, parameters go on the stack: `add esp, N` after a call means cdecl (caller cleans) and `ret N` means stdcall (callee cleans). In IDA, `var_x` is a local (`[rbp-x]`) and `arg_x` is a parameter passed on the stack, so rename as soon as you understand it.
+On 32-bit, parameters go on the stack, so `add esp, N` after a call means cdecl (caller cleans) and `ret N` means stdcall (callee cleans). In IDA, `var_x` is a local (`[rbp-x]`) and `arg_x` is a parameter passed on the stack, so rename as soon as you understand it.

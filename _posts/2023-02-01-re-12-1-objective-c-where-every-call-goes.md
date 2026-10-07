@@ -8,11 +8,11 @@ categories: ["Technique Reverse", "Part 12 · Swift and Objective-C"]
 tags: [reverse-engineering, ios, swift]
 render_with_liquid: false
 ---
-Open a macOS or iOS app written in Objective-C in IDA for the first time and it looks strange: there are almost no direct function calls. Instead there's `call objc_msgSend` repeated thousands of times. If you don't know what's going on, you'd think the whole program calls a single function. This lesson explains the mechanism and why it actually helps the reverser.
+Open a macOS or iOS app written in Objective-C in IDA for the first time and it looks strange because there are almost no direct function calls. Instead there's `call objc_msgSend` repeated thousands of times. If you don't know what's going on, you'd think the whole program calls a single function. This lesson explains the mechanism and why it actually helps the reverser.
 
 ## Objective-C sends messages
 
-In C or C++, calling a function is a `call` straight to its address. Objective-C works differently: every method call is translated into a message sent through a single function called `objc_msgSend`.
+In C or C++, calling a function is a `call` straight to its address. Objective-C works differently, because every method call is translated into a message sent through a single function called `objc_msgSend`.
 
 A familiar line of Objective-C:
 
@@ -60,23 +60,23 @@ So names like `checkPassword:`, `AccountManager`, `validateLicense` are still si
 
 ## class-dump: getting the whole interface back
 
-Since the metadata is intact, there's a tool that rebuilds the header files almost completely: `class-dump` (and `class-dump-swift` for Swift support). Run it on an ObjC Mach-O:
+Since the metadata is intact, there's a tool that rebuilds the header files almost completely, `class-dump` (and `class-dump-swift` for Swift support). Run it on an ObjC Mach-O:
 
 ```
 class-dump /path/to/MyApp.app/Contents/MacOS/MyApp
 ```
 
-The result is full `@interface` declarations: every class, its list of methods, properties and instance variables. It's like having the program's `.h` files back. From there you know which classes matter (for example `LicenseManager`) and which methods are the targets (`-isValidLicense:`), and only then open IDA/Ghidra to read the bodies.
+The result is full `@interface` declarations, covering every class, its list of methods, properties and instance variables. It's like having the program's `.h` files back. From there you know which classes matter (for example `LicenseManager`) and which methods are the targets (`-isValidLicense:`), and only then open IDA/Ghidra to read the bodies.
 
 ## The practical workflow
 
-First identify the file: a Mach-O with `__objc_*` sections that imports `objc_msgSend` is an Objective-C app. Run `class-dump` to get the interface and read it to narrow down the classes and methods of interest. Then open IDA/Ghidra and jump to the target method (IDA names methods like `-[AccountManager checkPassword:]`).
+First identify the file, because a Mach-O with `__objc_*` sections that imports `objc_msgSend` is an Objective-C app. Run `class-dump` to get the interface and read it to narrow down the classes and methods of interest. Then open IDA/Ghidra and jump to the target method (IDA names methods like `-[AccountManager checkPassword:]`).
 
 Read the method body, and at each `objc_msgSend` look at the selector in `rsi`/`x1` to see what it calls. Follow the chain of messages to understand the logic, and rename variables as you go, like the habit from [Lesson 0.4](/posts/re-0-4-reverse-engineering-workflow-not-get-lost/).
 
 ## A few pitfalls
 
-`objc_msgSend` has relatives: `objc_msgSendSuper` (calls up to the superclass), `objc_msgSend_stret` (method returns a struct), and `objc_msgSend_fpret` (returns a float). When you meet a variant, you read the selector the same way. A selector is just a name, not an address, so two different classes can have the same `init` selector and you have to look at the receiver too to know which method actually runs.
+`objc_msgSend` has relatives, `objc_msgSendSuper` (calls up to the superclass), `objc_msgSend_stret` (method returns a struct), and `objc_msgSend_fpret` (returns a float). When you meet a variant, you read the selector the same way. A selector is just a name, not an address, so two different classes can have the same `init` selector and you have to look at the receiver too to know which method actually runs.
 
 An app can also call methods through dynamic strings (`NSSelectorFromString`), in which case the selector doesn't show up statically and you have to watch it at runtime. Obfuscated code may rename selectors to nonsense, but in most ordinary commercial apps the names are still very clear.
 
@@ -88,7 +88,7 @@ The task is to practice extracting the interface with class-dump and reading met
 clang -framework Foundation -o accountdemo accountdemo.m
 ```
 
-First confirm that the file is a Mach-O and is Objective-C: use `file`, then `otool -l` to find the sections `__objc_classlist` and `__objc_methname`, which ties back to Lesson 1.8. Run `class-dump <binary>` and read the output, listing the classes and methods and picking out which class looks related to the main logic (for example one with "verify", "license" or "password" in a name). Then open the binary in Ghidra or IDA, find the import `objc_msgSend`, and see how many places call it. Choose a target method from the class-dump output and jump to its body. For each `objc_msgSend`, read the selector at `rsi` (x64) or `x1` (ARM64) and rewrite the original line of code in the form `[receiver selector:arg]`. Follow the chain of messages to understand what the method does.
+First confirm that the file is a Mach-O and is Objective-C, using `file`, then `otool -l` to find the sections `__objc_classlist` and `__objc_methname`, which ties back to Lesson 1.8. Run `class-dump <binary>` and read the output, listing the classes and methods and picking out which class looks related to the main logic (for example one with "verify", "license" or "password" in a name). Then open the binary in Ghidra or IDA, find the import `objc_msgSend`, and see how many places call it. Choose a target method from the class-dump output and jump to its body. For each `objc_msgSend`, read the selector at `rsi` (x64) or `x1` (ARM64) and rewrite the original line of code in the form `[receiver selector:arg]`. Follow the chain of messages to understand what the method does.
 
 Two questions to think about. Why is reversing Objective-C usually easier than C++ even though both are native code? And if the app calls a method through `NSSelectorFromString(someString)`, does the static reading above still work, and what would you have to do differently? Do it yourself before opening the solution.
 
@@ -131,7 +131,7 @@ The class `AccountManager` with a `checkPassword:` method returning `BOOL` is an
 
 ### Task 3: finding objc_msgSend
 
-In Ghidra: Symbol Tree > Imports > `_objc_msgSend`, right-click > Show References. In IDA: jump to `objc_msgSend` and look at the xrefs. A medium-sized app has hundreds to thousands of calls, which is normal because every method call goes through here.
+In Ghidra, go to Symbol Tree > Imports > `_objc_msgSend`, right-click > Show References. In IDA, jump to `objc_msgSend` and look at the xrefs. A medium-sized app has hundreds to thousands of calls, which is normal because every method call goes through here.
 
 ### Task 4: reading selectors
 
@@ -166,7 +166,7 @@ The chain of messages shows that the method takes the length of the input, may h
 
 ### Answers to the questions
 
-It's easier than C++ because the ObjC runtime forces the compiler to keep class names, method names and selectors in the binary for dispatch at run time. C++ mangles the names and resolves most things at compile time, so it has no need to keep them. As for dynamic selectors, no: if the selector is built from a dynamic string through `NSSelectorFromString`, the name does not appear next to the static call. You have to run it dynamically (a debugger, or a Frida hook on `objc_msgSend`) to catch the actual selector at run time.
+It's easier than C++ because the ObjC runtime forces the compiler to keep class names, method names and selectors in the binary for dispatch at run time. C++ mangles the names and resolves most things at compile time, so it has no need to keep them. As for dynamic selectors, no, because if the selector is built from a dynamic string through `NSSelectorFromString`, the name does not appear next to the static call. You have to run it dynamically (a debugger, or a Frida hook on `objc_msgSend`) to catch the actual selector at run time.
 
 </details>
 

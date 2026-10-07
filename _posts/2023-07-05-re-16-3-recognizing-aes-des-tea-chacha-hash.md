@@ -36,11 +36,11 @@ xor  eax, ecx
 add  ebx, eax             ; v0 += ...
 ```
 
-The pattern "shl 4, shr 5, add key, XOR, add into the other half" repeating symmetrically for v0 and v1, together with delta, is hard to confuse with anything else. Decrypting TEA is easy because it's symmetric: run the 32 rounds backwards, subtracting delta instead of adding.
+The pattern "shl 4, shr 5, add key, XOR, add into the other half" repeating symmetrically for v0 and v1, together with delta, is hard to confuse with anything else. Decrypting TEA is easy because it's symmetric, so you run the 32 rounds backwards, subtracting delta instead of adding.
 
 ## AES: look at the S-box
 
-AES (Rijndael) is the most widely used symmetric encryption algorithm, so you'll meet it constantly. The strongest sign is a 256-byte S-box starting with `63 7C 77 7B F2 6B 6F C5 30 01 67 2B...`. This is the byte substitution table, and if you see exactly this sequence it's AES. The Rcon (round constant) for the key schedule is another tell: `01 02 04 08 10 20 40 80 1B 36...`.
+AES (Rijndael) is the most widely used symmetric encryption algorithm, so you'll meet it constantly. The strongest sign is a 256-byte S-box starting with `63 7C 77 7B F2 6B 6F C5 30 01 67 2B...`. This is the byte substitution table, and if you see exactly this sequence it's AES. The Rcon (round constant) for the key schedule is another tell, `01 02 04 08 10 20 40 80 1B 36...`.
 
 The number of rounds is 10, 12 or 14 for 128, 192, 256-bit keys. MixColumns uses multiplication in a Galois field, so you often see multiplication by 2 and 3 with a conditional XOR of `0x1B`.
 
@@ -52,9 +52,9 @@ DES is old but still turns up in legacy systems. The signs are lots of permutati
 
 ## ChaCha and Salsa20: the constant string
 
-These are modern stream ciphers, increasingly common (TLS, WireGuard, lots of newer malware). The easiest tell is an ASCII string sitting in the binary: "expand 32-byte k" (ChaCha20/Salsa20 with a 256-bit key) or "expand 16-byte k".
+These are modern stream ciphers, increasingly common (TLS, WireGuard, lots of newer malware). The easiest tell is an ASCII string sitting in the binary, "expand 32-byte k" (ChaCha20/Salsa20 with a 256-bit key) or "expand 16-byte k".
 
-If you see this string in strings, it's almost certainly ChaCha/Salsa. The internal structure is the quarter-round: four additions, XORs, and bit rotations with characteristic rotation constants (ChaCha uses 16, 12, 8, 7). No S-box, just add-rotate-XOR all the way (called ARX).
+If you see this string in strings, it's almost certainly ChaCha/Salsa. The internal structure is the quarter-round, with four additions, XORs, and bit rotations with characteristic rotation constants (ChaCha uses 16, 12, 8, 7). No S-box, just add-rotate-XOR all the way (called ARX).
 
 ## Hash functions: MD5, SHA, CRC
 
@@ -76,7 +76,7 @@ CRC32 uses a 256-entry table generated from the polynomial `0xEDB88320` (reverse
 
 ## Once you know the name, don't reimplement it
 
-A common beginner mistake: recognize AES and then sit down translating every round by hand into Python. No need. Once you know the algorithm, the key, and the mode (ECB/CBC/CTR), you call a standard library and you're done in a few lines:
+A common beginner mistake is to recognize AES and then sit down translating every round by hand into Python. No need. Once you know the algorithm, the key, and the mode (ECB/CBC/CTR), you call a standard library and you're done in a few lines:
 
 ```python
 from Crypto.Cipher import AES
@@ -84,7 +84,7 @@ cipher = AES.new(key, AES.MODE_CBC, iv)
 plaintext = cipher.decrypt(ciphertext)
 ```
 
-From the reversing you need three things: which algorithm, where the key is, which mode (and the IV if there is one). Let the library do the computation. TEA is tiny and not in the standard library, so rewriting it by hand is only about ten lines (see the lab).
+From the reversing you need three things, which are the algorithm, where the key is, and the mode (and the IV if there is one). Let the library do the computation. TEA is tiny and not in the standard library, so rewriting it by hand is only about ten lines (see the lab).
 
 ## Lab
 
@@ -130,7 +130,7 @@ The constant `0x9E3779B9` plus 32 rounds plus the symmetric `<<4` and `>>5` patt
 
 From the binary, the key is `KEY = {0x11223344, 0x55667788, 0x9ABCDEF0, 0x0F1E2D3C}`, the expected ciphertext (checked as `blk[0]==EXPECTED[0] && blk[1]==EXPECTED[1]`) is `(0xBBAAD475, 0x2E138704)`, and the password is 8 characters long (one TEA block is 2 dwords, 8 bytes).
 
-TEA is symmetric, so decrypting means running the 32 rounds backward: start with `sum = delta*32`, and on each round subtract the mixing term and then subtract the delta. See `solve_tea.py` for the full script.
+TEA is symmetric, so decrypting means running the 32 rounds backward, starting with `sum = delta*32`, and on each round subtract the mixing term and then subtract the delta. See `solve_tea.py` for the full script.
 
 ```
 $ python3 solve_tea.py
@@ -154,11 +154,11 @@ The password `TEA_Rev!` doesn't show up in `strings` because the binary only sto
 
 If this had been AES, you would have recognized it through the opening S-box bytes `63 7C 77 7B` or four 1KB T-tables, a round count of 10, 12 or 14, and no delta constant. findcrypt would catch the S-box right away.
 
-As for why you shouldn't hand-translate AES or DES into Python: they're complex, easy to get wrong, and `pycryptodome` already has correct, ready-made implementations. You only need to reverse out the algorithm, the key and the mode, then call the library. TEA, by contrast, is tiny (a dozen lines) and isn't part of any standard library, so writing it by hand is faster than looking for a library that has it.
+As for why you shouldn't hand-translate AES or DES into Python, because they're complex, easy to get wrong, and `pycryptodome` already has correct, ready-made implementations. You only need to reverse out the algorithm, the key and the mode, then call the library. TEA, by contrast, is tiny (a dozen lines) and isn't part of any standard library, so writing it by hand is faster than looking for a library that has it.
 
 </details>
 
 ## Key takeaways
 TEA/XTEA is recognized by the delta `0x9E3779B9`, 32 rounds, and shl 4 / shr 5, and it's easy to decrypt because it's symmetric. AES shows an S-box starting `63 7C 77 7B` (or 4 T-tables) and 10/12/14 rounds. ChaCha/Salsa has the string "expand 32-byte k" and is all add-rotate-XOR. DES has 8 small S-boxes, many permutation tables, and 16 Feistel rounds.
 
-Hashes are recognized by init values and K tables, and CRC32 is a checksum with poly `0xEDB88320`. Once you've identified the algorithm, use a standard library to decrypt: you only need the right algorithm, key, and mode.
+Hashes are recognized by init values and K tables, and CRC32 is a checksum with poly `0xEDB88320`. Once you've identified the algorithm, use a standard library to decrypt, since you only need the right algorithm, key, and mode.

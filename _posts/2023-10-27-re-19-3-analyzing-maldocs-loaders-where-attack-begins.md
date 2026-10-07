@@ -8,7 +8,7 @@ categories: ["Technique Reverse", "Part 19 · Malware Analysis Basics"]
 tags: [reverse-engineering, malware]
 render_with_liquid: false
 ---
-Most infections don't start with an `.exe` thrown at the victim. They start with something that looks harmless: a Word file attached to an email, a PDF invoice, a `.lnk` shortcut pretending to be a folder. These aren't the real malware, they're loaders, and their only job is to pull down the next-stage payload and run it. If you can reverse this step you stop the attack at the start, so the blue team does this every day.
+Most infections don't start with an `.exe` thrown at the victim. They start with something that looks harmless, such as a Word file attached to an email, a PDF invoice, a `.lnk` shortcut pretending to be a folder. These aren't the real malware, they're loaders, and their only job is to pull down the next-stage payload and run it. If you can reverse this step you stop the attack at the start, so the blue team does this every day.
 
 The whole lesson is from the defensive side. We analyze to understand and detect, every example is benign and runs in an isolated lab (see [Lesson 0.3](/posts/re-0-3-set-up-safe-lab-before-touching/)).
 
@@ -16,7 +16,7 @@ The whole lesson is from the defensive side. We analyze to understand and detect
 
 Before taking it apart, know what you're holding. Use `file`, read the magic, look at the real extension. The four types are Office macros in `.doc/.docm/.xls/.xlsm` (embedded VBA that runs automatically on open), malicious PDFs (embedded JavaScript or a launch action calling an external command), malicious LNKs (a shortcut hiding a long command line in the arguments field), and script loaders (PowerShell, JS, HTA, VBS, usually obfuscated in many layers).
 
-All four follow the same pattern: a lure (the file the user opens) that triggers a chain of hidden commands, and that chain downloads the real payload. Your job is to unpack it layer by layer until you see the URL or the next-stage payload.
+All four follow the same pattern, which is a lure (the file the user opens) that triggers a chain of hidden commands, and that chain downloads the real payload. Your job is to unpack it layer by layer until you see the URL or the next-stage payload.
 
 ## Office macros
 
@@ -28,9 +28,9 @@ oleid sample.doc         # summary of suspicious indicators
 mraptor sample.doc       # score how likely it is malicious (auto-exec + write + execute)
 ```
 
-When reading a macro, look for three things. The first is auto-exec triggers: `AutoOpen`, `Document_Open`, `Workbook_Open`, `AutoClose`. These functions run when the file opens, without the user clicking anything, and olevba flags them. The second is obfuscated strings. Authors often concatenate strings (`"po" & "wer" & "shell"`), use `Chr()` for each character, or base64, and olevba has a flag to extract these strings. The third is external execution: `Shell`, `CreateObject("WScript.Shell").Run`, `WMI`, usually ending in a `powershell` call that downloads a payload.
+When reading a macro, look for three things. The first is auto-exec triggers, such as `AutoOpen`, `Document_Open`, `Workbook_Open`, `AutoClose`. These functions run when the file opens, without the user clicking anything, and olevba flags them. The second is obfuscated strings. Authors often concatenate strings (`"po" & "wer" & "shell"`), use `Chr()` for each character, or base64, and olevba has a flag to extract these strings. The third is external execution, such as `Shell`, `CreateObject("WScript.Shell").Run`, `WMI`, usually ending in a `powershell` call that downloads a payload.
 
-olevba can also decode some common encodings in its output. Custom obfuscation you have to undo yourself: copy the VBA out, replace `Shell`/`Run` with a print command (or translate it to Python) to get the final string without executing it.
+olevba can also decode some common encodings in its output. Custom obfuscation you have to undo yourself. Copy the VBA out, replace `Shell`/`Run` with a print command (or translate it to Python) to get the final string without executing it.
 
 ## Malicious PDF
 
@@ -62,7 +62,7 @@ Look at `arguments`. If you see `powershell -enc ...` or `cmd /c ... & start ...
 
 Whether it came through a macro, PDF or LNK, the end is almost always a script hidden in many layers. The most common pattern is PowerShell with `-EncodedCommand` (or `-enc`), where the parameter after it is a base64 UTF-16LE string.
 
-Unpack it layer by layer: decode each layer and read it, and never execute. Common layers are base64 (PowerShell's encoded command uses UTF-16LE, different from plain base64), gzip/deflate compression inside base64, XOR with a small key, and tricks like `-join`, `Reverse`, character replace and format strings.
+Unpack it layer by layer. Decode each layer and read it, and never execute. Common layers are base64 (PowerShell's encoded command uses UTF-16LE, different from plain base64), gzip/deflate compression inside base64, XOR with a small key, and tricks like `-join`, `Reverse`, character replace and format strings.
 
 `IEX` (Invoke-Expression), `DownloadString`, `DownloadFile`, `New-Object Net.WebClient` and `Start-BitsTransfer` mean you're close to the payload URL. Replace `IEX` with `Write-Output` (or copy it to Python) to print the next layer instead of running it.
 
@@ -99,11 +99,11 @@ At the end of the chain you want the payload download URL and how it runs the pa
 
 ## Lab
 
-The goal of this lab is to practice stripping away a loader's obfuscation without ever executing it. Every sample here is harmless (it only prints text), but the point is to build the habit: decode and read, never run. You need Python 3, and optionally `pip install oletools` if you want to try `olevba` on a macro. If you later move on to a real sample, do it in an isolated lab as covered in Lesson 0.3.
+The goal of this lab is to practice stripping away a loader's obfuscation without ever executing it. Every sample here is harmless (it only prints text), but the point is to build the habit, which is to decode and read and never run. You need Python 3, and optionally `pip install oletools` if you want to try `olevba` on a macro. If you later move on to a real sample, do it in an isolated lab as covered in Lesson 0.3.
 
 There are four files. `stage1_encoded.txt` holds a string shaped like a `powershell -EncodedCommand` argument (base64 over UTF-16LE). `stage2_gzip_b64.txt` holds a base64-wrapped gzip pattern, the kind a multi-stage loader uses. `benign_macro.vba` is a harmless macro that mimics the structure of a real maldoc (an AutoOpen trigger, a string split into pieces). `decode_layers.py` is a reference script that decodes both encoded strings (it only prints, it never executes anything).
 
-Start with `stage1_encoded.txt`. It's the argument that would follow `-enc`. Decode it by hand: base64 decode it, then decode the result as UTF-16LE. What's the real command? Then work out why you decode as UTF-16LE and not UTF-8, and try decoding as UTF-8 to see what goes wrong.
+Start with `stage1_encoded.txt`. It's the argument that would follow `-enc`. Decode it by hand. Base64 decode it, then decode the result as UTF-16LE. What's the real command? Then work out why you decode as UTF-16LE and not UTF-8, and try decoding as UTF-8 to see what goes wrong.
 
 Next open `stage2_gzip_b64.txt` and recognize the gzip magic (`1f 8b`) once you base64 decode it, then finish decoding with gzip to get the command. Read `benign_macro.vba` and point out which part is the auto-exec trigger, which part is the string split apart to hide it, and where in a real maldoc the payload-downloading command would sit. If you have oletools installed, put this macro into an Office file (or use a known-safe sample) and run `olevba` to see how it flags AutoOpen. Finally check your work against the reference script by running `decode_layers.py`.
 
@@ -138,7 +138,7 @@ Write-Host 'Hello from a benign decoded payload'
 
 The real command just prints a line of text. In a real maldoc, this spot would hold a call to `DownloadString` or `DownloadFile`.
 
-On why UTF-16LE: PowerShell's `-EncodedCommand` specifies that the string is UTF-16LE before it gets base64 encoded. If you decode it as UTF-8 instead, every ASCII character is interleaved with a `00` byte, so you get a string with scattered spaces like `W r i t e - H o s t`. Letters separated by null bytes like that mean you need to switch to UTF-16LE.
+On why UTF-16LE, PowerShell's `-EncodedCommand` specifies that the string is UTF-16LE before it gets base64 encoded. If you decode it as UTF-8 instead, every ASCII character is interleaved with a `00` byte, so you get a string with scattered spaces like `W r i t e - H o s t`. Letters separated by null bytes like that mean you need to switch to UTF-16LE.
 
 For the second stage, base64 decoding `stage2_gzip_b64.txt` gives a result whose first two bytes are `1f 8b`, the gzip magic. Finishing the decode:
 
@@ -170,7 +170,7 @@ $ python3 decode_layers.py
 Both are harmless commands that only print text.
 ```
 
-On the questions: you would replace `IEX` (or `Invoke-Expression`, or `.Invoke()`) with `Write-Output` (or copy the string over to Python and `print` it). That way the next stage gets printed instead of executed, and you can read the URL or payload without getting infected. Loaders nest several layers because each layer gets past one layer of detection (an antivirus scanning strings, an EDR scanning commands), and it costs an analyst more effort to unpack. For us it's the same decode step repeated until the layers run out.
+On the questions, you would replace `IEX` (or `Invoke-Expression`, or `.Invoke()`) with `Write-Output` (or copy the string over to Python and `print` it). That way the next stage gets printed instead of executed, and you can read the URL or payload without getting infected. Loaders nest several layers because each layer gets past one layer of detection (an antivirus scanning strings, an EDR scanning commands), and it costs an analyst more effort to unpack. For us it's the same decode step repeated until the layers run out.
 
 </details>
 

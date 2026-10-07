@@ -8,9 +8,9 @@ categories: ["Technique Reverse", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
 render_with_liquid: false
 ---
-Some problems don't live in a binary but in data: a save game file nobody has documented, a homemade network protocol between client and server, a binary config format. No spec, no documentation. Your job is to look at data samples and rebuild the spec, accurately enough to read the data yourself and produce valid data yourself.
+Some problems don't live in a binary but in data, such as a save game file nobody has documented, a homemade network protocol between client and server, a binary config format. No spec, no documentation. Your job is to look at data samples and rebuild the spec, accurately enough to read the data yourself and produce valid data yourself.
 
-There are two sources of information, and I use both: the data itself (comparing many samples), and the code that handles the data (following the parse function in the binary). The data gives quick hypotheses, and the code confirms them.
+There are two sources of information, and I use both, the data itself (comparing many samples), and the code that handles the data (following the parse function in the binary). The data gives quick hypotheses, and the code confirms them.
 
 ## Differential analysis: change one thing, see which byte changes
 
@@ -25,9 +25,9 @@ rich:  5341 5645 0200 0300 0700 0000 3f42 0f00  SAVE............
                       offset 6       offset 12
 ```
 
-Two places differ: offset 6 (`0100` becomes `0300`) and offset 12 (`dc05 0000` becomes `3f42 0f00`). Gold 1500 = `0x05DC`, read little-endian it's `dc 05`, matching offset 12. Gold 999999 = `0x000F423F`, little-endian `3f 42 0f 00`, also matching. So offset 12 is the gold field as a little-endian u32. Offset 6 is a flag (alice didn't cheat, rich did). Two fields found without reading a line of code.
+Two places differ, offset 6 (`0100` becomes `0300`) and offset 12 (`dc05 0000` becomes `3f42 0f00`). Gold 1500 = `0x05DC`, read little-endian it's `dc 05`, matching offset 12. Gold 999999 = `0x000F423F`, little-endian `3f 42 0f 00`, also matching. So offset 12 is the gold field as a little-endian u32. Offset 6 is a flag (alice didn't cheat, rich did). Two fields found without reading a line of code.
 
-Do the same with `save_alice.sav` and `save_bob.sav` (differing only in name): the changed bytes start at offset 18, and right before that there's a value giving the name length. That's how you find a length-prefix + string pair.
+Do the same with `save_alice.sav` and `save_bob.sav` (differing only in name), and the changed bytes start at offset 18, and right before that there's a value giving the name length. That's how you find a length-prefix + string pair.
 
 ## Finding the magic and anchoring the structure
 
@@ -49,7 +49,7 @@ Writing a small parser in Python with `struct.unpack` is the surest way to confi
 
 ## Confirming with code: following the parse function
 
-Comparing data gives hypotheses, but some ambiguities only code can answer: is this field signed or unsigned, is this number a length or an ID, which algorithm is the checksum computed with. Then open the binary that handles the file in IDA/Ghidra. Set a breakpoint at `CreateFile`/`fopen`/`ReadFile`/`fread` (see [Lesson 1.13](/posts/re-1-13-recognizing-windows-apis-when-reversing-reading/)) to catch the moment it reads the file, then follow the buffer. Find where the magic is compared (a `cmp` with a constant that looks like "SAVE" with its bytes reversed), which is the start of the parse function.
+Comparing data gives hypotheses, but some ambiguities only code can answer, such as whether this field is signed or unsigned, is this number a length or an ID, which algorithm is the checksum computed with. Then open the binary that handles the file in IDA/Ghidra. Set a breakpoint at `CreateFile`/`fopen`/`ReadFile`/`fread` (see [Lesson 1.13](/posts/re-1-13-recognizing-windows-apis-when-reversing-reading/)) to catch the moment it reads the file, then follow the buffer. Find where the magic is compared (a `cmp` with a constant that looks like "SAVE" with its bytes reversed), which is the start of the parse function.
 
 Reading on, you'll see it add offsets, read u16/u32, multiply lengths, and loop over records. Each read confirms a field in your spec. The checksum function reveals the real algorithm (a simple sum, or CRC with a 256-entry table, see [Lesson 16.1](/posts/re-16-1-identifying-crypto-algorithms-by-their-constants/)).
 
@@ -57,9 +57,9 @@ Reading on, you'll see it add offsets, read u16/u32, multiply lengths, and loop 
 
 A network protocol is just a data format moving over time. The difference is you capture it with Wireshark instead of opening a file. Capture the traffic between client and server and view each packet in hex. Then apply the same three patterns. Each message usually has a header (magic/version), a length field (the total length of the rest, extremely common so you know how far to read), then the payload. Find the length field by comparing the real packet length with the number in the header.
 
-Use differential analysis here too: do the same action in the app twice and compare the two packets. The differing parts are dynamic data (timestamp, session id, nonce) and the identical parts are the fixed frame.
+Use differential analysis here too by doing the same action in the app twice and compare the two packets. The differing parts are dynamic data (timestamp, session id, nonce) and the identical parts are the fixed frame.
 
-If the payload looks like junk (high entropy), it's encrypted. Then follow the code in the binary: set breakpoints at `send`/`WSASend` and `recv`, and going back up you'll see the encryption function running right before `send` (and decryption right after `recv`). Hook the right spot before encryption (or after decryption) with Frida ([Lesson 17.2](/posts/re-17-2-frida-full-inspecting-modifying-program-while/)) and you see the payload in the clear, with no need to break the algorithm.
+If the payload looks like junk (high entropy), it's encrypted. Then follow the code in the binary by setting breakpoints at `send`/`WSASend` and `recv`, and going back up you'll see the encryption function running right before `send` (and decryption right after `recv`). Hook the right spot before encryption (or after decryption) with Frida ([Lesson 17.2](/posts/re-17-2-frida-full-inspecting-modifying-program-while/)) and you see the payload in the clear, with no need to break the algorithm.
 
 The same technique is used for extracting configs and understanding malware C2 protocols, and comes back in [Lesson 19.4](/posts/re-19-4-extracting-config-c2-pulling-out-brain/).
 
@@ -73,11 +73,11 @@ python3 -I make_savefile.py
 
 Treat `make_savefile.py` as a black box until you're done. The three samples are made to differ in just one detail each so that you can use differential analysis.
 
-Hexdump all three files (`xxd save_alice.sav` and so on) and find the common magic number at the start. Compare `save_alice.sav` with `save_rich.sav`, which differ in the amount of gold and one flag. Which bytes change? Work out the offset and type of the gold field and the flags field, remembering little-endian. Then compare `save_alice.sav` with `save_bob.sav`, which differ only in the name. Find the length-prefix plus string pair: where the length value sits and what offset the name starts at. After the name there is a repeated list of items, so find the field that counts the items and the structure of each item. Next, work out what the last four bytes are (hint: change one byte in the middle of the file and see whether it plays a verification role). Finally, write your own `my_parse.py` with `struct.unpack` that prints every field, and run it on all three samples. Compare the result with `parse_savefile.py`, the reference solution. If everything matches, your spec is right.
+Hexdump all three files (`xxd save_alice.sav` and so on) and find the common magic number at the start. Compare `save_alice.sav` with `save_rich.sav`, which differ in the amount of gold and one flag. Which bytes change? Work out the offset and type of the gold field and the flags field, remembering little-endian. Then compare `save_alice.sav` with `save_bob.sav`, which differ only in the name. Find the length-prefix plus string pair, meaning where the length value sits and what offset the name starts at. After the name there is a repeated list of items, so find the field that counts the items and the structure of each item. Next, work out what the last four bytes are (the hint is to change one byte in the middle of the file and see whether it plays a verification role). Finally, write your own `my_parse.py` with `struct.unpack` that prints every field, and run it on all three samples. Compare the result with `parse_savefile.py`, the reference solution. If everything matches, your spec is right.
 
 As an extension, write an ImHex pattern (`.hexpat`) that describes this format, so the tool colors each field when you open a `.sav` file (see Lesson 2.7 again). You can also edit the gold amount in a `.sav` file with a hex editor and then recompute the checksum so the file stays valid. That step is what turns "can read" into "can create".
 
-Three questions to think about. Why is differential analysis (comparing several samples that differ in one detail) faster than guessing byte by byte? What if you have no generator to produce samples at will (hint: work inside the program that produces the file, changing one value each time)? And when are you forced to open the binary and read the parse function instead of just looking at the data?
+Three questions to think about. Why is differential analysis (comparing several samples that differ in one detail) faster than guessing byte by byte? What if you have no generator to produce samples at will (the hint is to work inside the program that produces the file, changing one value each time)? And when are you forced to open the binary and read the parse function instead of just looking at the data?
 
 <div class="lab-box">
 <div class="lab-head"><b>LAB 18.7</b>source files</div>
@@ -114,9 +114,9 @@ save_rich.sav (37 bytes):
 
 The first four bytes of every sample are `53 41 56 45`, ASCII "SAVE". That's the magic, the anchor for all the offsets that follow.
 
-For gold and flags, the differential between alice and rich shows two differences. At offset 6 it's `0100` (alice) versus `0300` (rich). That's the flags u16: alice is 0b01 (hardcore) and rich is 0b11 (hardcore plus cheats_used). At offset 12 it's `dc05 0000` versus `3f42 0f00`. In little-endian that's `0x000005DC` = 1500 for alice and `0x000F423F` = 999999 for rich, so offset 12 is the gold, a little-endian u32.
+For gold and flags, the differential between alice and rich shows two differences. At offset 6 it's `0100` (alice) versus `0300` (rich). That's the flags u16, where alice is 0b01 (hardcore) and rich is 0b11 (hardcore plus cheats_used). At offset 12 it's `dc05 0000` versus `3f42 0f00`. In little-endian that's `0x000005DC` = 1500 for alice and `0x000F423F` = 999999 for rich, so offset 12 is the gold, a little-endian u32.
 
-For the name, alice and bob differ from offset 16 onward. At offset 16 it's `0500` (alice) versus `0300` (bob), which in little-endian is 5 and 3, exactly the lengths of "alice" and "bob". That's name_len, a u16. At offset 18 the ASCII string begins: `61 6c 69 63 65` is "alice" and `62 6f 62` is "bob". The string isn't null-terminated, and its length comes from name_len. Because bob is 2 characters shorter, the bob file is exactly 2 bytes smaller (35 versus 37).
+For the name, alice and bob differ from offset 16 onward. At offset 16 it's `0500` (alice) versus `0300` (bob), which in little-endian is 5 and 3, exactly the lengths of "alice" and "bob". That's name_len, a u16. At offset 18 the ASCII string begins, and `61 6c 69 63 65` is "alice" and `62 6f 62` is "bob". The string isn't null-terminated, and its length comes from name_len. Because bob is 2 characters shorter, the bob file is exactly 2 bytes smaller (35 versus 37).
 
 Right after the name (for alice, offset 18+5 = 23) comes the item list. `0200` is n_items = 2 (u16). Item 1 is `6500 0300`, item_id 0x65 = 101 with qty 3. Item 2 is `cd00 0100`, item_id 0xCD = 205 with qty 1. Each item is `(item_id u16, qty u16)`, repeated n_items times.
 
@@ -165,11 +165,11 @@ struct Save {
 Save save @ 0x00;
 ```
 
-On the reflection questions: differential analysis is faster because it isolates each field. Instead of guessing the meaning of 37 bytes, you only look at the 2 to 4 bytes that change with exactly the detail you just altered, and every new sample pins down one more field. Without a generator, work inside the program that produces the file (play a game and save with different gold amounts, or send the same network command twice), changing one variable at a time and saving a sample each time. You have to open the binary when the data can't answer the question: whether a field is signed or unsigned, whether a number is a length or an ID, and the specific checksum or encryption algorithm. The parse function and the checksum function in the binary are the final source of truth.
+On the reflection questions, differential analysis is faster because it isolates each field. Instead of guessing the meaning of 37 bytes, you only look at the 2 to 4 bytes that change with exactly the detail you just altered, and every new sample pins down one more field. Without a generator, work inside the program that produces the file (play a game and save with different gold amounts, or send the same network command twice), changing one variable at a time and saving a sample each time. You have to open the binary when the data can't answer the question, such as whether a field is signed or unsigned, whether a number is a length or an ID, and the specific checksum or encryption algorithm. The parse function and the checksum function in the binary are the final source of truth.
 
 </details>
 
 ## Key takeaways
-Differential analysis comes first: create samples that differ in one detail, and the bytes that change are that field. Every format anchors on a magic number at the start, so find it first. There are three common patterns: fixed field, length-prefixed (a length number then data), and repeated records/TLV.
+Differential analysis comes first, which means creating samples that differ in one detail, and the bytes that change are that field. Every format anchors on a magic number at the start, so find it first. There are three common patterns, fixed field, length-prefixed (a length number then data), and repeated records/TLV.
 
-Multi-byte numbers are read little-endian (bytes reversed) and strings are read directly in the ASCII column. A checksum at the end means that to create valid data you have to recompute it correctly. Data gives hypotheses, and code (the parse function, the send/recv functions) confirms the ambiguous details. A network protocol is a format over time: use Wireshark + differential analysis, and for encrypted payloads hook around send/recv.
+Multi-byte numbers are read little-endian (bytes reversed) and strings are read directly in the ASCII column. A checksum at the end means that to create valid data you have to recompute it correctly. Data gives hypotheses, and code (the parse function, the send/recv functions) confirms the ambiguous details. A network protocol is a format over time, so use Wireshark + differential analysis, and for encrypted payloads hook around send/recv.

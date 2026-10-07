@@ -8,13 +8,13 @@ categories: ["Technique Reverse", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
 render_with_liquid: false
 ---
-Some jobs in reverse engineering repeat until they're boring: decrypting the same kind of string encryption for three hundred strings, mass-renaming functions by some rule, marking every call to an API. Doing it by hand is slow and error-prone. Write a script and let the decompiler do it.
+Some jobs in reverse engineering repeat until they're boring, such as decrypting the same kind of string encryption for three hundred strings, mass-renaming functions by some rule, marking every call to an API. Doing it by hand is slow and error-prone. Write a script and let the decompiler do it.
 
-All three big platforms have an API: IDA has IDAPython, Ghidra has Java/Python scripting, Binary Ninja has a Python API. The idea is the same, only the syntax differs. This lesson focuses on IDAPython because it's the most common, then touches on the other two.
+All three big platforms have an API. IDA has IDAPython, Ghidra has Java/Python scripting, Binary Ninja has a Python API. The idea is the same, only the syntax differs. This lesson focuses on IDAPython because it's the most common, then touches on the other two.
 
 ## When it's worth writing a script
 
-Don't script everything. My rule: if you're about to do something more than a dozen times the same way, or apply a transformation at many locations, script it. Typical cases are decrypting encrypted strings in bulk and putting a comment next to each, renaming functions by pattern (for example every function that calls `print_error` with a fixed error code), finding all the places that call a suspicious API and listing the parameters, marking crypto constants, bulk patching, and extracting data tables.
+Don't script everything. My rule is that if you're about to do something more than a dozen times the same way, or apply a transformation at many locations, you script it. Typical cases are decrypting encrypted strings in bulk and putting a comment next to each, renaming functions by pattern (for example every function that calls `print_error` with a fixed error code), finding all the places that call a suspicious API and listing the parameters, marking crypto constants, bulk patching, and extracting data tables.
 
 If you only do it once or twice, doing it by hand is faster.
 
@@ -45,7 +45,7 @@ for xref in idautils.XrefsTo(target_ea):
     print(hex(xref.frm))
 ```
 
-That's a lot of function names, but you only need to remember a few: walk, read bytes, set comment, rename, get xrefs. Look up the rest when needed.
+That's a lot of function names, but you only need to remember a few, which are walk, read bytes, set comment, rename, get xrefs. Look up the rest when needed.
 
 ## Example: bulk XOR string decryption
 
@@ -77,7 +77,7 @@ for xref in idautils.XrefsTo(decrypt_ea):
         print(hex(call_ea), dec)
 ```
 
-The specific code changes with every binary. What carries over is the pattern: find an anchor (the decrypt function, a constant, a byte pattern), walk every location, apply the transformation, write the result back as a comment or a name. After running it, open the pseudocode again and every call has its real string annotated, and you read it like source code.
+The specific code changes with every binary. What carries over is the pattern, which is to find an anchor (the decrypt function, a constant, a byte pattern), walk every location, apply the transformation, write the result back as a comment or a name. After running it, open the pseudocode again and every call has its real string annotated, and you read it like source code.
 
 ## Finding byte patterns
 
@@ -114,7 +114,7 @@ Use headless when you have a hundred malware samples and need to extract the sam
 
 ## Binary Ninja API
 
-Binary Ninja has a Python API that many people find the cleanest, and it can access the IL layers (BNIL: LLIL, MLIL, HLIL). Example:
+Binary Ninja has a Python API that many people find the cleanest, and it can access the IL layers (BNIL, which covers LLIL, MLIL, HLIL). Example:
 
 ```python
 # Binary Ninja
@@ -141,7 +141,7 @@ gcc -O0 -o strcrypt_demo strcrypt_demo.c
 
 Open `strcrypt_demo` in IDA or Ghidra and find the `decrypt` function and the arrays `enc_1`, `enc_2` and `enc_3`. Work out the XOR key and the structure of the encrypted strings, in particular which byte terminates them. Then write (or adapt from the samples) a script that decrypts every string and puts the result as a comment right next to where it's used, and reopen the pseudocode to check that the string comments appear. For a harder variant, change the key to a multi-byte one and generalize the script.
 
-One hint: every real binary differs in how it passes the pointer into the decryption function, so the part of the sample script that fetches `ptr` needs adjusting to your binary. The approach stays the same: find an anchor, walk the locations, apply the transform, write the comment. Try it yourself before opening the solution.
+One hint is that every real binary differs in how it passes the pointer into the decryption function, so the part of the sample script that fetches `ptr` needs adjusting to your binary. The approach stays the same, which is to find an anchor, walk the locations, apply the transform, write the comment. Try it yourself before opening the solution.
 
 <div class="lab-box">
 <div class="lab-head"><b>LAB 18.1</b>source files</div>
@@ -183,7 +183,7 @@ api: VirtualAlloc
 
 These three strings are also exactly what you get by applying XOR 0x5A to the three `enc_*` arrays. The string-decryption scripts (IDAPython and Ghidra) reproduce them and then set a comment at each `decrypt` call, so when you reopen the pseudocode you see the real strings immediately without chasing them by hand.
 
-The string `api: VirtualAlloc` is a typical example of malware hiding API names with XOR to avoid being caught through Imports or strings, and a string-decryption script is a fast way to expose it. The same template repeats in every binary: determine the key and the terminator, walk every string or call location, apply the XOR, and write the comment. With a multi-byte key, you only need to change `b ^ KEY` to `b ^ KEY[i % len(KEY)]`.
+The string `api: VirtualAlloc` is a typical example of malware hiding API names with XOR to avoid being caught through Imports or strings, and a string-decryption script is a fast way to expose it. The same template repeats in every binary, which is to determine the key and the terminator, walk every string or call location, apply the XOR, and write the comment. With a multi-byte key, you only need to change `b ^ KEY` to `b ^ KEY[i % len(KEY)]`.
 
 The C part (`strcrypt_demo.c`) builds with gcc and gives exactly the three strings above. The IDAPython and Ghidra scripts are reference samples meant to be run in the matching tool, so run them there. The XOR decryption logic gives the correct result when checked independently in Python.
 
@@ -191,7 +191,7 @@ The C part (`strcrypt_demo.c`) builds with gcc and gives exactly the three strin
 
 ## Key takeaways
 
-Script when an operation repeats more than a dozen times or applies to many locations, and otherwise do it by hand. In IDAPython, five operations are enough: walk functions, read bytes, set comment, rename, get xrefs. For automatic deobfuscation, find an anchor, walk every location, apply the transformation, and write the result back.
+Script when an operation repeats more than a dozen times or applies to many locations, and otherwise do it by hand. In IDAPython, five operations are enough, namely walk functions, read bytes, set comment, rename, get xrefs. For automatic deobfuscation, find an anchor, walk every location, apply the transformation, and write the result back.
 
 Ghidra headless processes binaries in bulk without opening the GUI, and the Binary Ninja API works on BNIL so scripts are architecture-independent.
 

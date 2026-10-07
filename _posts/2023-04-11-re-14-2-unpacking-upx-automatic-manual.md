@@ -8,11 +8,11 @@ categories: ["Technique Reverse", "Part 14 · Packers and Obfuscation"]
 tags: [reverse-engineering, packer, obfuscation]
 render_with_liquid: false
 ---
-UPX is the packer you'll meet most, and a good place to learn manual unpacking because it's simple, open source, and has no anti-debug. The structure of every packer is the same: a small piece of code (the stub) decompresses the real code into memory and then jumps to the original entry point. This lesson goes from the laziest way (one command) to what you do by hand when the packer resists.
+UPX is the packer you'll meet most, and a good place to learn manual unpacking because it's simple, open source, and has no anti-debug. The structure of every packer is the same. A small piece of code (the stub) decompresses the real code into memory and then jumps to the original entry point. This lesson goes from the laziest way (one command) to what you do by hand when the packer resists.
 
 ## What a packer does
 
-A packed file has two parts: compressed data (your original code, compressed so it can't be read) and a decompression stub placed at the entry point. When it runs, the stub expands the compressed part into memory, rebuilds the import table, then jumps to the OEP (Original Entry Point, the real entry point of the original program). From the OEP onward the original program runs.
+A packed file has two parts, which are compressed data (your original code, compressed so it can't be read) and a decompression stub placed at the entry point. When it runs, the stub expands the compressed part into memory, rebuilds the import table, then jumps to the OEP (Original Entry Point, the real entry point of the original program). From the OEP onward the original program runs.
 
 To unpack, you catch the moment the stub has just finished expanding and is about to jump to the OEP, then dump the memory at that moment. That dump is the original code.
 
@@ -24,7 +24,7 @@ If the file was packed with standard UPX and nobody touched it, all you need is:
 upx -d -o output.exe packed.exe
 ```
 
-UPX recognizes its own format and expands it back. This is the best case, and it's why UPX alone isn't real protection: anyone can remove it in a second.
+UPX recognizes its own format and expands it back. This is the best case, and it's why UPX alone isn't real protection, since anyone can remove it in a second.
 
 A real session on Linux so you can see the numbers:
 
@@ -81,7 +81,7 @@ In x64dbg (x32dbg for 32-bit), open the file in the debugger and it stops at the
 
 Now you're right before the tail jump. Step a few instructions (F8) until you see a `jmp` to a far address, completely different from the stub region. That's the tail jump. Step over it and you're at the OEP.
 
-At the OEP the code looks clean: a normal function prologue (or for a real program the CRT startup, see [Lesson 3.1](/posts/re-3-1-hello-world-under-microscope-finding-real/)), no longer like a compression stub.
+At the OEP the code looks clean, with a normal function prologue (or for a real program the CRT startup, see [Lesson 3.1](/posts/re-3-1-hello-world-under-microscope-finding-real/)), no longer like a compression stub.
 
 ## Method 2: find the tail jump directly
 
@@ -89,7 +89,7 @@ If you have a trained eye, you can scroll to the end of the stub and look for th
 
 ## Method 3: breakpoint on the original section
 
-Another approach: the section that holds the original code is empty at the start (because the code is still compressed). Set an "execute" memory breakpoint on that section. When the stub finishes decompressing and the CPU starts running code in the original section, the breakpoint fires, and you're close to the OEP. This helps when a complicated stub makes the ESP trick hard.
+Another approach relies on the fact that the section that holds the original code is empty at the start (because the code is still compressed). Set an "execute" memory breakpoint on that section. When the stub finishes decompressing and the CPU starts running code in the original section, the breakpoint fires, and you're close to the OEP. This helps when a complicated stub makes the ESP trick hard.
 
 ## At the OEP, dump
 

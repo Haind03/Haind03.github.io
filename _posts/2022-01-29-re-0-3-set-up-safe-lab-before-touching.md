@@ -14,7 +14,7 @@ For crackmes and CTFs the risk is close to zero, and running them on a normal ma
 
 ## Why you need a separate virtual machine
 
-There are three reasons. First is isolation: malware running in a VM can't touch your real machine if you configure things correctly. Second is snapshots. You save the clean state of the VM, run the sample, analyze as much as you like, then revert to the exact clean state in a few seconds. No reinstalling Windows, no cleanup. Third, you install your tools once and clone the VM as many times as you want.
+There are three reasons. First is isolation, because malware running in a VM can't touch your real machine if you configure things correctly. Second is snapshots. You save the clean state of the VM, run the sample, analyze as much as you like, then revert to the exact clean state in a few seconds. No reinstalling Windows, no cleanup. Third, you install your tools once and clone the VM as many times as you want.
 
 ## Choosing a hypervisor
 
@@ -26,7 +26,7 @@ If you're a beginner, just take VirtualBox or the free VMware. Don't spend too l
 
 By default a VM connects to the internet through NAT. With malware, that's when it calls home to its command-and-control (C2) server, and it may even spread to other machines on your home network. There are three modes to remember.
 
-Host-only (or an internal network) means the VM only talks to the host or to other VMs, with no internet. This is the default when analyzing malware. NAT lets the VM reach the internet, so only turn it on when you deliberately want to watch the sample's real network traffic and accept the risk. The third option is a simulated internet: a second VM running INetSim or FakeNet-NG pretends to be every network service (DNS, HTTP, SMTP...). The malware thinks it got out and shows its behavior, while the packets go nowhere. This is the standard setup for a serious lab.
+Host-only (or an internal network) means the VM only talks to the host or to other VMs, with no internet. This is the default when analyzing malware. NAT lets the VM reach the internet, so only turn it on when you deliberately want to watch the sample's real network traffic and accept the risk. The third option is a simulated internet, where a second VM running INetSim or FakeNet-NG pretends to be every network service (DNS, HTTP, SMTP...). The malware thinks it got out and shows its behavior, while the packets go nowhere. This is the standard setup for a serious lab.
 
 The classic two-VM model is one Windows VM that runs the sample (the victim machine), and one Linux VM acting as the fake network gateway and packet capture. They're connected through a host-only network, completely separate from your home network.
 
@@ -38,9 +38,9 @@ For sophisticated samples, consider not installing VM Guest Additions or VMware 
 
 ## Pre-built tools: FLARE-VM and REMnux
 
-You don't have to install hundreds of tools by hand. FLARE-VM (from Mandiant) is a PowerShell script you run on a clean Windows VM. It downloads and installs lots of RE and malware analysis tools: x64dbg, IDA Free, Ghidra, PE-bear, dnSpy, Detour, and many more. Snapshot right after the install. REMnux is a prebuilt Linux distro for malware analysis, with tools for file, network, maldoc, and memory analysis. It usually plays the Linux VM in the two-VM model.
+You don't have to install hundreds of tools by hand. FLARE-VM (from Mandiant) is a PowerShell script you run on a clean Windows VM. It downloads and installs lots of RE and malware analysis tools, such as x64dbg, IDA Free, Ghidra, PE-bear, dnSpy, Detour, and many more. Snapshot right after the install. REMnux is a prebuilt Linux distro for malware analysis, with tools for file, network, maldoc, and memory analysis. It usually plays the Linux VM in the two-VM model.
 
-A short workflow for beginners: install Windows into a VM, run FLARE-VM, snapshot `clean-base`. Add a REMnux VM as the network gateway. That's a decent lab.
+A short workflow for beginners is to install Windows into a VM, run FLARE-VM, snapshot `clean-base`. Add a REMnux VM as the network gateway. That's a decent lab.
 
 ## How serious you need to get
 

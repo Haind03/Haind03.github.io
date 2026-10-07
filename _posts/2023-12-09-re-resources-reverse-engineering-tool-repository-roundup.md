@@ -10,7 +10,7 @@ render_with_liquid: false
 ---
 > A catalog of the tools used throughout the series. In the Platform column, W is Windows, L is Linux, M is macOS and X is cross-platform. In the Price column, `free` means free/open source, `paid` means commercial, and `free+paid` means there's both a free and a pro version. The mark (priority) means install these first.
 
-Table of contents: [1. Triage & file identification](#1-triage--file-identification), [2. General-purpose disassemblers / decompilers](#2-general-purpose-disassemblers--decompilers), [3. Debuggers](#3-debuggers), [4. Hex editors & binary viewers](#4-hex-editors--binary-viewers), [5. System & runtime monitoring](#5-system--runtime-monitoring), [6. .NET](#6-net), [7. Java / Android](#7-java--android), [8. Python](#8-python), [9. Go & Rust](#9-go--rust), [10. Delphi / VB / script-compiled](#10-delphi--vb--script-compiled), [11. JavaScript / Electron / WASM](#11-javascript--electron--wasm), [12. Apple: macOS / iOS](#12-apple-macos--ios), [13. Games](#13-games), [14. Unpacking & import rebuild](#14-unpacking--import-rebuild), [15. Anti-anti-debug & stealth](#15-anti-anti-debug--stealth), [16. Hook, injection, instrumentation](#16-hook-injection-instrumentation), [17. Emulation & symbolic execution](#17-emulation--symbolic-execution), [18. Crypto & pattern](#18-crypto--pattern), [19. Binary diffing](#19-binary-diffing), [20. Firmware & embedded](#20-firmware--embedded), [21. Malware analysis](#21-malware-analysis), [22. Prepackaged distros](#22-prepackaged-distros), [23. AI assistance for RE](#23-ai-assistance-for-re).
+The sections are [1. Triage & file identification](#1-triage--file-identification), [2. General-purpose disassemblers / decompilers](#2-general-purpose-disassemblers--decompilers), [3. Debuggers](#3-debuggers), [4. Hex editors & binary viewers](#4-hex-editors--binary-viewers), [5. System & runtime monitoring](#5-system--runtime-monitoring), [6. .NET](#6-net), [7. Java / Android](#7-java--android), [8. Python](#8-python), [9. Go & Rust](#9-go--rust), [10. Delphi / VB / script-compiled](#10-delphi--vb--script-compiled), [11. JavaScript / Electron / WASM](#11-javascript--electron--wasm), [12. Apple: macOS / iOS](#12-apple-macos--ios), [13. Games](#13-games), [14. Unpacking & import rebuild](#14-unpacking--import-rebuild), [15. Anti-anti-debug & stealth](#15-anti-anti-debug--stealth), [16. Hook, injection, instrumentation](#16-hook-injection-instrumentation), [17. Emulation & symbolic execution](#17-emulation--symbolic-execution), [18. Crypto & pattern](#18-crypto--pattern), [19. Binary diffing](#19-binary-diffing), [20. Firmware & embedded](#20-firmware--embedded), [21. Malware analysis](#21-malware-analysis), [22. Prepackaged distros](#22-prepackaged-distros), [23. AI assistance for RE](#23-ai-assistance-for-re).
 
 ---
 
@@ -300,7 +300,7 @@ Table of contents: [1. Triage & file identification](#1-triage--file-identificat
 | **LLM4Decompile / DeGPT** | X | Research on improving decompiler output |
 
 ### 23b. MCP servers for RE (connecting decompilers/tools to Cursor, LLM agents)
-MCP (Model Context Protocol) lets an LLM drive RE tools directly: read pseudocode, rename, set comments, run debugger commands... Configure it in your LLM client (Cline, Cursor, or any MCP-capable client) and then ask in natural language.
+MCP (Model Context Protocol) lets an LLM drive RE tools directly, for example to read pseudocode, rename, set comments, run debugger commands... Configure it in your LLM client (Cline, Cursor, or any MCP-capable client) and then ask in natural language.
 
 | MCP server | Connects to | Notes |
 |---|---|---|
@@ -317,11 +317,11 @@ MCP (Model Context Protocol) lets an LLM drive RE tools directly: read pseudocod
 | **capa-mcp / YARA MCP** | capa, YARA | Classify capabilities & scan rules on demand |
 | **unblob / binwalk MCP** | firmware tools | Extract firmware conversationally |
 
-> Safety note: MCP gives an LLM permission to run tools on your machine. When analyzing malware, run the client and MCP in an isolated VM (see [Lesson 0.3](/posts/re-0-3-set-up-safe-lab-before-touching/)), and don't let the agent execute samples on its own. A separate lesson on setting up MCP for RE is at [Lesson 18.8](/technique-reverse/).
+> MCP gives an LLM permission to run tools on your machine. When analyzing malware, run the client and MCP in an isolated VM (see [Lesson 0.3](/posts/re-0-3-set-up-safe-lab-before-touching/)), and don't let the agent execute samples on its own. A separate lesson on setting up MCP for RE is at [Lesson 18.8](/technique-reverse/).
 
 ---
 
 ### Suggested minimum kit to get started (Windows)
 Detect It Easy, x64dbg, IDA Free or Ghidra, dnSpyEx, JADX, HxD or ImHex, Process Hacker plus Procmon, Python plus Frida, PE-bear, and CyberChef (offline).
 
-All of them are free. When you need to go professional: IDA Pro + Hex-Rays, Binary Ninja, 010 Editor.
+All of them are free. When you need to go professional, use IDA Pro + Hex-Rays, Binary Ninja, 010 Editor.

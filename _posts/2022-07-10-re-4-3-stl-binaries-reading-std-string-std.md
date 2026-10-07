@@ -27,7 +27,7 @@ offset 16 : 16-byte union {
             }
 ```
 
-The important part is Small String Optimization (SSO): if the string is short enough (at most 15 characters on libstdc++), it doesn't allocate on the heap and puts the characters into the 16-byte buffer inside the object. The pointer at offset 0 then points into the object itself (object address + 16).
+The important part is Small String Optimization (SSO). If the string is short enough (at most 15 characters on libstdc++), it doesn't allocate on the heap and puts the characters into the 16-byte buffer inside the object. The pointer at offset 0 then points into the object itself (object address + 16).
 
 The lab prints exactly this:
 
@@ -103,7 +103,7 @@ std::unique_ptr is usually just a bare pointer (8 bytes), almost gone after opti
 
 If the binary was built with MSVC (common on Windows), the numbers change but the ideas stay the same. MSVC's `std::string` also has SSO but with a 16-byte buffer and a 15-character threshold, the field layout is in a different order, and `sizeof` is usually 32 (x64) but the union is placed at the start. MSVC's `std::vector` is still three pointers (first, last, end). Library function names differ (MSVC-style mangling `?...@@`), but once IDA/Ghidra demangle them you recognize them right away.
 
-Don't memorize the offsets for every toolchain. Remember the shape: string = pointer + size + (buffer or capacity), vector = three pointers. When you meet an unfamiliar binary, build a small program with that exact compiler, print the offsets, and apply them. The lab does exactly that.
+Don't memorize the offsets for every toolchain. Remember the shape, which is string = pointer + size + (buffer or capacity), vector = three pointers. When you meet an unfamiliar binary, build a small program with that exact compiler, print the offsets, and apply them. The lab does exactly that.
 
 ## Tips when using a decompiler
 
@@ -132,11 +132,11 @@ g++ -O0 -g -std=c++17 containers.cpp -o containers.exe
 containers.exe
 ```
 
-Run the program and write down `sizeof(std::string)` and `sizeof(std::vector<int>)` on your toolchain. Are they exactly 32 and 24 (libstdc++), and what does MSVC give? Then look at the "std::string short (SSO)" part of the output: how many bytes apart are the `data()` address and the object address, and why does the pointer point into the object itself? In the "std::string long (heap)" part, where does `data()` sit relative to the object this time, and why is that different from the short string? For the short string, what is `capacity()`, and what does that number say about the size of the SSO buffer?
+Run the program and write down `sizeof(std::string)` and `sizeof(std::vector<int>)` on your toolchain. Are they exactly 32 and 24 (libstdc++), and what does MSVC give? Then look at the "std::string short (SSO)" part of the output. How many bytes apart are the `data()` address and the object address, and why does the pointer point into the object itself? In the "std::string long (heap)" part, where does `data()` sit relative to the object this time, and why is that different from the short string? For the short string, what is `capacity()`, and what does that number say about the size of the SSO buffer?
 
 Next, open the binary in Ghidra or IDA and set a breakpoint (x64dbg or gdb) right after `shortStr` and `longStr` are created. Look at the 32 bytes at each object's address and point out which part is the pointer, which is the size, and which is the buffer or capacity. For `std::vector<int> v`, look at the 24 bytes of the object and compute `(second pointer - first pointer) / 4`. Does it give `size()`?
 
-Two questions to think about afterwards. Why does SSO exist (hint: what would a heap allocation for every short string cost)? And if you see a 24-byte object made of consecutive heap pointers, why should you suspect a `std::vector`? Try it all before opening the solution.
+Two questions to think about afterwards. Why does SSO exist (think about what a heap allocation for every short string would cost)? And if you see a 24-byte object made of consecutive heap pointers, why should you suspect a `std::vector`? Try it all before opening the solution.
 
 <div class="lab-box">
 <div class="lab-head"><b>LAB 4.3</b>source files</div>
@@ -176,7 +176,7 @@ capacity     = 4
 
 On libstdc++, `sizeof(std::string)` is 32 and `sizeof(std::vector<int>)` is 24, which is exactly three 8-byte pointers. MSVC x64 also gives 32 for string but lays out the union at the start of the object, and its vector is still 24.
 
-For the short string, `data()` equals object + 16. Short strings use SSO: the characters live in an internal buffer at offset 16 of the object, so the data pointer points into the object itself, and no heap allocation happens. For the long string, `data()` points to a heap region far from the object (a completely different address range from the object's stack). The 39-character string exceeds the SSO threshold of 15, so the string has to `malloc` a heap buffer and the pointer at offset 0 points there.
+For the short string, `data()` equals object + 16. Short strings use SSO. The characters live in an internal buffer at offset 16 of the object, so the data pointer points into the object itself, and no heap allocation happens. For the long string, `data()` points to a heap region far from the object (a completely different address range from the object's stack). The 39-character string exceeds the SSO threshold of 15, so the string has to `malloc` a heap buffer and the pointer at offset 0 points there.
 
 The short string's `capacity()` is 15. That is the maximum number of characters the 16-byte SSO buffer holds (15 characters plus 1 byte for the null terminator). A capacity of 15 on libstdc++ almost always means the string is in SSO mode.
 
@@ -202,13 +202,13 @@ The `std::vector<int>` layout is:
 
 `(_M_finish - _M_start) / sizeof(int)` is `(pointer[8] - pointer[0]) / 4`, which is 4, equal to `size()`. It checks out.
 
-As for the reflection questions: SSO exists to avoid a `malloc` plus `free` for every short string. Short strings are very common (variable names, keys, tokens), and if each one allocated on the heap it would be slow and fragment memory, whereas putting them in the object costs nothing. A 24-byte object made of three increasing heap pointers (start < finish <= end_of_storage) is the typical signature of a `std::vector`, and dividing the difference of the first two pointers by the element size gives the element count, a computation the compiler always generates when you call `.size()`.
+As for the reflection questions, SSO exists to avoid a `malloc` plus `free` for every short string. Short strings are very common (variable names, keys, tokens), and if each one allocated on the heap it would be slow and fragment memory, whereas putting them in the object costs nothing. A 24-byte object made of three increasing heap pointers (start < finish <= end_of_storage) is the typical signature of a `std::vector`, and dividing the difference of the first two pointers by the element size gives the element count, a computation the compiler always generates when you call `.size()`.
 
-You don't need to memorize the offsets of every toolchain. Remember two shapes: a string is (pointer, size, buffer-or-capacity) and a vector is three pointers. When you meet an unfamiliar binary, build a small program with that exact compiler and print the offsets, as this lab does.
+You don't need to memorize the offsets of every toolchain. Remember two shapes, a string is (pointer, size, buffer-or-capacity) and a vector is three pointers. When you meet an unfamiliar binary, build a small program with that exact compiler and print the offsets, as this lab does.
 
 </details>
 
 ## Key takeaways
-`std::string` (libstdc++, 32 bytes) is [0]=data pointer, [8]=size, [16]=buffer/capacity union. With SSO, strings up to 15 characters live inside the object, and the data pointer points into the object itself (object+16). `std::vector` is three pointers (24 bytes): start, finish, end_of_storage, and size = (finish-start)/sizeof(T). A difference of two pointers divided by the element size means it's computing a vector's size.
+`std::string` (libstdc++, 32 bytes) is [0]=data pointer, [8]=size, [16]=buffer/capacity union. With SSO, strings up to 15 characters live inside the object, and the data pointer points into the object itself (object+16). `std::vector` is three pointers (24 bytes), which are start, finish, end_of_storage, and size = (finish-start)/sizeof(T). A difference of two pointers divided by the element size means it's computing a vector's size.
 
 map/set are red-black trees (_Rb_tree), and shared_ptr has a control block with an atomic refcount. MSVC has different numbers but the same ideas, so test-build with exactly that compiler to get the right offsets.

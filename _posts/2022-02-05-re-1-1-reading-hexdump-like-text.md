@@ -12,7 +12,7 @@ Before assembly you need to be comfortable with how a computer represents number
 
 ## Why base 16 (hex)
 
-Computers work in bits, just 0s and 1s. Binary is hard on the eyes: a byte is 8 bits, `01001000`, and you can stare at it forever. Base 16 is the short way to write it. Every 4 bits become one hex digit, so a byte always fits in exactly 2 hex digits.
+Computers work in bits, just 0s and 1s. Binary is hard on the eyes, and a byte is 8 bits, `01001000`, and you can stare at it forever. Base 16 is the short way to write it. Every 4 bits become one hex digit, so a byte always fits in exactly 2 hex digits.
 
 The 4-bit conversion table, the sooner you memorize it the better:
 
@@ -55,7 +55,7 @@ Offset    Hex bytes                                         ASCII
 00000000  48 65 6C 6C 6F 2C 20 52 45 21 00 00 00 00 00 00   Hello, RE!......
 ```
 
-Three columns: the offset (position from the start of the file), the bytes in hex, and the same bytes decoded as ASCII (non-printable bytes show as dots). The ASCII column on the right is the fastest way to spot strings in a file. `48 65 6C 6C 6F` is "Hello", and the `00` after it is the string terminator.
+There are three columns, the offset (position from the start of the file), the bytes in hex, and the same bytes decoded as ASCII (non-printable bytes show as dots). The ASCII column on the right is the fastest way to spot strings in a file. `48 65 6C 6C 6F` is "Hello", and the `00` after it is the string terminator.
 
 ## Endianness
 
@@ -69,21 +69,21 @@ So if you see the four bytes `78 56 34 12` in a hex editor, the value is `0x1234
 
 A common example is searching a file for the address `0x00401000`. If you search for `00 40 10 00` you find nothing, because on disk it's `00 10 40 00`. Scrambled bytes usually mean you forgot little-endian.
 
-The rule I use: on x86/x64, multi-byte numbers are stored reversed. Strings are not, because a string is a sequence of separate bytes, not one number.
+The rule I use is that on x86/x64, multi-byte numbers are stored reversed. Strings are not, because a string is a sequence of separate bytes, not one number.
 
 ## Bitwise operations
 
-Reversing crypto and obfuscation means running into bit operations all the time. There are four core ones. AND (`&`) gives 1 when both bits are 1, and it's used to mask out some bits, so `x & 0xFF` takes the lowest byte. OR (`|`) gives 1 when either bit is 1, and it's used to set bits. XOR (`^`) gives 1 when the two bits differ. You'll see XOR the most: XOR a value twice with the same key and you get the original back, so it's the simplest and most common encryption in malware and crackmes, `A ^ key ^ key == A`. NOT (`~`) flips every bit.
+Reversing crypto and obfuscation means running into bit operations all the time. There are four core ones. AND (`&`) gives 1 when both bits are 1, and it's used to mask out some bits, so `x & 0xFF` takes the lowest byte. OR (`|`) gives 1 when either bit is 1, and it's used to set bits. XOR (`^`) gives 1 when the two bits differ. You'll see XOR the most. XOR a value twice with the same key and you get the original back, so it's the simplest and most common encryption in malware and crackmes, `A ^ key ^ key == A`. NOT (`~`) flips every bit.
 
 Then there are shifts. Shift left (`<<`) doubles the value each step and shift right (`>>`) halves it. Compilers often replace multiplication/division by powers of 2 with shifts because it's faster, so `shl eax, 3` means multiply by 8.
 
-Since XOR is everywhere, remember this: if you see a loop going through data and `xor`ing each byte with a constant or a key, 90% of the time it's a string encryption/decryption routine. Lesson [16.2](/posts/re-16-2-xor-rc4-custom-base64-three-youll/) goes deeper.
+Since XOR is everywhere, remember this. If you see a loop going through data and `xor`ing each byte with a constant or a key, 90% of the time it's a string encryption/decryption routine. Lesson [16.2](/posts/re-16-2-xor-rc4-custom-base64-three-youll/) goes deeper.
 
 ## Practice
 
-No tools needed, do these in your head, then check with a programmer calculator (or Python). First, which two ASCII characters is `0x4D5A`? (Hint: it's the magic number at the start of every Windows PE file, "MZ".) Second, in a hex editor you see `90 1F 00 00`, a 32-bit little-endian number, so what's the decimal value? Third, what character is `'a' ^ 0x20`, and what about `'A' ^ 0x20`? Fourth, to get the low 4 bits of a byte, which hex value do you AND with?
+No tools needed, do these in your head, then check with a programmer calculator (or Python). First, which two ASCII characters is `0x4D5A`? (It's the magic number at the start of every Windows PE file, "MZ".) Second, in a hex editor you see `90 1F 00 00`, a 32-bit little-endian number, so what's the decimal value? Third, what character is `'a' ^ 0x20`, and what about `'A' ^ 0x20`? Fourth, to get the low 4 bits of a byte, which hex value do you AND with?
 
-Answers: 1) "MZ". 2) 0x00001F90 = 8080. 3) 'a'^0x20='A', 'A'^0x20='a' (XOR 0x20 flips the case). 4) `& 0x0F`.
+The answers are 1) "MZ". 2) 0x00001F90 = 8080. 3) 'a'^0x20='A', 'A'^0x20='a' (XOR 0x20 flips the case). 4) `& 0x0F`.
 
 ## Key takeaways
 One byte is 2 hex digits, `0x00` to `0xFF`, and byte/word/dword/qword are 1/2/4/8 bytes. x86/x64 is little-endian, so multi-byte numbers are stored with reversed byte order and you read them backwards. Strings are not reversed. XOR is the operation you'll see most in crypto and obfuscation.

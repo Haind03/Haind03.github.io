@@ -20,7 +20,7 @@ Never load an unknown driver onto your real machine to see what it does.
 
 ## Windows kernel driver: the .sys file
 
-A Windows driver (`.sys`) is still a PE file, like the `.exe` and `.dll` in lesson 1.7, except the subsystem is Native and it links against `ntoskrnl.exe` instead of `kernel32.dll`. Open it in IDA or Ghidra as usual, but the APIs you see will be kernel ones: `IoCreateDevice`, `ObReferenceObjectByHandle`, `MmGetSystemRoutineAddress`, `ZwOpenKey`, not `CreateFileW`.
+A Windows driver (`.sys`) is still a PE file, like the `.exe` and `.dll` in lesson 1.7, except the subsystem is Native and it links against `ntoskrnl.exe` instead of `kernel32.dll`. Open it in IDA or Ghidra as usual, but the APIs you see will be kernel ones, such as `IoCreateDevice`, `ObReferenceObjectByHandle`, `MmGetSystemRoutineAddress`, `ZwOpenKey`, not `CreateFileW`.
 
 ### DriverEntry
 
@@ -48,7 +48,7 @@ If you also have the user-mode program that controls the driver, look for the `D
 
 Debug a driver with WinDbg (mentioned in lesson 2.6) in kernel mode. On the target VM, turn on kernel debugging with `bcdedit /debug on` and configure the transport (`bcdedit /dbgsettings net ...` or serial/named pipe), then reboot. On the host, open WinDbg and attach to the kernel over the same transport.
 
-A few commands get used a lot: `lm` lists loaded modules (find your driver), `!drvobj MyDriver 7` shows the driver object and the major function table, `bp MyDriver!DriverDeviceControl` sets a breakpoint, `!irp` shows the current IRP, and `dt` reads a struct. The target VM freezes when a breakpoint hits. That's normal, the host controls everything.
+A few commands get used a lot. `lm` lists loaded modules (find your driver), `!drvobj MyDriver 7` shows the driver object and the major function table, `bp MyDriver!DriverDeviceControl` sets a breakpoint, `!irp` shows the current IRP, and `dt` reads a struct. The target VM freezes when a breakpoint hits. That's normal, the host controls everything.
 
 ## Linux kernel module: the .ko file
 
@@ -74,7 +74,7 @@ Same spirit as lesson 0.2. Analyzing a driver to understand what it does, testin
 
 ## Lab
 
-The goal is to get familiar with the structure of a `.ko` kernel module, find its entry point and how it talks to user mode, and then compare the disassembly with the source. A safety warning first: only `insmod` the module in a Linux VM you use for learning, never on your main machine. This lab doesn't require loading the module into a kernel. You only need to build the `.ko` and open it in Ghidra to read it, and if you do want to load it, do it in a VM with a snapshot.
+The goal is to get familiar with the structure of a `.ko` kernel module, find its entry point and how it talks to user mode, and then compare the disassembly with the source. A safety warning first, only `insmod` the module in a Linux VM you use for learning, never on your main machine. This lab doesn't require loading the module into a kernel. You only need to build the `.ko` and open it in Ghidra to read it, and if you do want to load it, do it in a VM with a snapshot.
 
 To build the module you need the kernel headers:
 
@@ -90,7 +90,7 @@ make
 
 The result is `hello_ioctl.ko`. If it won't build (missing headers, or a WSL environment with no kernel tree), you can still do the reading part by following the solution.
 
-Run `modinfo hello_ioctl.ko` and read the `.modinfo` section: what are the license, description and author? Open `hello_ioctl.ko` in Ghidra (import it as an ELF) and find the function that `module_init` points to. A hint is to look at the symbol `init_module` or the `.init.text` section. Find the module's `file_operations` struct and see which functions the `.open` and `.unlocked_ioctl` pointers lead to. Go into the ioctl handler and rebuild the table of IOCTL codes (the commands user mode sends down) and what each one does. Finally, compare what you found with `hello_ioctl.c` and see how much of it was right.
+Run `modinfo hello_ioctl.ko` and read the `.modinfo` section. What are the license, description and author? Open `hello_ioctl.ko` in Ghidra (import it as an ELF) and find the function that `module_init` points to. A hint is to look at the symbol `init_module` or the `.init.text` section. Find the module's `file_operations` struct and see which functions the `.open` and `.unlocked_ioctl` pointers lead to. Go into the ioctl handler and rebuild the table of IOCTL codes (the commands user mode sends down) and what each one does. Finally, compare what you found with `hello_ioctl.c` and see how much of it was right.
 
 Two questions to think about. Why is a kernel module often easier to read than a stripped Windows driver? And if this module hooked `sys_call_table` instead of creating a character device, where would you look for that sign?
 
@@ -105,23 +105,23 @@ Two questions to think about. Why is a kernel module often easier to read than a
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>
 
-The solution below follows the source `hello_ioctl.c` and the standard behavior of the module compiler. Building the `.ko` needs `linux-headers` matching your kernel, so use a Linux VM with the headers: `make` produces `hello_ioctl.ko` and every step matches.
+The solution below follows the source `hello_ioctl.c` and the standard behavior of the module compiler. Building the `.ko` needs `linux-headers` matching your kernel, so use a Linux VM with the headers, and `make` produces `hello_ioctl.ko` and every step matches.
 
-For `modinfo hello_ioctl.ko`, you get these (from the macros at the end of the source): `license: GPL`, `description: Lab 18.6 character device with ioctl for RE practice` and `author: Blog Reverse Engineering`, along with `vermagic` (the kernel version), `depends` and the symbol list. The `.modinfo` section holds exactly these strings, and you can also see them with `strings hello_ioctl.ko | grep -E 'license|author|description'`.
+For `modinfo hello_ioctl.ko`, you get these (from the macros at the end of the source) `license: GPL`, `description: Lab 18.6 character device with ioctl for RE practice` and `author: Blog Reverse Engineering`, along with `vermagic` (the kernel version), `depends` and the symbol list. The `.modinfo` section holds exactly these strings, and you can also see them with `strings hello_ioctl.ko | grep -E 'license|author|description'`.
 
 To find `module_init`, note that `module_init(hello_init)` makes the build create a symbol `init_module` pointing to `hello_init`, placed in the `.init.text` section. In Ghidra, look for `init_module` in the Symbol Tree (or `hello_init` if the name survives). The function calls `register_chrdev(0, "hello_ioctl", &hello_fops)` and then `printk` or `_printk` with the string `"hello_ioctl: loaded, major=%d"`. Going backwards from that string (the technique from Lesson 0.4) leads straight to `hello_init`. Likewise `cleanup_module` points to `hello_exit`, which calls `unregister_chrdev`.
 
 For `file_operations`, the third parameter of `register_chrdev` is `&hello_fops`. Jump to that address and Ghidra shows an array of function pointers. The layout of `struct file_operations` puts `.open`, `.release` and `.unlocked_ioctl` at fixed offsets (depending on the kernel version). The non-null slots point to `hello_open` (return 0), `hello_release` (return 0) and `hello_ioctl`, the main logic function for `.unlocked_ioctl`. The function in the table that has a switch with many branches is `unlocked_ioctl`, the equivalent of `IRP_MJ_DEVICE_CONTROL` on Windows.
 
-To rebuild the IOCTL table, inside `hello_ioctl` the `cmd` parameter is compared against constants. The codes are generated by the `_IO`, `_IOW` and `_IOR` macros with the magic `'H'` (0x48). `IOCTL_PING = _IO('H', 1)` is code `0x00004801` and prints "PING" and returns 0. `IOCTL_SET = _IOW('H', 2, int)` is code `0x40044802` and does a `copy_from_user` of 4 bytes into `stored_value`. `IOCTL_GET = _IOR('H', 3, int)` is code `0x80044803` and does a `copy_to_user` of `stored_value` out to user mode. The default case returns `-EINVAL` (-22). To compute `_IOW('H',2,int)`: `dir=1 (write)` sits at bit 30, `size=4` at bits 16 to 29, `type='H'=0x48` at bits 8 to 15 and `nr=2` at bits 0 to 7, which combine into `0x40044802`. `copy_from_user` and `copy_to_user` are clear markers for IOCTL_SET and IOCTL_GET. This is the module's own private API: user mode opens `/dev/hello_ioctl` and calls `ioctl(fd, 0x40044802, &val)` to set and `ioctl(fd, 0x80044803, &out)` to get.
+To rebuild the IOCTL table, inside `hello_ioctl` the `cmd` parameter is compared against constants. The codes are generated by the `_IO`, `_IOW` and `_IOR` macros with the magic `'H'` (0x48). `IOCTL_PING = _IO('H', 1)` is code `0x00004801` and prints "PING" and returns 0. `IOCTL_SET = _IOW('H', 2, int)` is code `0x40044802` and does a `copy_from_user` of 4 bytes into `stored_value`. `IOCTL_GET = _IOR('H', 3, int)` is code `0x80044803` and does a `copy_to_user` of `stored_value` out to user mode. The default case returns `-EINVAL` (-22). To compute `_IOW('H',2,int)`, `dir=1 (write)` sits at bit 30, `size=4` at bits 16 to 29, `type='H'=0x48` at bits 8 to 15 and `nr=2` at bits 0 to 7, which combine into `0x40044802`. `copy_from_user` and `copy_to_user` are clear markers for IOCTL_SET and IOCTL_GET. This is the module's own private API, where user mode opens `/dev/hello_ioctl` and calls `ioctl(fd, 0x40044802, &val)` to set and `ioctl(fd, 0x80044803, &out)` to get.
 
-Comparing with the source, everything matches: three IOCTLs, one static `stored_value` variable and a `file_operations` with three functions. The parts that tend to be off when reading are the offsets inside `file_operations` (they change with the kernel version) and `printk` being renamed to `_printk` on newer kernels.
+Comparing with the source, everything matches, with three IOCTLs, one static `stored_value` variable and a `file_operations` with three functions. The parts that tend to be off when reading are the offsets inside `file_operations` (they change with the kernel version) and `printk` being renamed to `_printk` on newer kernels.
 
 On the questions. A `.ko` is easier to read than a stripped `.sys` because Linux kernel modules usually keep many symbols (function names in the ELF symbol table, strings in `.modinfo`, names through `__ksymtab`), while commercial Windows drivers are often stripped down to just `DriverEntry`. Also, `printk` leaves log strings describing the behavior, which makes going from strings very effective. If the module hooked `sys_call_table`, you'd look for references to the symbol `sys_call_table` (or code that scans kernel memory for this table), followed by a write of the module's function pointer into a syscall slot while saving the original pointer. The module also changes the write permission of the page holding the table (`write_cr0` clearing the WP bit, or `set_memory_rw`) before writing. That's a classic sign of a rootkit.
 
 </details>
 
 ## Key takeaways
-Always reverse ring-0 in a VM: the target is a VM, the host runs the debugger, and you take a snapshot before loading the driver. A Windows `.sys` is a PE whose entry point is `DriverEntry`, and the main part is `MajorFunction[IRP_MJ_DEVICE_CONTROL]` (slot 0xE) handling IOCTLs. Work backwards from `DeviceIoControl` on the user-mode side to understand IOCTL codes and buffer structures.
+Always reverse ring-0 in a VM, with the target as a VM, the host running the debugger, and a snapshot before loading the driver. A Windows `.sys` is a PE whose entry point is `DriverEntry`, and the main part is `MajorFunction[IRP_MJ_DEVICE_CONTROL]` (slot 0xE) handling IOCTLs. Work backwards from `DeviceIoControl` on the user-mode side to understand IOCTL codes and buffer structures.
 
 A Linux `.ko` is an ELF whose entry point is `module_init`, so look for `file_operations` and signs of `sys_call_table` hooking. Debug with WinDbg kernel mode on Windows, or kgdb or the QEMU gdbstub on Linux. One ring-0 bug crashes the machine, so read statically with care before running dynamically.

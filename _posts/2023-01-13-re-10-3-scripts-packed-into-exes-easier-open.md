@@ -30,7 +30,7 @@ Quick tells in `strings` or DIE:
 
 AutoIt is an automation scripting language for Windows. When compiled, it embeds the script code (tokenized, not plain text) into an interpreter stub. Tokenizing isn't strong encryption, so tools can reverse almost all of it.
 
-The simplest tool is Exe2Aut: drag and drop the exe in and it unpacks the original `.au3` file. It runs on Windows. There's also AutoIt-Ripper (Python), which is cross-platform and extracts the script from the exe or from a memory dump.
+The simplest tool is Exe2Aut, and you drag and drop the exe in and it unpacks the original `.au3` file. It runs on Windows. There's also AutoIt-Ripper (Python), which is cross-platform and extracts the script from the exe or from a memory dump.
 
 For newer AutoIt variants with extra encryption, Exe2Aut sometimes has to run the file itself (dangerous if it's malware) to catch the moment the script gets decoded in memory. When analyzing malicious samples, do it in an isolated VM following [Lesson 0.3](/posts/re-0-3-set-up-safe-lab-before-touching/).
 
@@ -52,7 +52,7 @@ With malware, NSIS is often just a shell. Extract it and you'll see the real pay
 
 Inno Setup is another popular installer builder. Its format differs from NSIS, so 7-Zip can't open it properly.
 
-The tool for it is innounp (Inno Setup Unpacker), on the command line: `innounp -x setup.exe` extracts all the files and also the decompiled `install_script.iss` script. UniExtract2 bundles many extractors and auto-detects NSIS, Inno and a few other types, which is handy when you don't want to remember which tool goes with which type.
+The tool for it is innounp (Inno Setup Unpacker), on the command line, where `innounp -x setup.exe` extracts all the files and also the decompiled `install_script.iss` script. UniExtract2 bundles many extractors and auto-detects NSIS, Inno and a few other types, which is handy when you don't want to remember which tool goes with which type.
 
 ## Other wrappers
 
@@ -66,9 +66,9 @@ Say a malware sample is reported as "hard". You drag it into IDA, see nothing bu
 
 The goal is to build the habit of asking "is this just a packaged script?" and to extract the original source. You need Detect It Easy (the `diec.exe` command line tool and the GUI), Exe2Aut or AutoIt-Ripper for AutoIt, Resource Hacker or CFF Explorer for AutoHotkey, 7-Zip for NSIS, and innounp or UniExtract2 for Inno Setup. If the sample is malware, run everything inside an isolated VM (see [Lesson 0.3](/posts/re-0-3-set-up-safe-lab-before-touching/)).
 
-Collect a few exes, either from your machine or made yourself: install a small program packed with NSIS or Inno (a lot of free software uses them), write a short AutoHotkey script and compile it, and write an AutoIt script and compile it. For each file, run `diec.exe <file>` and open the DIE GUI, and note the identification traces: AU3, AUTOHOTKEY SCRIPT, Nullsoft Install System, Inno Setup. Compare them against the table in the lesson.
+Collect a few exes, either from your machine or made yourself. Install a small program packed with NSIS or Inno (a lot of free software uses them), write a short AutoHotkey script and compile it, and write an AutoIt script and compile it. For each file, run `diec.exe <file>` and open the DIE GUI, and note the identification traces, which are AU3, AUTOHOTKEY SCRIPT, Nullsoft Install System, Inno Setup. Compare them against the table in the lesson.
 
-Then extract the script or payload with the right tool. For AutoIt use Exe2Aut or `autoit-ripper <file> out/`. For AutoHotkey, open Resource Hacker, find the RCDATA entry named `>AUTOHOTKEY SCRIPT<` and export it. For NSIS, open the file with 7-Zip and extract everything. For Inno, run `innounp -x setup.exe`. Compare the extracted script with the original you wrote (for AutoIt and AHK): does it match, and is anything lost? For the NSIS and Inno files, list the payload files the installer will drop. If this were real malware, which payload would be worth analyzing next?
+Then extract the script or payload with the right tool. For AutoIt use Exe2Aut or `autoit-ripper <file> out/`. For AutoHotkey, open Resource Hacker, find the RCDATA entry named `>AUTOHOTKEY SCRIPT<` and export it. For NSIS, open the file with 7-Zip and extract everything. For Inno, run `innounp -x setup.exe`. Compare the extracted script with the original you wrote (for AutoIt and AHK), and check whether it matches and whether anything is lost. For the NSIS and Inno files, list the payload files the installer will drop. If this were real malware, which payload would be worth analyzing next?
 
 Two questions to think about. Why is extracting the script so much faster than reading the assembly of the stub? And when Exe2Aut can't extract statically (an encrypted variant), what do you do next that is still safe?
 
@@ -99,7 +99,7 @@ innounp -x setup.exe
 
 This extracts the files and a decompiled `install_script.iss` that tells you what the installer does (writes the registry, runs commands, drops which files).
 
-In the comparison, for AutoIt and AHK the extracted script is almost identical to the original: variable and function names are kept, comments are usually lost (they aren't embedded), and the strings and logic stay intact. So compiled scripts belong in the same "easy to reverse" group as managed code, not native C.
+In the comparison, for AutoIt and AHK the extracted script is almost identical to the original, as variable and function names are kept, comments are usually lost (they aren't embedded), and the strings and logic stay intact. So compiled scripts belong in the same "easy to reverse" group as managed code, not native C.
 
 For the payload question, with NSIS and Inno the files worth analyzing next are usually another exe or dll in the extracted list (the real payload), or a script (bat, vbs, ps1, au3) that the installer runs after installing. Read `install_script.iss` or a Procmon log to learn which file gets run (`Exec`, `Run`), since that is the next target.
 

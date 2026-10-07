@@ -27,7 +27,7 @@ static bool Check(string input)
 
 That's all. The password is right there in the IL `ldstr` instruction. No debugging, no patching. This level shows how weak a lot of .NET software is, which is why people obfuscate.
 
-A tip that's faster than opening each method: in dnSpy use search, type part of a message string like "Correct", then Analyze to jump to where it's used.
+A tip that's faster than opening each method is to use search in dnSpy, type part of a message string like "Correct", then Analyze to jump to where it's used.
 
 ## Level 2: understand the algorithm, write a keygen
 
@@ -76,7 +76,7 @@ Managed code is much harder to hide than native code, because the runtime has to
 
 ## Lab
 
-This lab applies everything from Part 5: decompile with ILSpy or dnSpy, read the logic, write a keygen and strip obfuscation. It's a .NET crackme in three levels. You need the .NET SDK (`dotnet`) to build it, which you can install from dotnet.microsoft.com. Each level is its own console app. A quick way to build one:
+This lab applies everything from Part 5. You decompile with ILSpy or dnSpy, read the logic, write a keygen and strip obfuscation. It's a .NET crackme in three levels. You need the .NET SDK (`dotnet`) to build it, which you can install from dotnet.microsoft.com. Each level is its own console app. A quick way to build one:
 
 ```
 cd level1
@@ -131,7 +131,7 @@ static string Expected(string user)
 }
 ```
 
-This is a variant of the djb2 hash: start with `acc = 0x1505`, and for each character do `acc = acc*33 + c`, computed on a `uint` (the 32-bit overflow is intentional). The correct serial is the hash value as 8 uppercase hex digits. The hash depends only on the username and uses only operations we can compute, so we reproduce it to generate a serial for any username (see `keygen.py`):
+This is a variant of the djb2 hash. You start with `acc = 0x1505`, and for each character do `acc = acc*33 + c`, computed on a `uint` (the 32-bit overflow is intentional). The correct serial is the hash value as 8 uppercase hex digits. The hash depends only on the username and uses only operations we can compute, so we reproduce it to generate a serial for any username (see `keygen.py`):
 
 ```python
 MASK = 0xFFFFFFFF
@@ -174,9 +174,9 @@ print("".join(chr(b ^ 0x3C) for b in enc))   # -> Confuse_Me_42
 
 The correct password is `Confuse_Me_42`.
 
-On the obfuscation part: if you obfuscate `level3.dll` with ConfuserEx and reopen it in dnSpy, class, method and field names turn into meaningless Unicode characters, the constant array may be converted into a call to a runtime decryption function, and the control flow is tangled. Running `de4dot -f level3.dll -o level3-clean.dll` makes de4dot recognize the protector, restore names (as `Class0.method1`), decrypt static strings and flatten the control flow, and `level3-clean.dll` reads almost like the original. When strings are encrypted at runtime and de4dot can't decrypt them, the manual way is to set a breakpoint in dnSpy on the decryption function, run to it and read the decrypted string in Locals.
+On the obfuscation part, if you obfuscate `level3.dll` with ConfuserEx and reopen it in dnSpy, class, method and field names turn into meaningless Unicode characters, the constant array may be converted into a call to a runtime decryption function, and the control flow is tangled. Running `de4dot -f level3.dll -o level3-clean.dll` makes de4dot recognize the protector, restore names (as `Class0.method1`), decrypt static strings and flatten the control flow, and `level3-clean.dll` reads almost like the original. When strings are encrypted at runtime and de4dot can't decrypt them, the manual way is to set a breakpoint in dnSpy on the decryption function, run to it and read the decrypted string in Locals.
 
-Summary: .NET decompiles almost back to source, so Level 1 is just reading. For an algorithm you write a keygen and don't need to patch. Hidden strings only slow you down, since custom XOR or Base64 reverses in minutes. Real obfuscation (ConfuserEx) needs de4dot or runtime tracing, but because .NET still runs on the CLR, there's always a debugging path to the decrypted values.
+In summary, .NET decompiles almost back to source, so Level 1 is just reading. For an algorithm you write a keygen and don't need to patch. Hidden strings only slow you down, since custom XOR or Base64 reverses in minutes. Real obfuscation (ConfuserEx) needs de4dot or runtime tracing, but because .NET still runs on the CLR, there's always a debugging path to the decrypted values.
 
 </details>
 

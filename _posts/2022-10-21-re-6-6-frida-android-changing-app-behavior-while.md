@@ -131,7 +131,7 @@ pip install frida-tools objection
 
 You also need the frida-server build for the right architecture, pushed to the device and running (see the setup section above). Check that everything is connected with `frida-ps -U`, which should list the apps. A good target is OWASP UnCrackable-Level1, downloaded from the official OWASP MASTG UnCrackable apps page (https://mas.owasp.org/crackmes/). It has a function that checks for root and then exits, and a function that verifies a secret string, which makes it good for practicing hooks.
 
-Open the APK in JADX-GUI and find the class and method that check for root (or the condition that makes the app quit early). Use Copy as Frida snippet to get the hook template for that method, then edit `hook.js` to force the method to return the value that lets the app continue. The file is a sample script with three patterns: forcing a root check to return false, logging the arguments and real result of a verification function, and hooking an overloaded method where you must spell out the signature. Adjust the class and method names to your target. Run it with the command below and check that the app no longer exits.
+Open the APK in JADX-GUI and find the class and method that check for root (or the condition that makes the app quit early). Use Copy as Frida snippet to get the hook template for that method, then edit `hook.js` to force the method to return the value that lets the app continue. The file is a sample script with three patterns, which are forcing a root check to return false, logging the arguments and real result of a verification function, and hooking an overloaded method where you must spell out the signature. Adjust the class and method names to your target. Run it with the command below and check that the app no longer exits.
 
 ```
 frida -U -f <package> -l hook.js
@@ -204,9 +204,9 @@ android root disable
 
 objection ships ready-made hooks for many root detection mechanisms, so you don't have to find each class yourself.
 
-On the questions: a runtime hook is fast, needs no repacking or re-signing, and can change many places in one session, which is good while exploring. But a hook only lives while Frida is attached. For a permanent change that doesn't depend on Frida, patch the smali and rebuild (Lesson 6.4). If the app detects Frida, you can run a renamed frida-server on a different port than the default 27042, or embed frida-gadget in a repacked APK, or hook the Frida detection function itself so that it sees nothing.
+On the questions, a runtime hook is fast, needs no repacking or re-signing, and can change many places in one session, which is good while exploring. But a hook only lives while Frida is attached. For a permanent change that doesn't depend on Frida, patch the smali and rebuild (Lesson 6.4). If the app detects Frida, you can run a renamed frida-server on a different port than the default 27042, or embed frida-gadget in a repacked APK, or hook the Frida detection function itself so that it sees nothing.
 
-One caveat: the class names and structure of UnCrackable-Level1 above follow the familiar public version of that app. After obfuscation the method names may differ slightly depending on the build you download, so use exactly what JADX shows.
+One caveat is that the class names and structure of UnCrackable-Level1 above follow the familiar public version of that app. After obfuscation the method names may differ slightly depending on the build you download, so use exactly what JADX shows.
 
 </details>
 

@@ -10,17 +10,17 @@ render_with_liquid: false
 ---
 Often the fastest way to learn what vulnerability a piece of software had is to read its patch. The vendor ships an update with a vague changelog line like "fixed some stability issues", but where the binaries before and after the patch differ tells you where the bug was. Comparing two binaries to find what differs is called binary diffing, and when the two binaries are before/after a patch it's called patch diffing.
 
-This lesson shows the technique with an example that actually ran: two versions of the same program, one with a bug, one patched, and how diffing points at the fixed function.
+This lesson shows the technique with an example that actually ran, using two versions of the same program, one with a bug, one patched, and how diffing points at the fixed function.
 
 ## What it's used for
 
-There are three common situations. The first is patch diffing for vulnerability research: compare the old version and the patched one, find the fixed function, and understand the bug that was fixed. From there you can rebuild the vulnerability to write a detection signature, or verify that your own systems are safe. This is legitimate defensive work, and also how people research 1-days (a vulnerability that was just patched but many machines haven't updated).
+There are three common situations. The first is patch diffing for vulnerability research, where you compare the old version and the patched one, find the fixed function, and understand the bug that was fixed. From there you can rebuild the vulnerability to write a detection signature, or verify that your own systems are safe. This is legitimate defensive work, and also how people research 1-days (a vulnerability that was just patched but many machines haven't updated).
 
 The second is comparing malware variants. Two malware samples from the same family share most of their code, and a diff shows what the attacker added or changed in the new variant, which helps update rules. The third is recovering already-known functions. You analyzed a binary thoroughly, and now you meet another binary that shares a library. A diff helps transfer function names and comments from the old one to the new one, so you don't start over.
 
 ## Tools
 
-Diffing doesn't compare byte by byte (almost every byte changes just because addresses shifted), it compares function structure: control flow graph (CFG), number of blocks, number of calls, constants. Each pair of functions gets a similarity score from 0 to 1.
+Diffing doesn't compare byte by byte (almost every byte changes just because addresses shifted), it compares function structure, meaning control flow graph (CFG), number of blocks, number of calls, constants. Each pair of functions gets a similarity score from 0 to 1.
 
 | Tool | Notes |
 |---|---|
@@ -33,7 +33,7 @@ A few concepts. A matched function is one where a corresponding pair was found b
 
 ## A real example
 
-Lab `18.4` has two versions of a small login program. The only difference in the source is in the `copy_name` function: v1 copies the username with `strcpy` into a 16-byte buffer without checking the length (a classic stack buffer overflow), and v2 adds a length check before copying.
+Lab `18.4` has two versions of a small login program. The only difference in the source is in the `copy_name` function, where v1 copies the username with `strcpy` into a 16-byte buffer without checking the length (a classic stack buffer overflow), and v2 adds a length check before copying.
 
 Build both with gcc `-O1` and run `objdump -d`. This is `copy_name` from v1 (the vulnerable one):
 
@@ -100,7 +100,7 @@ gcc -O1 -fno-stack-protector -o login_v1 login_v1.c
 gcc -O1 -fno-stack-protector -o login_v2 login_v2.c
 ```
 
-Use `objdump -d login_v1` and `objdump -d login_v2` to list the three functions `main`, `copy_name` and `check_pin` in each build. Compare `main` and `check_pin` between the two and decide whether they differ structurally, ignoring address shifts. Then compare `copy_name`, point out the instructions that appear only in v2 and say what that new group does. From the difference, work out what v1's vulnerability is and which input triggers it. If you have the tools, run one of the following and compare: `radiff2 -A -C login_v1 login_v2`, BinDiff (analyze both files in IDA or Ghidra, export BinExport and compare), or `ghidriff login_v1 login_v2` and read the markdown report. To confirm the bug, run `./login_v1 AAAAAAAAAAAAAAAAAAAAAAAAAAAA 0000` (a name longer than 16 characters) and `./login_v2` with the same input and see which one crashes.
+Use `objdump -d login_v1` and `objdump -d login_v2` to list the three functions `main`, `copy_name` and `check_pin` in each build. Compare `main` and `check_pin` between the two and decide whether they differ structurally, ignoring address shifts. Then compare `copy_name`, point out the instructions that appear only in v2 and say what that new group does. From the difference, work out what v1's vulnerability is and which input triggers it. If you have the tools, run one of the following and compare, using `radiff2 -A -C login_v1 login_v2`, BinDiff (analyze both files in IDA or Ghidra, export BinExport and compare), or `ghidriff login_v1 login_v2` and read the markdown report. To confirm the bug, run `./login_v1 AAAAAAAAAAAAAAAAAAAAAAAAAAAA 0000` (a name longer than 16 characters) and `./login_v2` with the same input and see which one crashes.
 
 Some questions to think about. Why does diffing compare function structure better than raw bytes when only one function changed? If the patched version were built with a very different compiler from the old one, what would the diff look like and how would you reduce the noise? And in a real patch that changes 50 functions, how do you filter down to the ones related to the vulnerability?
 
@@ -127,7 +127,7 @@ movzbl %al,%eax
 ret
 ```
 
-`main` is structurally the same too: the same `cmp` on argc, the call to `copy_name`, the call to `strtol`, the call to `check_pin`, and the same branches printing "PIN correct" and "PIN wrong". A diffing tool would score `main` and `check_pin` at a similarity close to 1.00 and skip them.
+`main` is structurally the same too, with the same `cmp` on argc, the call to `copy_name`, the call to `strtol`, the call to `check_pin`, and the same branches printing "PIN correct" and "PIN wrong". A diffing tool would score `main` and `check_pin` at a similarity close to 1.00 and skip them.
 
 `copy_name` in v1:
 

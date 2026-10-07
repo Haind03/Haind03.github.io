@@ -8,13 +8,13 @@ categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
-The three things in this lesson have one annoying thing in common: they let code run in places you don't expect. An exception jumps the flow to a handler you haven't read. A TLS callback runs before `main` even starts. A syscall drops straight into the kernel and skips every Win32 function you're watching. Malware uses all three for that reason, so it's worth knowing how each one works.
+The three things in this lesson have one annoying thing in common, which is that they let code run in places you don't expect. An exception jumps the flow to a handler you haven't read. A TLS callback runs before `main` even starts. A syscall drops straight into the kernel and skips every Win32 function you're watching. Malware uses all three for that reason, so it's worth knowing how each one works.
 
 ## SEH
 
-Structured Exception Handling (SEH) is the Windows mechanism for handling exceptions: divide by zero, bad memory access, or an error the code throws itself. Instead of crashing right away, Windows looks for a registered handler and hands control to it.
+Structured Exception Handling (SEH) is the Windows mechanism for handling exceptions, such as divide by zero, bad memory access, or an error the code throws itself. Instead of crashing right away, Windows looks for a registered handler and hands control to it.
 
-On x86, the SEH handler chain is a linked list on the stack, and the head pointer lives at `fs:[0]` (the first field of the TEB, see [Lesson 1.11](/posts/re-1-11-windows-internals-2-peb-teb-handles/)). Each record has two fields: a pointer to the next record, and a pointer to the handler function.
+On x86, the SEH handler chain is a linked list on the stack, and the head pointer lives at `fs:[0]` (the first field of the TEB, see [Lesson 1.11](/posts/re-1-11-windows-internals-2-peb-teb-handles/)). Each record has two fields, a pointer to the next record and a pointer to the handler function.
 
 ```asm
 ; x86: manually registering an SEH handler, the classic pattern
@@ -37,7 +37,7 @@ If you see an `AddVectoredExceptionHandler` or a manual SEH registration pattern
 
 ## TLS callbacks
 
-Thread Local Storage (TLS) exists so each thread gets its own copy of a variable. It also has a feature that gets abused more than its original purpose: TLS callbacks, functions called automatically whenever a process or thread starts up and exits.
+Thread Local Storage (TLS) exists so each thread gets its own copy of a variable. It also has a feature that gets abused more than its original purpose, namely TLS callbacks, which are functions called automatically whenever a process or thread starts up and exits.
 
 TLS callbacks run before the program's entry point (`AddressOfEntryPoint`). So before the first line of code you thought was the start, other code has already run.
 
@@ -57,7 +57,7 @@ Not every TLS callback is malicious. Plenty of runtimes and libraries use it leg
 
 This part covers the whole path of a system call, and why tracing Win32 APIs sometimes still misses things.
 
-From [Lesson 1.10](/posts/re-1-10-windows-internals-1-win32-api-dlls/): kernel32 doesn't do the heavy lifting itself, it calls down into ntdll. The functions in ntdll have an `Nt` or `Zw` prefix (for example `NtCreateFile`, `NtAllocateVirtualMemory`). This is the Native API layer, the closest to the kernel in user mode. The full chain:
+From [Lesson 1.10](/posts/re-1-10-windows-internals-1-win32-api-dlls/) we know that kernel32 doesn't do the heavy lifting itself, it calls down into ntdll. The functions in ntdll have an `Nt` or `Zw` prefix (for example `NtCreateFile`, `NtAllocateVirtualMemory`). This is the Native API layer, the closest to the kernel in user mode. The full chain:
 
 ```
 Program
@@ -67,7 +67,7 @@ Program
             -> the kernel half of NtCreateFile
 ```
 
-The `syscall` instruction (x64) works like this: put an identifying number (the system service number) into the `eax` register, then execute `syscall`. The CPU switches to kernel mode, and the kernel looks that number up in the service table (SSDT) to know which function to call.
+The `syscall` instruction (x64) works like this. Put an identifying number (the system service number) into the `eax` register, then execute `syscall`. The CPU switches to kernel mode, and the kernel looks that number up in the service table (SSDT) to know which function to call.
 
 A typical ntdll stub looks like this:
 
@@ -147,7 +147,7 @@ Why is a breakpoint on main too late for a TLS callback? The TLS callback runs b
 
 Will a breakpoint on `CreateFileW` hit when the malware calls `NtCreateFile` directly or uses a direct syscall? No. `bp CreateFileW` only stops when kernel32's `CreateFileW` is called. If the malware calls `NtCreateFile` in ntdll directly, it skips kernel32 and your breakpoint never fires. If it uses a direct syscall (placing `mov eax, <number>; syscall` into its own code), even a breakpoint on `NtCreateFile` in ntdll misses, because it never calls any ntdll function at all.
 
-The lower you put the breakpoint, the harder it is to dodge. From weakest to strongest: kernel32, ntdll (`Nt*`), the `syscall` instruction itself. When you suspect direct syscalls, find the `syscall` instructions and put hardware breakpoints on them, or observe at the kernel callback and ETW level, which user-mode code can't reach.
+The lower you put the breakpoint, the harder it is to dodge. From weakest to strongest, the order is kernel32, ntdll (`Nt*`), the `syscall` instruction itself. When you suspect direct syscalls, find the `syscall` instructions and put hardware breakpoints on them, or observe at the kernel callback and ETW level, which user-mode code can't reach.
 
 </details>
 

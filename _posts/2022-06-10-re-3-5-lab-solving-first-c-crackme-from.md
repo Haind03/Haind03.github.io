@@ -8,7 +8,7 @@ categories: ["Technique Reverse", "Part 03 · C"]
 tags: [reverse-engineering, c]
 render_with_liquid: false
 ---
-By now you have the separate pieces: reading assembly (1.3), the stack and parameters (1.4), recognizing if/loop (1.5), IDA/Ghidra (2.2, 2.3) and x64dbg (2.5). This lesson uses all of them on a small crackme written in C. There's no new theory, we just sit down and solve it.
+By now you have the separate pieces, reading assembly (1.3), the stack and parameters (1.4), recognizing if/loop (1.5), IDA/Ghidra (2.2, 2.3) and x64dbg (2.5). This lesson uses all of them on a small crackme written in C. There's no new theory, we just sit down and solve it.
 
 The crackme is `crackme.c`, in the Lab section at the end. I suggest you stop here, try it yourself, and come back to compare. Below I walk through the whole solution, so it's a spoiler.
 
@@ -63,9 +63,9 @@ int check_password(char *input) {
 }
 ```
 
-There are three checks. The first is the length: the password must be exactly 10 characters, and `strlen(input) != 10` returns 0 right away. You saw this pattern in lesson 1.3.
+There are three checks. The first is the length. The password must be exactly 10 characters, and `strlen(input) != 10` returns 0 right away. You saw this pattern in lesson 1.3.
 
-The second is a per-character transform. Each character gets XORed with `0x5A` and compared with an element of the `expected` array. That's why the password doesn't show up in strings: the file holds the XORed `expected` array, not the original password. The third is a checksum. The sum of the ASCII codes must equal `0x39C`. It's there to stop random guessing, but it doesn't cost us anything. If we get the second check right, the third passes on its own.
+The second is a per-character transform. Each character gets XORed with `0x5A` and compared with an element of the `expected` array. That's why the password doesn't show up in strings. The file holds the XORed `expected` array, not the original password. The third is a checksum. The sum of the ASCII codes must equal `0x39C`. It's there to stop random guessing, but it doesn't cost us anything. If we get the second check right, the third passes on its own.
 
 The XOR is the important part. Remember from lesson 1.1 that `a ^ k ^ k == a`. If `input[i] ^ 0x5A == expected[i]`, then `input[i] == expected[i] ^ 0x5A`. So take the `expected` array and XOR it with `0x5A` to get the password.
 
@@ -123,7 +123,7 @@ cl /Od crackme.c
 
 Work in this order. Triage with Detect It Easy to see which compiler built it and whether it's packed. Run `strings` and check whether the password shows up in plaintext, and whether any function name hints at the destination. Open it in Ghidra or IDA and go from the result strings to the checking function by xref. Read the check logic and work out how long the password is and how each character is transformed before the comparison. Take the constant array used in the comparison and compute the password backwards. Enter it and confirm the program prints `Correct!`. Optionally, open it in x64dbg, put a breakpoint at the comparison loop and watch the two operands of `cmp`, so you can read the constant array without hunting for it statically.
 
-A hint: the password isn't in the file as readable text. It's transformed, so you have to understand the transformation and undo it. Look at the properties of XOR in [Lesson 1.1](/posts/re-1-1-reading-hexdump-like-text/) if you need a refresher. Do all the steps yourself before opening the solution.
+A hint is that the password isn't in the file as readable text. It's transformed, so you have to understand the transformation and undo it. Look at the properties of XOR in [Lesson 1.1](/posts/re-1-1-reading-hexdump-like-text/) if you need a refresher. Do all the steps yourself before opening the solution.
 
 <div class="lab-box">
 <div class="lab-head"><b>LAB 3.5</b>source files</div>
@@ -169,4 +169,4 @@ A few notes. The password is XORed, so it never appears in `strings`, and the wa
 ## Key takeaways
 Always triage first, then strings. Function names like `check_password` help a lot, and the `Correct` string leads straight to the logic. If the password doesn't appear in strings, it's transformed, so you have to read how it's checked.
 
-XOR goes both ways: `input = expected ^ key`. A per-byte XOR loop followed by a comparison with a constant array usually means you can XOR back. Solving from static reading is the cleanest, and dynamic is for confirming or for complex logic. Patching the jump makes the check always pass but doesn't give you the real password.
+XOR goes both ways, which gives `input = expected ^ key`. A per-byte XOR loop followed by a comparison with a constant array usually means you can XOR back. Solving from static reading is the cleanest, and dynamic is for confirming or for complex logic. Patching the jump makes the check always pass but doesn't give you the real password.

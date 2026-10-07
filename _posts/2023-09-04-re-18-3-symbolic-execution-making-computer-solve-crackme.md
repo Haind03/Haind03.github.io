@@ -8,11 +8,11 @@ categories: ["Technique Reverse", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
 render_with_liquid: false
 ---
-In [lesson 16.4](/posts/re-16-4-rewriting-algorithm-python-letting-z3-solve/) you wrote constraints by hand and let Z3 solve them. That means reading every comparison in the binary and copying it down without a single wrong sign. With a check function that has a few dozen branches, that's tiring and easy to get wrong. Symbolic execution does the copying for you: it runs the binary with the input as symbolic variables, collects constraints along the way, then calls a solver. You only say "find the path to the spot that prints Correct".
+In [lesson 16.4](/posts/re-16-4-rewriting-algorithm-python-letting-z3-solve/) you wrote constraints by hand and let Z3 solve them. That means reading every comparison in the binary and copying it down without a single wrong sign. With a check function that has a few dozen branches, that's tiring and easy to get wrong. Symbolic execution does the copying for you. It runs the binary with the input as symbolic variables, collects constraints along the way, then calls a solver. You only say "find the path to the spot that prints Correct".
 
 ## The core idea
 
-In a normal run, the input is a concrete value, for example `s[0] = 0x41`. Symbolic execution replaces it with a symbolic variable (a symbol), call it `c0`. When it meets the instruction `s[0] ^ 0x41`, the machine doesn't compute a number but records the expression `c0 ^ 0x41`. When it meets a branch `if (... == 0)`, it splits into two paths: one path adds the constraint `c0 ^ 0x41 == 0`, the other adds `c0 ^ 0x41 != 0`, and it continues down both.
+In a normal run, the input is a concrete value, for example `s[0] = 0x41`. Symbolic execution replaces it with a symbolic variable (a symbol), call it `c0`. When it meets the instruction `s[0] ^ 0x41`, the machine doesn't compute a number but records the expression `c0 ^ 0x41`. When it meets a branch `if (... == 0)`, it splits into two paths. One path adds the constraint `c0 ^ 0x41 == 0`, the other adds `c0 ^ 0x41 != 0`, and it continues down both.
 
 So each execution path accumulates a set of constraints. When it reaches the goal (the spot that prints "Correct"), the constraints describe which input leads there, and handing them to an SMT solver gives a concrete input. You don't read the logic or copy constraints, you only point at the goal and at the spots to avoid.
 
@@ -59,9 +59,9 @@ Triton (Quarkslab) leans toward concolic and integrates DBI (tying to [lesson 17
 
 angr works well when the check logic has many branches but each branch is simple, you don't want to read it all, and the input space is moderate. It handles the translation from binary to constraints for you.
 
-It struggles in a few cases, where hand-written Z3 or another approach wins. Path explosion is one: big loops and many nested branches blow up the number of paths, and then you limit the exploration area, or symbolize only the check function (use `call_state` to call the function directly instead of running from main). Heavy crypto or one-way hashes are another: hashing MD5/SHA or multi-round AES produces huge constraints the solver can't handle, and a one-way hash can't in theory be solved by a solver, so you have to brute force or find another route (tying back to [lesson 16.4](/posts/re-16-4-rewriting-algorithm-python-letting-z3-solve/)). The last is syscalls or a complex environment: angr has to be able to simulate whatever the program calls, and without hooks it gets lost.
+It struggles in a few cases, where hand-written Z3 or another approach wins. Path explosion is one. Big loops and many nested branches blow up the number of paths, and then you limit the exploration area, or symbolize only the check function (use `call_state` to call the function directly instead of running from main). Heavy crypto or one-way hashes are another. Hashing MD5/SHA or multi-round AES produces huge constraints the solver can't handle, and a one-way hash can't in theory be solved by a solver, so you have to brute force or find another route (tying back to [lesson 16.4](/posts/re-16-4-rewriting-algorithm-python-letting-z3-solve/)). The last is syscalls or a complex environment. Angr has to be able to simulate whatever the program calls, and without hooks it gets lost.
 
-My rule: try angr first because it's cheap, and if it hangs or explodes, narrow the scope. If that doesn't work, read by hand and write Z3.
+My rule is to try angr first because it's cheap, and if it hangs or explodes, narrow the scope. If that doesn't work, read by hand and write Z3.
 
 ## Lab
 
@@ -97,7 +97,7 @@ The correct serial is `AorrnsqT`. I verified it end to end on Linux. I built wit
 
 Here's what angr did. It loaded the binary, created 8 symbolic bytes `c0..c7`, joined them into `serial`, and passed it through `argv[1]`. It added a soft constraint that each byte is printable (0x20 to 0x7e) for a tidy result. Then `explore(find=..., avoid=...)` pushed all states forward, keeping the states whose stdout contains `Correct` and dropping those containing `Nope`. On the state it found, `solver.eval(serial)` derives bytes satisfying every constraint accumulated along the way.
 
-To compare with solving by hand, open `crackme.c`: the `check` function applies 8 constraints.
+To compare with solving by hand, open `crackme.c`, where the `check` function applies 8 constraints.
 
 | Byte | Constraint | Result |
 |---|---|---|
@@ -112,7 +112,7 @@ To compare with solving by hand, open `crackme.c`: the `check` function applies 
 
 Putting them together, `A o r r n s q T` is `AorrnsqT`, which matches angr's result.
 
-On the questions: you don't need to copy constraints because angr executes the binary with symbolic variables and collects the constraints at each branch itself. We only point at the goal (stdout containing "Correct") and what to avoid, and the job of translating logic into constraints belongs to angr, not to us. If `check` hashed with SHA-256 and compared to a constant, angr would nearly give up. A hash function creates enormous constraints and is essentially one-way, so an SMT solver can't invert it in finite time. Then you would have to brute-force the feasible space, or look for some other weakness (which connects to lesson 16.4). As for other ways to point at the goal, use specific addresses: `find=0x...` (the address of the instruction that prints Correct, or of the return-1 branch) and `avoid=0x...`, taking the addresses from IDA, Ghidra or objdump. Matching on stdout is more convenient when you don't want to look up addresses.
+On the questions, you don't need to copy constraints because angr executes the binary with symbolic variables and collects the constraints at each branch itself. We only point at the goal (stdout containing "Correct") and what to avoid, and the job of translating logic into constraints belongs to angr, not to us. If `check` hashed with SHA-256 and compared to a constant, angr would nearly give up. A hash function creates enormous constraints and is essentially one-way, so an SMT solver can't invert it in finite time. Then you would have to brute-force the feasible space, or look for some other weakness (which connects to lesson 16.4). As for other ways to point at the goal, use specific addresses, with `find=0x...` (the address of the instruction that prints Correct, or of the return-1 branch) and `avoid=0x...`, taking the addresses from IDA, Ghidra or objdump. Matching on stdout is more convenient when you don't want to look up addresses.
 
 </details>
 

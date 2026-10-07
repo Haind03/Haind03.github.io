@@ -30,7 +30,7 @@ RTTI also leaves the class name strings in the binary. Search the Strings and yo
 
 `main` creates the object with `new SerialValidator()` and assigns it to a pointer of type `Validator*`. Because `check` is virtual, the compiler doesn't know at compile time which function will be called, so it looks it up in a table at runtime. That table is the vtable. Every object with virtual functions carries a pointer to its class's vtable at offset 0 (the first 8 bytes of the object on x64).
 
-Picture it like this: `object -> [vtable_ptr][field1][field2]...`, and `vtable -> [&check][&name][&destructor]...`. A virtual call is two dereferences: take the vtable_ptr from the object, then take the function address from the vtable.
+Picture it like this, `object -> [vtable_ptr][field1][field2]...`, and `vtable -> [&check][&name][&destructor]...`. A virtual call is two dereferences, where you take the vtable_ptr from the object, then take the function address from the vtable.
 
 ## Step 3: reading the virtual call in asm
 
@@ -49,7 +49,7 @@ mov  rdi, rax                    ; rdi = this (the first hidden parameter)
 call rcx                         ; indirect call through the vtable
 ```
 
-Three things to notice. The pair `mov rax,[rax]` then `mov rcx,[rax]` is the classic signature of a virtual call: dereference the object to get the vtable, dereference the vtable to get the function pointer. The last instruction is `call rcx`, not `call <function name>`, so in the IDA/Ghidra graph there's no arrow to the target function and you can't double-click to jump in. This is where beginners get stuck. And `rdi` gets `this` while `rsi` gets the input. That's System V (Linux). On Windows x64 it would be `rcx` for `this` and `rdx` for the input (see Lesson 4.1 again on the this pointer).
+Three things to notice. The pair `mov rax,[rax]` then `mov rcx,[rax]` is the classic signature of a virtual call, because it dereferences the object to get the vtable, dereference the vtable to get the function pointer. The last instruction is `call rcx`, not `call <function name>`, so in the IDA/Ghidra graph there's no arrow to the target function and you can't double-click to jump in. This is where beginners get stuck. And `rdi` gets `this` while `rsi` gets the input. That's System V (Linux). On Windows x64 it would be `rcx` for `this` and `rdx` for the input (see Lesson 4.1 again on the this pointer).
 
 How do you know `call rcx` actually calls `SerialValidator::check`? Two ways. Statically, `vtable[0]` is loaded from the vtable pointer, and the vtable of `SerialValidator` is set by the constructor. Follow the constructor (or let IDA/Ghidra's RTTI analysis attach it) and you get the vtable, where the first slot points to `check`. With RTTI in place, IDA usually names the vtable `SerialValidator::vftable` itself and you just open it and read. Dynamically, set a breakpoint at `call rcx` and look at `rcx` at runtime, which is the address of `check`. Step into and you're in the function. I use this when the static vtable analysis is messy.
 
@@ -70,7 +70,7 @@ The 12-byte `expected` array lives in the object (a field of `SerialValidator`, 
 
 ## Step 5: reverse it to find the password
 
-The transform `t = (c ^ 0x5A) + i` is invertible: `c = (expected[i] - i) ^ 0x5A`. A few lines of Python give you the password. The numbers and the full solution are in the "Show solution" block below.
+The transform `t = (c ^ 0x5A) + i` is invertible, since `c = (expected[i] - i) ^ 0x5A`. A few lines of Python give you the password. The numbers and the full solution are in the "Show solution" block below.
 
 ## Why this lesson matters
 
@@ -99,7 +99,7 @@ or with MinGW:
 g++ -O0 -std=c++17 -o crackme.exe crackme.cpp
 ```
 
-Run it as `./crackme <password>`. Start with triage: use DIE to confirm the compiler, use `nm -C` (or let IDA/Ghidra demangle) to see the class and method names, and look for the RTTI strings (`SerialValidator`, `Validator`) in the Strings view. Then open the binary in IDA or Ghidra, find `main`, and identify where the object is created (`new`) and where `check` is called. Point out the asm that makes the virtual call, recognizing the two dereferences (object to vtable to function pointer) and the `call reg` instruction. Trace to the real `check` function in one of two ways: read the vtable through RTTI, or set a breakpoint at the `call reg` and read the register. Read the logic in `check`: the required length, the transform applied to each character, and the array of constants it compares against. Invert the transform to compute the password, writing a few lines of Python if you need to, and finally run `./crackme <your_password>` to confirm it prints "Correct!".
+Run it as `./crackme <password>`. Start with triage. Use DIE to confirm the compiler, use `nm -C` (or let IDA/Ghidra demangle) to see the class and method names, and look for the RTTI strings (`SerialValidator`, `Validator`) in the Strings view. Then open the binary in IDA or Ghidra, find `main`, and identify where the object is created (`new`) and where `check` is called. Point out the asm that makes the virtual call, recognizing the two dereferences (object to vtable to function pointer) and the `call reg` instruction. Trace to the real `check` function in one of two ways, either read the vtable through RTTI, or set a breakpoint at the `call reg` and read the register. Read the logic in `check` to find the required length, the transform applied to each character, and the array of constants it compares against. Invert the transform to compute the password, writing a few lines of Python if you need to, and finally run `./crackme <your_password>` to confirm it prints "Correct!".
 
 Some questions to think about. Why does the `check` call site have no arrow to the target function in IDA's graph? If the class has many virtual functions, how do you know which vtable slot is `check`? And this check algorithm is invertible, so what if it used a one-way hash instead? Do it yourself before opening the solution.
 
@@ -113,7 +113,7 @@ Some questions to think about. Why does the `check` call site have no arrow to t
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>
 
-The correct password is `V7abl3_Cr4ck` (12 characters): entering it prints `Correct! You passed the C++ crackme.` and any other input is rejected. The password does not appear in the binary's `strings`.
+The correct password is `V7abl3_Cr4ck` (12 characters), and entering it prints `Correct! You passed the C++ crackme.` and any other input is rejected. The password does not appear in the binary's `strings`.
 
 ### 1. Triage
 

@@ -8,7 +8,7 @@ categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
-Every `.exe`, `.dll`, `.sys` on Windows follows the same format called PE (Portable Executable). Knowing it explains a lot: why DIE can tell what a file was written in, why packers can hide code, where the entry point is so you can place your first breakpoint, and why your program can call a function from `kernel32.dll`. This lesson goes through a PE from the top of the file down, just enough for you to poke around in PE-bear by hand.
+Every `.exe`, `.dll`, `.sys` on Windows follows the same format called PE (Portable Executable). Knowing it explains a lot, including why DIE can tell what a file was written in, why packers can hide code, where the entry point is so you can place your first breakpoint, and why your program can call a function from `kernel32.dll`. This lesson goes through a PE from the top of the file down, just enough for you to poke around in PE-bear by hand.
 
 ## The big picture
 
@@ -41,15 +41,15 @@ The headers at the start describe the file. The rest is the actual content. The 
 
 Open any exe in a hex editor and the first two bytes are always `4D 5A`, the ASCII characters "MZ". This is the magic number that identifies a PE file. "MZ" stands for Mark Zbikowski, a Microsoft engineer from the DOS days. `4D 5A` at offset 0 means you're holding a Windows executable.
 
-The DOS header has only one field that matters to us: `e_lfanew` at offset `0x3C`. It points to where the NT headers start. Read 4 bytes at offset `0x3C`, jump there, and you're at the real PE part.
+The DOS header has only one field that matters to us, which is `e_lfanew` at offset `0x3C`. It points to where the NT headers start. Read 4 bytes at offset `0x3C`, jump there, and you're at the real PE part.
 
 Right after the DOS header is the DOS stub, a tiny DOS program that prints the familiar "This program cannot be run in DOS mode." if someone runs the file on DOS. It's harmless for RE, skip it.
 
 ## NT headers
 
-At the position `e_lfanew` points to, you find the PE signature first: 4 bytes `50 45 00 00`, i.e. "PE\0\0". It confirms the PE part starts here.
+At the position `e_lfanew` points to, you find the PE signature first, which is 4 bytes `50 45 00 00`, i.e. "PE\0\0". It confirms the PE part starts here.
 
-Next is the file header (also called the COFF header), with a few notable fields. `Machine` is the architecture: `0x14C` is x86 (32-bit) and `0x8664` is x64, which tells you whether to use x32dbg or x64dbg. `NumberOfSections` is how many sections the file has, and `Characteristics` holds descriptive flags, for example whether this is an EXE or a DLL.
+Next is the file header (also called the COFF header), with a few notable fields. `Machine` is the architecture, where `0x14C` is x86 (32-bit) and `0x8664` is x64, which tells you whether to use x32dbg or x64dbg. `NumberOfSections` is how many sections the file has, and `Characteristics` holds descriptive flags, for example whether this is an EXE or a DLL.
 
 Then comes the optional header (the name is misleading, it's mandatory for executables). This part has a lot of information. `Magic` is `0x10B` for PE32 (32-bit) and `0x20B` for PE32+ (64-bit). `AddressOfEntryPoint` is the entry point, where code starts running. It's an RVA (explained below), and your first breakpoint when debugging usually goes here. `ImageBase` is the virtual address the file wants to be loaded at. The classic is `0x400000` for 32-bit exes. With ASLR on, the loader puts it somewhere else, but ImageBase is the reference point for calculations. `SectionAlignment` and `FileAlignment` are the alignment of sections in memory and on disk, and these two numbers are why RVAs and file offsets don't line up. Finally `DataDirectory` is an array of pointers to the important tables (Import, Export, Relocation, TLS, Resource...). You'll keep coming back here.
 
@@ -61,11 +61,11 @@ A file offset (also called raw offset) is the position in bytes from the start o
 
 The two numbers differ because the alignment on disk (`FileAlignment`, usually 0x200) is different from the alignment in memory (`SectionAlignment`, usually 0x1000). The same code byte has one file offset but a different RVA.
 
-For the conversion, first find the section containing that RVA, meaning which section's `[VirtualAddress, VirtualAddress + VirtualSize)` range the RVA falls in. Then compute the offset within the section: `delta = RVA - VirtualAddress` (of that section). The file offset is then `PointerToRawData` (of that section) `+ delta`.
+For the conversion, first find the section containing that RVA, meaning which section's `[VirtualAddress, VirtualAddress + VirtualSize)` range the RVA falls in. Then compute the offset within the section as `delta = RVA - VirtualAddress` (of that section). The file offset is then `PointerToRawData` (of that section) `+ delta`.
 
-So: `file_offset = RVA - section.VirtualAddress + section.PointerToRawData`.
+Put together, `file_offset = RVA - section.VirtualAddress + section.PointerToRawData`.
 
-To get the real virtual address (VA): `VA = ImageBase + RVA`. When IDA gives you a VA like `0x401500` and you want to find that byte on disk, work backwards: VA minus ImageBase gives the RVA, then apply the formula above to get the file offset.
+To get the real virtual address (VA), use `VA = ImageBase + RVA`. When IDA gives you a VA like `0x401500` and you want to find that byte on disk, work backwards. VA minus ImageBase gives the RVA, then apply the formula above to get the file offset.
 
 PE-bear and CFF Explorer do all of this math for you, with a button to convert RVA to offset. Still, learn the formula so you don't panic when the two numbers don't match.
 
@@ -75,7 +75,7 @@ Right after the NT headers is an array, each element describing one section. Eac
 
 The usual sections are `.text` for code (flags are usually readable + executable), `.rdata` for read-only data such as constants, strings, and the IAT, `.data` for writable globals, `.rsrc` for resources (icons, dialogs, version info, sometimes a payload hidden in here), and `.reloc` for relocation info.
 
-Triage tip: an odd section named something like `.UPX0` or `.vmp0`, or a `.text` with a huge `VirtualSize` but `SizeOfRawData` near zero, means the file is probably packed. The real code gets unpacked into the virtual region at runtime.
+As a triage tip, an odd section named something like `.UPX0` or `.vmp0`, or a `.text` with a huge `VirtualSize` but `SizeOfRawData` near zero, means the file is probably packed. The real code gets unpacked into the virtual region at runtime.
 
 ## Import Directory and IAT
 
@@ -97,13 +97,13 @@ ImageBase is only a preference. When that address is already taken (or ASLR move
 
 ## TLS directory and TLS callbacks
 
-TLS (Thread Local Storage) gives each thread its own copy of data. What matters for RE is the TLS callback: functions registered in the TLS directory, which the loader calls even before the entry point (before `main`).
+TLS (Thread Local Storage) gives each thread its own copy of data. What matters for RE is the TLS callback, meaning functions registered in the TLS directory, which the loader calls even before the entry point (before `main`).
 
 Malware and protectors love this. They put the debugger check in a TLS callback, so it runs before you can set a breakpoint at the entry point, and the sample detects you before you see anything. If you set a breakpoint at the entry point but the program already knows there's a debugger and exits, check the TLS directory. x64dbg has an option to break at TLS callbacks, turn it on. Details in Lesson 15.4.
 
 ## Seeing it in PE-bear
 
-Open PE-bear (or CFF Explorer), drag an exe in, and each part I described shows up as a tree: the DOS header, the NT headers with the Optional header's full fields, the section table with each section's permissions, the Import table with the list of DLLs and functions. DIE is less detailed but gives a quick picture: compiler, entropy, packed or not. My usual workflow is DIE for quick triage, then PE-bear for a closer look.
+Open PE-bear (or CFF Explorer), drag an exe in, and each part I described shows up as a tree, including the DOS header, the NT headers with the Optional header's full fields, the section table with each section's permissions, the Import table with the list of DLLs and functions. DIE is less detailed but gives a quick picture, with the compiler, entropy, and packed or not. My usual workflow is DIE for quick triage, then PE-bear for a closer look.
 
 ## Lab
 
@@ -141,13 +141,13 @@ Build it with `cl hello.c` (MSVC) or `gcc hello.c -o hello.exe` (MinGW). Try it 
 
 The numbers below come from one concrete example to show the reasoning. Your file will give different values, but the method is identical.
 
-For the DIE triage, the architecture is on the first line: "PE32+" means x64 and "PE32" means x86. DIE usually names the compiler and linker too, for example "Microsoft Visual C/C++" or "MinGW", with the linker version. To judge packing, look at the entropy. An overall entropy around 6.x or lower together with the standard section names (`.text`, `.rdata`, `.data`) is normal and means not packed. An entropy close to 7.8 to 8.0 with strange section names points to packing. Notepad and a self-built exe will not be packed.
+For the DIE triage, the architecture is on the first line, where "PE32+" means x64 and "PE32" means x86. DIE usually names the compiler and linker too, for example "Microsoft Visual C/C++" or "MinGW", with the linker version. To judge packing, look at the entropy. An overall entropy around 6.x or lower together with the standard section names (`.text`, `.rdata`, `.data`) is normal and means not packed. An entropy close to 7.8 to 8.0 with strange section names points to packing. Notepad and a self-built exe will not be packed.
 
 For the headers, the first two bytes are always `4D 5A`, and if they are not, the file is not a PE. To read `e_lfanew`, take the 4 little-endian bytes at offset 0x3C. If you see `F8 00 00 00`, then `e_lfanew = 0xF8`, and jumping to offset 0xF8 you find `50 45 00 00` ("PE\0\0"), which confirms that the NT headers start there. As an example for the entry point, an x64 exe might have `ImageBase = 0x140000000` and `AddressOfEntryPoint = 0x1200`, so the entry point VA is `0x140000000 + 0x1200 = 0x140001200`. A classic 32-bit exe has `ImageBase = 0x400000`.
 
 PE-bear shows the full section table. For instance, `.text` might have `VirtualAddress = 0x1000`, `VirtualSize = 0x5000`, `PointerToRawData = 0x400` and `SizeOfRawData = 0x5000`. The code section is the one with the `MEM_EXECUTE` flag (shown as "X" or "executable" in PE-bear), almost always `.text`, and the entry point RVA must fall inside its virtual address range.
 
-For imports, notepad pulls from many DLLs such as `kernel32.dll`, `user32.dll`, `gdi32.dll`, `comdlg32.dll` and `advapi32.dll`. Three examples of reasoning from API names: `CreateFileW` (kernel32) means the program reads and writes files, which makes sense since notepad opens files. `GetOpenFileNameW` (comdlg32) shows a file picker dialog. `RegGetValueW` or `RegOpenKeyExW` (advapi32) reads the registry, here for notepad's settings and font. An API name usually sums up what it does: kernel32 is file, process and memory, user32 is the UI, advapi32 is registry, services and crypto, and ws2_32 is networking.
+For imports, notepad pulls from many DLLs such as `kernel32.dll`, `user32.dll`, `gdi32.dll`, `comdlg32.dll` and `advapi32.dll`. Here are three examples of reasoning from API names. `CreateFileW` (kernel32) means the program reads and writes files, which makes sense since notepad opens files. `GetOpenFileNameW` (comdlg32) shows a file picker dialog. `RegGetValueW` or `RegOpenKeyExW` (advapi32) reads the registry, here for notepad's settings and font. An API name usually sums up what it does. In general, kernel32 is file, process and memory, user32 is the UI, advapi32 is registry, services and crypto, and ws2_32 is networking.
 
 The RVA to file offset conversion is the most important part. Suppose `AddressOfEntryPoint = 0x1200` (an RVA) and the section containing it is `.text` with `VirtualAddress = 0x1000` and `PointerToRawData = 0x400`. Applying the formula:
 
@@ -162,7 +162,7 @@ So the first byte of the entry point code sits at file offset `0x600` on disk. T
 
 The two differ (`0x1000` in memory but `0x400` on disk) because `SectionAlignment` (0x1000) differs from `FileAlignment` (0x200). In memory sections are aligned to 0x1000 pages, while on disk they are aligned to 0x200 to keep the file compact. That gap produces the formula.
 
-A few common mistakes. Forgetting that file offset and RVA are two different coordinate systems, so searching for the RVA directly on disk finds nothing. Picking the wrong section for the conversion: you must use the section the RVA falls into, which is not always `.text`. Forgetting little-endian when reading `e_lfanew` by hand: `F8 00 00 00` is `0xF8`, not `0xF8000000`. And confusing VA with RVA: a VA already includes ImageBase, an RVA does not.
+A few common mistakes. Forgetting that file offset and RVA are two different coordinate systems, so searching for the RVA directly on disk finds nothing. Picking the wrong section for the conversion, since you must use the section the RVA falls into, which is not always `.text`. Forgetting little-endian when reading `e_lfanew` by hand, since `F8 00 00 00` is `0xF8`, not `0xF8000000`. And confusing VA with RVA, since a VA already includes ImageBase and an RVA does not.
 
 </details>
 

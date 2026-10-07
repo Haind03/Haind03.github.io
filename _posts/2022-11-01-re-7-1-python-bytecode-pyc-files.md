@@ -8,11 +8,11 @@ categories: ["Technique Reverse", "Part 07 · Python"]
 tags: [reverse-engineering, python]
 render_with_liquid: false
 ---
-After native C++ and managed .NET, Python is a relief. Reversing it is almost like re-reading the source, because Python keeps almost everything: function names, variable names, constant names, even line numbers. Knowing how Python compiles and what a `.pyc` file contains explains why it's so easy, and why it's sometimes still hard (versions).
+After native C++ and managed .NET, Python is a relief. Reversing it is almost like re-reading the source, because Python keeps almost everything, including function names, variable names, constant names and even line numbers. Knowing how Python compiles and what a `.pyc` file contains explains why it's so easy, and why it's sometimes still hard (versions).
 
 ## Python compiles too
 
-Many people think Python is purely interpreted, running straight from text. Not quite. When you run a `.py` file, CPython compiles it to bytecode first, and then a virtual machine (the CPython VM) runs that bytecode. This VM is stack-based, like the JVM: instructions push and pop values on a stack.
+Many people think Python is purely interpreted, running straight from text. Not quite. When you run a `.py` file, CPython compiles it to bytecode first, and then a virtual machine (the CPython VM) runs that bytecode. This VM is stack-based, like the JVM, so instructions push and pop values on a stack.
 
 The bytecode doesn't vanish. For imported modules, CPython saves it as a `.pyc` file in the `__pycache__/` folder so it doesn't recompile next time. `.pyc` is what you often have to reverse, because many packaged Python programs ship only `.pyc` and not the `.py`.
 
@@ -20,7 +20,7 @@ The bytecode doesn't vanish. For imported modules, CPython saves it as a `.pyc` 
 
 ![.pyc file structure: a 16-byte header and a marshaled code object](/assets/img/re/part-07/pyc-structure.svg)
 
-A `.pyc` file has two parts: a short header, then a marshaled (serialized) code object.
+A `.pyc` file has two parts, a short header and then a marshaled (serialized) code object.
 
 The 16-byte header (from Python 3.7 onward):
 
@@ -59,7 +59,7 @@ Decompilers like pycdc or uncompyle6 have to know the exact version to translate
 
 After the header is a marshaled code object. Unpacked, it contains `co_code`, the actual bytecode byte sequence, and `co_consts`, the constants used in the function (numbers, strings, even the code objects of child functions). It also holds `co_names` for global variable names and attribute names, `co_varnames` for local variable names and parameters, and `co_filename`, `co_name` and `co_firstlineno` for the file name, function name and line number.
 
-That list is why Python is easy to reverse: local variable names are intact, strings are intact, even the original line numbers. Nothing throws the information away the way a C compiler does.
+That list is why Python is easy to reverse, because local variable names are intact, strings are intact, even the original line numbers. Nothing throws the information away the way a C compiler does.
 
 ## Reading bytecode with dis
 
@@ -99,7 +99,7 @@ def check(name):
         RETURN_VALUE
 ```
 
-It reads almost like the source. The left column is the original Python line number. `LOAD_CONST`, `STORE_FAST`, `LOAD_FAST` push and store values, `FOR_ITER` is the loop, `COMPARE_OP 2 (==)` is the comparison, and look at `LOAD_CONST 2 (666)`: the constant `0x29A` is right there. A Python crackme like this leaks its secret in `co_consts`.
+It reads almost like the source. The left column is the original Python line number. `LOAD_CONST`, `STORE_FAST`, `LOAD_FAST` push and store values, `FOR_ITER` is the loop, `COMPARE_OP 2 (==)` is the comparison, and look at `LOAD_CONST 2 (666)`, where the constant `0x29A` is right there. A Python crackme like this leaks its secret in `co_consts`.
 
 Opcodes change by version. `PRECALL` and `BINARY_OP` above are from 3.11. Version 3.8 calls functions with `CALL_FUNCTION` and adds with `INPLACE_ADD`. That's why the magic number matters.
 
@@ -107,7 +107,7 @@ Opcodes change by version. `PRECALL` and `BINARY_OP` above are from 3.11. Versio
 
 In practice you meet three situations, getting harder. In the first you have the `.pyc` and can decompile it directly with pycdc or uncompyle6 (Lessons 7.2, 7.3). In the second the program is packaged as an `.exe` with PyInstaller/py2exe, so you have to extract the `.pyc` first (Lesson 7.4). In the third it's been turned into native code or encrypted by Nuitka/Cython/PyArmor, which is much harder and means reversing it like C (Lesson 7.5).
 
-This lesson is the foundation: knowing what a `.pyc` contains and how to read the magic. The rest of Part 7 builds on it.
+This lesson is the foundation, meaning knowing what a `.pyc` contains and how to read the magic. The rest of Part 7 builds on it.
 
 ## Lab
 

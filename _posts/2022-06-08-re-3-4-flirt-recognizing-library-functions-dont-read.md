@@ -88,7 +88,7 @@ loop:
     jmp  loop
 ```
 
-Two pointers moving together, comparing byte by byte, with a check for the 0 byte: that's the shape of `strcmp`/`memcmp`. `memcpy` is a loop copying in big blocks (often using wide registers, movups/rep movsb). Knowing these few is enough to not get lost.
+Two pointers moving together, comparing byte by byte, with a check for the 0 byte, which is the shape of `strcmp`/`memcmp`. `memcpy` is a loop copying in big blocks (often using wide registers, movups/rep movsb). Knowing these few is enough to not get lost.
 
 The format string is another free clue. A function that takes a string with `%d`, `%s` and then calls around is almost certainly related to the `printf` family.
 
@@ -141,7 +141,7 @@ To isolate the author's code, filter the Functions table (type into the filter b
 
 For Ghidra, open `greet_static`, go to `Tools > Function ID` and enable the bundled FID databases. Ghidra usually recognizes part of it (the CRT and some common glibc functions) but with clearly lower coverage than FLIRT, and many functions stay `FUN_`. This is where knowing the shapes of `strlen`, `strcmp` and `memcpy` pays off.
 
-So: decide whether the binary is static or dynamic and apply signatures before reading. FLIRT turns a table of 2000 functions into a handful worth reading. When the tool can't help, the familiar shapes of libc functions still do.
+So decide whether the binary is static or dynamic and apply signatures before reading. FLIRT turns a table of 2000 functions into a handful worth reading. When the tool can't help, the familiar shapes of libc functions still do.
 
 </details>
 

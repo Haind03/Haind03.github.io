@@ -8,17 +8,17 @@ categories: ["Technique Reverse", "Part 02 · The Toolkit"]
 tags: [reverse-engineering, tools]
 render_with_liquid: false
 ---
-Before opening IDA or Ghidra, there's one thing veterans always do and beginners often skip: a quick checkup. Five minutes of asking "what am I holding" saves hours later. Open a disassembler on a packed file and you stare at garbage. Open it in the wrong 32/64-bit mode and every address is off. Skip the strings and you miss an answer sitting on the surface.
+Before opening IDA or Ghidra, there's one thing veterans always do and beginners often skip, which is a quick checkup. Five minutes of asking "what am I holding" saves hours later. Open a disassembler on a packed file and you stare at garbage. Open it in the wrong 32/64-bit mode and every address is off. Skip the strings and you miss an answer sitting on the surface.
 
 This lesson is a practical triage workflow with four tools. Detect It Easy is a portable build, so there's nothing to install.
 
 ## Detect It Easy
 
-DIE answers three questions: what is this file, what was it written with, and is it packed.
+DIE answers three questions, namely what is this file, what was it written with, and is it packed.
 
 ### Using the GUI
 
-Run `die.exe` and drag the file in. The main result line shows the file type (PE32, PE32+, ELF, ...) and what DIE guessed: the compiler (MSVC, GCC, MinGW), linker, or protector/packer (UPX, VMProtect, Themida, .NET). "PE32+" means 64-bit, "PE32" is 32-bit.
+Run `die.exe` and drag the file in. The main result line shows the file type (PE32, PE32+, ELF, ...) and what DIE guessed, such as the compiler (MSVC, GCC, MinGW), linker, or protector/packer (UPX, VMProtect, Themida, .NET). "PE32+" means 64-bit, "PE32" is 32-bit.
 
 People often ignore the Entropy button, but it's very useful. Entropy measures how random the data is, on a scale of 0 to 8. Normal code is around 6, compressed or encrypted data goes up to nearly 8. A `.text` section with entropy 7.9 is almost certainly packed or encrypted. DIE draws an entropy chart per section, so you see at a glance where something is abnormal.
 
@@ -49,11 +49,11 @@ $ file sample.bin
 sample.bin: ELF 64-bit LSB pie executable, x86-64, dynamically linked, not stripped
 ```
 
-This one line says: 64-bit ELF, executable, dynamically linked, and "not stripped", which means it still has symbols and will be much easier to read. If you see "stripped", expect no function names.
+This one line says it is a 64-bit ELF, executable, dynamically linked, and "not stripped", which means it still has symbols and will be much easier to read. If you see "stripped", expect no function names.
 
 ## Strings
 
-A lot of the time, what you need is sitting in the file's strings: URLs, paths, error messages, registry key names, even passwords or the flag in an easy crackme. Glance at the strings before disassembling.
+A lot of the time, what you need is sitting in the file's strings, such as URLs, paths, error messages, registry key names, even passwords or the flag in an easy crackme. Glance at the strings before disassembling.
 
 ```
 $ strings -n 6 sample.exe
@@ -83,7 +83,7 @@ The goal of triage isn't to understand the program, just to know which way to go
 
 ## Lab
 
-Practice right away on tools you probably already have. The targets are four executables: `die.exe`, `dnSpy.exe`, `ILSpy.exe` and `jadx-gui-1.5.1.exe`. Open a terminal (PowerShell or cmd) in the folder that holds them and run the console version of DIE on each one:
+Practice right away on tools you probably already have. The targets are four executables, namely `die.exe`, `dnSpy.exe`, `ILSpy.exe` and `jadx-gui-1.5.1.exe`. Open a terminal (PowerShell or cmd) in the folder that holds them and run the console version of DIE on each one:
 
 ```
 diec.exe die.exe
@@ -94,11 +94,11 @@ diec.exe jadx-gui-1.5.1.exe
 
 Write down the file type and the compiler or packer each one reports. Which are native C/C++ and which are .NET, and how does DIE tell them apart?
 
-Next, take the entropy of two of them and compare, for example `diec.exe -e dnSpy.exe`. Is any section close to 8.0? If so, guess why: compression, a resource, encryption. Then open the DIE GUI, drag a file in, press the Entropy button to see the per-section chart, and press the PE/Import button to see the import table. Which file imports many functions and which imports few?
+Next, take the entropy of two of them and compare, for example `diec.exe -e dnSpy.exe`. Is any section close to 8.0? If so, guess why, for example compression, a resource, encryption. Then open the DIE GUI, drag a file in, press the Entropy button to see the per-section chart, and press the PE/Import button to see the import table. Which file imports many functions and which imports few?
 
 After that, run strings on one file (WSL or Sysinternals `strings.exe`) with `-n 6` and pick out three strings that tell you what the file does, such as a library name, a message or a path.
 
-Finally, think about this: if a file has entropy around 7.9 in `.text` and an import table with only a few functions left, what is your next step? Hint: it isn't opening IDA right away. Try it yourself first, then open the solution.
+Finally, think about this. If a file has entropy around 7.9 in `.text` and an import table with only a few functions left, what is your next step? As a hint, it isn't opening IDA right away. Try it yourself first, then open the solution.
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

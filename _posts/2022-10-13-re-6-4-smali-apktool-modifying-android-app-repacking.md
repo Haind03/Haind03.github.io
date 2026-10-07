@@ -14,7 +14,7 @@ JADX lets you read Android code as Java, but only for reading. If you want to ch
 
 Android doesn't run JVM bytecode, it runs DEX bytecode (Dalvik/ART). Smali is the assembly language for DEX, and each smali instruction maps to one bytecode instruction. It's the lowest level a human can still read and edit comfortably.
 
-The difference from the x86 assembly in earlier lessons: DEX is register-based, not stack-based. There's no push/pop. Each method has a numbered set of virtual registers and instructions work on them directly.
+The difference from the x86 assembly in earlier lessons is that DEX is register-based, not stack-based. There's no push/pop. Each method has a numbered set of virtual registers and instructions work on them directly.
 
 There are two groups of registers. `p0, p1, p2...` are the parameters passed into the method, and in a non-static method `p0` is `this`. `v0, v1, v2...` are local registers for computation. At the start of each method it declares how many local registers it needs, for example `.registers 4` or `.locals 2`.
 
@@ -41,7 +41,7 @@ public boolean check(String input) {
 }
 ```
 
-Abbreviations like `Z` and `Ljava/lang/String;` are DEX type descriptors: `Z`=boolean, `I`=int, `V`=void, `Ljava/lang/String;`=class String. You get used to reading them quickly.
+Abbreviations like `Z` and `Ljava/lang/String;` are DEX type descriptors, where `Z`=boolean, `I`=int, `V`=void, `Ljava/lang/String;`=class String. You get used to reading them quickly.
 
 These are the instructions you touch most when patching. `const/4 v0, 0x1` loads a small constant (here 1) into v0, and `const/4 v0, 0x0` loads 0. `invoke-virtual {...}, ...` calls a method, and `move-result v0` puts the return value of the last call into v0 (like "rax is the return value" in x86). `if-eqz v0, :label` jumps to the label if v0 equals 0, and `if-nez` jumps if it's not zero. `return v0` and `return-void` return.
 

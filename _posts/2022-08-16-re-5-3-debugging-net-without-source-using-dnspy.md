@@ -12,7 +12,7 @@ Debugging native code means dealing with addresses, registers, stack frames. .NE
 
 ## Why managed debugging is easy
 
-Recall [Lesson 5.1](/posts/re-5-1-net-internals-why-decompiling-gives-back/): a .NET assembly carries full metadata and IL. dnSpy decompiles the IL into C#, and it also knows which IL instructions each line of C# corresponds to. When you set a breakpoint on a line, dnSpy sets a real breakpoint at the matching IL offset. The CLR stops there, and because the metadata keeps the names of local variables, parameters, and fields, dnSpy displays everything with proper names.
+Recall [Lesson 5.1](/posts/re-5-1-net-internals-why-decompiling-gives-back/) that a .NET assembly carries full metadata and IL. dnSpy decompiles the IL into C#, and it also knows which IL instructions each line of C# corresponds to. When you set a breakpoint on a line, dnSpy sets a real breakpoint at the matching IL offset. The CLR stops there, and because the metadata keeps the names of local variables, parameters, and fields, dnSpy displays everything with proper names.
 
 In x64dbg you look at `[rbp-4]` and have to guess what variable that is. In dnSpy you see `int attempts = 3` directly.
 
@@ -20,21 +20,21 @@ dnSpy is a portable download (run `dnSpy.exe`), no installation needed.
 
 ## Start and Attach
 
-There are two situations. With Start, dnSpy launches the program itself under a debugger: open the assembly in dnSpy, click Start (F5), and pick the right executable. Use it when you want to debug from the beginning and catch code that runs early. With Attach, the program is already running and you attach the debugger: Debug menu, Attach to Process, pick the .NET process. Use it when you want to catch it in a running state, or when the program is started by something else.
+There are two situations. With Start, dnSpy launches the program itself under a debugger. Open the assembly in dnSpy, click Start (F5), and pick the right executable. Use it when you want to debug from the beginning and catch code that runs early. With Attach, the program is already running and you attach the debugger from the Debug menu with Attach to Process and pick the .NET process. Use it when you want to catch it in a running state, or when the program is started by something else.
 
 For a simple crackme, just use Start.
 
 ## Where to set breakpoints
 
-It's the same process as native but easier: use static first to narrow things down, then set a breakpoint there. Open the assembly, use search (Ctrl+Shift+K) or browse the tree to find message strings like "Wrong" or "Correct". Click the string, and use Analyze to see which method uses it. That's the check function.
+It's the same process as native but easier. Use static first to narrow things down, then set a breakpoint there. Open the assembly, use search (Ctrl+Shift+K) or browse the tree to find message strings like "Wrong" or "Correct". Click the string, and use Analyze to see which method uses it. That's the check function.
 
-In the decompiled C# of that function, click the left margin of the line you want to stop at (or put the cursor there and press F9) to toggle a breakpoint, and a red dot appears. The best spot is the comparison line: `if (input == password)` or `if (CheckSerial(...))`.
+In the decompiled C# of that function, click the left margin of the line you want to stop at (or put the cursor there and press F9) to toggle a breakpoint, and a red dot appears. The best spot is the comparison line, such as `if (input == password)` or `if (CheckSerial(...))`.
 
 ## Once stopped
 
-When the breakpoint hits, the program freezes and dnSpy highlights the line about to run. There are several windows. Locals shows every local variable and parameter with its current value, and the answer is often right there: if the function compares `input` with a variable `expected`, Locals shows that `expected` holds the correct serial. In Watch you add expressions you want to track, for example `input.Length`. Call Stack shows the chain of functions called to get here, and Immediate runs C# expressions at the stop.
+When the breakpoint hits, the program freezes and dnSpy highlights the line about to run. There are several windows. Locals shows every local variable and parameter with its current value, and the answer is often right there. If the function compares `input` with a variable `expected`, Locals shows that `expected` holds the correct serial. In Watch you add expressions you want to track, for example `input.Length`. Call Stack shows the chain of functions called to get here, and Immediate runs C# expressions at the stop.
 
-The control keys: F10 step over (don't go inside child functions), F11 step into (go inside), Shift+F11 step out (run to the end of the current function and then stop), F5 continue.
+The control keys are F10 to step over (don't go inside child functions), F11 to step into (go inside), Shift+F11 to step out (run to the end of the current function and then stop), and F5 to continue.
 
 ## Editing variables at runtime
 
@@ -122,7 +122,7 @@ The second method is editing `isValid` at run time. You do not need to know the 
 
 The correct serial differs per username because it is a hash of the username itself, with `acc` rolling through each character. This is an algorithmic check, not a comparison against a fixed serial. To write a keygen you have to use the first method, understanding and reproducing the algorithm. Editing `isValid` is only a one-off runtime patch.
 
-One caveat on verification: the serials in the table come from a Python simulation that follows `MakeSerial` step by step (start at `0x1337`, multiply by 31 and add the character code, mask with `0xFFFFF`, print 5 uppercase hex digits). When you build the crackme with the dotnet SDK, the `expected` value you see in dnSpy should match this table exactly.
+One caveat on verification is that the serials in the table come from a Python simulation that follows `MakeSerial` step by step (start at `0x1337`, multiply by 31 and add the character code, mask with `0xFFFFF`, print 5 uppercase hex digits). When you build the crackme with the dotnet SDK, the `expected` value you see in dnSpy should match this table exactly.
 
 </details>
 

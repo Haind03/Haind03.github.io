@@ -50,7 +50,7 @@ I submitted the hash to VirusTotal and also looked for drivers related to `Nvidi
 ![The three functions inside start](/assets/img/malware/nvidiagraphicdriver/image-1.png)
 
 ### The `start2` function
-After debugging `start2`, I could see which `kernel32` APIs get resolved. They come in this order: `kernel32_RemoveVectoredExceptionHandler`, `kernel32_AddVectoredExceptionHandler`, `kernel32_CopyFileA`, `kernel32_CreateDirectoryA`, `kernel32_OpenProcess`, `kernel32_VirtualAllocEx`, `kernel32_WriteProcessMemory`, `kernel32_CreateThread`, `kernel32_ExitProcess`, `kernel32_WaitForSingleObject`, `kernel32_CreateToolhelp32Snapshot`, `kernel32_Thread32First`, `kernel32_Thread32Next`, `kernel32_OpenThread`, `kernel32_SuspendThread`, `kernel32_GetThreadContext`, `kernel32_SetThreadContext`, `kernel32_ResumeThread`, `kernel32_GetModuleFileNameA`, `advapi32_GetUserNameA`, `kernel32_Process32First`, `kernel32_Process32Next`, `kernel32_CloseHandle`, `kernel32_VirtualAlloc`, `kernel32_VirtualFree`, `kernel32_SetFileAttributesA`, `kernel32_CreateRemoteThread`, and `kernel32_SetThreadPriority`.
+After debugging `start2`, I could see which `kernel32` APIs get resolved. They come in this order, `kernel32_RemoveVectoredExceptionHandler`, `kernel32_AddVectoredExceptionHandler`, `kernel32_CopyFileA`, `kernel32_CreateDirectoryA`, `kernel32_OpenProcess`, `kernel32_VirtualAllocEx`, `kernel32_WriteProcessMemory`, `kernel32_CreateThread`, `kernel32_ExitProcess`, `kernel32_WaitForSingleObject`, `kernel32_CreateToolhelp32Snapshot`, `kernel32_Thread32First`, `kernel32_Thread32Next`, `kernel32_OpenThread`, `kernel32_SuspendThread`, `kernel32_GetThreadContext`, `kernel32_SetThreadContext`, `kernel32_ResumeThread`, `kernel32_GetModuleFileNameA`, `advapi32_GetUserNameA`, `kernel32_Process32First`, `kernel32_Process32Next`, `kernel32_CloseHandle`, `kernel32_VirtualAlloc`, `kernel32_VirtualFree`, `kernel32_SetFileAttributesA`, `kernel32_CreateRemoteThread`, and `kernel32_SetThreadPriority`.
 
 ![The resolved API list in start2](/assets/img/malware/nvidiagraphicdriver/image-2.png)
 
@@ -143,7 +143,7 @@ The start address is `0x000001FD15741330`. I had to suspend the threads in `shel
 
 ![Start of shellcode 2](/assets/img/malware/nvidiagraphicdriver/image-22.png)
 
-This function also resolves APIs from `kernel32` and others: `kernel32_VirtualAlloc`, `kernel32_VirtualFree`, `kernel32_CloseHandle`, `kernel32_GetComputerNameA`, `kernel32_CreateProcessA`, `kernel32_Sleep`, `kernel32_CreateThread`, `wininet_InternetOpenA`, `wininet_InternetConnectA`, `wininet_InternetOpenUrlA`, `wininet_InternetReadFile`, `wininet_HttpOpenRequestA`, `wininet_HttpSendRequestA`, and `wininet_InternetCloseHandle`.
+This function also resolves APIs from `kernel32` and others, `kernel32_VirtualAlloc`, `kernel32_VirtualFree`, `kernel32_CloseHandle`, `kernel32_GetComputerNameA`, `kernel32_CreateProcessA`, `kernel32_Sleep`, `kernel32_CreateThread`, `wininet_InternetOpenA`, `wininet_InternetConnectA`, `wininet_InternetOpenUrlA`, `wininet_InternetReadFile`, `wininet_HttpOpenRequestA`, `wininet_HttpSendRequestA`, and `wininet_InternetCloseHandle`.
 
 ![Shellcode 2 resolving APIs](/assets/img/malware/nvidiagraphicdriver/image-23.png)
 <br>
@@ -290,17 +290,17 @@ EventID 4720 means the user account KitagawaMarin was created, at 2024-08-23T03:
 
 ![EventID 4732 adding the account to Users](/assets/img/malware/nvidiagraphicdriver/image-38.png)
 
-EventID 4732 means a member was added to the local security group "Users", at 2024-08-23T03:27:51.7959146Z. The details are: MemberSid S-1-5-21-1866265027-1870850910-1579135973-1001 (the SID of the KitagawaMarin account), TargetUserName Users (the "Users" built-in security group of the system), TargetSid S-1-5-32-545 (the SID of the "Users" group), SubjectUserName REM (the user who performed the action), and SubjectLogonId 0x3de37 (the logon session ID of the user REM). So the KitagawaMarin account was added to the "Users" group. This is the default group for all standard users on a Windows system, and it gives basic access to the computer's resources.
+EventID 4732 means a member was added to the local security group "Users", at 2024-08-23T03:27:51.7959146Z. The details are the following, MemberSid S-1-5-21-1866265027-1870850910-1579135973-1001 (the SID of the KitagawaMarin account), TargetUserName Users (the "Users" built-in security group of the system), TargetSid S-1-5-32-545 (the SID of the "Users" group), SubjectUserName REM (the user who performed the action), and SubjectLogonId 0x3de37 (the logon session ID of the user REM). So the KitagawaMarin account was added to the "Users" group. This is the default group for all standard users on a Windows system, and it gives basic access to the computer's resources.
 
 EventID 4722 means the KitagawaMarin account was re-enabled, at 2024-08-23T03:27:51.8042773Z. The account had been disabled earlier and was unlocked to be used again.
 
-The first EventID 4738 means the properties of the user account changed, at 2024-08-23T03:27:51.8043200Z. The details are: TargetUserName KitagawaMarin, OldUacValue 0x15 (the old User Account Control value), NewUacValue 0x14 (the new UAC value, which may indicate a change in permissions or security settings), SubjectUserName REM, and SubjectLogonId 0x3de37.
+The first EventID 4738 means the properties of the user account changed, at 2024-08-23T03:27:51.8043200Z. The details are the following, TargetUserName KitagawaMarin, OldUacValue 0x15 (the old User Account Control value), NewUacValue 0x14 (the new UAC value, which may indicate a change in permissions or security settings), SubjectUserName REM, and SubjectLogonId 0x3de37.
 
-The second EventID 4738 is another property change, at 2024-08-23T03:27:51.8144463Z. The details are: TargetUserName KitagawaMarin, OldUacValue 0x14, NewUacValue 0x14 (unchanged), PasswordLastSet 8/22/2024 11:27:51 PM, SubjectUserName REM, and SubjectLogonId 0x3de37. The UAC value didn't change, but the password may have been updated.
+The second EventID 4738 is another property change, at 2024-08-23T03:27:51.8144463Z. The details are the following, TargetUserName KitagawaMarin, OldUacValue 0x14, NewUacValue 0x14 (unchanged), PasswordLastSet 8/22/2024 11:27:51 PM, SubjectUserName REM, and SubjectLogonId 0x3de37. The UAC value didn't change, but the password may have been updated.
 
-EventID 4724 means the password of the user account was changed, at 2024-08-23T03:27:51.8144685Z. The details are: TargetUserName KitagawaMarin, TargetSid S-1-5-21-1866265027-1870850910-1579135973-1001, SubjectUserName REM, and SubjectLogonId 0x3de37. If this wasn't done by an administrator, it needs close monitoring.
+EventID 4724 means the password of the user account was changed, at 2024-08-23T03:27:51.8144685Z. The details are the following, TargetUserName KitagawaMarin, TargetSid S-1-5-21-1866265027-1870850910-1579135973-1001, SubjectUserName REM, and SubjectLogonId 0x3de37. If this wasn't done by an administrator, it needs close monitoring.
 
-Together these events show a chain of actions around the `KitagawaMarin` account: re-enabling it, adding it to the "Users" group, changing its security properties, and finally changing its password. If they weren't performed by an administrator or weren't part of a deliberate account management process, they could indicate an intrusion or an unauthorized change to an important account, and need to be investigated.
+Together these events show a chain of actions around the `KitagawaMarin` account, namely re-enabling it, adding it to the "Users" group, changing its security properties, and finally changing its password. If they weren't performed by an administrator or weren't part of a deliberate account management process, they could indicate an intrusion or an unauthorized change to an important account, and need to be investigated.
 
 ![Events involving KitagawaMarin and Administrator](/assets/img/malware/nvidiagraphicdriver/image-39.png) 
 
@@ -312,14 +312,14 @@ Right at this point the `KitagawaMarin` account was added to the `Administrators
 
 ![EventID 4732 adding the account to Remote Desktop Users](/assets/img/malware/nvidiagraphicdriver/image-41.png)
  
-EventID 4732 means a member was added to the "Remote Desktop Users" group, at 2024-08-23T03:28:28.6006461Z. The details are: MemberSid S-1-5-21-1866265027-1870850910-1579135973-1001, TargetUserName Remote Desktop Users, TargetSid S-1-5-32-555, SubjectUserSid S-1-5-21-1866265027-1870850910-1579135973-1000, SubjectUserName REM, and SubjectLogonId 0x3de37. So the `KitagawaMarin` account was added to the group that allows remote access through `Remote Desktop Protocol (RDP)`, which opens up remote access to the system for this account.
+EventID 4732 means a member was added to the "Remote Desktop Users" group, at 2024-08-23T03:28:28.6006461Z. The details are the following, MemberSid S-1-5-21-1866265027-1870850910-1579135973-1001, TargetUserName Remote Desktop Users, TargetSid S-1-5-32-555, SubjectUserSid S-1-5-21-1866265027-1870850910-1579135973-1000, SubjectUserName REM, and SubjectLogonId 0x3de37. So the `KitagawaMarin` account was added to the group that allows remote access through `Remote Desktop Protocol (RDP)`, which opens up remote access to the system for this account.
  
 ![EventID 4624 successful logon of KitagawaMarin](/assets/img/malware/nvidiagraphicdriver/image-42.png)
-EventID 4624 means the KitagawaMarin account logged on successfully, at 2024-08-23T03:28:42.9384676Z. The details are: TargetUserName KitagawaMarin, LogonType 3 (network logon), LogonProcessName NtLmSsp, AuthenticationPackageName NTLM, WorkstationName JUMP-WINDOWS, IpAddress 192.168.0.118, and KeyLength 128. The logon came from a workstation at IP address 192.168.0.118, using NTLM.
+EventID 4624 means the KitagawaMarin account logged on successfully, at 2024-08-23T03:28:42.9384676Z. The details are the following, TargetUserName KitagawaMarin, LogonType 3 (network logon), LogonProcessName NtLmSsp, AuthenticationPackageName NTLM, WorkstationName JUMP-WINDOWS, IpAddress 192.168.0.118, and KeyLength 128. The logon came from a workstation at IP address 192.168.0.118, using NTLM.
 
-EventID 4634 means the logon session was logged off, at 2024-08-23T03:28:42.9415540Z. The details are: TargetUserName KitagawaMarin and LogonType 3. The session was logged off right after the successful logon, which could be a temporary connection or an automatic logon that was terminated.
+EventID 4634 means the logon session was logged off, at 2024-08-23T03:28:42.9415540Z. The details are the following, TargetUserName KitagawaMarin and LogonType 3. The session was logged off right after the successful logon, which could be a temporary connection or an automatic logon that was terminated.
 
-The next EventID 4624 is another successful logon, at 2024-08-23T03:28:44.0056137Z. The details are: TargetUserName KitagawaMarin, LogonType 3, IpAddress 192.168.0.118, and WorkstationName JUMP-WINDOWS. The account logged on again right after being logged off, from the same IP address and workstation.
+The next EventID 4624 is another successful logon, at 2024-08-23T03:28:44.0056137Z. The details are the following, TargetUserName KitagawaMarin, LogonType 3, IpAddress 192.168.0.118, and WorkstationName JUMP-WINDOWS. The account logged on again right after being logged off, from the same IP address and workstation.
 
 So the `KitagawaMarin` account logged on and off several times within a short period, using NTLM from one specific IP address. This account had been given high administrative privileges, which is a risk if it isn't monitored and controlled. It could indicate an intrusion or unauthorized use and needs to be investigated.
 
@@ -555,6 +555,6 @@ The malware sits in the Roaming folder and is hidden, so it was designed to evad
 
 ### Possible ways the malware got into the system
 
-First, a newly created and re-enabled user account: the `KitagawaMarin` account was created, enabled, and used to log on remotely with high privileges. Second, the Remote Desktop Users group: remote access was widened by adding "Everyone" and the `KitagawaMarin` account to this group. Third, an unidentified IP address: the attacker logged on from IP address `192.168.0.118` using an account with high privileges or other credentials.
+First, a newly created and re-enabled user account, since the `KitagawaMarin` account was created, enabled, and used to log on remotely with high privileges. Second, the Remote Desktop Users group, since remote access was widened by adding "Everyone" and the `KitagawaMarin` account to this group. Third, an unidentified IP address, since the attacker logged on from IP address `192.168.0.118` using an account with high privileges or other credentials.
 
 The system was compromised through several channels, mainly abused user accounts and remote access that was set up.

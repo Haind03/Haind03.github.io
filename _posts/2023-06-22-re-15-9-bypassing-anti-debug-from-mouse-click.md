@@ -8,7 +8,7 @@ categories: ["Technique Reverse", "Part 15 · Anti-Reversing and Bypasses"]
 tags: [reverse-engineering, anti-debug]
 render_with_liquid: false
 ---
-The previous four lessons (15.1 to 15.4) showed all kinds of anti-debug: asking an API, reading the PEB, measuring time, setting traps, hiding in a TLS callback. If you had to patch each one by hand, a malware sample with twenty checks would eat your whole afternoon. Luckily most of that work is already packaged into plugins, and you just turn them on. When a plugin isn't enough, there are a few manual techniques to fill in.
+The previous four lessons (15.1 to 15.4) showed all kinds of anti-debug, including asking an API, reading the PEB, measuring time, setting traps, hiding in a TLS callback. If you had to patch each one by hand, a malware sample with twenty checks would eat your whole afternoon. Luckily most of that work is already packaged into plugins, and you just turn them on. When a plugin isn't enough, there are a few manual techniques to fill in.
 
 Almost every anti-debug check boils down to one question, "am I being watched", answered by reading a flag, a value, or a system behavior. Bypassing it doesn't mean deleting the question. You answer falsely, so every source of information says there's no debugger. The tools below all do that lying, at different layers.
 
@@ -56,9 +56,9 @@ bp IsDebuggerPresent
 SetBreakpointCommand IsDebuggerPresent, "ret; mov rax,0"
 ```
 
-(the exact syntax depends on the version, but the idea is: on a hit, fix the return value yourself and continue). This makes an annoying check disappear without patching the file.
+(the exact syntax depends on the version, but the idea is that on a hit you fix the return value yourself and continue). This makes an annoying check disappear without patching the file.
 
-The second is using hardware breakpoints instead of software breakpoints. A debugger's software breakpoint works by overwriting the first byte of the instruction with `0xCC` (INT 3). Anti-debug code can scan the code section for stray `0xCC` bytes to detect that you set a breakpoint (lesson 15.3). A hardware breakpoint uses the CPU's debug registers DR0 to DR3 and modifies no code bytes, so a `0xCC` scan sees nothing. Downsides: only 4 slots, and there's a separate check that reads DR through GetThreadContext (ScyllaHide can fake this part too). When you suspect the binary scans for `0xCC`, switch to hardware breakpoints.
+The second is using hardware breakpoints instead of software breakpoints. A debugger's software breakpoint works by overwriting the first byte of the instruction with `0xCC` (INT 3). Anti-debug code can scan the code section for stray `0xCC` bytes to detect that you set a breakpoint (lesson 15.3). A hardware breakpoint uses the CPU's debug registers DR0 to DR3 and modifies no code bytes, so a `0xCC` scan sees nothing. The downsides are that there are only 4 slots, and there's a separate check that reads DR through GetThreadContext (ScyllaHide can fake this part too). When you suspect the binary scans for `0xCC`, switch to hardware breakpoints.
 
 The third is targeted patching. Once you've located the exact branch of the check (the `cmp`/`je` pair leading to the "detected" branch), sometimes the simplest thing is to NOP the jump or flip the condition right there, as lesson 17.1 covers in detail. Use it when you want a permanent patch instead of turning on a plugin every time.
 
@@ -66,7 +66,7 @@ My usual order is to turn on ScyllaHide first to clean up 90%, look at which che
 
 ## Lab
 
-This lab has no source code of its own. It reuses the anti-debug programs you built in the earlier labs of this part: the one from Lesson 15.1 (anti-debug through APIs such as IsDebuggerPresent and NtQueryInformationProcess), the one from Lesson 15.2 (reading PEB.BeingDebugged and NtGlobalFlag directly) and the one from Lesson 15.3 (RDTSC timing and the trap). The goal is to use ScyllaHide to get past many checks at once instead of patching each one by hand, and then to deal with one leftover check yourself using a conditional breakpoint.
+This lab has no source code of its own. It reuses the anti-debug programs you built in the earlier labs of this part, namely the one from Lesson 15.1 (anti-debug through APIs such as IsDebuggerPresent and NtQueryInformationProcess), the one from Lesson 15.2 (reading PEB.BeingDebugged and NtGlobalFlag directly) and the one from Lesson 15.3 (RDTSC timing and the trap). The goal is to use ScyllaHide to get past many checks at once instead of patching each one by hand, and then to deal with one leftover check yourself using a conditional breakpoint.
 
 You need Windows, x64dbg, and the ScyllaHide plugin (copied into the x64dbg `plugins` folder), plus the anti-debug programs from those three labs.
 
@@ -74,7 +74,7 @@ Start by opening the Lesson 15.1 program in x64dbg and running it normally, with
 
 Repeat with the Lesson 15.2 program (direct PEB access) and the Lesson 15.3 program (timing). Write down which ones ScyllaHide gets past immediately and which need extra options. Timing usually needs the time group turned on.
 
-Next pick one check and deliberately turn off its ScyllaHide option, pretending the plugin doesn't cover it. Get past it yourself with a conditional breakpoint: put a breakpoint at the check function, attach a command that fixes the return value (for example forcing `rax = 0` after `IsDebuggerPresent`), and let it continue by itself. Confirm that the program passes the check. Finally set a hardware breakpoint (right-click > Breakpoint > Hardware) instead of a software breakpoint at a function, and explain why this avoids a check that scans for the byte `0xCC`.
+Next pick one check and deliberately turn off its ScyllaHide option, pretending the plugin doesn't cover it. Get past it yourself with a conditional breakpoint. Put a breakpoint at the check function, attach a command that fixes the return value (for example forcing `rax = 0` after `IsDebuggerPresent`), and let it continue by itself. Confirm that the program passes the check. Finally set a hardware breakpoint (right-click > Breakpoint > Hardware) instead of a software breakpoint at a function, and explain why this avoids a check that scans for the byte `0xCC`.
 
 Two questions to think about. Why is ScyllaHide (user-mode) not enough for every binary, and when should you think of TitanHide? And how does a self-fixing conditional breakpoint differ from patching the file directly, and which situation suits each?
 
@@ -87,7 +87,7 @@ To confirm detection, run the Lesson 15.1 program under x64dbg with nothing turn
 
 After you apply the default profile, ScyllaHide hooks ntdll inside the process and forces values. `IsDebuggerPresent` reads `PEB.BeingDebugged`, and ScyllaHide keeps that byte at 0, so it returns 0. `NtQueryInformationProcess(ProcessDebugPort)` returns 0 instead of a non-zero value. `NtQueryInformationProcess(ProcessDebugFlags)` returns 1 (meaning "no debug"). `NtSetInformationThread(ThreadHideFromDebugger)` is swallowed, so the thread doesn't hide itself. Run again and the program takes the "no debugger" branch. Every check from Lessons 15.1 and 15.2 has a corresponding option box in ScyllaHide.
 
-For direct PEB access and timing, the Lesson 15.2 program reads `gs:[0x60]` straight to get the PEB and then checks BeingDebugged and NtGlobalFlag. ScyllaHide keeps these fields clean in the PEB memory itself, so a direct read still sees clean values and it gets through. The Lesson 15.3 program measures time with RDTSC, which often needs extra tuning: turn on the option group related to time (ScyllaHide intervenes in the system's time functions). RDTSC is a direct CPU instruction, and ScyllaHide can't intercept a pure CPU instruction as easily as an API. So for timing based on bare RDTSC, the sure way is to patch the branch that compares the delta, or to run through the measured section without single-stepping (use run-to after the measured section rather than stepping instruction by instruction).
+For direct PEB access and timing, the Lesson 15.2 program reads `gs:[0x60]` straight to get the PEB and then checks BeingDebugged and NtGlobalFlag. ScyllaHide keeps these fields clean in the PEB memory itself, so a direct read still sees clean values and it gets through. The Lesson 15.3 program measures time with RDTSC, which often needs extra tuning, so turn on the option group related to time (ScyllaHide intervenes in the system's time functions). RDTSC is a direct CPU instruction, and ScyllaHide can't intercept a pure CPU instruction as easily as an API. So for timing based on bare RDTSC, the sure way is to patch the branch that compares the delta, or to run through the measured section without single-stepping (use run-to after the measured section rather than stepping instruction by instruction).
 
 For the self-fixing conditional breakpoint, suppose you turn off ScyllaHide's IsDebuggerPresent option to handle it yourself. In x64dbg, first run `bp IsDebuggerPresent` (or put the breakpoint right after the call, at the instruction that uses the result in `rax` or `eax`). Then attach a command that runs when the breakpoint hits, to force the result to 0 and continue. For example, put the breakpoint at the `test eax, eax` right after the call and give it the command `eax=0` with the "do not pause" option. Every time the program asks whether there's a debugger, it receives 0 and takes the clean branch, and you never have to click anything by hand.
 
@@ -102,4 +102,4 @@ As for conditional breakpoint versus patching the file, a conditional breakpoint
 ## Key takeaways
 Bypassing anti-debug means making every source of information answer "no debugger", not deleting the check. ScyllaHide (user-mode) is the first line, and its default profile gets past most checks from lessons 15.1 to 15.4. TitanHide (kernel driver) handles checks that look down into the kernel, and HyperHide (hypervisor) is for protectors that detect even the driver.
 
-Hardware breakpoints (DR0-DR3) don't write `0xCC` into the code, so they dodge breakpoint-scanning checks. A conditional breakpoint that fixes the return value neutralizes a weird check without patching the file. Go from the lower layers up: user-mode first, kernel next, hypervisor last.
+Hardware breakpoints (DR0-DR3) don't write `0xCC` into the code, so they dodge breakpoint-scanning checks. A conditional breakpoint that fixes the return value neutralizes a weird check without patching the file. Go from the lower layers up, with user-mode first, kernel next, hypervisor last.

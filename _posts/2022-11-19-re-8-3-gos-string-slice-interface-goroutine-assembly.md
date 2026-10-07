@@ -42,7 +42,7 @@ MOVQ CX, 0x98(SP)          ; save the pointer
 MOVL $0xd, AX              ; AX = 0xd = 13 = length of "GopherReverse"
 ```
 
-`0xd` is 13, the length of `"GopherReverse"`. A useful rule: if you see a `LEAQ` loading a pointer into the string blob, with a small constant loaded into another register right next to it, that constant is almost certainly the string length. Take the pointer, add the length, and you cut the string cleanly out of the blob.
+`0xd` is 13, the length of `"GopherReverse"`. A useful rule is that if you see a `LEAQ` loading a pointer into the string blob, with a small constant loaded into another register right next to it, that constant is almost certainly the string length. Take the pointer, add the length, and you cut the string cleanly out of the blob.
 
 ## Slice: pointer, len, cap
 
@@ -67,7 +67,7 @@ MOVQ $0x17, 0x50(SP)       ; element 4 = 23 (0x17)
 MOVQ $0x2a, 0x58(SP)       ; element 5 = 42 (0x2a)
 ```
 
-Six int elements, 8 bytes each, written back to back on the stack, exactly 8 apart. That's how you recognize a slice literal: a series of `MOVQ` writing values to consecutive stack positions. When the slice is passed into a function, three values travel together: pointer, len, cap.
+Six int elements, 8 bytes each, written back to back on the stack, exactly 8 apart. That's how you recognize a slice literal, a series of `MOVQ` writing values to consecutive stack positions. When the slice is passed into a function, three values travel together, which are pointer, len, cap.
 
 ## Interface: two pointers
 
@@ -144,7 +144,7 @@ go tool nm demo83 | grep -iE "func1|newproc|gowrap|deferwrap"
 
 The function `main.main.func1` is the body of `go func(...)`, and `runtime.newproc` is where the goroutine gets created.
 
-Two questions to think about. Why does letting IDA auto-detect C-style strings on a Go binary give wrong results? And if the binary is stripped, what still lets you find `main.main` (hint: look back at Lesson 8.2)?
+Two questions to think about. Why does letting IDA auto-detect C-style strings on a Go binary give wrong results? And if the binary is stripped, what still lets you find `main.main` (the hint is to look back at Lesson 8.2)?
 
 <div class="lab-box">
 <div class="lab-head"><b>LAB 8.3</b>source files</div>
@@ -169,7 +169,7 @@ The string `"secret length:"` is glued to `"1907348..."` and then to `"unexpecte
 sum:true3125-Inf+Inffileboolint8uintchanfunccall...
 ```
 
-That's how Go strings work: the compiler merges every string literal (including those of the runtime) into one shared blob, and each use site keeps only a pointer and a length.
+That's how Go strings work. The compiler merges every string literal (including those of the runtime) into one shared blob, and each use site keeps only a pointer and a length.
 
 For the length, `"GopherReverse"` has 13 characters. In the disassembly:
 
@@ -179,7 +179,7 @@ MOVQ CX, 0x98(SP)
 MOVL $0xd, AX              ; 0xd = 13 = length of "GopherReverse"
 ```
 
-`0xd` is 13, matching the length. This is the common pattern: `LEAQ` loads the pointer and a small constant loads the length. The pointer plus the length cuts the string cleanly out of the blob.
+`0xd` is 13, matching the length. This is the common pattern, where `LEAQ` loads the pointer and a small constant loads the length. The pointer plus the length cuts the string cleanly out of the blob.
 
 For the slice literal:
 
@@ -206,11 +206,11 @@ $ go tool nm demo83 | grep -iE "func1|newproc|gowrap|deferwrap"
 
 `main.main.func1` is the real body of `go func(id int){...}`, `runtime.newproc` is where the goroutine is created (the compiler turns `go f()` into this call), and `deferwrap1` is the wrapper for `defer wg.Done()` inside the goroutine. Also note that `sumSlice` doesn't appear in `nm` because the compiler inlined it into `main`. Inlining like this is normal in Go, and it's another reason the function tree in the binary doesn't match the source one to one.
 
-On the questions: IDA's C-style string detection goes wrong because it looks for a 0 terminator byte and Go strings don't have one. It merges the whole blob into one enormous string or cuts in the wrong places, so you rely on the pointer plus length pair where the code loads the string. A stripped binary still lets you find `main.main` thanks to pclntab (see Lesson 8.2), the table that keeps the mapping from addresses to function names and that GoReSym can read.
+On the questions, IDA's C-style string detection goes wrong because it looks for a 0 terminator byte and Go strings don't have one. It merges the whole blob into one enormous string or cuts in the wrong places, so you rely on the pointer plus length pair where the code loads the string. A stripped binary still lets you find `main.main` thanks to pclntab (see Lesson 8.2), the table that keeps the mapping from addresses to function names and that GoReSym can read.
 
 </details>
 
 ## Key takeaways
-A Go string is (pointer, length) and is not terminated by a 0 byte, so string literals merge into one stuck-together blob. To cut a string correctly, follow the code that loads it: a `LEAQ` pointer next to a small constant, which is the length. A slice is (data, len, cap), 24 bytes, and a slice literal is a series of MOVQ into consecutive stack slots.
+A Go string is (pointer, length) and is not terminated by a 0 byte, so string literals merge into one stuck-together blob. To cut a string correctly, follow the code that loads it, meaning a `LEAQ` pointer next to a small constant, which is the length. A slice is (data, len, cap), 24 bytes, and a slice literal is a series of MOVQ into consecutive stack slots.
 
 An interface is (itab, data), and calling a method through the itab is like a virtual call. `go func` becomes `runtime.newproc`, and the real body sits in a separate `funcN` function. Learn the runtime function names (newproc, deferproc, makemap, chansend) so you can read the intent quickly.

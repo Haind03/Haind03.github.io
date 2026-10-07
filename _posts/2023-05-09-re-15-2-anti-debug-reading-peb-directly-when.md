@@ -38,11 +38,11 @@ if (((PEB*)__readgsqword(0x60))->BeingDebugged)
     exit_or_crash();
 ```
 
-To recognize it: read `gs:[0x60]`, then read the byte at `[rax+2]`, then `test` and jump. No API name shows up, so searching by function name misses it. You have to search for the segment access pattern.
+To recognize it, read `gs:[0x60]`, then read the byte at `[rax+2]`, then `test` and jump. No API name shows up, so searching by function name misses it. You have to search for the segment access pattern.
 
 ## NtGlobalFlag
 
-`PEB.NtGlobalFlag` is at offset `0xBC` (x64) or `0x68` (x86). When a process is created under a debugger, the loader turns on three flags in this field: `FLG_HEAP_ENABLE_TAIL_CHECK` (0x10), `FLG_HEAP_ENABLE_FREE_CHECK` (0x20) and `FLG_HEAP_VALIDATE_PARAMETERS` (0x40).
+`PEB.NtGlobalFlag` is at offset `0xBC` (x64) or `0x68` (x86). When a process is created under a debugger, the loader turns on three flags in this field, which are `FLG_HEAP_ENABLE_TAIL_CHECK` (0x10), `FLG_HEAP_ENABLE_FREE_CHECK` (0x20) and `FLG_HEAP_VALIDATE_PARAMETERS` (0x40).
 
 Added together that's `0x70`. So the usual check looks like:
 
@@ -66,11 +66,11 @@ The checking code gets ProcessHeap and reads `ForceFlags`, and if it's nonzero i
 
 With the API group (Lesson 15.1), you set a breakpoint at `IsDebuggerPresent` and force it to return 0. This group has no function to put a breakpoint on. The code is just `mov` and `cmp` mixed in with normal logic, and looks no different from reading an ordinary variable. You have to read and understand it to see that it's reading a sensitive PEB offset.
 
-A quick tip when reading statically: find every spot that touches `gs:[0x60]` (x64) or `fs:[0x30]` (x86), then see which offset it reads next. A byte at `[...+2]` is BeingDebugged, a dword at `[...+0xBC]` is NtGlobalFlag, and `[...+0x30]` followed by a read into the heap is the ProcessHeap flags.
+A quick tip when reading statically is to find every spot that touches `gs:[0x60]` (x64) or `fs:[0x30]` (x86), then see which offset it reads next. A byte at `[...+2]` is BeingDebugged, a dword at `[...+0xBC]` is NtGlobalFlag, and `[...+0x30]` followed by a read into the heap is the ProcessHeap flags.
 
 ## How to get past it
 
-These flags live in the memory of your own process (running in the debugger), so you can modify them directly. You can edit by hand in the debugger: before the check code runs, go to the PEB and write `BeingDebugged = 0`, and clear the three bits of NtGlobalFlag. In x64dbg, use `dump` on the PEB then edit the byte, or use an expression. You can also use ScyllaHide, which does it automatically and thoroughly: it cleans BeingDebugged, NtGlobalFlag, heap flags, and a lot of other checks as soon as the process starts. For most user-mode anti-debug, turning on ScyllaHide is enough and you don't need to patch each one. See also [Lesson 15.9](/posts/re-15-9-bypassing-anti-debug-from-mouse-click/). The third option is to patch the check code: if there are only a few places, flip the detecting `jnz`/`jz` to jump the opposite way, or NOP out the check. This is good if you plan to run it many times.
+These flags live in the memory of your own process (running in the debugger), so you can modify them directly. You can edit by hand in the debugger. Before the check code runs, go to the PEB and write `BeingDebugged = 0`, and clear the three bits of NtGlobalFlag. In x64dbg, use `dump` on the PEB then edit the byte, or use an expression. You can also use ScyllaHide, which does it automatically and thoroughly, as it cleans BeingDebugged, NtGlobalFlag, heap flags, and a lot of other checks as soon as the process starts. For most user-mode anti-debug, turning on ScyllaHide is enough and you don't need to patch each one. See also [Lesson 15.9](/posts/re-15-9-bypassing-anti-debug-from-mouse-click/). The third option is to patch the check code. If there are only a few places, flip the detecting `jnz`/`jz` to jump the opposite way, or NOP out the check. This is good if you plan to run it many times.
 
 I usually try ScyllaHide first because it covers almost the whole PEB group in one go. Patching by hand is for when you want to understand each check or when the check is well hidden.
 
@@ -88,7 +88,7 @@ or with MinGW:
 x86_64-w64-mingw32-gcc -O2 peb_check.c -o peb_check.exe
 ```
 
-Run `peb_check.exe` normally (double-click or in cmd), write down the output and note that it reports no debugger detected. Then open `peb_check.exe` in x64dbg and run until it prints to the screen. This time it reports a debugger. Why, and which field is set? Open it in IDA or Ghidra and find the code that reads `gs:[0x60]`. Which offset does it read right after that? Compare with the lesson: what is `+2` and what is `+0xBC`?
+Run `peb_check.exe` normally (double-click or in cmd), write down the output and note that it reports no debugger detected. Then open `peb_check.exe` in x64dbg and run until it prints to the screen. This time it reports a debugger. Why, and which field is set? Open it in IDA or Ghidra and find the code that reads `gs:[0x60]`. Which offset does it read right after that? Compare with the lesson. What is `+2` and what is `+0xBC`?
 
 In x64dbg, before the check code runs, set `BeingDebugged` to 0 and clear the three bits of `NtGlobalFlag`, then continue and see whether it still reports a detection. After that install ScyllaHide for x64dbg, turn it on and run again from the start without editing anything by hand, and compare the result.
 
@@ -140,17 +140,17 @@ and   eax, 0x70
 cmp   eax, 0x70
 ```
 
-There's no API name anywhere. The anchor you recognize it by is `gs:[0x60]`, and then the offset read next tells you which check it is: `+2` is `BeingDebugged` and `+0xBC` is `NtGlobalFlag`.
+There's no API name anywhere. The anchor you recognize it by is `gs:[0x60]`, and then the offset read next tells you which check it is. `+2` is `BeingDebugged` and `+0xBC` is `NtGlobalFlag`.
 
 To fix the flags by hand in x64dbg, get the PEB address (the `peb()` command, or look in the Memory Map tab, or use `dump peb()+2`). Before the check function runs, write 0 to the byte at `PEB+0x2` (`BeingDebugged`) and write 0 (or clear the `0x70` bits) in the dword at `PEB+0xBC` (`NtGlobalFlag`). Continue and the program prints `No debugger detected.` If you only fix `BeingDebugged` and forget `NtGlobalFlag`, the second check still fires, and that's the point of the task.
 
-With ScyllaHide, turn on the PEB options (BeingDebugged, NtGlobalFlag, HeapFlags) and run again from the start without editing by hand. It cleans every PEB flag automatically and the program reports it isn't being debugged. That's why ScyllaHide is the first choice: one switch covers the whole group.
+With ScyllaHide, turn on the PEB options (BeingDebugged, NtGlobalFlag, HeapFlags) and run again from the start without editing by hand. It cleans every PEB flag automatically and the program reports it isn't being debugged. That's why ScyllaHide is the first choice, because one switch covers the whole group.
 
 On the questions, a breakpoint on `IsDebuggerPresent` is useless because the program never calls that function and reads the byte in the PEB directly, so there's no call to stop at. Patching `BeingDebugged` alone isn't enough, because `NtGlobalFlag` is an independent check, set by the loader, and still gives you away, so you must handle both (and the heap flags if present). Other sensitive offsets in the PEB include `ProcessHeap` (`+0x30`) for reading the heap's Flags and ForceFlags, the `Ldr` pointer for walking the loaded modules yourself (to detect a debugger or hook DLL), and other fields depending on the version.
 
 </details>
 
 ## Key takeaways
-The PEB can be accessed without an API: `gs:[0x60]` (x64), `fs:[0x30]` (x86), and when you see it, pay attention. BeingDebugged is at offset `0x2` and is 1 when debugged. NtGlobalFlag is at offset `0xBC` (x64), the three heap debug bits add up to `0x70`, and it's set by the loader and not by the code. Heap Flags/ForceFlags are nonzero when a debugger is present, though that check depends on the Windows version.
+The PEB can be accessed without an API, using `gs:[0x60]` (x64), `fs:[0x30]` (x86), and when you see it, pay attention. BeingDebugged is at offset `0x2` and is 1 when debugged. NtGlobalFlag is at offset `0xBC` (x64), the three heap debug bits add up to `0x70`, and it's set by the loader and not by the code. Heap Flags/ForceFlags are nonzero when a debugger is present, though that check depends on the Windows version.
 
 This group has no API to hook, so you have to read and recognize the segment access pattern. To get past it, edit the flags in memory, use ScyllaHide (fastest), or patch the check branch.

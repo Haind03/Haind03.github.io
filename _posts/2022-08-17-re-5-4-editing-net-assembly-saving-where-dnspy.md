@@ -8,9 +8,9 @@ categories: ["Technique Reverse", "Part 05 · C# and .NET"]
 tags: [reverse-engineering, dotnet]
 render_with_liquid: false
 ---
-With native code, patching means changing opcode bytes one by one, watching that you don't shift addresses, then rebuilding. With .NET it's very different: dnSpy lets you edit the C# code directly, hit recompile, and save the file. It sounds like cheating, but it follows from .NET assemblies carrying full metadata (see [Lesson 5.1](/posts/re-5-1-net-internals-why-decompiling-gives-back/)).
+With native code, patching means changing opcode bytes one by one, watching that you don't shift addresses, then rebuilding. With .NET it's very different, because dnSpy lets you edit the C# code directly, hit recompile, and save the file. It sounds like cheating, but it follows from .NET assemblies carrying full metadata (see [Lesson 5.1](/posts/re-5-1-net-internals-why-decompiling-gives-back/)).
 
-We'll patch at two levels: the C# level (easiest, but not always possible) and the IL level (always works, and the main skill of a .NET reverser).
+We'll patch at two levels, the C# level (easiest, but not always possible) and the IL level (always works, and the main skill of a .NET reverser).
 
 ## Why patching .NET is cleaner than native
 
@@ -46,7 +46,7 @@ A few IL instructions to know, enough to patch most crackmes:
 | `nop` | Do nothing (used to delete an instruction) |
 | `ceq` | Compare for equality, push the 0/1 result onto the stack |
 
-Some classic patching tricks. You can flip a branch by changing `brtrue` to `brfalse` (and vice versa) so the "wrong" and "right" branches swap, and one instruction flips the whole logic. You can force the return value: if the check function returns a bool, insert `ldc.i4.1` then `ret` at the start of the method, and the function always returns `true` and never runs the logic. You can disable a call by replacing the annoying `call` (for example one that calls an anti-tamper function) with the same number of `nop`s. Balance the stack: if the call returns a value that's used afterwards, push a fake value in its place. And you can change a comparison constant: if it compares a length against 8, change the `ldc.i4.8` constant to the value you want.
+Some classic patching tricks. You can flip a branch by changing `brtrue` to `brfalse` (and vice versa) so the "wrong" and "right" branches swap, and one instruction flips the whole logic. You can force the return value. If the check function returns a bool, insert `ldc.i4.1` then `ret` at the start of the method, and the function always returns `true` and never runs the logic. You can disable a call by replacing the annoying `call` (for example one that calls an anti-tamper function) with the same number of `nop`s. Balance the stack too. If the call returns a value that's used afterwards, push a fake value in its place. And you can change a comparison constant. If it compares a length against 8, change the `ldc.i4.8` constant to the value you want.
 
 You usually don't need to understand the whole method. Find the exact spot where it decides right/wrong (either a `brtrue`/`brfalse` or the `ret` of a bool function) and step in there. Least touching, least risk.
 
@@ -56,13 +56,13 @@ Many assemblies are signed with a strong name. After you edit and save, the sign
 
 How you handle it depends on the case. If the assembly loads other assemblies itself and verifies signatures, you may have to patch that check too. For a normal assembly run directly, strong name verification has been off by default since .NET Framework 3.5 SP1 for full-trust, so it often still runs. dnSpy's Save Module has writer-related options, so if you hit a token/signature error, try unchecking keep signature, or remove the strong name and re-sign with your own key. Command-line tools like `sn.exe -Vr` (skip verification) also work in your own test environment.
 
-Beginners often get confused here: the patch is right but it still reports an error, and the cause is usually the signature and not the logic.
+Beginners often get confused here, because the patch is right but it still reports an error, and the cause is usually the signature and not the logic.
 
 ## Automation: dnlib and Mono.Cecil
 
 When you need to patch in bulk, or write an unpack/deobfuscate tool, you don't click through dnSpy method by method. Two libraries read and write .NET assemblies from code. dnlib is what dnSpy itself uses underneath. It can handle even broken/obfuscated assemblies, and most modern .NET RE tools (including de4dot) are built on it. Mono.Cecil is older, with a compact API, enough for most IL reading/editing tasks.
 
-An example with dnlib: load the module, walk to the check method, insert `ldc.i4.1; ret` at the start of the body, write it to a new file. About ten lines of C#. API details are for a lesson on automation, here you just need to know this route exists when manual dnSpy isn't enough.
+An example with dnlib is to load the module, walk to the check method, insert `ldc.i4.1; ret` at the start of the body, write it to a new file. About ten lines of C#. API details are for a lesson on automation, here you just need to know this route exists when manual dnSpy isn't enough.
 
 ## Lab
 
@@ -75,7 +75,7 @@ dotnet crackme54.dll
 
 With the .NET Framework instead, `csc Program.cs` produces `Program.exe`.
 
-Open the assembly in dnSpy and find the method `CheckPassword`. Work out where the right/wrong decision is made: the bool return value, and the `brtrue`/`brfalse` branch in `Main`. For the first approach, right-click `CheckPassword`, choose Edit Method (C#), change the body to `return true;`, Compile, Save Module and run again. For the second approach, undo that (or start from the original), right-click `CheckPassword`, choose Edit IL Instructions, insert `ldc.i4.1` followed by `ret` at the start of the method, save the module and run again. Then try a third way: patch `Main` itself and flip the `brfalse`/`brtrue` at the branch so the "Correct!" path always runs. Compare the three, and decide which one touches the least and which one is the safest.
+Open the assembly in dnSpy and find the method `CheckPassword`. Work out where the right/wrong decision is made, which is the bool return value, and the `brtrue`/`brfalse` branch in `Main`. For the first approach, right-click `CheckPassword`, choose Edit Method (C#), change the body to `return true;`, Compile, Save Module and run again. For the second approach, undo that (or start from the original), right-click `CheckPassword`, choose Edit IL Instructions, insert `ldc.i4.1` followed by `ret` at the start of the method, save the module and run again. Then try a third way, which is to patch `Main` itself and flip the `brfalse`/`brtrue` at the branch so the "Correct!" path always runs. Compare the three, and decide which one touches the least and which one is the safest.
 
 Two questions to think about afterwards. If the assembly has a strong name, what error do you get after Save Module and how do you handle it? And why doesn't patching IL break the other methods even though you added instructions?
 
@@ -144,15 +144,15 @@ call   void Console::WriteLine(string)
 
 Change `brfalse.s` to `brtrue.s` (or remove the jump) so the "Correct!" path always runs regardless of the result. This is the classic inverted-branch patch and it edits a single instruction.
 
-Comparing them: A (Edit C#) touches the whole method, is quick, and suits cases where the C# recompiles. B (insert `ldc.i4.1; ret`) touches the first two instructions of the method and always works when the target is a bool function. C (flip the branch in the caller) touches one instruction and is the one to use when you don't want to, or can't, modify the check function itself.
+In comparison, A (Edit C#) touches the whole method, is quick, and suits cases where the C# recompiles. B (insert `ldc.i4.1; ret`) touches the first two instructions of the method and always works when the target is a bool function. C (flip the branch in the caller) touches one instruction and is the one to use when you don't want to, or can't, modify the check function itself.
 
-On the strong name question: if the assembly is signed, running it after Save Module may report a signature verification error rather than a logic error. To handle it, remove the strong name when saving (an option in dnSpy's writer), or re-sign with your own key, or in a test environment use `sn -Vr`. Your logic patch was right, the signature is the cause.
+On the strong name question, if the assembly is signed, running it after Save Module may report a signature verification error rather than a logic error. To handle it, remove the strong name when saving (an option in dnSpy's writer), or re-sign with your own key, or in a test environment use `sn -Vr`. Your logic patch was right, the signature is the cause.
 
-As for why other methods don't break: .NET methods are referenced through metadata tokens, not fixed offsets. When you Save Module, dnSpy rewrites the whole metadata and the method bodies and recomputes every offset, so adding instructions to one method doesn't shift any other method.
+Other methods don't break because .NET methods are referenced through metadata tokens, not fixed offsets. When you Save Module, dnSpy rewrites the whole metadata and the method bodies and recomputes every offset, so adding instructions to one method doesn't shift any other method.
 
 </details>
 
 ## Key takeaways
-Patching .NET is cleaner than native because methods are located through metadata tokens, and dnSpy recomputes offsets when you Save Module. Edit Method (C#) is fastest, but you get stuck when the decompiler translated it wrong. Edit IL always works, so remember a few instructions: `ldc.i4.0/1`, `ret`, `brtrue/brfalse`, `nop`.
+Patching .NET is cleaner than native because methods are located through metadata tokens, and dnSpy recomputes offsets when you Save Module. Edit Method (C#) is fastest, but you get stuck when the decompiler translated it wrong. Edit IL always works, so remember a few instructions such as `ldc.i4.0/1`, `ret`, `brtrue/brfalse`, `nop`.
 
 Common tricks are flipping `brtrue`/`brfalse`, inserting `ldc.i4.1; ret` to force a bool function to return true, and nopping a call. If it still errors after patching, suspect the strong name signature before the logic. For bulk patching, use dnlib or Mono.Cecil.

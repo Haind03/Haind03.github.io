@@ -8,9 +8,9 @@ categories: ["Technique Reverse", "Part 11 · JavaScript, Electron, WebAssembly"
 tags: [reverse-engineering, javascript, wasm]
 render_with_liquid: false
 ---
-JavaScript doesn't compile to machine code, it runs as text. That sounds like the easiest thing to reverse, but because it's text, people put a lot of effort into obfuscating it: renaming variables to garbage, hiding strings in encoded arrays, shredding control flow. JS malware, credit card skimmers on websites and adblock-blocking scripts are all obfuscated. This lesson covers how to take the layers off in the right order.
+JavaScript doesn't compile to machine code, it runs as text. That sounds like the easiest thing to reverse, but because it's text, people put a lot of effort into obfuscating it, such as renaming variables to garbage, hiding strings in encoded arrays, shredding control flow. JS malware, credit card skimmers on websites and adblock-blocking scripts are all obfuscated. This lesson covers how to take the layers off in the right order.
 
-Remember this first: obfuscation doesn't encrypt the logic, it only makes it hard to read. The code still has to run, so everything you need is there, just covered up. Your job is to remove the cover.
+Remember this first. Obfuscation doesn't encrypt the logic, it only makes it hard to read. The code still has to run, so everything you need is there, just covered up. Your job is to remove the cover.
 
 ## Four levels, from light to heavy
 
@@ -33,7 +33,7 @@ For a file that's only minified (not obfuscated), beautify is the whole job. You
 
 Beginners often jump into unpicking by hand before knowing what tool obfuscated the code. Most obfuscated code in the wild comes from obfuscator.io (the `javascript-obfuscator` library), and it leaves patterns that are easy to recognize.
 
-The first is a string array: a function returning a long array of strings, with every string in the code replaced by a call like `_0x4ae3eb(0xc4)`. The second is a rotate function, an IIFE with a `while(true)` loop using `parseInt` and `push/shift`, which rotates the string array into the right order at runtime. The third is control flow flattening, where function bodies turn into `while` + `switch` with shuffled case order, driven by a string like `"4|2|3|0|1"[split]`. The last is variable names in `_0x` hex form.
+The first is a string array, which is a function returning a long array of strings, with every string in the code replaced by a call like `_0x4ae3eb(0xc4)`. The second is a rotate function, an IIFE with a `while(true)` loop using `parseInt` and `push/shift`, which rotates the string array into the right order at runtime. The third is control flow flattening, where function bodies turn into `while` + `switch` with shuffled case order, driven by a string like `"4|2|3|0|1"[split]`. The last is variable names in `_0x` hex form.
 
 If you see these four signs, it's obfuscator.io, and ready-made deobfuscation tools exist.
 
@@ -41,17 +41,17 @@ If you see these four signs, it's obfuscator.io, and ready-made deobfuscation to
 
 Two main tools, try them in this order.
 
-webcrack is the strongest right now for obfuscator.io and also webpack bundles: `npx webcrack obf.js -o out`. It resolves the string array, unflattens control flow, inlines, and splits modules. synchrony (the `deobfuscator` package) is specialized for obfuscator.io: `npx deobfuscator file.js` removes the string array and simplifies expressions.
+webcrack is the strongest right now for obfuscator.io and also webpack bundles, run as `npx webcrack obf.js -o out`. It resolves the string array, unflattens control flow, inlines, and splits modules. synchrony (the `deobfuscator` package) is specialized for obfuscator.io, and `npx deobfuscator file.js` removes the string array and simplifies expressions.
 
-In practice a single tool doesn't always clean it 100%. webcrack runs code in a sandbox to resolve the string array, so on some machines that layer (isolated-vm, for example) can fail to load or run. synchrony may only do part of it: convert hex constants to decimal, simplify, but still leave the control flow flattening. That's fine. You don't need the tool to clean everything, only enough that you can read the logic.
+In practice a single tool doesn't always clean it 100%. webcrack runs code in a sandbox to resolve the string array, so on some machines that layer (isolated-vm, for example) can fail to load or run. synchrony may only do part of it, such as converting hex constants to decimal and simplifying, but it may still leave the control flow flattening. That's fine. You don't need the tool to clean everything, only enough that you can read the logic.
 
-Even when a messy `switch`-case is still there, you read each case and the original logic comes out. In this lesson's lab, after running synchrony the check function still had flattening, but the cases were clear: one case `split('-')`, one case checking the number of parts, one case summing `charCodeAt`, one case `return`ing a comparison of the sum against a constant. Put them together and you have all of it.
+Even when a messy `switch`-case is still there, you read each case and the original logic comes out. In this lesson's lab, after running synchrony the check function still had flattening, but the cases were clear, with one case `split('-')`, one case checking the number of parts, one case summing `charCodeAt`, one case `return`ing a comparison of the sum against a constant. Put them together and you have all of it.
 
 ## Level 2, advanced: write your own AST transform
 
 When you hit a custom obfuscator that no tool can unpick, you write the transform yourself. JavaScript can parse itself, which helps. Use Babel to turn the code into an AST (syntax tree), modify the tree, then print it back.
 
-The workflow: paste the code into AST Explorer (astexplorer.net) to look at the tree, find a repeating pattern (for example every `_0xabc(0x1f)` call), and write a visitor that replaces it with the real value.
+The workflow is to paste the code into AST Explorer (astexplorer.net) to look at the tree, find a repeating pattern (for example every `_0xabc(0x1f)` call), and write a visitor that replaces it with the real value.
 
 ```js
 // Example: replace every decode function call with the real string
@@ -86,10 +86,10 @@ This is the most flexible way, and it's how the tools above work inside. If you 
 
 ## A note on JS malware
 
-JS malware often adds one more layer: `eval`, `Function()`, or `atob` (base64 decode) to run a payload generated at runtime. Don't run it blindly. Replace `eval(x)` with `console.log(x)` to print the payload instead of executing it, which is the safest way to decode it. Do this in an isolated environment as in [Lesson 0.3](/posts/re-0-3-set-up-safe-lab-before-touching/).
+JS malware often adds one more layer, such as `eval`, `Function()`, or `atob` (base64 decode) to run a payload generated at runtime. Don't run it blindly. Replace `eval(x)` with `console.log(x)` to print the payload instead of executing it, which is the safest way to decode it. Do this in an isolated environment as in [Lesson 0.3](/posts/re-0-3-set-up-safe-lab-before-touching/).
 
 ## Key takeaways
-Obfuscation only hides the logic, it doesn't encrypt it, so if the code runs, everything you need is there. Beautify first, since a lot of "hidden" stuff is really just minified. Identify the obfuscator before removing it: string array + rotate + `_0x` + switch flattening is obfuscator.io.
+Obfuscation only hides the logic, it doesn't encrypt it, so if the code runs, everything you need is there. Beautify first, since a lot of "hidden" stuff is really just minified. Identify the obfuscator before removing it, since string array + rotate + `_0x` + switch flattening is obfuscator.io.
 
 webcrack is the strongest and synchrony is plan B, and you don't need a full cleanup, just readable logic. When the tools give up, write your own Babel/AST transform, which is also how the tools work inside. For payloads in `eval`/`Function`, print them with `console.log` and don't run them.
 
@@ -154,7 +154,7 @@ while (true) {
 }
 ```
 
-Read the cases in the order given by the `split('|')` string and you get the original logic back: split on `-`, check there are 3 parts, add the charCodes of the first part, compare with 266, the middle part is `"PRO"`, and the last part is 4 long. Control flow flattening only shuffles the order of the blocks and doesn't change the meaning.
+Read the cases in the order given by the `split('|')` string and you get the original logic back. It splits on `-`, checks there are 3 parts, adds the charCodes of the first part, compares with 266, requires the middle part to be `"PRO"`, and requires the last part to be 4 long. Control flow flattening only shuffles the order of the blocks and doesn't change the meaning.
 
 To build a valid key you need the charCode sum of the first part to be 266, the middle part `"PRO"` and the last part 4 characters long. `"ABCD"` gives 65+66+67+68 = 266, which works, so a valid key is `ABCD-PRO-2024` (the last part `2024` is 4 characters long). Checking it:
 

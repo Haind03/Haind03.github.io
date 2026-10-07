@@ -14,7 +14,7 @@ The series uses IDA Free as the baseline because it's free and enough to learn x
 
 ## Opening a file for the first time
 
-Drag a file into IDA and it shows a dialog asking for the file type and architecture. For a normal PE or ELF, leave the defaults and click OK, IDA detects it itself. Then it runs auto-analysis: it scans the whole file, finds functions, separates code from data, and marks strings. Wait for the progress indicator at the bottom to finish (the text "AU: idle") before you start working. Don't click around while it's still analyzing.
+Drag a file into IDA and it shows a dialog asking for the file type and architecture. For a normal PE or ELF, leave the defaults and click OK, IDA detects it itself. Then it runs auto-analysis, where it scans the whole file, finds functions, separates code from data, and marks strings. Wait for the progress indicator at the bottom to finish (the text "AU: idle") before you start working. Don't click around while it's still analyzing.
 
 ## The windows you'll use
 
@@ -48,7 +48,7 @@ Press `:` to add a comment to a line, `;` for a repeatable comment (shown at eve
 
 ## Start from strings
 
-For most crackmes and small programs, the fastest way to find the interesting spot isn't to read from `main`, it's to go backwards from strings. Open the Strings window (`Shift+F12`) and look for a string that hints at logic: "Correct!", "Wrong password", "Access granted", "Invalid license". Double-click it to jump to where the string is defined in data, then press `X` to see which function uses it. Jump into that function and you're standing in the middle of the checking logic.
+For most crackmes and small programs, the fastest way to find the interesting spot isn't to read from `main`, it's to go backwards from strings. Open the Strings window (`Shift+F12`) and look for a string that hints at logic, such as "Correct!", "Wrong password", "Access granted", "Invalid license". Double-click it to jump to where the string is defined in data, then press `X` to see which function uses it. Jump into that function and you're standing in the middle of the checking logic.
 
 It works because the program has to print a message to the user, so the message string always sits next to the code that decides what to print.
 
@@ -60,7 +60,7 @@ No F5? You can still do RE, you just read assembly more slowly. Ghidra (Lesson 2
 
 ## Lab
 
-Here's a small crackme to practice the workflow above, `crackme01.c`. It's harmless and fine to run on a normal machine. The aim is to drill the IDA routine: start from strings, use xrefs, rename, read the logic. Build it first. On Windows with the MSVC Developer Command Prompt:
+Here's a small crackme to practice the workflow above, `crackme01.c`. It's harmless and fine to run on a normal machine. The aim is to drill the IDA routine, which is to start from strings, use xrefs, rename, read the logic. Build it first. On Windows with the MSVC Developer Command Prompt:
 
 ```
 cl /Fe:crackme01.exe crackme01.c
@@ -82,7 +82,7 @@ Don't open `crackme01.c` to read it. The whole exercise is finding the password 
 
 Run the program, type a random password and see what it prints. Then open the built file in IDA and wait for auto-analysis to finish (AU: idle). Open the Strings window (`Shift+F12`) and look for a message about a right or wrong password. Double-click it to land in the data, then press `X` to see which function references it. Jump into that function and find the sub-function that does the real checking, and rename it (`N`) to `check_password`. Inside it, find the secret string the input is compared against, rename variables so they read well and add comments (`:`). If you have Hex-Rays, press `F5` to read the pseudocode and compare it with the assembly. Finally work out the correct password, run the program again and type it in to confirm you see "Correct!".
 
-A few questions to think about afterwards. Why is going from strings faster than reading from `main`? What does the program check before comparing the strings (hint: look at a length comparison)? And if there were no Strings window, how else could you locate the check function (hint: Imports, and functions like `strcmp`)?
+A few questions to think about afterwards. Why is going from strings faster than reading from `main`? What does the program check before comparing the strings (a hint is to look at a length comparison)? And if there were no Strings window, how else could you locate the check function (a hint is to look at Imports, and functions like `strcmp`)?
 
 <div class="lab-box">
 <div class="lab-head"><b>LAB 2.2</b>source files</div>
@@ -102,7 +102,7 @@ R3v3rs3_M3
 
 Type it into the program and you'll see "Correct!".
 
-In the Strings window (`Shift+F12`) you see a few interesting strings: `Enter password: `, `Correct! Congratulations, you solved the crackme.`, `Wrong password. Try again.`, and one that looks like a password, `R3v3rs3_M3`. It sits oddly among the messages. That's the secret, because the programmer embedded the comparison string straight into the binary. Hardcoding a secret string in native code protects nothing, since it shows up in Strings immediately.
+In the Strings window (`Shift+F12`) you see a few interesting strings, including `Enter password: `, `Correct! Congratulations, you solved the crackme.`, `Wrong password. Try again.`, and one that looks like a password, `R3v3rs3_M3`. It sits oddly among the messages. That's the secret, because the programmer embedded the comparison string straight into the binary. Hardcoding a secret string in native code protects nothing, since it shows up in Strings immediately.
 
 To confirm that `R3v3rs3_M3` really is the password, double-click it and press `X`. IDA shows it being loaded inside one function, right before a call to `strcmp` (or `strlen` and then `strcmp`). Rename that function to `check_password`. The pseudocode (F5) of the check function looks roughly like this:
 
@@ -122,7 +122,7 @@ Two things to notice. The program compares lengths first (a `cmp`/`jne` pair in 
 
 If you don't use Strings, there's another route. Open Imports, find `strcmp` and `strlen`, and press `X` on `strcmp` to go to where it's called, which also lands you in the check function. Starting from an API is the second way in after starting from strings.
 
-To take away: hardcoded strings are the first weakness of every beginner crackme, and the two fastest ways to locate logic are from strings (`Shift+F12` then `X`) and from imports (`strcmp`, `strcpy` and so on, then `X`). Renaming a function as soon as you understand it makes `main` read much more clearly.
+To take away, hardcoded strings are the first weakness of every beginner crackme, and the two fastest ways to locate logic are from strings (`Shift+F12` then `X`) and from imports (`strcmp`, `strcpy` and so on, then `X`). Renaming a function as soon as you understand it makes `main` read much more clearly.
 
 </details>
 

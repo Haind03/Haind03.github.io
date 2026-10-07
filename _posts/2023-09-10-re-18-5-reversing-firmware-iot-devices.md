@@ -8,7 +8,7 @@ categories: ["Technique Reverse", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
 render_with_liquid: false
 ---
-The old router in the corner of the house, the cheap camera, the smart lock, they all run a bit of embedded Linux in a few MB of flash. Reversing firmware means opening that box: getting the filesystem, reading the service code, finding backdoors and hardcoded credentials, and then, if you want, running the whole firmware in an emulator on your own machine without the real hardware. This lesson goes from getting the firmware to running a binary from it.
+The old router in the corner of the house, the cheap camera, the smart lock, they all run a bit of embedded Linux in a few MB of flash. Reversing firmware means opening that box, which means getting the filesystem, reading the service code, finding backdoors and hardcoded credentials, and then, if you want, running the whole firmware in an emulator on your own machine without the real hardware. This lesson goes from getting the firmware to running a binary from it.
 
 It pulls together almost everything so far. The binaries are usually MIPS or ARM (see [Lesson 1.9](/posts/re-1-9-arm-arm64-basics-people-who-already/)), the format is ELF ([Lesson 1.8](/posts/re-1-8-elf-mach-o-two-formats-outside/)), and you open them in Ghidra like always.
 
@@ -22,7 +22,7 @@ For this lesson we assume you already have a firmware image file (`.bin`).
 
 ## binwalk
 
-A firmware image is several things laid side by side: the vendor header, the bootloader, a compressed kernel, and a filesystem. `binwalk` scans the whole file looking for the magic signatures of each component.
+A firmware image is several things laid side by side, namely the vendor header, the bootloader, a compressed kernel, and a filesystem. `binwalk` scans the whole file looking for the magic signatures of each component.
 
 ```
 $ binwalk firmware.bin
@@ -34,7 +34,7 @@ DECIMAL     HEXADECIMAL   DESCRIPTION
 1310720     0x140000      Squashfs filesystem, little endian, version 4.0
 ```
 
-You can read it right away: this is MIPS Linux firmware, with an LZMA-compressed kernel at the start, and a SquashFS (a read-only filesystem commonly used for embedded) starting at offset `0x140000`. Extract everything:
+You can read it right away. This is MIPS Linux firmware, with an LZMA-compressed kernel at the start, and a SquashFS (a read-only filesystem commonly used for embedded) starting at offset `0x140000`. Extract everything:
 
 ```
 $ binwalk -e firmware.bin        # extract, outputs to the _firmware.bin.extracted/ folder
@@ -93,7 +93,7 @@ Two things to keep in mind. First, reversing firmware on a device that's your ow
 
 ## Lab
 
-The task is to get a firmware image, extract the root filesystem, pull out credentials and keys, and run a MIPS or ARM binary under QEMU. Safety first: a firmware downloaded from an unknown source is untrusted data, so work inside an isolated VM (see Lesson 0.3), and only reverse the firmware of your own devices.
+The task is to get a firmware image, extract the root filesystem, pull out credentials and keys, and run a MIPS or ARM binary under QEMU. Safety first. A firmware downloaded from an unknown source is untrusted data, so work inside an isolated VM (see Lesson 0.3), and only reverse the firmware of your own devices.
 
 For setup, install the tools:
 
@@ -104,7 +104,7 @@ pip install unblob        # or follow the official instructions
 
 Get a real firmware for your own router or camera from the vendor's support page (for example a common router line) and name it `firmware.bin`. If you don't have one, the public sample firmware sets meant for learning (such as DVRF, IoTGoat or Damn Vulnerable Router Firmware) work too.
 
-Start with `binwalk firmware.bin` and work out the CPU architecture, how the kernel is compressed, and what kind of filesystem there is and at which offset it starts. Look at the entropy with `binwalk -E firmware.bin` and see whether the firmware is fully encrypted (a flat entropy line close to 1.0). Extract with `binwalk -eM firmware.bin`, and if the filesystem comes out unclean, try `unblob -e out/ firmware.bin` and compare the results of the two tools. Find the root filesystem (the folder with `/bin`, `/etc` and `/www`) and open `/etc/passwd` and `/etc/shadow`: is there a suspicious account or a weak root hash? Then scan for hard-coded credentials and keys:
+Start with `binwalk firmware.bin` and work out the CPU architecture, how the kernel is compressed, and what kind of filesystem there is and at which offset it starts. Look at the entropy with `binwalk -E firmware.bin` and see whether the firmware is fully encrypted (a flat entropy line close to 1.0). Extract with `binwalk -eM firmware.bin`, and if the filesystem comes out unclean, try `unblob -e out/ firmware.bin` and compare the results of the two tools. Find the root filesystem (the folder with `/bin`, `/etc` and `/www`) and open `/etc/passwd` and `/etc/shadow`. Is there a suspicious account or a weak root hash? Then scan for hard-coded credentials and keys:
 
 ```
 grep -riIn "password\|admin\|secret\|telnet\|backdoor" rootfs/etc rootfs/www
@@ -129,7 +129,7 @@ Try it yourself before reading.
 
 ### A note on the sample output
 
-There's no specific commercial firmware in this writeup, so the `binwalk` figures below are typical output (they show the form you'll see). The carving, decompressing and credential grep part uses a simulated blob to illustrate the mechanism. One caveat: the `binwalk` package in some distros currently has a broken `capstone` dependency (missing `CS_ARCH_ARM64`). If you hit that, install a newer version, use `unblob` instead, or carve by hand as shown below.
+There's no specific commercial firmware in this writeup, so the `binwalk` figures below are typical output (they show the form you'll see). The carving, decompressing and credential grep part uses a simulated blob to illustrate the mechanism. One caveat is that the `binwalk` package in some distros currently has a broken `capstone` dependency (missing `CS_ARCH_ARM64`). If you hit that, install a newer version, use `unblob` instead, or carve by hand as shown below.
 
 ### Identification and entropy
 
@@ -142,7 +142,7 @@ DECIMAL     HEXADECIMAL   DESCRIPTION
 1310720     0x140000      Squashfs filesystem, little endian, version 4.0
 ```
 
-The CPU is MIPS, the kernel is LZMA-compressed, and the filesystem is SquashFS 4.0 at offset `0x140000`. `binwalk -E` gives the entropy plot: the kernel and squashfs regions are flat near 1.0 (compressed) and the header region is low. If everything is flat near 1.0 including the header, the firmware is encrypted and you have to find the key.
+The CPU is MIPS, the kernel is LZMA-compressed, and the filesystem is SquashFS 4.0 at offset `0x140000`. `binwalk -E` gives the entropy plot. The kernel and squashfs regions are flat near 1.0 (compressed) and the header region is low. If everything is flat near 1.0 including the header, the firmware is encrypted and you have to find the key.
 
 ### Extraction
 
@@ -157,7 +157,7 @@ root:$1$abc$0123456789abcdef:0:0:root:/root:/bin/sh
 backdoor
 ```
 
-This is what binwalk automates: find the signature, cut from the offset, decompress.
+This is what binwalk automates, which is to find the signature, cut from the offset, decompress.
 
 ### Going through the rootfs
 

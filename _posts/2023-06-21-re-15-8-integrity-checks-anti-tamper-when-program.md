@@ -37,9 +37,9 @@ Same correct input, but because the code was touched, the program refuses to run
 
 ## Why patching directly always loses
 
-A beginner's reflex is to patch more cleverly: NOP fewer bytes, change exactly one instruction. That doesn't work. The checksum doesn't care how much you changed, as long as one byte in the checked region is different it catches you. A careful patch doesn't beat a hash function.
+A beginner's reflex is to patch more cleverly, for example NOP fewer bytes or change exactly one instruction. That doesn't work. The checksum doesn't care how much you changed, as long as one byte in the checked region is different it catches you. A careful patch doesn't beat a hash function.
 
-It gets worse. Serious protectors scatter multiple layers of cross-checks: function A checksums the region containing function B, and function B checksums the region containing function A and the license-check function. Disable one spot and another catches it. Some types don't exit right away but slowly corrupt data so that you think you patched wrong.
+It gets worse. Serious protectors scatter multiple layers of cross-checks, where function A checksums the region containing function B, and function B checksums the region containing function A and the license-check function. Disable one spot and another catches it. Some types don't exit right away but slowly corrupt data so that you think you patched wrong.
 
 ## The right approach: attack the check, not the code it guards
 
@@ -53,17 +53,17 @@ Flip license bit + disable verify_integrity  ->  "Correct!" (exit 0)
 
 The check function sits outside the self-checked region, so editing it doesn't break its own checksum.
 
-The second is to patch the checksum comparison branch. If you don't want to touch the whole function, find the `cmp got, EXPECTED` followed by `jne fail` and invert or NOP that branch. Same idea: make the comparison always "match".
+The second is to patch the checksum comparison branch. If you don't want to touch the whole function, find the `cmp got, EXPECTED` followed by `jne fail` and invert or NOP that branch. The idea is the same, which is to make the comparison always "match".
 
 The third is to patch in memory after the check has run. Let the program self-check at startup (the code on disk is intact so it passes), then use a debugger to edit the code in RAM after that point. The checksum has already run and nobody checks again. That's why runtime patching is sometimes easier than patching on disk, see [Lesson 17.1](/technique-reverse/).
 
-There's a fourth way that's rarely used: recompute `EXPECTED` to match the patched code and overwrite the embedded value. It only works when you understand the checksum algorithm well and can find where the value is stored, and multiple cross-checking layers make it a pain.
+There's a fourth way that's rarely used, which is to recompute `EXPECTED` to match the patched code and overwrite the embedded value. It only works when you understand the checksum algorithm well and can find where the value is stored, and multiple cross-checking layers make it a pain.
 
 ## Where to find the integrity-check function
 
-During static analysis, look for a function that reads its own code section: a pointer into the `.text` region (the address of another function, or the image base) and then a loop over every byte. Look for a CRC loop too, with `xor`, `shr`, and a characteristic constant. CRC32 often exposes the polynomial `0xEDB88320`, see how to spot constants in [Lesson 16.1](/technique-reverse/). Other signs are comparing the result against a hard-coded 32-bit constant and then branching to exit, and the function being called very early (in initialization, or a TLS callback, see [Lesson 15.4](/posts/re-15-4-advanced-anti-debug-self-debug-tls/)) or called repeatedly.
+During static analysis, look for a function that reads its own code section, meaning a pointer into the `.text` region (the address of another function, or the image base) and then a loop over every byte. Look for a CRC loop too, with `xor`, `shr`, and a characteristic constant. CRC32 often exposes the polynomial `0xEDB88320`, see how to spot constants in [Lesson 16.1](/technique-reverse/). Other signs are comparing the result against a hard-coded 32-bit constant and then branching to exit, and the function being called very early (in initialization, or a TLS callback, see [Lesson 15.4](/posts/re-15-4-advanced-anti-debug-self-debug-tls/)) or called repeatedly.
 
-A dynamic tip: set a read memory breakpoint on the code section, so you stop when some code reads memory inside its own `.text` region. A function that touches code for any reason other than executing it is very suspicious.
+A dynamic tip is to set a read memory breakpoint on the code section, so you stop when some code reads memory inside its own `.text` region. A function that touches code for any reason other than executing it is very suspicious.
 
 ## Lab
 
@@ -84,7 +84,7 @@ gcc -O0 -no-pie -fno-pic -o sc_ok selfcheck.c
 
 The `-no-pie -fno-pic` flags keep function addresses stable, which makes them easier to read in objdump and x64dbg.
 
-Run the clean build first: `./sc_ok INTEGRITY_OK` should print "Correct!" and `./sc_ok WRONG` should print "Nope". The correct key is `INTEGRITY_OK`.
+Run the clean build first. `./sc_ok INTEGRITY_OK` should print "Correct!" and `./sc_ok WRONG` should print "Nope". The correct key is `INTEGRITY_OK`.
 
 Next, patch the logic and watch the check catch it. Flip one bit somewhere inside `check_license`'s code range, simulating NOPing out a jump. Use `nm` to find `check_license`'s address, work out the file offset, flip one byte, and run it again. You should see it report "Integrity check FAILED" and exit with code 3, even when you type the correct key.
 
@@ -92,7 +92,7 @@ Then get past it by disabling the check function instead. Overwrite the start of
 
 Finally, think about what happens if the author adds a second function that checksums `verify_integrity` too. Would this same trick still work? What would you do next? As a hint, think about patching in RAM after every check has already run, or following the whole chain of checks back to its root.
 
-A helper for finding the file offset: use `nm <binary>` for the function's address, `objdump -h <binary>` for the VMA and file offset of `.text`, then `file_offset = addr - text_vma + text_file_offset`.
+A helper for finding the file offset is to use `nm <binary>` for the function's address, `objdump -h <binary>` for the VMA and file offset of `.text`, then `file_offset = addr - text_vma + text_file_offset`.
 
 Do it yourself first, then check the full write-up with real run results below.
 
@@ -158,7 +158,7 @@ mov eax, 1
 ret
 ```
 
-When there are multiple layers. If a second function checksums `verify_integrity` too, then as soon as you patch `verify_integrity`, that second layer catches it. At that point you either trace the whole chain of who checks whom and disable them starting from the outermost layer inward, or you leave the on-disk code untouched entirely, letting every check run and pass normally at startup, and then use a debugger to modify the code in RAM after that point, since the checksum has already run and won't run again. The principle stays the same: find the moment or place where checking has already finished, and act after that.
+When there are multiple layers. If a second function checksums `verify_integrity` too, then as soon as you patch `verify_integrity`, that second layer catches it. At that point you either trace the whole chain of who checks whom and disable them starting from the outermost layer inward, or you leave the on-disk code untouched entirely, letting every check run and pass normally at startup, and then use a debugger to modify the code in RAM after that point, since the checksum has already run and won't run again. The principle stays the same, which is to find the moment or place where checking has already finished, and act after that.
 
 </details>
 

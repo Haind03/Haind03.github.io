@@ -20,7 +20,7 @@ With an APK, the first thing I do is open `AndroidManifest.xml` in the Resources
 
 ## The left tree and two ways of viewing code
 
-The left panel has two main branches: Source code (the decompiled Java packages) and Resources (manifest, strings, layouts, files in assets). Click a class and the right panel shows Java.
+The left panel has two main branches, Source code (the decompiled Java packages) and Resources (manifest, strings, layouts, files in assets). Click a class and the right panel shows Java.
 
 Many people don't know you can view smali side by side. Right-click a class and choose to view bytecode/smali, or turn on the mode that shows both. When JADX decompiles wrong (tangled or obfuscated code), smali is the real thing and Java is just a translation that can be faulty. When in doubt, drop down to smali to cross-check.
 
@@ -40,7 +40,7 @@ Finding a string like "Wrong password" or "Premium activated" gets you almost ex
 
 ## Automatic deobfuscation
 
-Real apps almost always go through R8/ProGuard, which turns names into `a`, `b`, `c`. JADX has an automatic renaming feature: go to Preferences, turn on Deobfuscation, and set the minimum/maximum name length thresholds. JADX generates consistent fake names (like `C0001a`) in place of colliding one-character names, so you can tell them apart. It doesn't restore the original names (they were lost at build time), but it makes the code less chaotic and lets you rename gradually.
+Real apps almost always go through R8/ProGuard, which turns names into `a`, `b`, `c`. JADX has an automatic renaming feature. Go to Preferences, turn on Deobfuscation, and set the minimum/maximum name length thresholds. JADX generates consistent fake names (like `C0001a`) in place of colliding one-character names, so you can tell them apart. It doesn't restore the original names (they were lost at build time), but it makes the code less chaotic and lets you rename gradually.
 
 For heavier obfuscation (string encryption, control flow) JADX gives up on that part, and you have to go dynamic (Frida, see [Lesson 6.6](/technique-reverse/)) or use other tools. Details on the types of obfuscation are in [Lesson 6.8](/technique-reverse/).
 
@@ -98,7 +98,7 @@ The class `com.example.app.MainActivity` is where the app starts. Double-click t
 
 To go from a string to code, press Ctrl+Shift+F on the displayed string. There are two cases. If the string is hard-coded, JADX jumps straight to the line that uses it. If it's a resource, find it in `res/values/strings.xml`, for example `<string name="login_failed">Wrong credentials</string>`, take the name `login_failed` and search for `R.string.login_failed`. JADX also shows the resource ID in the form `0x7f...`, and searching for that ID works too. The place that uses the "failure" string usually sits right after an `if` condition, and that condition is the check itself.
 
-For find usage, press `x` on a method such as `checkPassword` to get the list of every caller. Often there's a single caller, the handler of the Login button. Go there and you see the whole flow: take the input, call the check, branch on the result.
+For find usage, press `x` on a method such as `checkPassword` to get the list of every caller. Often there's a single caller, the handler of the Login button. Go there and you see the whole flow, which is to take the input, call the check, branch on the result.
 
 For renaming, an obfuscated app shows things like `a.a.b(String)`. Once you understand what `b` does, press `n` and rename it to `validateSerial`. JADX updates every reference. After a few of these you can read the logic.
 
@@ -116,7 +116,7 @@ grep -rn "SharedPreferences" jadx_output/sources/     # find where state is stor
 
 This catches patterns that are hard to see while scrolling in the GUI, for example an app that stores a "purchased" flag in SharedPreferences.
 
-On the questions: starting from strings is faster because a string is a clue the user can see and it connects straight to the relevant logic, whereas reading sequentially means wading through a lot of unrelated initialization and UI code. You verify suspicious Java by comparing against smali (what the bytecode really says), or by hooking dynamically with Frida to see the real values at runtime. Deobfuscation doesn't restore the original names, because R8 and ProGuard delete them at build time unless you have a mapping file. JADX only generates consistent fake names to make things easier to tell apart.
+On the questions, starting from strings is faster because a string is a clue the user can see and it connects straight to the relevant logic, whereas reading sequentially means wading through a lot of unrelated initialization and UI code. You verify suspicious Java by comparing against smali (what the bytecode really says), or by hooking dynamically with Frida to see the real values at runtime. Deobfuscation doesn't restore the original names, because R8 and ProGuard delete them at build time unless you have a mapping file. JADX only generates consistent fake names to make things easier to tell apart.
 
 </details>
 

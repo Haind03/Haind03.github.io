@@ -14,7 +14,7 @@ This lesson helps you recognize that in a minute, instead of wasting an evening 
 
 ## What a packer does to a program
 
-A packer is simple in idea. Take the program's original code, compress or encrypt it into a block of data, then attach a small piece of code called the stub (or unpacking stub). At runtime the stub runs first: it decompresses/decrypts that data block back into the original code in memory, then jumps there so the program runs normally.
+A packer is simple in idea. Take the program's original code, compress or encrypt it into a block of data, then attach a small piece of code called the stub (or unpacking stub). At runtime the stub runs first. It decompresses/decrypts that data block back into the original code in memory, then jumps there so the program runs normally.
 
 ```
 File on disk:                 At runtime (in memory):
@@ -47,7 +47,7 @@ Detect It Easy (DIE) has an Entropy button that plots entropy per region of the 
 
 ### 2. A suspiciously poor import table
 
-A normal Windows program calls dozens to hundreds of API functions, so its import table (IAT) is long. A packed file is different: the stub doesn't need many APIs, just a few to rebuild the imports itself after unpacking, typically `LoadLibraryA` and `GetProcAddress`. A fully featured exe whose import table has only a handful of functions, including `LoadLibrary` and `GetProcAddress`, is a strong sign of a packer.
+A normal Windows program calls dozens to hundreds of API functions, so its import table (IAT) is long. A packed file is different. The stub doesn't need many APIs, just a few to rebuild the imports itself after unpacking, typically `LoadLibraryA` and `GetProcAddress`. A fully featured exe whose import table has only a handful of functions, including `LoadLibrary` and `GetProcAddress`, is a strong sign of a packer.
 
 ### 3. Strange section names
 
@@ -80,9 +80,9 @@ The line isn't absolute (many modern packers come with some protection), but kno
 
 ## Packer triage workflow
 
-Make this a habit whenever you suspect a file is packed. Drag the file into DIE and see whether it recognizes a packer (DIE has signatures for most common packers). Click the Entropy button and look for a flat block near 8.0. Check the import table, whether it's abnormally poor with only `LoadLibrary`/`GetProcAddress`, and check the section names for strange ones. Then conclude: packed or not, and if so what kind, packer or protector.
+Make this a habit whenever you suspect a file is packed. Drag the file into DIE and see whether it recognizes a packer (DIE has signatures for most common packers). Click the Entropy button and look for a flat block near 8.0. Check the import table, whether it's abnormally poor with only `LoadLibrary`/`GetProcAddress`, and check the section names for strange ones. Then conclude whether it is packed or not, and if so what kind, packer or protector.
 
-After this you know what you're holding and can choose a tactic: for UPX, a single `upx -d` (lesson 14.2), for a custom packer, unpack manually to find the OEP, for a strong protector, decide whether it's worth it.
+After this you know what you're holding and can choose a tactic, for UPX, a single `upx -d` (lesson 14.2), for a custom packer, unpack manually to find the OEP, for a strong protector, decide whether it's worth it.
 
 ## Lab
 
@@ -95,9 +95,9 @@ upx test.exe
 
 If you don't have UPX, any packed sample you already have in your learning environment works too.
 
-Drag a clean exe into DIE and note what compiler it recognizes, how many sections there are and their names. Click the Entropy button on that clean file and look at the curve: what's the rough average value, and is there any block that's flat near 8.0? Then drag the packed file into DIE and see whether it recognizes a packer, and if so, which one. Click Entropy on the packed file and compare the chart with the clean one, noting where the compressed block sits and its entropy. Open the section view for both files and compare section names, section count, and permissions, specifically whether any section is both WRITE and EXECUTE. Finally open the import table for both and count the imported functions: is the packed one noticeably poorer, and do you see `LoadLibraryA` and `GetProcAddress`?
+Drag a clean exe into DIE and note what compiler it recognizes, how many sections there are and their names. Click the Entropy button on that clean file and look at the curve. What's the rough average value, and is there any block that's flat near 8.0? Then drag the packed file into DIE and see whether it recognizes a packer, and if so, which one. Click Entropy on the packed file and compare the chart with the clean one, noting where the compressed block sits and its entropy. Open the section view for both files and compare section names, section count, and permissions, specifically whether any section is both WRITE and EXECUTE. Finally open the import table for both and count the imported functions. Is the packed one noticeably poorer, and do you see `LoadLibraryA` and `GetProcAddress`?
 
-A few questions to think through. Why does compressed data have entropy near 8.0 while ordinary code only sits around 5 to 6.5? If a file has high entropy but DIE doesn't recognize any packer, what does that tell you (hint: a custom or encrypting packer with no public signature)? And why is the packed file's import table so poor when the original program calls plenty of APIs?
+A few questions to think through. Why does compressed data have entropy near 8.0 while ordinary code only sits around 5 to 6.5? If a file has high entropy but DIE doesn't recognize any packer, what does that tell you (the hint is a custom or encrypting packer with no public signature)? And why is the packed file's import table so poor when the original program calls plenty of APIs?
 
 Do it yourself first, then open the solution below.
 
@@ -116,15 +116,15 @@ Comparing sections. The clean file has `.text`, `.rdata`, `.data`, `.rsrc` and s
 
 The import table. The clean file has dozens to hundreds of functions from several DLLs (kernel32, user32, gdi32 and so on). The packed file has very few, often just kernel32 with `LoadLibraryA` and `GetProcAddress` plus a handful more. The reason is explained below.
 
-On why compressed data has high entropy: compression removes redundancy and repetition, leaving a byte sequence that's distributed almost uniformly and randomly. Entropy measures that randomness, so it climbs close to the maximum of 8 bits per byte. Ordinary code has a lot of repeated patterns (commonly used opcodes, strings, alignment zero bytes), which keeps its entropy lower.
+On why compressed data has high entropy, compression removes redundancy and repetition, leaving a byte sequence that's distributed almost uniformly and randomly. Entropy measures that randomness, so it climbs close to the maximum of 8 bits per byte. Ordinary code has a lot of repeated patterns (commonly used opcodes, strings, alignment zero bytes), which keeps its entropy lower.
 
-On high entropy with no packer name: it's likely a custom packer, a self-written one, or a separate encryption layer that DIE has no signature for. This comes up often with malware. In that case there's no `upx -d` shortcut, you have to unpack manually: run it in a debugger, let the stub decompress itself, find the OEP and dump it (Lessons 14.2 and 14.3).
+On high entropy with no packer name, it's likely a custom packer, a self-written one, or a separate encryption layer that DIE has no signature for. This comes up often with malware. In that case there's no `upx -d` shortcut, you have to unpack manually. Run it in a debugger, let the stub decompress itself, find the OEP and dump it (Lessons 14.2 and 14.3).
 
-On the poor import table: the original code calls plenty of APIs, but those calls live inside the part that's compressed. While the file is still on disk, they don't exist yet as ordinary imports. The stub only needs `LoadLibraryA` and `GetProcAddress` so that once decompression finishes, it can load the needed DLLs itself and look up function addresses, rebuilding the IAT in memory. That's why rebuilding the IAT is its own separate step during unpacking (Lesson 14.3).
+On the poor import table, the original code calls plenty of APIs, but those calls live inside the part that's compressed. While the file is still on disk, they don't exist yet as ordinary imports. The stub only needs `LoadLibraryA` and `GetProcAddress` so that once decompression finishes, it can load the needed DLLs itself and look up function addresses, rebuilding the IAT in memory. That's why rebuilding the IAT is its own separate step during unpacking (Lesson 14.3).
 
 </details>
 
 ## Key takeaways
-A packer compresses/encrypts the original code and adds a stub that unpacks it at runtime, so the real code only appears in memory at runtime, not on disk. The OEP (Original Entry Point) is where every unpack ends: once you're there, the original code is ready in memory.
+A packer compresses/encrypts the original code and adds a stub that unpacks it at runtime, so the real code only appears in memory at runtime, not on disk. The OEP (Original Entry Point) is where every unpack ends. Once you're there, the original code is ready in memory.
 
-There are five signs of packing: entropy near 8.0, poor imports (LoadLibrary/GetProcAddress), strange section names, a section that's both writable and executable, and few strings. Use Detect It Easy for quick identification (signatures + entropy). Packers compress while protectors resist analysis (adding anti-debug/anti-VM/virtualization), so work out which one you have before deciding how much effort to spend.
+There are five signs of packing, which are entropy near 8.0, poor imports (LoadLibrary/GetProcAddress), strange section names, a section that's both writable and executable, and few strings. Use Detect It Easy for quick identification (signatures + entropy). Packers compress while protectors resist analysis (adding anti-debug/anti-VM/virtualization), so work out which one you have before deciding how much effort to spend.

@@ -12,7 +12,7 @@ By now you can unpack packers and strip ordinary obfuscation. Code virtualizatio
 
 ## What virtualization is and how it differs
 
-A packer hides code and expands it at runtime, and once you reach the OEP you have the original x86 back. Obfuscation makes code messy but it's still x86: read carefully, run it dynamically, simplify, and you get it. Virtualization is different.
+A packer hides code and expands it at runtime, and once you reach the OEP you have the original x86 back. Obfuscation makes code messy but it's still x86, and if you read it carefully, run it dynamically and simplify, you get it. Virtualization is different.
 
 It takes the original x86 code of a function and translates it into bytecode for a virtual machine (VM) that the protector invents. This VM isn't x86. It has its own instruction set, different for each protector and even for each build. The binary carries a block of bytecode (the original program translated into the VM's language), a dispatcher (a loop that reads each bytecode and calls the right piece of code), and a table of handlers (each handler executes one VM opcode, for example add, read memory, jump).
 
@@ -60,7 +60,7 @@ In general, pick the lowest level of abstraction that gets you to the goal. Unde
 
 ## Recognize it early
 
-Don't read a virtualized function statically for hours before realizing it's a VM. Early signs: Detect It Easy reports VMProtect, Themida, WinLicense or Code Virtualizer, and there are odd section names like `.vmp0`, `.vmp1`, `.themida`, `.winlice`. Other signs are a function that jumps into another region and disappears into a huge dispatcher loop, lots of `push`/`pop` with accesses to a context through fixed registers, and an IDA decompiler that gives up or produces endless meaningless pseudocode.
+Don't read a virtualized function statically for hours before realizing it's a VM. Early signs are that Detect It Easy reports VMProtect, Themida, WinLicense or Code Virtualizer, and there are odd section names like `.vmp0`, `.vmp1`, `.themida`, `.winlice`. Other signs are a function that jumps into another region and disappears into a huge dispatcher loop, lots of `push`/`pop` with accesses to a context through fixed registers, and an IDA decompiler that gives up or produces endless meaningless pseudocode.
 
 When you see these, switch to black-box or dynamic thinking right away and don't try to read it statically.
 
@@ -70,9 +70,9 @@ The goal is to recognize a binary (or a function) that has been virtualized and 
 
 First triage. Open the sample in DIE and note the protector name and any odd sections (`.vmp0`, `.themida` and so on). What's the entropy of the bytecode section? Then look for the VM entry. In x64dbg, set a breakpoint at a suspicious function (for example a license check), run to it, and watch the flow jump into a different region and then disappear into a loop.
 
-Inside that loop, recognize the dispatcher by the fetch, decode, execute pattern: an instruction that reads a byte from a pointer (the VIP), advances the pointer, and then jumps indirectly through a table (`jmp [table + reg*8]`). That's the dispatcher. Look at the table of pointers the dispatcher jumps to and estimate how many handlers there are. Open a few handlers and see whether they're covered in junk or MBA.
+Inside that loop, recognize the dispatcher by the fetch, decode, execute pattern, which is an instruction that reads a byte from a pointer (the VIP), advances the pointer, and then jumps indirectly through a table (`jmp [table + reg*8]`). That's the dispatcher. Look at the table of pointers the dispatcher jumps to and estimate how many handlers there are. Open a few handlers and see whether they're covered in junk or MBA.
 
-Finally choose an attack. Suppose the goal is to get past the license check. Instead of translating the entire VM, find where the function returns its result (right or wrong) and think about how to patch it or read the result. Write two sentences: what black box approach would you try, and why shouldn't you translate the whole VM?
+Finally choose an attack. Suppose the goal is to get past the license check. Instead of translating the entire VM, find where the function returns its result (right or wrong) and think about how to patch it or read the result. Write two sentences saying what black box approach you would try and why you shouldn't translate the whole VM.
 
 Two questions to think about. Why doesn't solving the VM of this binary help you solve another VMProtect binary? And when are you forced into real devirtualization, where the black box approach won't do?
 
@@ -83,7 +83,7 @@ This writeup describes the signs and the standard procedure you'll meet on a rea
 
 For triage, DIE often reports `VMProtect`, `Themida/WinLicense` or `Code Virtualizer` straight on the protector line. Sections you commonly see are `.vmp0` and `.vmp1` (VMProtect) and `.themida` and `.winlice` (Themida). The section holding the VM bytecode has high entropy because the data has been mixed up, though not necessarily close to 8.0 the way pure compression is. If DIE isn't sure, indirect signs are a poor import table, many executable sections and a size that's unusually large for the functionality.
 
-For the VM entry, set a breakpoint at the suspicious function and run. The flow doesn't go linearly but jumps into a `.vmp` section, usually through a chain of `push` instructions that push a "handler key" followed by a `jmp` or `ret` into the VM. That's `vmenter`: it saves the real CPU context into the VM context and starts the dispatcher.
+For the VM entry, set a breakpoint at the suspicious function and run. The flow doesn't go linearly but jumps into a `.vmp` section, usually through a chain of `push` instructions that push a "handler key" followed by a `jmp` or `ret` into the VM. That's `vmenter`. It saves the real CPU context into the VM context and starts the dispatcher.
 
 You recognize the core by the fetch, decode, execute pattern:
 
@@ -97,7 +97,7 @@ The registers playing VIP, VSP and context differ per build, but the shape "read
 
 The table the dispatcher jumps to holds pointers to the handlers. VMProtect usually has a few dozen to over a hundred handlers (including duplicate variants to cause noise). Open a few and you see they're short, each doing one primitive thing (push a constant, add, xor, read or write memory), and are usually covered with extra junk, redundant instructions and MBA. Because the handlers are obfuscated, mapping the opcodes takes effort.
 
-For the attack, the black box approach to try first is this: even a virtualized license check still has to return a right or wrong value to the code that calls it (the calling code is usually not virtualized). Set a breakpoint right after the VM returns, look at the return value and patch it, or patch the `jz` or `jnz` branch on the caller's side. You get past the check without understanding a single VM opcode. You shouldn't translate the whole VM because it takes dozens of hours, the result only works for this one binary, and it's usually unnecessary for the real goal.
+For the attack, the black box approach to try first is that even a virtualized license check still has to return a right or wrong value to the code that calls it (the calling code is usually not virtualized). Set a breakpoint right after the VM returns, look at the return value and patch it, or patch the `jz` or `jnz` branch on the caller's side. You get past the check without understanding a single VM opcode. You shouldn't translate the whole VM because it takes dozens of hours, the result only works for this one binary, and it's usually unnecessary for the real goal.
 
 On the questions, the work can't be reused because every build VMProtect generates a different opcode table and different handlers (it's polymorphic), so the dictionary you built for binary A is useless for binary B. You're forced into real devirtualization when the goal is to understand the hidden algorithm itself (for example pulling out the key computation formula to write a keygen, or extracting a proprietary encryption algorithm) and not just to get past a right or wrong check. Then the black box isn't enough and you have to rebuild the logic through devirtualization (VTIL, Triton, dedicated lifters) or symbolic execution.
 

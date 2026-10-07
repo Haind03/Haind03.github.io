@@ -37,7 +37,7 @@ There are two groups here. The ones with clear constants (MD5, SHA, AES, TEA, CR
 
 You don't need to check each number by eye. Several tools scan for constants automatically. FindCrypt / findcrypt2 (an IDA plugin) scans the whole binary, marks every region matching a known algorithm signature, and prints a list with addresses, so one run gives you a crypto map. FindCrypt-Ghidra is the equivalent for Ghidra. capa (Mandiant) not only finds constants but infers high-level capabilities, for example "hash data via MD5" or "encrypt data using AES", which is handy for quick triage. signsrch scans for algorithm signatures and some common implementation patterns and runs standalone outside IDA. And if you already have a yara rule set with crypto rules, scanning a batch of samples works too.
 
-My usual routine: open the binary, run findcrypt or capa first, and it shows a few addresses, "AES here, CRC32 over there". Then I jump straight there instead of going through the rest.
+My usual routine is to open the binary, run findcrypt or capa first, and it shows a few addresses, "AES here, CRC32 over there". Then I jump straight there instead of going through the rest.
 
 ## Confirm with structure
 
@@ -55,9 +55,9 @@ Sophisticated malware sometimes doesn't leave constants in the open. It may buil
 
 The task is to see the magic constants of crypto algorithms in a binary, and to use automatic tools to narrow down the region. The file `hashdemo.c` is a program that embeds the MD5 init values, MD5's T table, and the TEA delta. Build it on Linux with `gcc -O0 -o hashdemo hashdemo.c`, or on Windows with `gcc -O0 -o hashdemo.exe hashdemo.c` or `cl hashdemo.c`. For tools you can use Detect It Easy, IDA with FindCrypt, Ghidra with FindCrypt-Ghidra, or capa.
 
-Build `hashdemo` and open it in IDA or Ghidra, then run FindCrypt (IDA) or FindCrypt-Ghidra and see which region it marks and which algorithm it names. Next search by hand: use a byte-sequence search for `01 23 45 67` (which is `0x67452301` in little-endian) and note which section it lands in. If you have capa, run `capa hashdemo` and see which capabilities it reports. Then open `tea_round` in the disassembly and check whether the constant `0x9E3779B9` appears intact, and if not, what the compiler turned it into. Finally, confirm that each constant you found matches an algorithm in the table of this lesson.
+Build `hashdemo` and open it in IDA or Ghidra, then run FindCrypt (IDA) or FindCrypt-Ghidra and see which region it marks and which algorithm it names. Next search by hand, using a byte-sequence search for `01 23 45 67` (which is `0x67452301` in little-endian) and note which section it lands in. If you have capa, run `capa hashdemo` and see which capabilities it reports. Then open `tea_round` in the disassembly and check whether the constant `0x9E3779B9` appears intact, and if not, what the compiler turned it into. Finally, confirm that each constant you found matches an algorithm in the table of this lesson.
 
-Two questions to think about. Why does `0x67452301` appear in the binary as the bytes `01 23 45 67` (hint: little-endian, Lesson 1.1)? And if a programmer changed the MD5 init values to other numbers (a "custom" MD5), could FindCrypt still catch it, and how else would you recognize it? Do it yourself before opening the solution.
+Two questions to think about. Why does `0x67452301` appear in the binary as the bytes `01 23 45 67` (the hint is little-endian, Lesson 1.1)? And if a programmer changed the MD5 init values to other numbers (a "custom" MD5), could FindCrypt still catch it, and how else would you recognize it? Do it yourself before opening the solution.
 
 <div class="lab-box">
 <div class="lab-head"><b>LAB 16.1</b>source files</div>
@@ -73,7 +73,7 @@ The figures below come from a real `gcc -O0` build on Linux x86-64.
 
 ### FindCrypt narrows the region
 
-FindCrypt scans the binary and matches the `md5_state` and `md5_T` arrays against known MD5 signatures, reporting something like "MD5 initial values" and "MD5 T-table" with addresses in `.data` or `.rodata`. This is the fastest way: you know MD5 is there before reading a single line of code.
+FindCrypt scans the binary and matches the `md5_state` and `md5_T` arrays against known MD5 signatures, reporting something like "MD5 initial values" and "MD5 T-table" with addresses in `.data` or `.rodata`. This is the fastest way, because you know MD5 is there before reading a single line of code.
 
 ### Searching by hand
 
@@ -106,7 +106,7 @@ tea_round:
     ...
 ```
 
-The compiler recognized that `+ 0x9E3779B9` is equivalent to `- 0x61C88647` (because `0x9E3779B9 = -0x61C88647` read as a signed 32-bit number, in two's complement: `0x100000000 - 0x9E3779B9 = 0x61C88647`). It chose a `sub` with the smaller constant. So searching for `B9 79 37 9E` as little-endian bytes in this code will MISS, because the constant has been transformed. FindCrypt still catches TEA in implementations that use the delta directly, but when it shows up as an optimized immediate you have to watch for the two's complement form `0x61C88647` as well. That's why you should confirm by structure and not only by byte strings.
+The compiler recognized that `+ 0x9E3779B9` is equivalent to `- 0x61C88647` (because `0x9E3779B9 = -0x61C88647` read as a signed 32-bit number, in two's complement, `0x100000000 - 0x9E3779B9 = 0x61C88647`). It chose a `sub` with the smaller constant. So searching for `B9 79 37 9E` as little-endian bytes in this code will MISS, because the constant has been transformed. FindCrypt still catches TEA in implementations that use the delta directly, but when it shows up as an optimized immediate you have to watch for the two's complement form `0x61C88647` as well. That's why you should confirm by structure and not only by byte strings.
 
 ### Matching the algorithms
 
@@ -114,11 +114,11 @@ The values `0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476` are MD5 (or SHA-1 if
 
 ### Answers to the questions
 
-`0x67452301` becomes `01 23 45 67` because x86 is little-endian: the lowest byte is stored first (Lesson 1.1). If the MD5 init values were changed to other numbers, FindCrypt wouldn't match the standard signature and would miss it. You then recognize it by structure: a compression loop that processes 64-byte blocks, four state variables, many rotate and add operations, and four rounds of 16 steps. That structure is characteristic of MD5 even when the constants have been replaced, which is when confirming by structure saves you.
+`0x67452301` becomes `01 23 45 67` because x86 is little-endian, so the lowest byte is stored first (Lesson 1.1). If the MD5 init values were changed to other numbers, FindCrypt wouldn't match the standard signature and would miss it. You then recognize it by structure, which is a compression loop that processes 64-byte blocks, four state variables, many rotate and add operations, and four rounds of 16 steps. That structure is characteristic of MD5 even when the constants have been replaced, which is when confirming by structure saves you.
 
 </details>
 
 ## Key takeaways
-Standard crypto algorithms carry fixed constants, and the compiler can't change them. Know a few common numbers: MD5/SHA `0x67452301`, SHA-256 `0x6A09E667`, TEA delta `0x9E3779B9`, CRC32 `0xEDB88320`. Run findcrypt/capa/signsrch first to mark out the crypto instead of reading it by hand.
+Standard crypto algorithms carry fixed constants, and the compiler can't change them. Know a few common numbers, such as MD5/SHA `0x67452301`, SHA-256 `0x6A09E667`, TEA delta `0x9E3779B9`, CRC32 `0xEDB88320`. Run findcrypt/capa/signsrch first to mark out the crypto instead of reading it by hand.
 
 Confirm with the loop structure, so you don't trust a coincidental signature. If constants are built or decoded at runtime, dump the memory and scan again.

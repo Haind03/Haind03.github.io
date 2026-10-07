@@ -8,13 +8,13 @@ categories: ["Technique Reverse", "Part 13 · Games: Unity, Unreal, Lua"]
 tags: [reverse-engineering, game-hacking]
 render_with_liquid: false
 ---
-A lot of games don't write gameplay logic in C++ but in Lua, because Lua is light, easy to embed, and can be edited without rebuilding the whole engine. Roblox, Garry's Mod, World of Warcraft (addons), and many mobile games all run Lua scripts. For a reverser that's good news. Lua keeps almost all its information, and decompiling gets you something close to the source. The catches: there are two different Lua lines (standard Lua and LuaJIT), the bytecode changes with the version, and games often encrypt scripts. This lesson goes through each piece.
+A lot of games don't write gameplay logic in C++ but in Lua, because Lua is light, easy to embed, and can be edited without rebuilding the whole engine. Roblox, Garry's Mod, World of Warcraft (addons), and many mobile games all run Lua scripts. For a reverser that's good news. Lua keeps almost all its information, and decompiling gets you something close to the source. The catches are that there are two different Lua lines (standard Lua and LuaJIT), the bytecode changes with the version, and games often encrypt scripts. This lesson goes through each piece.
 
 ## Lua runs on bytecode, like Python
 
 When you write a `.lua` file, the interpreter doesn't run the text directly. It compiles to bytecode first and then runs it on the Lua VM (register-based, unlike stack-based CPython). Most of the time games embed the plain `.lua` text so you can read it right away, but when the author wants to hide it, they ship compiled bytecode (made with `luac`, the Lua compiler). Then you need a decompiler.
 
-There are two completely different bytecode families. Standard Lua (lua.org) produces bytecode with `luac`, and you decompile it with `unluac` (Java, the best one right now) or `luadec`. LuaJIT is a separate implementation, faster, and its bytecode is not compatible with standard Lua. You need a dedicated decompiler: `luajit-decompiler`, `ljd`, or the `luajit-decompiler-v2` version.
+There are two completely different bytecode families. Standard Lua (lua.org) produces bytecode with `luac`, and you decompile it with `unluac` (Java, the best one right now) or `luadec`. LuaJIT is a separate implementation, faster, and its bytecode is not compatible with standard Lua. You need a dedicated decompiler, such as `luajit-decompiler`, `ljd`, or the `luajit-decompiler-v2` version.
 
 Pick the wrong one and the decompiler errors out from the first byte. So step one is always identification.
 
@@ -22,7 +22,7 @@ Pick the wrong one and the decompiler errors out from the first byte. So step on
 
 Open the bytecode file in a hex editor and look at the first few bytes.
 
-Standard Lua starts with the magic `1B 4C 75 61`, i.e. `\x1bLua`. The 5th byte is the version number in hex: `51` = Lua 5.1, `52` = 5.2, `53` = 5.3, `54` = 5.4. This decides which decompiler you use, because the bytecode differs per version.
+Standard Lua starts with the magic `1B 4C 75 61`, i.e. `\x1bLua`. The 5th byte is the version number in hex, where `51` = Lua 5.1, `52` = 5.2, `53` = 5.3, `54` = 5.4. This decides which decompiler you use, because the bytecode differs per version.
 
 ```
 1B 4C 75 61 54 00 19 93 0D 0A 1A 0A ...
@@ -73,7 +73,7 @@ Many games don't leave the bytecode bare but encrypt it (XOR, a custom cipher) a
 
 One approach is to dump from runtime. Let the game decrypt it itself, then pull the decrypted bytecode out of memory. Hook the script loading function (for example `luaL_loadbuffer`, `lua_load`, `luaL_loadbufferx`) with Frida and print the buffer at the moment it's clean bytecode. It's the same dynamic unpacking idea as Part 14. The other case is when the key sits in the binary. If the cipher is simple, find the decryption function in the native code, get the key, and decrypt offline.
 
-The principle is the same as for every kind of packer: find where the data is in its cleanest form and grab it there, instead of working against the encryption layer.
+The principle is the same as for every kind of packer, which is to find where the data is in its cleanest form and grab it there, instead of working against the encryption layer.
 
 ## Lab
 
@@ -129,15 +129,15 @@ key = ''.join(chr((EXPECTED[i] - (i + 1)) % 256) for i in range(len(EXPECTED)))
 print(key)   # lua_2024!
 ```
 
-The valid license key is `lua_2024!`. I checked this in Python both ways: building `EXPECTED` from `lua_2024!` with the forward formula gives exactly the array in `guard.lua`, and inverting it gives exactly `lua_2024!` back. With `lua` installed, running `lua guard.lua` and typing `lua_2024!` prints `Correct! Welcome.`
+The valid license key is `lua_2024!`. I checked this in Python both ways. Building `EXPECTED` from `lua_2024!` with the forward formula gives exactly the array in `guard.lua`, and inverting it gives exactly `lua_2024!` back. With `lua` installed, running `lua guard.lua` and typing `lua_2024!` prints `Correct! Welcome.`
 
-On why stripping loses names but not logic: variable and function names are metadata for humans, while the Lua virtual machine runs on register indices. Removing names doesn't affect execution, so the bytecode still has every instruction it needs and the logic can always be rebuilt.
+On why stripping loses names but not logic, variable and function names are metadata for humans, while the Lua virtual machine runs on register indices. Removing names doesn't affect execution, so the bytecode still has every instruction it needs and the logic can always be rebuilt.
 
-On LuaJIT: no, unluac only understands standard Lua bytecode. A `\x1bLJ` file needs `ljd` or `luajit-decompiler-v2` instead.
+On LuaJIT, the answer is no, unluac only understands standard Lua bytecode. A `\x1bLJ` file needs `ljd` or `luajit-decompiler-v2` instead.
 
 </details>
 
 ## Key takeaways
-Embedded Lua is usually plain text you can read directly, and only the bytecode form needs a decompiler. There are two different families: standard Lua (magic `\x1bLua`, use unluac/luadec) and LuaJIT (magic `\x1bLJ`, use ljd), so identify first. The version byte after the magic (`51`/`52`/`53`/`54`) decides the decompiler.
+Embedded Lua is usually plain text you can read directly, and only the bytecode form needs a decompiler. There are two different families, standard Lua (magic `\x1bLua`, use unluac/luadec) and LuaJIT (magic `\x1bLJ`, use ljd), so identify first. The version byte after the magic (`51`/`52`/`53`/`54`) decides the decompiler.
 
 Stripped bytecode only loses local variable names, the logic is still there. For encrypted scripts, dump from runtime by hooking `luaL_loadbuffer`/`lua_load` with Frida to get the clean bytecode. Tables are central to Lua, and in `t:method()` self is the hidden first parameter.

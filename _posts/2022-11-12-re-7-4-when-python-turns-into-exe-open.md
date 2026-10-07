@@ -10,11 +10,11 @@ render_with_liquid: false
 ---
 You download a program, DIE says it's a normal Windows PE, but IDA shows only bootloader code that has nothing to do with the logic. Looking closer at the strings you see `python311.dll`, `_MEIPASS`, `pyi-`. This isn't a C program, it's a Python script packaged into an exe. The real logic is still Python bytecode inside. You just have to dig it out and decompile it like in Lesson 7.2.
 
-Three packaging tools you'll commonly meet are PyInstaller (the most common), py2exe, and cx_Freeze. The handling is similar: identify, extract, decompile.
+Three packaging tools you'll commonly meet are PyInstaller (the most common), py2exe, and cx_Freeze. The handling is similar and has three steps, identify, extract, decompile.
 
 ## PyInstaller: structure and how to recognize it
 
-PyInstaller doesn't compile Python to machine code. It puts a whole runtime into the exe: a bootloader written in C (the part you see in IDA), the Python interpreter (`python3xx.dll` or `libpython`), and an archive with all the program's `.pyc` files, compressed in a block called PYZ. At runtime, the bootloader unpacks into a temp folder (the `_MEIPASS` environment variable) and then calls the interpreter to run the main script.
+PyInstaller doesn't compile Python to machine code. It puts a whole runtime into the exe, made up of a bootloader written in C (the part you see in IDA), the Python interpreter (`python3xx.dll` or `libpython`), and an archive with all the program's `.pyc` files, compressed in a block called PYZ. At runtime, the bootloader unpacks into a temp folder (the `_MEIPASS` environment variable) and then calls the interpreter to run the main script.
 
 The tells, `strings` is enough:
 
@@ -110,9 +110,9 @@ The result lands in `dist/secretapp` (Linux/macOS) or `dist\secretapp.exe` (Wind
 python3 pyinstxtractor.py dist/secretapp
 ```
 
-Read the output: which Python version does the tool report, and which file is the Possible entry point? Go into the `secretapp_extracted/` folder. Among the many `.pyc` files, which one is the original script and which are PyInstaller's support files (hint: names starting with `pyi`)? Check the magic header of `secretapp.pyc` (the first 16 bytes). Is the header complete? If it's missing, copy the header from a standard module such as `struct.pyc` in the same folder. Finally decompile `secretapp.pyc`, find the license key, and see whether anything hides it.
+Read the output. Which Python version does the tool report, and which file is the Possible entry point? Go into the `secretapp_extracted/` folder. Among the many `.pyc` files, which one is the original script and which are PyInstaller's support files (think about names starting with `pyi`)? Check the magic header of `secretapp.pyc` (the first 16 bytes). Is the header complete? If it's missing, copy the header from a standard module such as `struct.pyc` in the same folder. Finally decompile `secretapp.pyc`, find the license key, and see whether anything hides it.
 
-Two questions to think about. Why does packaging into an exe barely protect secrets in the code? And if the author really wanted to hide the license key, what would they have to use (hint: Lesson 7.5)? Do it yourself before opening the solution.
+Two questions to think about. Why does packaging into an exe barely protect secrets in the code? And if the author really wanted to hide the license key, what would they have to use (see Lesson 7.5)? Do it yourself before opening the solution.
 
 <div class="lab-box">
 <div class="lab-head"><b>LAB 7.4</b>source files</div>
@@ -219,7 +219,7 @@ The license key is `PyInst@ller_2024`, in plain sight in the constants of the `c
 
 ### Answers to the questions
 
-Packaging only gathers the files together and doesn't encrypt the bytecode. Every string constant, function name and piece of logic is still in the `.pyc`, so once extracted it can all be read. To really hide something, the bytecode must stop being in the standard form: PyArmor (encrypting and wrapping the bytecode), or Nuitka and Cython (compiling to C and then native, at which point you reverse it like C). See Lesson 7.5.
+Packaging only gathers the files together and doesn't encrypt the bytecode. Every string constant, function name and piece of logic is still in the `.pyc`, so once extracted it can all be read. To really hide something, the bytecode must stop being in the standard form, for example with PyArmor (encrypting and wrapping the bytecode), or Nuitka and Cython (compiling to C and then native, at which point you reverse it like C). See Lesson 7.5.
 
 </details>
 
