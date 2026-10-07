@@ -21,6 +21,11 @@
   name: Digital Dragons CTF 2025, Da Nang (Jeopardy, team BlueCyber_Intern)
   result: CONSOLATION
   post: /posts/ctf-digital-dragons-2025/
+- date: Jul 2025
+  name: HackTheon Sejong 2025, international collegiate final, South Korea
+  result: TOP 10
+  badge: acc
+  post: /posts/ctf-hacktheon-sejong-2025/
 - date: Nov 2024
   name: Flare-On 11, every challenge solved
   result: FINISHER
