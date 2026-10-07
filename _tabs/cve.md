@@ -129,7 +129,6 @@ order: 2
 
 <div class="ca-h"><span class="n">0x02</span><h2>The archive</h2></div>
 
-<p>Sorted by CVSS (scores from the official CVE records). Each ID links to its CVE record.</p>
 
 <div class="ca-filters" id="ca-filters">
   <button class="on" data-f="all">All<b>{{ total }}</b></button>
