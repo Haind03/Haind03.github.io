@@ -81,13 +81,16 @@ title: About
   /* cves */
   .cves { width: 100%; border-collapse: collapse; font-size: .9rem; margin-top: 1rem; }
   .cves th { font: 500 .72rem var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--mute); text-align: left; padding: .5rem; border-bottom: 1px solid var(--acc-dim); background: transparent !important; }
+  .cves { display: table; table-layout: auto; }
+  .cves th, .cves td { white-space: normal; }
   .cves td { padding: .65rem .5rem; border-bottom: 1px solid var(--line); vertical-align: top; background: transparent !important; }
   .cves .cid { font: .82rem var(--mono); white-space: nowrap; }
-  .cves .ctype { color: var(--mute); }
+  .cves .ctype { color: var(--mute); font-size: .85rem; }
   .cves .cdate { font: .78rem var(--mono); color: var(--mute); white-space: nowrap; }
   .cvss { display: inline-block; min-width: 2.6rem; text-align: center; font: 700 .78rem var(--mono); padding: .2rem .4rem; border-radius: 4px; color: #0a1114; }
   .cvss.crit { background: #ff5c7a; } .cvss.high { background: #ff9f43; } .cvss.med { background: #f2c94c; } .cvss.low { background: #7fd1ae; }
-  @media (max-width: 767px) { .cves .ctype, .cves .cdate, .cves th:nth-child(4), .cves th:nth-child(5) { display: none; } }
+  @media (max-width: 1399px) { .cves .cdate, .cves th:nth-child(5) { display: none; } }
+  @media (max-width: 767px) { .cves .ctype, .cves th:nth-child(4) { display: none; } }
 
   /* cards */
   .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
