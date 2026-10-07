@@ -1,4 +1,123 @@
 ---
-layout: home
-# Index page
+layout: default
+title: About
 ---
+
+<style>
+  .about { --accent: #2bb39a; }
+  .about-hero { display: flex; gap: 1.5rem; align-items: center; margin: 1rem 0 2rem; }
+  .about-hero img { width: 112px; height: 112px; border-radius: 50%; border: 3px solid var(--accent); flex-shrink: 0; }
+  .about-hero h1 { margin: 0 0 .25rem; font-size: 2rem; }
+  .about-hero .role { color: var(--text-muted-color); margin: 0 0 .75rem; }
+  .about-links { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .about-links a { display: inline-flex; align-items: center; gap: .4rem; padding: .3rem .8rem; border: 1px solid var(--main-border-color); border-radius: 999px; font-size: .9rem; color: var(--text-color); text-decoration: none; border-bottom: 1px solid var(--main-border-color) !important; }
+  .about-links a:hover { border-color: var(--accent) !important; color: var(--accent); }
+  .about h2 { margin-top: 2.5rem; font-size: 1.35rem; }
+  .about p { line-height: 1.75; }
+  .timeline { list-style: none; padding: 0; margin: 1rem 0 0; border-left: 2px solid var(--main-border-color); }
+  .timeline li { position: relative; padding: 0 0 1.25rem 1.25rem; }
+  .timeline li::before { content: ""; position: absolute; left: -7px; top: .45rem; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); }
+  .timeline .when { font-size: .85rem; color: var(--text-muted-color); }
+  .timeline .what { font-weight: 600; }
+  .timeline .where { color: var(--text-muted-color); }
+  .timeline p { margin: .3rem 0 0; }
+  .honors td:first-child { white-space: nowrap; color: var(--text-muted-color); }
+  .honors td:last-child { font-weight: 600; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .cards a { display: block; padding: 1rem 1.1rem; border: 1px solid var(--main-border-color); border-radius: .6rem; background: var(--card-bg); color: var(--text-color); text-decoration: none; border-bottom: 1px solid var(--main-border-color) !important; }
+  .cards a:hover { border-color: var(--accent) !important; }
+  .cards strong { display: block; margin-bottom: .3rem; }
+  .cards span { font-size: .9rem; color: var(--text-muted-color); }
+  .recent { list-style: none; padding: 0; }
+  .recent li { display: flex; justify-content: space-between; gap: 1rem; padding: .45rem 0; border-bottom: 1px dashed var(--main-border-color); }
+  .recent time { color: var(--text-muted-color); font-size: .85rem; white-space: nowrap; }
+  @media (max-width: 576px) {
+    .about-hero { flex-direction: column; text-align: center; }
+    .about-links { justify-content: center; }
+    .recent li { flex-direction: column; gap: 0; }
+  }
+</style>
+
+<article class="px-1 about">
+  <div class="about-hero">
+    <img src="{{ site.avatar }}" alt="HaiND">
+    <div>
+      <h1>Nguyen Dinh Hai</h1>
+      <p class="role">Teaching Assistant at PTIT · Reverse engineering, malware analysis, vulnerability research</p>
+      <div class="about-links">
+        <a href="https://github.com/Haind03" target="_blank" rel="noopener"><i class="fab fa-github"></i> GitHub</a>
+        <a href="https://www.linkedin.com/in/haind03" target="_blank" rel="noopener"><i class="fab fa-linkedin"></i> LinkedIn</a>
+        <a href="https://www.wordfence.com/threat-intel/vulnerabilities/researchers/nguyen-dinh-hai-haind" target="_blank" rel="noopener"><i class="fas fa-shield-halved"></i> Wordfence</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+    <p>Hi, I'm Hai, though most people online know me as HaiND. I like taking things apart to see how they really work, and in security that usually means a binary nobody gave me the source for, a piece of malware that doesn't want to be read, or a disk image that still remembers what happened on it.</p>
+
+    <p>I'm currently a Teaching Assistant in cybersecurity at the Posts and Telecommunications Institute of Technology (PTIT), where I help run classes, support academic research and train students for competitions. Before that I spent a little over three years at BlueCyber, first as an intern doing reverse engineering and malware analysis, then full time on threat hunting, tracking down persistent threats and working incident response investigations.</p>
+
+    <p>Outside of work I hunt for bugs in web software, mostly WordPress plugins, and report them through Wordfence. And I play a lot of CTF. I usually take the reversing and forensics challenges, and with the PTIT team I've played everything from the school contest to the ASEAN finals and an Attack-Defense final in Russia.</p>
+
+    <p>This blog is my notebook. The <a href="/technique-reverse/">Technique Reverse</a> series is everything I wish someone had handed me when I started learning RE, and the <a href="/categories/malware-analysis/">malware analysis</a> posts are write-ups of samples and labs I've worked through.</p>
+
+    <h2>Experience</h2>
+    <ul class="timeline">
+      <li>
+        <div class="when">May 2026 to now</div>
+        <div class="what">Cybersecurity Teaching Assistant</div>
+        <div class="where">Posts and Telecommunications Institute of Technology</div>
+        <p>Teaching support for security courses, academic research, and training students for security competitions.</p>
+      </li>
+      <li>
+        <div class="when">2024 to Apr 2026</div>
+        <div class="what">Threat Hunting &amp; Malware Analysis</div>
+        <div class="where">BlueCyber Limited Company</div>
+        <p>Hunting for advanced persistent threats, analysing malicious activity and samples, and running incident response investigations.</p>
+      </li>
+      <li>
+        <div class="when">Feb 2023 to Feb 2024</div>
+        <div class="what">Intern, Reverse Engineering &amp; Malware Analysis</div>
+        <div class="where">BlueCyber Limited Company</div>
+        <p>Where I learned to read malware properly, one sample at a time.</p>
+      </li>
+      <li>
+        <div class="when">2024 and 2025</div>
+        <div class="what">Challenge author</div>
+        <div class="where">PTIT Student Information Security Competition</div>
+        <p>Wrote reverse engineering and forensics challenges, validated solutions and deployed the infrastructure for the qualifying and final rounds.</p>
+      </li>
+    </ul>
+
+    <h2>Vulnerability research</h2>
+    <p>I look for security bugs in WordPress plugins and disclose them responsibly through the Wordfence bug bounty program. The full list of what I've reported, with CVE IDs and advisories, is on my <a href="https://www.wordfence.com/threat-intel/vulnerabilities/researchers/nguyen-dinh-hai-haind" target="_blank" rel="noopener">Wordfence researcher profile</a>.</p>
+
+    <h2>Honors</h2>
+    <table class="honors">
+      <tbody>
+        <tr><td>Dec 2025</td><td>M*CTF 2025, international Attack-Defense CTF in Russia</td><td>Champion</td></tr>
+        <tr><td>Nov 2025</td><td>CSCV 2025, Vietnam Student Cyber Security Contest, Bracket B Jeopardy</td><td>Runner-up</td></tr>
+        <tr><td>2025</td><td>Flare-On 12, Mandiant's reverse engineering challenge</td><td>Finisher</td></tr>
+        <tr><td>Nov 2024</td><td>Flare-On 11, all challenges solved</td><td>Finisher</td></tr>
+        <tr><td>Nov 2024</td><td>ASEAN Student Contest on Information Security, Attack-Defense final</td><td>Third prize</td></tr>
+        <tr><td>Nov 2023</td><td>ASEAN Student Contest on Information Security, Attack-Defense final</td><td>Consolation prize</td></tr>
+        <tr><td>Aug 2023</td><td>PTIT Student Information Security Competition, individual Jeopardy</td><td>Second prize</td></tr>
+        <tr><td>Aug 2022</td><td>PTIT Student Information Security Competition, individual Jeopardy</td><td>Consolation prize</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Start reading</h2>
+    <div class="cards">
+      <a href="/technique-reverse/"><strong>Technique Reverse</strong><span>A full RE series, from reading hexdumps to unpacking, anti-debug and Frida.</span></a>
+      <a href="/categories/malware-analysis/"><strong>Malware analysis</strong><span>Write-ups of real samples: LNK droppers, stealers and a threat hunting lab.</span></a>
+      <a href="/archives/"><strong>Archives</strong><span>Every post, by date.</span></a>
+    </div>
+
+    <h2>Latest posts</h2>
+    <ul class="recent">
+      {% for post in site.posts limit: 5 %}
+        <li><a href="{{ post.url | relative_url }}">{{ post.title }}</a><time>{{ post.date | date: "%b %d, %Y" }}</time></li>
+      {% endfor %}
+    </ul>
+  </div>
+</article>
