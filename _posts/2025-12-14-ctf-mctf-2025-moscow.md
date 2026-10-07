@@ -28,7 +28,7 @@ _Round 180/180. PTIT 1st with 19,477.14, MTUCI 2nd with 18,056.53, UTT 3rd with 
 
 You can see it in our row. 100% SLA on pupocer and qrb, 85.56% on arasaka, and nobody got any flags from us on those three. erpdotnet was the only service where flags really moved, and there we went +20/-20 with 91.39% uptime.
 
-MTUCI attacked better on erpdotnet, +92 and nothing lost. But their uptime was lower on every service (90.28%, 86.94%, 77.50%, 73.33%), and over 180 rounds that adds up. We won mostly by keeping our services up and not losing flags. After the last two years, winning on defense felt really good.
+Over 180 rounds, uptime counts for a lot, and that is where most of our points came from. After the two ASEAN finals, winning mainly through defense felt really good.
 
 ![The M*CTF 2025 1st place award](/assets/img/posts/mctf-2025/trophy.webp)
 _The 1st place award, M\*CTF 2025._

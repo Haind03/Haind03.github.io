@@ -23,10 +23,10 @@ I took a screenshot of the scoreboard at the end of the day, and it shows pretty
 ![The final Attack-Defense scoreboard of the 2023 ASEAN Student Contest](/assets/img/posts/asean-2023/scoreboard.webp)
 _The final board on November 11, 2023. PTIT.Sn0rlax is 15th (team 115), on the right._
 
-There were four services: petstore, web 1, binary chef and web 2. We finished 15th with 4,881.03 points, one spot behind PTIT.inj3cted. UIT.Wolf_Brigade won with 19,801.95.
+There were four services: petstore, web 1, binary chef and web 2. We finished 15th with 4,881.03 points.
 
-Our uptime was fine, 95.08% on petstore and 100% on the other three. The problem was patching. We lost 482 flags on petstore and 658 on web 1, and only stole 120 and 189. So the services were running, but they were still vulnerable for way too long and other teams kept taking flags from us. For comparison, the winners were at +705/-25 on web 1. We never got an exploit working on web 2, and on binary chef nobody in the top 20 got a single flag either way, so I don't feel too bad about that one.
+Our SLA was 95.08% on petstore and 100% on the other three, so the services were almost always up. The problem was patching. We lost 482 flags on petstore and 658 on web 1, and captured 120 and 189 on them. The services were running but stayed vulnerable for too long. We didn't get a working exploit for web 2 or binary chef.
 
-Main thing I learned: keeping the service up is not enough, you have to patch fast.
+What I took from this final: keeping services up is not enough, they also have to be patched early.
 
 I went back to the same final in 2024 with PTIT.Celebi and got third prize. That one's [here](/posts/ctf-asean-2024-attack-defense/).
