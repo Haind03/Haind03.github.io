@@ -1,97 +1,97 @@
 ---
-title: "Bài 17.4: Nhận diện các kỹ thuật DLL injection"
+title: "Lesson 17.4: Recognizing DLL injection techniques"
 date: 2026-10-06 09:43:00 +0700
-categories: ["Technique Reverse", "Phần 17 · Patch, Hook, Injection & Instrumentation"]
+categories: ["Technique Reverse", "Part 17 · Patching, Hooking, Injection"]
 tags: [reverse-engineering, frida, hooking]
 render_with_liquid: false
 ---
-DLL injection là chuyện một tiến trình ép một tiến trình khác nạp và chạy code của mình. Phần mềm tử tế thỉnh thoảng cũng dùng (overlay game, công cụ accessibility, EDR), nhưng malware dùng nó liên tục: để chạy ẩn trong một tiến trình hợp pháp như `explorer.exe`, né allowlist, và khó bị tắt.
+DLL injection is when one process forces another process to load and run its code. Legit software uses it now and then too (game overlays, accessibility tools, EDR), but malware uses it constantly: to run hidden inside a legitimate process like `explorer.exe`, dodge allowlists, and be hard to kill.
 
-Bài này không dạy bạn viết injector. Mục tiêu ngược lại: khi mổ một mẫu hoặc nhìn một tiến trình nghi vấn, bạn nhận ra ngay "à, đây là CreateRemoteThread injection" hay "đây là manual mapping", biết đặt breakpoint ở đâu, và biết công cụ nào soi ra nó. Đây là kiến thức analyst chuẩn, nhìn từ phía người phòng thủ.
+This lesson doesn't teach you to write an injector. The goal is the opposite: when you're dissecting a sample or looking at a suspicious process, you recognize right away "ah, this is CreateRemoteThread injection" or "this is manual mapping", know where to set breakpoints, and know which tool will show it. This is standard analyst knowledge, seen from the defender's side.
 
-## Khung chung để đọc mọi kỹ thuật injection
+## A common frame for reading every injection technique
 
-Dù biến thể nào, một lần inject gần như luôn gồm ba việc:
+Whatever the variant, one injection almost always consists of three things:
 
-1. **Mở tiến trình đích** để lấy quyền thao tác (thường qua `OpenProcess` với quyền `PROCESS_VM_WRITE | PROCESS_VM_OPERATION | PROCESS_CREATE_THREAD`).
-2. **Đặt code hoặc đường dẫn DLL vào bộ nhớ đích** (cấp vùng nhớ rồi ghi vào).
-3. **Buộc đích thực thi code đó** (tạo thread mới, hoặc cướp một thread sẵn có, hoặc dùng một cơ chế callback của Windows).
+1. **Open the target process** to get the rights to manipulate it (usually via `OpenProcess` with `PROCESS_VM_WRITE | PROCESS_VM_OPERATION | PROCESS_CREATE_THREAD`).
+2. **Put code or the DLL path into the target's memory** (allocate a region, then write into it).
+3. **Force the target to execute that code** (create a new thread, or hijack an existing thread, or use a Windows callback mechanism).
 
-Bắt được chuỗi ba bước này là bắt được injection. Khác biệt giữa các kỹ thuật chủ yếu nằm ở bước 2 và 3.
+Catching this three-step chain is catching the injection. The differences between techniques mostly lie in steps 2 and 3.
 
 ## 1. LoadLibrary + CreateRemoteThread
 
-Đây là kỹ thuật kinh điển, đơn giản nhất, và vẫn gặp nhiều nhất.
+This is the classic technique, the simplest, and still the most common.
 
-**Cơ chế (khái niệm):** injector ghi *chuỗi đường dẫn tới file DLL* vào bộ nhớ đích, rồi tạo một remote thread chạy thẳng vào hàm `LoadLibraryW` của `kernel32` với tham số là chuỗi đó. Vì `LoadLibraryW` có chữ ký giống một thread start routine (nhận một con trỏ, trả một giá trị), Windows vui vẻ chạy nó, và DLL được nạp đúng theo loader chuẩn.
+**Mechanism (conceptually):** the injector writes the *string with the path to the DLL file* into the target's memory, then creates a remote thread that runs straight into the `kernel32` function `LoadLibraryW` with that string as the parameter. Since `LoadLibraryW` has a signature like a thread start routine (takes one pointer, returns one value), Windows happily runs it, and the DLL gets loaded through the standard loader.
 
-**Chuỗi API đặc trưng** (đặt breakpoint tại đây khi debug):
+**Characteristic API chain** (set breakpoints here when debugging):
 ```
 OpenProcess
-VirtualAllocEx        ; cấp vùng nhớ trong tiến trình đích
-WriteProcessMemory    ; ghi đường dẫn DLL vào vùng đó
-GetProcAddress        ; lấy địa chỉ LoadLibraryW
-CreateRemoteThread    ; chạy LoadLibraryW(duong_dan_dll)
+VirtualAllocEx        ; allocate a region in the target process
+WriteProcessMemory    ; write the DLL path into that region
+GetProcAddress        ; get the address of LoadLibraryW
+CreateRemoteThread    ; run LoadLibraryW(dll_path)
 ```
 
-**Dấu hiệu nhận diện:**
-- DLL lạ xuất hiện trong danh sách module của một tiến trình không có lý do nạp nó (một file DLL nằm ở thư mục temp, tên ngẫu nhiên).
-- Một thread có start address trỏ thẳng vào `LoadLibraryW`.
-- Trên đĩa có file DLL thật, vì kỹ thuật này cần DLL là file (các kỹ thuật sau thì không).
+**Tells:**
+- A strange DLL shows up in the module list of a process that has no reason to load it (a DLL file in the temp folder, with a random name).
+- A thread whose start address points straight at `LoadLibraryW`.
+- A real DLL file on disk, since this technique needs the DLL to be a file (later techniques don't).
 
-**Phát hiện:** Process Hacker hoặc System Informer, mở tiến trình, xem tab Modules tìm DLL lạ, xem tab Threads tìm thread có start address ở `kernel32!LoadLibraryW`. Procmon bắt được thao tác `Load Image` của DLL lạ.
+**Detection:** Process Hacker or System Informer, open the process, check the Modules tab for strange DLLs, check the Threads tab for a thread with a start address at `kernel32!LoadLibraryW`. Procmon catches the `Load Image` operation of the strange DLL.
 
 ## 2. SetWindowsHookEx
 
-**Cơ chế:** Windows cho phép đăng ký một hook vào chuỗi message của các cửa sổ (ví dụ `WH_KEYBOARD`, `WH_GETMESSAGE`). Khi hook nằm trong một DLL, Windows **tự nạp DLL đó vào mọi tiến trình có cửa sổ** nhận message tương ứng. Vậy chỉ cần đăng ký hook trỏ tới một hàm trong DLL của mình là DLL được rải khắp nơi, không cần `CreateRemoteThread`.
+**Mechanism:** Windows lets you register a hook into the message chain of windows (for example `WH_KEYBOARD`, `WH_GETMESSAGE`). When the hook is in a DLL, Windows **automatically loads that DLL into every process with a window** that receives the corresponding message. So just registering a hook pointing at a function in your own DLL spreads the DLL everywhere, no `CreateRemoteThread` needed.
 
-**Dấu hiệu:** lời gọi `SetWindowsHookEx` với `hMod` trỏ tới một DLL lạ, DLL xuất hiện trong nhiều tiến trình GUI cùng lúc. Keylogger cũ rất chuộng cách này.
+**Tells:** a `SetWindowsHookEx` call with `hMod` pointing to a strange DLL, and the DLL appearing in many GUI processes at once. Old keyloggers loved this approach.
 
-**Phát hiện:** cùng một DLL khả nghi có mặt trong nhiều tiến trình; GMER và một số tool anti-rootkit liệt kê hook.
+**Detection:** the same suspicious DLL present in many processes; GMER and some anti-rootkit tools list hooks.
 
-## 3. AppInit_DLLs (và các registry autoload)
+## 3. AppInit_DLLs (and other registry autoloads)
 
-**Cơ chế:** khoá registry `HKLM\Software\Microsoft\Windows NT\CurrentVersion\Windows\AppInit_DLLs` liệt kê các DLL mà `user32.dll` tự nạp vào mọi tiến trình có dùng `user32`. Đặt tên DLL vào đó là có persistence kiêm injection toàn hệ thống, không cần đụng tới tiến trình đích.
+**Mechanism:** the registry key `HKLM\Software\Microsoft\Windows NT\CurrentVersion\Windows\AppInit_DLLs` lists DLLs that `user32.dll` automatically loads into every process that uses `user32`. Putting a DLL name there gets you persistence and system-wide injection in one, without touching any target process.
 
-**Dấu hiệu:** giá trị `AppInit_DLLs` khác rỗng, `LoadAppInit_DLLs` bằng 1. Các biến thể khác cùng ý tưởng: IFEO (Image File Execution Options) với `Debugger`, `Netsh Helper DLL`, `COM hijacking`.
+**Tells:** the `AppInit_DLLs` value is non-empty, `LoadAppInit_DLLs` equals 1. Other variants with the same idea: IFEO (Image File Execution Options) with `Debugger`, `Netsh Helper DLL`, `COM hijacking`.
 
-**Phát hiện:** Autoruns (Sysinternals) có hẳn tab AppInit và quét gần như mọi điểm autoload. Đây là nơi đầu tiên blue-team nhìn khi nghi persistence.
+**Detection:** Autoruns (Sysinternals) has a dedicated AppInit tab and scans almost every autoload point. This is the first place a blue team looks when suspecting persistence.
 
 ## 4. Manual mapping
 
-Đây là bước nâng cấp để **né loader chuẩn**. Thay vì nhờ `LoadLibrary`, injector tự làm công việc của Windows loader bằng tay.
+This is the upgrade to **dodge the standard loader**. Instead of relying on `LoadLibrary`, the injector does the Windows loader's job by hand.
 
-**Cơ chế (khái niệm):** injector tự parse PE của DLL, cấp vùng nhớ trong đích, copy từng section vào đúng vị trí, tự áp relocation, tự resolve import (IAT), rồi gọi tới entry point (DllMain). Vì không qua `LoadLibrary`, DLL **không xuất hiện trong danh sách module** của tiến trình (Windows không biết nó tồn tại theo nghĩa chính thức).
+**Mechanism (conceptually):** the injector parses the DLL's PE itself, allocates a region in the target, copies each section into place, applies relocations itself, resolves imports (IAT) itself, then calls the entry point (DllMain). Since it doesn't go through `LoadLibrary`, the DLL **doesn't appear in the process's module list** (Windows doesn't know it exists in the official sense).
 
-**Dấu hiệu:** đây là lý do manual mapping được chuộng để lẩn trốn, nên dấu hiệu tinh vi hơn:
-- Một vùng nhớ `PRIVATE` có quyền thực thi (RX hoặc RWX) nhưng **không thuộc module nào** (unbacked executable memory). Đây là cờ đỏ kinh điển.
-- Có đủ bố cục giống một PE (dấu `MZ`/`PE`, section header) trong một vùng private, dù danh sách module không khai báo.
+**Tells:** this is why manual mapping is favored for hiding, so the tells are more subtle:
+- A `PRIVATE` memory region with execute permission (RX or RWX) that **doesn't belong to any module** (unbacked executable memory). This is the classic red flag.
+- A full PE-like layout (the `MZ`/`PE` markers, section headers) inside a private region, even though the module list doesn't declare it.
 
-**Phát hiện:** **PE-sieve** và **HollowsHunter** sinh ra chính là để bắt loại này. Chúng quét từng vùng nhớ, so với file trên đĩa, và báo các vùng code không khớp module hoặc không có module hậu thuẫn. Process Hacker cũng hiện được vùng memory có quyền execute lạ.
+**Detection:** **PE-sieve** and **HollowsHunter** were built precisely to catch this kind. They scan each memory region, compare against the file on disk, and report code regions that don't match a module or have no backing module. Process Hacker can also show strange regions with execute permission.
 
 ## 5. Reflective DLL loading
 
-Cùng tinh thần manual mapping nhưng đẩy xa hơn: **chính DLL tự nạp mình**. DLL chứa một hàm bootstrap đặc biệt (reflective loader) có khả năng tự map bản thân vào bộ nhớ từ một buffer, không cần file trên đĩa và không cần `LoadLibrary`.
+The same spirit as manual mapping but pushed further: **the DLL loads itself**. The DLL contains a special bootstrap function (a reflective loader) that can map itself into memory from a buffer, with no file on disk and no `LoadLibrary`.
 
-**Cơ chế:** code shellcode trong buffer tìm lại địa chỉ các API cần thiết (parse PEB để tìm `kernel32`, duyệt export table lấy `LoadLibraryA`/`GetProcAddress`), rồi tự làm việc của loader. Vì DLL chưa bao giờ nằm trên đĩa, phân tích tĩnh file gần như không có gì để bám.
+**Mechanism:** the shellcode in the buffer finds the addresses of the APIs it needs (parsing the PEB to find `kernel32`, walking the export table to get `LoadLibraryA`/`GetProcAddress`), then does the loader's work itself. Since the DLL never sat on disk, static analysis of a file has almost nothing to grab onto.
 
-**Dấu hiệu:** giống manual mapping (vùng RX/RWX unbacked, PE trong private memory), cộng thêm việc code tự parse PEB để resolve API (một pattern bạn đã gặp ở các bài anti-analysis). Metasploit và Cobalt Strike dùng rộng rãi, nên dấu vết của chúng được tài liệu hoá kỹ trong tài liệu threat intel.
+**Tells:** like manual mapping (unbacked RX/RWX region, PE in private memory), plus the code parsing the PEB itself to resolve APIs (a pattern you've met in the anti-analysis lessons). Metasploit and Cobalt Strike use it widely, so their traces are well documented in threat intel material.
 
-**Phát hiện:** PE-sieve vẫn là bạn tốt nhất; ngoài ra giám sát hành vi (một tiến trình bỗng cấp vùng RWX rồi chạy code trong đó) là chỉ dấu mạnh cho EDR.
+**Detection:** PE-sieve is still your best friend; besides that, behavior monitoring (a process suddenly allocating an RWX region and then running code in it) is a strong indicator for EDR.
 
-## Quy trình phân tích khi nghi có injection
+## Analysis workflow when you suspect injection
 
-1. **Triage tiến trình sống:** Process Hacker, xem Modules (DLL lạ) và Memory (vùng RX/RWX private, unbacked).
-2. **Chạy PE-sieve/HollowsHunter** trên tiến trình nghi vấn, nó dump ra các module bị implant để bạn mở trong IDA/Ghidra.
-3. **Giám sát động:** Procmon lọc theo tiến trình, chú ý `Load Image` của path lạ và các thao tác registry (AppInit, IFEO).
-4. **Nếu có mẫu injector:** đặt breakpoint tại chuỗi API ở từng mục trên, đọc tham số (nối lại [Bài 1.13](/posts/tr-1-13-nhan-dien-windows-api/)) để biết nó inject vào đâu, bằng cách nào.
-5. **Dump payload** đã bị inject rồi phân tích như một module độc lập.
+1. **Triage the live process:** Process Hacker, look at Modules (strange DLLs) and Memory (private RX/RWX regions, unbacked).
+2. **Run PE-sieve/HollowsHunter** on the suspect process, it dumps the implanted modules so you can open them in IDA/Ghidra.
+3. **Dynamic monitoring:** Procmon filtered by process, watch for `Load Image` of strange paths and registry operations (AppInit, IFEO).
+4. **If you have the injector sample:** set breakpoints at the API chain in each item above, read the parameters (tying back to [Lesson 1.13](/posts/tr-1-13-nhan-dien-windows-api/)) to know where it injects and how.
+5. **Dump the injected payload** and analyze it as a standalone module.
 
-Shellcode injection, APC injection, thread hijacking và process hollowing (các biến thể của bước 3) được tách riêng sang [Bài 17.5](https://github.com/Haind03/Technique-Reverse/blob/main/phan-17-patch-hook-frida/17.5-shellcode-apc-hollowing.md).
+Shellcode injection, APC injection, thread hijacking and process hollowing (variants of step 3) are split off into [Lesson 17.5](https://github.com/Haind03/Technique-Reverse/blob/main/phan-17-patch-hook-frida/17.5-shellcode-apc-hollowing.md).
 
-## Checklist ghi nhớ
-- Mọi injection gần như luôn gồm: mở tiến trình, đặt code/path vào bộ nhớ đích, buộc nó chạy.
-- LoadLibrary + CreateRemoteThread: cần DLL trên đĩa, thread start = LoadLibraryW, dễ thấy nhất.
-- SetWindowsHookEx và AppInit_DLLs: để Windows tự rải DLL, soi bằng Autoruns.
-- Manual mapping và reflective loading: né loader, DLL không có trong danh sách module. Dấu hiệu là vùng execute private không hậu thuẫn module.
-- PE-sieve/HollowsHunter là công cụ phát hiện chủ lực; Process Hacker và Procmon bổ trợ.
+## Key takeaways
+- Almost every injection consists of: open the process, put code/path into the target's memory, force it to run.
+- LoadLibrary + CreateRemoteThread: needs a DLL on disk, thread start = LoadLibraryW, the easiest to spot.
+- SetWindowsHookEx and AppInit_DLLs: let Windows spread the DLL itself, inspect with Autoruns.
+- Manual mapping and reflective loading: dodge the loader, the DLL isn't in the module list. The tell is a private execute region with no backing module.
+- PE-sieve/HollowsHunter are the main detection tools; Process Hacker and Procmon support them.

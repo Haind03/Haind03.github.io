@@ -1,97 +1,82 @@
 ---
-title: "Bài 13.4: Lua và LuaJIT bytecode, mổ script trong game"
+title: "Lesson 13.4: Lua and LuaJIT bytecode, taking apart in-game scripts"
 date: 2026-10-06 09:18:00 +0700
-categories: ["Technique Reverse", "Phần 13 · Game: Unity, Unreal, Lua"]
+categories: ["Technique Reverse", "Part 13 · Games: Unity, Unreal, Lua"]
 tags: [reverse-engineering, game-hacking]
 render_with_liquid: false
 ---
-Rất nhiều game không viết logic gameplay bằng C++ mà bằng Lua, vì Lua nhẹ, nhúng dễ, và sửa được mà không phải build lại cả engine. Roblox, Garry's Mod, World of Warcraft (addon), và một rừng game mobile đều chạy script Lua. Với người reverse, đây là tin tốt: Lua giữ gần hết thông tin, decompile ra lại gần như source. Tin xấu: có tới hai dòng Lua khác nhau (Lua chuẩn và LuaJIT), bytecode đổi theo phiên bản, và game hay mã hoá script để làm khó bạn. Bài này gỡ từng khúc đó.
+A lot of games don't write gameplay logic in C++ but in Lua, because Lua is light, easy to embed, and can be edited without rebuilding the whole engine. Roblox, Garry's Mod, World of Warcraft (addons), and a forest of mobile games all run Lua scripts. For a reverser this is good news: Lua keeps almost all its information, and decompiling gets you back something close to the source. The bad news: there are two different Lua lines (standard Lua and LuaJIT), the bytecode changes with the version, and games often encrypt scripts to make life hard for you. This lesson untangles each piece.
 
-## Lua chạy bằng bytecode, giống Python
+## Lua runs on bytecode, like Python
 
-Khi bạn viết một file `.lua`, trình thông dịch không chạy thẳng text. Nó biên dịch sang bytecode trước rồi mới chạy trên máy ảo Lua (register-based, khác CPython stack-based). Phần lớn thời gian game nhúng luôn text `.lua` nên bạn đọc được ngay, nhưng khi tác giả muốn giấu, họ phân phối dạng bytecode đã biên dịch (bằng `luac`, Lua compiler). Lúc đó bạn cần decompiler.
+When you write a `.lua` file, the interpreter doesn't run the text directly. It compiles to bytecode first and then runs it on the Lua VM (register-based, unlike stack-based CPython). Most of the time games embed the plain `.lua` text so you can read it right away, but when the author wants to hide it, they ship compiled bytecode (made with `luac`, the Lua compiler). Then you need a decompiler.
 
-Điểm mấu chốt phải nhớ ngay: **có hai hệ bytecode hoàn toàn khác nhau.**
+The key point to remember right away: there are two completely different bytecode families. Standard Lua (lua.org) produces bytecode with `luac`, and you decompile it with `unluac` (Java, the best one right now) or `luadec`. LuaJIT is a separate implementation, faster, and its bytecode is not compatible with standard Lua. You must use a dedicated decompiler: `luajit-decompiler`, `ljd`, or the `luajit-decompiler-v2` version.
 
-- **Lua chuẩn** (lua.org): bytecode do `luac` sinh. Decompile bằng `unluac` (Java, tốt nhất hiện nay) hoặc `luadec`.
-- **LuaJIT**: một implementation riêng, nhanh hơn, bytecode KHÔNG tương thích với Lua chuẩn. Phải dùng decompiler riêng: `luajit-decompiler`, `ljd`, hoặc bản `luajit-decompiler-v2`.
+Pick the wrong branch and the decompiler errors out from the very first byte. So step one is always identification.
 
-Chọn nhầm nhánh là decompiler báo lỗi ngay từ byte đầu. Nên bước số một luôn là nhận diện.
+## Identifying: read the magic and version
 
-## Nhận diện: đọc magic và phiên bản
+Open the bytecode file in a hex editor and look at the first few bytes.
 
-Mở file bytecode bằng hex editor, nhìn vài byte đầu.
-
-**Lua chuẩn** mở đầu bằng magic `1B 4C 75 61`, tức `\x1bLua`. Byte thứ 5 là số phiên bản dạng hex: `51` = Lua 5.1, `52` = 5.2, `53` = 5.3, `54` = 5.4. Đây là thứ quyết định bạn dùng decompiler nào, vì bytecode mỗi phiên bản khác nhau.
+Standard Lua starts with the magic `1B 4C 75 61`, i.e. `\x1bLua`. The 5th byte is the version number in hex: `51` = Lua 5.1, `52` = 5.2, `53` = 5.3, `54` = 5.4. This decides which decompiler you use, because the bytecode differs per version.
 
 ```
 1B 4C 75 61 54 00 19 93 0D 0A 1A 0A ...
-\x1b L  u  a  |  phiên bản 0x54 = Lua 5.4
+\x1b L  u  a  |  version 0x54 = Lua 5.4
 ```
 
-**LuaJIT** mở đầu bằng magic `1B 4C 4A`, tức `\x1bLJ`, rồi một byte phiên bản bytecode (`01`, `02`...). Thấy `LJ` là biết ngay phải rẽ sang nhánh ljd, đừng phí thời gian với unluac.
+LuaJIT starts with the magic `1B 4C 4A`, i.e. `\x1bLJ`, then a bytecode version byte (`01`, `02`...). Seeing `LJ` tells you right away to turn to the ljd branch, don't waste time on unluac.
 
-Nếu không thấy magic nào mà file lại trông như rác có entropy cao, nhiều khả năng script đã bị mã hoá (xem phần cuối).
+If you see no magic and the file looks like high-entropy junk, the script has probably been encrypted (see the last section).
 
-## Decompile Lua chuẩn với unluac
+## Decompiling standard Lua with unluac
 
-Quy trình gọn khi đã biết là Lua chuẩn:
+A tidy workflow once you know it's standard Lua:
 
 ```
-# biên dịch (nếu bạn tự tạo mẫu để học)
+# compile (if you're making your own sample to learn)
 luac -o script.luac script.lua
 
-# decompile ngược
+# decompile back
 java -jar unluac.jar script.luac > script_decompiled.lua
 ```
 
-unluac trả lại code rất gần bản gốc: giữ tên biến cục bộ (nếu bytecode chưa strip debug info), tên hàm, hằng số chuỗi, cấu trúc if/for/while. Nếu bytecode bị strip (`luac -s`), tên biến cục bộ mất, bạn nhận được `A0_1`, `L1_2`... nhưng logic vẫn đầy đủ, vẫn đọc hiểu được.
+unluac gives back code very close to the original: it keeps local variable names (if the bytecode hasn't had its debug info stripped), function names, string constants, and the if/for/while structure. If the bytecode is stripped (`luac -s`), local variable names are lost and you get `A0_1`, `L1_2`... but the logic is still complete and still readable.
 
-`luadec` là lựa chọn thay thế, cũ hơn, hỗ trợ tốt Lua 5.1 nhưng đuối với các phiên bản mới. Gặp Lua 5.1 mà unluac trục trặc thì thử luadec.
+`luadec` is the older alternative, good with Lua 5.1 but struggles with newer versions. If you hit Lua 5.1 and unluac misbehaves, try luadec.
 
-## Decompile LuaJIT với ljd
+## Decompiling LuaJIT with ljd
 
-LuaJIT cứng đầu hơn. `ljd` (và bản viết lại `luajit-decompiler-v2`) là công cụ chính:
+LuaJIT is more stubborn. `ljd` (and its rewrite `luajit-decompiler-v2`) is the main tool:
 
 ```
 python3 ljd/main.py -f script_ljbc.luac
 ```
 
-Chất lượng output thường kém hơn unluac với Lua chuẩn: một số cấu trúc điều khiển phức tạp có thể ra không sạch, phải đọc kèm bytecode dạng disassembly để hiểu. Nhưng với script gameplay thông thường thì đủ dùng.
+Output quality is usually worse than unluac on standard Lua: some complex control structures may come out unclean, and you have to read alongside the bytecode disassembly to understand them. But for ordinary gameplay scripts it's good enough.
 
-## Cấu trúc cần biết khi đọc
+## Structures to know when reading
 
-Vài thứ đặc trưng Lua sẽ gặp trong code decompiled:
+A few Lua-specific things you'll see in decompiled code. The table is Lua's central data type, serving as array, dictionary, and object (through metatables), so seeing `t[1]`, `t.field`, `t:method()` all means tables. Strings in Lua are interned and stored in the constant pool of each function prototype, so API function names, keys, and messages leak out quite a lot. Going from a string to where it's used is the familiar tactic, same as every earlier part. And `t:method(a)` is just syntactic sugar for `t.method(t, a)`, so self is a hidden first parameter, like `this`.
 
-- **table** là kiểu dữ liệu trung tâm của Lua, vừa làm array vừa làm dictionary vừa làm object (qua metatable). Thấy `t[1]`, `t.field`, `t:method()` đều là table.
-- **string** trong Lua được intern và lưu trong constant pool của mỗi function prototype, nên tên hàm API, key, thông báo lộ ra khá nhiều. Đi từ chuỗi tới chỗ dùng là chiến thuật quen thuộc, giống mọi phần trước.
-- **`t:method(a)`** chỉ là đường tắt cú pháp của `t.method(t, a)`, tức self là tham số đầu ẩn, tương tự `this`.
+## Finding Lua scripts in a game
 
-## Tìm script Lua trong game
+Before decompiling, you have to get the bytecode out first. In the game folder, look for `.lua`, `.luac`, `.lc` files, or a dedicated archive (`.pak`, `.rbxl`, asset bundle). Use `strings` and look for the magic `\x1bLua` / `\x1bLJ` to locate the bytecode block even when it's embedded in a large file. It may also be embedded in a native binary, so grep for the magic in the exe/so itself. Otherwise, unpack the game's archive with the matching tool and then scan.
 
-Trước khi decompile, phải lấy được bytecode ra đã. Vài nơi hay nằm:
+## When the script is encrypted
 
-- Thư mục game: file `.lua`, `.luac`, `.lc`, hoặc trong archive riêng (`.pak`, `.rbxl`, asset bundle). Dùng `strings` và tìm magic `\x1bLua` / `\x1bLJ` để định vị khối bytecode ngay cả khi nó nhúng trong file lớn.
-- Nhúng trong binary native: grep magic trong chính exe/so.
-- Giải nén archive của game bằng tool tương ứng rồi quét.
+Many games don't leave the bytecode bare but encrypt it (XOR, a custom cipher) and decrypt in memory right before loading into the Lua VM. Then decompiling the file on disk is useless.
 
-## Khi script bị mã hoá
+One approach is to dump from runtime. Let the game decrypt it itself, then pull the decrypted bytecode out of memory. Hook the script loading function (for example `luaL_loadbuffer`, `lua_load`, `luaL_loadbufferx`) with Frida and print the buffer at the moment it's clean bytecode. This is exactly the dynamic unpacking spirit from Part 14. The other case is when the key sits in the binary. If the cipher is simple, find the decryption function in the native code, get the key, and decrypt offline.
 
-Nhiều game không để bytecode trần mà mã hoá (XOR, custom cipher) rồi giải trong bộ nhớ ngay trước khi nạp vào máy ảo Lua. Lúc đó decompile file trên đĩa vô ích. Hướng tiếp cận:
+The general principle is the same as for every kind of packer: find where the data is in its cleanest form and grab it there, instead of wrestling with the encryption layer.
 
-- **Dump từ runtime.** Để game tự giải mã rồi lấy bytecode đã giải ra khỏi bộ nhớ. Hook hàm nạp script (ví dụ `luaL_loadbuffer`, `lua_load`, `luaL_loadbufferx`) bằng Frida, in ra buffer tại thời điểm nó đã là bytecode sạch. Đây đúng tinh thần unpack động ở Phần 14.
-- **Khoá nằm trong binary.** Nếu cipher đơn giản, tìm hàm giải mã trong native code, lấy khoá, giải offline.
+## Lab
 
-Nguyên tắc chung giống mọi loại packer: tìm chỗ dữ liệu đã ở dạng sạch nhất rồi chộp tại đó, thay vì vật lộn với lớp mã hoá.
+See [labs/13.4/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/13.4). The task: compile a Lua script with `luac`, identify the magic and version in hex, then decompile it back with `unluac` and compare with the original. The solution is at [solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/13.4/solution.md).
 
-## Lab tự làm
+## Key takeaways
+Embedded Lua is usually plain text you can read directly, and only the bytecode form needs a decompiler. There are two different families: standard Lua (magic `\x1bLua`, use unluac/luadec) and LuaJIT (magic `\x1bLJ`, use ljd), so identify first. The version byte after the magic (`51`/`52`/`53`/`54`) decides the decompiler.
 
-Xem [labs/13.4/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/13.4). Nhiệm vụ: biên dịch một script Lua bằng `luac`, nhận diện magic và phiên bản trong hex, rồi decompile lại bằng `unluac` và so với bản gốc. Lời giải ở [solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/13.4/solution.md).
-
-## Checklist ghi nhớ
-- Lua nhúng thường là text đọc thẳng được; chỉ khi dạng bytecode mới cần decompiler.
-- Hai hệ khác nhau: Lua chuẩn (magic `\x1bLua`, dùng unluac/luadec) và LuaJIT (magic `\x1bLJ`, dùng ljd). Nhận diện trước.
-- Byte phiên bản sau magic (`51`/`52`/`53`/`54`) quyết định decompiler.
-- Bytecode strip chỉ mất tên biến cục bộ, logic vẫn còn.
-- Script mã hoá thì dump từ runtime: hook `luaL_loadbuffer`/`lua_load` bằng Frida lấy bytecode sạch.
-- table là trung tâm của Lua; `t:method()` có self là tham số ẩn đầu tiên.
+Stripped bytecode only loses local variable names, the logic is still there. For encrypted scripts, dump from runtime by hooking `luaL_loadbuffer`/`lua_load` with Frida to get the clean bytecode. Tables are central to Lua, and in `t:method()` self is the hidden first parameter.

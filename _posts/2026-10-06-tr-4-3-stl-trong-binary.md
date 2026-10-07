@@ -1,125 +1,125 @@
 ---
-title: "Bài 4.3: STL trong binary, đọc std::string và std::vector như người bản xứ"
+title: "Lesson 4.3: STL in binaries, reading std::string and std::vector like a native"
 date: 2026-10-06 08:33:00 +0700
-categories: ["Technique Reverse", "Phần 4 · C++"]
+categories: ["Technique Reverse", "Part 04 · C++"]
 tags: [reverse-engineering, cpp]
 render_with_liquid: false
 ---
-Code C++ thật gần như không bao giờ chỉ dùng mảng C trần. Nó đầy `std::string`, `std::vector`, `std::map`. Tin tốt: mỗi container này có một layout cố định, lặp đi lặp lại. Một khi bạn nhận ra khuôn của chúng, một đống `[rax]`, `[rax+8]`, `[rax+10h]` trong pseudocode đột nhiên có nghĩa, và bạn đọc được "à đây là một string, kia là một vector" mà không cần decompiler nói hộ.
+Real C++ code almost never uses bare C arrays alone. It's full of `std::string`, `std::vector`, `std::map`. The good news: each of these containers has a fixed layout that repeats over and over. Once you recognize their mold, a pile of `[rax]`, `[rax+8]`, `[rax+10h]` in pseudocode suddenly means something, and you can read "ah this is a string, that's a vector" without the decompiler telling you.
 
-Bài này tập trung vào hai container bạn gặp nhiều nhất (`string` và `vector`), rồi điểm nhanh phần còn lại. Mọi con số layout dưới đây là từ libstdc++ trên x64 (toolchain g++), đã kiểm bằng chương trình lab. MSVC khác đôi chút, có ghi chú ở cuối.
+This lesson focuses on the two containers you meet most (`string` and `vector`), then quickly covers the rest. Every layout number below is from libstdc++ on x64 (the g++ toolchain), checked with the lab program. MSVC differs a little, with notes at the end.
 
-## std::string, và cú lừa mang tên SSO
+## std::string, and the trick called SSO
 
-Người mới hay tưởng `std::string` chỉ là một con trỏ tới chuỗi. Sai, và chính chỗ sai đó làm họ đọc nhầm binary.
+Beginners often think `std::string` is just a pointer to a string. Wrong, and that very mistake makes them misread binaries.
 
-Trên libstdc++, `std::string` là một object **32 byte** gồm:
+On libstdc++, `std::string` is a **32-byte** object made of:
 
 ```
-offset 0  : char*   con trỏ tới dữ liệu (_M_p)
-offset 8  : size_t  độ dài chuỗi (_M_string_length)
-offset 16 : union 16 byte {
-              char   buffer nội bộ [16]   // dùng khi chuỗi ngắn
-              size_t capacity             // dùng khi chuỗi dài
+offset 0  : char*   pointer to the data (_M_p)
+offset 8  : size_t  string length (_M_string_length)
+offset 16 : 16-byte union {
+              char   internal buffer [16]   // used when the string is short
+              size_t capacity               // used when the string is long
             }
 ```
 
-Điểm mấu chốt là **Small String Optimization (SSO)**: nếu chuỗi đủ ngắn (tối đa 15 ký tự trên libstdc++), nó không cấp phát heap mà nhét luôn ký tự vào 16 byte buffer ngay bên trong object. Con trỏ ở offset 0 khi đó trỏ vào **chính object** (địa chỉ object + 16).
+The key point is **Small String Optimization (SSO)**: if the string is short enough (at most 15 characters on libstdc++), it doesn't allocate on the heap but stuffs the characters into the 16-byte buffer right inside the object. The pointer at offset 0 then points **into the object itself** (object address + 16).
 
-Lab in ra đúng điều này:
+The lab prints exactly this:
 
 ```
---- std::string ngan (SSO) ---
+--- short std::string (SSO) ---
 addr object  = 0x7ffec62d5060
-data()       = 0x7ffec62d5070   (= object + 16, tro VAO chinh no)
+data()       = 0x7ffec62d5070   (= object + 16, points INTO itself)
 size         = 2
 capacity     = 15
 
---- std::string dai (heap) ---
+--- long std::string (heap) ---
 addr object  = 0x7ffec62d5080
-data()       = 0x6306a1464eb0   (tro ra heap, xa object)
+data()       = 0x6306a1464eb0   (points to the heap, far from the object)
 size         = 39
 capacity     = 39
 ```
 
-Cách nhận ra `std::string` trong lúc debug: tìm một object mà offset 0 là con trỏ, offset 8 là một số nhỏ hợp lý (độ dài), và nếu con trỏ đó trỏ ngược vào chính object thì bạn đang nhìn một chuỗi ngắn SSO. Thấy capacity là 15 cũng là dấu hiệu rất đặc trưng của string rỗng hoặc ngắn trên libstdc++.
+How to recognize a `std::string` while debugging: find an object where offset 0 is a pointer, offset 8 is a sensible small number (the length), and if that pointer points back into the object itself then you're looking at a short SSO string. Seeing a capacity of 15 is also a very characteristic sign of an empty or short string on libstdc++.
 
-Trong asm, một thao tác lấy độ dài chuỗi thường là:
-
-```asm
-mov  rax, [rbx+8]      ; rax = độ dài chuỗi (field _M_string_length)
-```
-
-và lấy con trỏ dữ liệu để đọc ký tự:
+In asm, getting the string length is usually:
 
 ```asm
-mov  rax, [rbx]       ; rax = con trỏ data
-movzx eax, byte [rax] ; đọc ký tự đầu
+mov  rax, [rbx+8]      ; rax = string length (the _M_string_length field)
 ```
 
-Thấy cặp "đọc [obj] làm con trỏ, đọc [obj+8] làm độ dài" là gần như chắc chắn một `std::string`.
+and getting the data pointer to read characters:
 
-## std::vector, ba con trỏ nói lên tất cả
-
-![Layout std::string với SSO và std::vector ba con trỏ](/assets/img/technique-reverse/assets/phan-04/stl-layout.svg)
-
-`std::vector` còn dễ nhận hơn. Trên libstdc++ nó chỉ là **ba con trỏ, 24 byte**:
-
-```
-offset 0  : T* _M_start            con trỏ tới phần tử đầu
-offset 8  : T* _M_finish           con trỏ tới sau phần tử cuối
-offset 16 : T* _M_end_of_storage   con trỏ tới hết vùng đã cấp
+```asm
+mov  rax, [rbx]       ; rax = data pointer
+movzx eax, byte [rax] ; read the first character
 ```
 
-Từ ba con trỏ này suy ra mọi thứ:
+Seeing the pair "read [obj] as a pointer, read [obj+8] as a length" is almost certainly a `std::string`.
+
+## std::vector, three pointers say it all
+
+![Layout of std::string with SSO and the three-pointer std::vector](/assets/img/technique-reverse/assets/phan-04/stl-layout.svg)
+
+`std::vector` is even easier to recognize. On libstdc++ it's just **three pointers, 24 bytes**:
+
+```
+offset 0  : T* _M_start            pointer to the first element
+offset 8  : T* _M_finish           pointer to just past the last element
+offset 16 : T* _M_end_of_storage   pointer to the end of the allocated region
+```
+
+Everything follows from these three pointers:
 
 ```
 size()     = (_M_finish - _M_start) / sizeof(T)
 capacity() = (_M_end_of_storage - _M_start) / sizeof(T)
 ```
 
-Nên trong pseudocode, khi thấy compiler tính `(v[8] - v[0]) >> 2` thì đó chính là `size()` của một `vector<int>` (chia 4 vì int 4 byte, `>>2` là chia 4). Nhận ra pattern "hiệu hai con trỏ rồi chia cho kích thước phần tử" là nhận ra vector.
+So in pseudocode, when you see the compiler compute `(v[8] - v[0]) >> 2` that's the `size()` of a `vector<int>` (divide by 4 because an int is 4 bytes, `>>2` is divide by 4). Recognizing the pattern "difference of two pointers then divide by element size" is recognizing a vector.
 
-Lab xác nhận:
+The lab confirms it:
 
 ```
-sizeof(std::vector<int>) = 24    (đúng 3 con trỏ)
-begin (data) = 0x...ee0          (trỏ ra heap)
+sizeof(std::vector<int>) = 24    (exactly 3 pointers)
+begin (data) = 0x...ee0          (points to the heap)
 size = 4, capacity = 4
 ```
 
-Vòng lặp duyệt vector trong asm thường có dạng: nạp `_M_start` vào một thanh ghi, nạp `_M_finish` vào thanh ghi khác, lặp tăng con trỏ tới khi bằng nhau. Thấy khuôn "chạy con trỏ từ [obj] tới [obj+8]" là vòng `for (auto& x : v)`.
+A loop walking a vector in asm usually looks like: load `_M_start` into one register, load `_M_finish` into another, and loop incrementing the pointer until they're equal. Seeing the mold "run a pointer from [obj] to [obj+8]" is a `for (auto& x : v)` loop.
 
-## Các container còn lại, điểm nhanh
+## The other containers, quick tour
 
-Bạn sẽ gặp ít hơn, nhưng nên biết mặt:
+You'll meet them less, but you should know their faces:
 
-- **std::map / std::set**: cài bằng cây đỏ đen (red-black tree). Mỗi node có con trỏ parent, left, right, một bit màu, rồi tới key/value. Trong binary bạn thấy rất nhiều thao tác con trỏ xoay cây và so sánh. `sizeof` của bản thân map nhỏ (48 byte ở lab, chủ yếu là header node và bộ đếm). Nhận ra map qua việc nó gọi các hàm thư viện rất dài tên liên quan `_Rb_tree`.
-- **std::unique_ptr**: thường chỉ là một con trỏ trần (8 byte), gần như biến mất sau tối ưu. Nó chỉ khác con trỏ thường ở chỗ destructor tự gọi `delete`.
-- **std::shared_ptr**: hai con trỏ (16 byte), một trỏ object, một trỏ control block chứa reference count. Thấy thao tác tăng giảm một số nguyên qua lock (atomic) cạnh một con trỏ là dấu hiệu shared_ptr.
+- **std::map / std::set**: implemented with a red-black tree. Each node has parent, left, right pointers, a color bit, and then the key/value. In the binary you see a lot of pointer operations rotating the tree and comparisons. The `sizeof` of the map itself is small (48 bytes in the lab, mostly the header node and a counter). You recognize a map by its calls to very long library function names involving `_Rb_tree`.
+- **std::unique_ptr**: usually just a bare pointer (8 bytes), almost vanishing after optimization. It differs from a plain pointer only in that the destructor calls `delete` automatically.
+- **std::shared_ptr**: two pointers (16 bytes), one to the object, one to a control block holding the reference count. Seeing an atomic (lock-prefixed) integer increment/decrement next to a pointer is a sign of shared_ptr.
 
-## MSVC khác gì
+## How MSVC differs
 
-Nếu binary build bằng MSVC (hay gặp trên Windows), con số đổi nhưng ý tưởng giữ nguyên:
+If the binary was built with MSVC (common on Windows), the numbers change but the ideas stay the same:
 
-- `std::string` MSVC cũng có SSO nhưng buffer 16 byte và ngưỡng 15 ký tự, layout field khác thứ tự, `sizeof` thường là 32 (x64) nhưng bố trí union ở đầu.
-- `std::vector` MSVC vẫn là ba con trỏ (first, last, end), giống về bản chất.
-- Tên hàm thư viện khác (mangling kiểu MSVC `?...@@`), nhưng IDA/Ghidra demangle ra là nhận ra ngay.
+- MSVC's `std::string` also has SSO but with a 16-byte buffer and a 15-character threshold, the field layout is in a different order, `sizeof` is usually 32 (x64) but the union is placed at the start.
+- MSVC's `std::vector` is still three pointers (first, last, end), the same in essence.
+- Library function names differ (MSVC-style mangling `?...@@`), but once IDA/Ghidra demangle them you recognize them right away.
 
-Quy tắc thực dụng: đừng học thuộc offset của mọi toolchain. Học **khuôn tư duy**: string = con trỏ + size + (buffer hoặc capacity), vector = ba con trỏ. Gặp binary lạ thì build một chương trình nhỏ bằng đúng compiler đó, in offset ra, rồi áp vào. Đó chính là nội dung lab.
+Practical rule: don't memorize the offsets for every toolchain. Learn the **mental mold**: string = pointer + size + (buffer or capacity), vector = three pointers. When you meet an unfamiliar binary, build a small program with exactly that compiler, print the offsets, and apply them. That's exactly what the lab is.
 
-## Mẹo khi dùng decompiler
+## Tips when using a decompiler
 
-Cả IDA và Ghidra đều cho bạn khai báo kiểu `std::string` / `std::vector` rồi gán cho biến, sau đó pseudocode tự hiển thị `.size()`, `.data()` thay vì offset trần. Với IDA Pro, plugin như HexRaysPyTools (xem [Bài 4.5](/posts/tr-4-5-plugin-ho-tro-cpp/)) còn tự nhận diện nhiều container. Nhưng ngay cả khi không có plugin, nhận ra khuôn bằng mắt vẫn là kỹ năng nền tảng, vì không phải lúc nào decompiler cũng đoán đúng.
+Both IDA and Ghidra let you declare the types `std::string` / `std::vector` and assign them to variables, after which the pseudocode shows `.size()`, `.data()` instead of bare offsets. With IDA Pro, plugins like HexRaysPyTools (see [Lesson 4.5](/posts/tr-4-5-plugin-ho-tro-cpp/)) even recognize many containers automatically. But even without a plugin, recognizing the mold by eye is a foundational skill, because the decompiler doesn't always guess right.
 
-## Lab tự làm
+## Lab
 
-Thư mục [labs/4.3/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/4.3). Bạn sẽ build `containers.cpp`, chạy để thấy số liệu layout thật trên máy mình, rồi mở trong debugger quan sát SSO và ba con trỏ của vector tận mắt. Chi tiết trong README của lab, lời giải ở `solution.md`.
+The folder [labs/4.3/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/4.3). You'll build `containers.cpp`, run it to see the real layout numbers on your own machine, then open it in a debugger and observe SSO and the vector's three pointers with your own eyes. Details in the lab's README, the solution in `solution.md`.
 
-## Checklist ghi nhớ
-- `std::string` (libstdc++, 32 byte): [0]=con trỏ data, [8]=size, [16]=union buffer/capacity.
-- SSO: chuỗi tối đa 15 ký tự nằm ngay trong object, con trỏ data trỏ vào chính object (object+16).
-- `std::vector` = ba con trỏ (24 byte): start, finish, end_of_storage. size = (finish-start)/sizeof(T).
-- Thấy "hiệu hai con trỏ rồi chia kích thước phần tử" là đang tính size của vector.
-- map/set là cây đỏ đen (_Rb_tree), shared_ptr có control block với refcount atomic.
-- MSVC khác số nhưng cùng ý tưởng. Build thử bằng đúng compiler để lấy offset chuẩn.
+## Key takeaways
+- `std::string` (libstdc++, 32 bytes): [0]=data pointer, [8]=size, [16]=buffer/capacity union.
+- SSO: strings up to 15 characters live right inside the object, and the data pointer points into the object itself (object+16).
+- `std::vector` = three pointers (24 bytes): start, finish, end_of_storage. size = (finish-start)/sizeof(T).
+- Seeing "difference of two pointers then divide by element size" means it's computing a vector's size.
+- map/set are red-black trees (_Rb_tree), shared_ptr has a control block with an atomic refcount.
+- MSVC has different numbers but the same ideas. Test-build with exactly that compiler to get the right offsets.

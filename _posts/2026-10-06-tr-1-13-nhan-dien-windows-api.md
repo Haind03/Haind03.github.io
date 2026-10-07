@@ -1,115 +1,107 @@
 ---
-title: "Bài 1.13: Nhận diện Windows API khi reverse, đọc tham số như đọc câu lệnh"
+title: "Lesson 1.13: Recognizing Windows APIs when reversing, reading parameters like a sentence"
 date: 2026-10-06 08:16:00 +0700
-categories: ["Technique Reverse", "Phần 1 · Nền tảng máy tính cho RE"]
+categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
-Ở bài [1.10](/posts/tr-1-10-windows-internals-1-win32-api-dll/) bạn đã thấy danh sách API là tấm bản đồ ý đồ của chương trình. Ở bài [1.4](/posts/tr-1-4-assembly-2-stack-calling-convention/) bạn đã biết tham số được truyền qua đâu. Bài này ghép hai thứ đó lại thành một kỹ năng dùng hàng ngày: nhìn một lời gọi API bất kỳ trong disassembly hay debugger, và đọc ra nó đang mở file nào, ghi khoá registry nào, kết nối tới đâu.
+In lesson [1.10](/posts/tr-1-10-windows-internals-1-win32-api-dll/) you saw that the API list is a map of what a program intends to do. In lesson [1.4](/posts/tr-1-4-assembly-2-stack-calling-convention/) you learned where parameters get passed. This lesson puts those two together into a daily skill: look at any API call in a disassembly or debugger, and read off which file it's opening, which registry key it's writing, where it's connecting.
 
-Đây không phải lý thuyết nữa. Đây là thao tác bạn làm vài trăm lần mỗi buổi reverse.
+This isn't theory anymore. It's something you'll do a few hundred times every reversing session.
 
-## Bước một: biết prototype của hàm
+## Step one: know the function's prototype
 
-Muốn đọc tham số thì phải biết hàm nhận bao nhiêu tham số và mỗi cái là gì. Nguồn chuẩn là MSDN (Microsoft Learn). Gõ tên hàm vào, bạn có ngay prototype.
+To read the parameters you need to know how many the function takes and what each one is. The standard source is MSDN (Microsoft Learn). Type the function name in and you get the prototype right away.
 
-Lấy `CreateFileW` làm ví dụ, prototype của nó:
+Take `CreateFileW` as an example, here's its prototype:
 
 ```c
 HANDLE CreateFileW(
-  LPCWSTR               lpFileName,            // tham số 1: tên file (chuỗi Unicode)
-  DWORD                 dwDesiredAccess,       // tham số 2: quyền truy cập
-  DWORD                 dwShareMode,           // tham số 3: chế độ chia sẻ
-  LPSECURITY_ATTRIBUTES lpSecurityAttributes,  // tham số 4
-  DWORD                 dwCreationDisposition,  // tham số 5
-  DWORD                 dwFlagsAndAttributes,   // tham số 6
-  HANDLE                hTemplateFile           // tham số 7
+  LPCWSTR               lpFileName,            // param 1: file name (Unicode string)
+  DWORD                 dwDesiredAccess,       // param 2: access rights
+  DWORD                 dwShareMode,           // param 3: share mode
+  LPSECURITY_ATTRIBUTES lpSecurityAttributes,  // param 4
+  DWORD                 dwCreationDisposition,  // param 5
+  DWORD                 dwFlagsAndAttributes,   // param 6
+  HANDLE                hTemplateFile           // param 7
 );
 ```
 
-Bảy tham số, trả về một HANDLE. Nhớ cái suffix `W` nghĩa là bản Unicode (còn `A` là ANSI), đã nói ở bài 1.10. Tham số đầu là tên file ta quan tâm nhất.
+Seven parameters, returns a HANDLE. Remember the `W` suffix means the Unicode version (`A` is ANSI), covered in lesson 1.10. The first parameter, the file name, is the one we care about most.
 
-## Bước hai: tham số nằm ở đâu
+## Step two: where the parameters live
 
-Trên Windows x64 (calling convention Win64, xem lại bài 1.4), thứ tự là cố định:
+On Windows x64 (the Win64 calling convention, see lesson 1.4 again), the order is fixed. Parameters 1 to 4 go in `rcx`, `rdx`, `r8`, `r9`. Parameter 5 onwards is on the stack, at `[rsp+0x20]`, `[rsp+0x28]`, and so on (the first 0x20 bytes are shadow space, ignore them). The return value is in `rax`.
 
-- Tham số 1 tới 4: `rcx`, `rdx`, `r8`, `r9`.
-- Tham số 5 trở đi: nằm trên stack, tại `[rsp+0x20]`, `[rsp+0x28]`, v.v. (0x20 byte đầu là shadow space, bỏ qua).
-- Giá trị trả về: `rax`.
+Mapped onto `CreateFileW`:
 
-Ghép vào `CreateFileW`:
-
-| Tham số | Vị trí | Ý nghĩa |
+| Parameter | Location | Meaning |
 |---|---|---|
-| 1 lpFileName | `rcx` | con trỏ tới tên file |
-| 2 dwDesiredAccess | `rdx` | quyền (đọc/ghi) |
-| 3 dwShareMode | `r8` | chế độ chia sẻ |
-| 4 lpSecurityAttributes | `r9` | thường 0 |
-| 5 dwCreationDisposition | `[rsp+0x20]` | tạo mới hay mở sẵn |
-| 6 dwFlagsAndAttributes | `[rsp+0x28]` | thuộc tính |
-| 7 hTemplateFile | `[rsp+0x30]` | thường 0 |
+| 1 lpFileName | `rcx` | pointer to the file name |
+| 2 dwDesiredAccess | `rdx` | access (read/write) |
+| 3 dwShareMode | `r8` | share mode |
+| 4 lpSecurityAttributes | `r9` | usually 0 |
+| 5 dwCreationDisposition | `[rsp+0x20]` | create new or open existing |
+| 6 dwFlagsAndAttributes | `[rsp+0x28]` | attributes |
+| 7 hTemplateFile | `[rsp+0x30]` | usually 0 |
 
-Giờ nhìn đoạn asm thật ngay trước lời gọi:
+Now look at real asm right before the call:
 
 ```asm
-lea     r9, [rsp+0x40]        ; param 4 = lpSecurityAttributes (ở đây là con trỏ, hiếm)
+lea     r9, [rsp+0x40]        ; param 4 = lpSecurityAttributes (a pointer here, rare)
 mov     dword ptr [rsp+0x28], 0x80   ; param 6 = FILE_ATTRIBUTE_NORMAL
 mov     dword ptr [rsp+0x20], 3      ; param 5 = OPEN_EXISTING (3)
-xor     r9d, r9d              ; param 4 = 0 (ghi đè, lpSecurityAttributes = NULL)
+xor     r9d, r9d              ; param 4 = 0 (overwrite, lpSecurityAttributes = NULL)
 mov     r8d, 1               ; param 3 = FILE_SHARE_READ
 mov     edx, 0x80000000      ; param 2 = GENERIC_READ
-lea     rcx, aConfigIni      ; param 1 = con trỏ tới chuỗi "config.ini"
+lea     rcx, aConfigIni      ; param 1 = pointer to the string "config.ini"
 call    CreateFileW
-mov     [rbp+hFile], rax     ; lưu HANDLE trả về
+mov     [rbp+hFile], rax     ; save the returned HANDLE
 ```
 
-Đọc ngược từ lời gọi lên: `rcx` trỏ tới chuỗi `aConfigIni`, nên chương trình đang mở file `config.ini`. `edx` = 0x80000000 là `GENERIC_READ`, tức mở để đọc. `[rsp+0x20]` = 3 là `OPEN_EXISTING`, mở file có sẵn chứ không tạo mới. `rax` sau đó được cất đi, đó là handle của file.
+Read backwards from the call: `rcx` points to the string `aConfigIni`, so the program is opening the file `config.ini`. `edx` = 0x80000000 is `GENERIC_READ`, so it's opened for reading. `[rsp+0x20]` = 3 is `OPEN_EXISTING`, open an existing file rather than creating a new one. `rax` is then stashed away, that's the file handle.
 
-Chỉ bằng đọc tham số, bạn đã biết: "chương trình mở file config.ini để đọc". Không cần chạy, không cần đoán. Đây là toàn bộ trò chơi.
+Just by reading the parameters, you know: "the program opens config.ini for reading". No need to run it, no need to guess. That's the whole game.
 
-Một quy ước nhỏ nhưng tiết kiệm thời gian: những giá trị như `0x80000000`, `3`, `0x80` là các hằng số định nghĩa sẵn trong Windows SDK (GENERIC_READ, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL). Tra chúng trên MSDN hoặc để IDA/Ghidra tự dịch (xem bước tiếp).
+A small convention that saves time: values like `0x80000000`, `3`, `0x80` are constants predefined in the Windows SDK (GENERIC_READ, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL). Look them up on MSDN or let IDA/Ghidra translate them (next step).
 
-## Bước ba: để công cụ làm hộ phần nhàm
+## Step three: let the tools do the boring part
 
-May mắn là bạn không phải tra tay mỗi lần. Khi IDA hoặc Ghidra nhận ra một lời gọi là API đã biết, chúng tự chú thích luôn.
+Luckily you don't have to look things up by hand every time. When IDA or Ghidra recognizes a call as a known API, they annotate it for you.
 
-- Trong **IDA**, bật type library phù hợp và nó sẽ hiện tên tham số ngay cạnh lệnh chuẩn bị, kiểu `; lpFileName`. Decompiler (F5) còn gộp cả lời gọi thành một dòng C đọc liền: `CreateFileW(L"config.ini", 0x80000000, 1, 0, 3, 0x80, 0)`.
-- Trong **Ghidra**, decompiler tự áp prototype từ dữ liệu của nó, và bạn có thể phải "apply" đúng signature nếu nó chưa nhận ra. Khi áp đúng, pseudocode hiện tên tham số rõ ràng.
-- Cả hai đều dịch được hằng số sang tên hằng (enum) nếu bạn gán đúng kiểu cho tham số đó. Thấy `3` biến thành `OPEN_EXISTING` là lúc đọc nhanh hơn hẳn.
+In IDA, enable the right type library and it shows parameter names right next to the setup instructions, like `; lpFileName`. The decompiler (F5) even merges the call into a single readable line of C: `CreateFileW(L"config.ini", 0x80000000, 1, 0, 3, 0x80, 0)`. In Ghidra, the decompiler applies the prototype from its own data, and you may have to "apply" the right signature if it doesn't recognize the function. Once applied correctly, the pseudocode shows clear parameter names. Both can translate constants into constant names (enums) if you assign the right type to that parameter, and seeing `3` turn into `OPEN_EXISTING` makes reading much faster.
 
-Nói vậy không có nghĩa bỏ qua bước đọc tay. Khi gặp API ít gặp hoặc công cụ không nhận ra, bạn vẫn phải tự tra MSDN và đếm thanh ghi. Kỹ năng tay là cái cứu bạn lúc công cụ im lặng.
+That doesn't mean skipping the manual reading. When you hit a rare API or the tool doesn't recognize it, you still have to look up MSDN yourself and count registers. The manual skill is what saves you when the tool goes quiet.
 
-## Bắt API lúc chạy, khi static chưa đủ
+## Catching APIs at runtime, when static isn't enough
 
-Đôi khi tham số chỉ có giá trị thật lúc chạy (tên file ghép từ nhiều chuỗi, khoá registry giải mã động). Lúc đó chuyển sang dynamic.
+Sometimes a parameter only has its real value at runtime (a file name built from several strings, a registry key decrypted dynamically). Then switch to dynamic.
 
-Trong x64dbg, đặt breakpoint ngay tại hàm API bằng tên:
+In x64dbg, set a breakpoint right at the API function by name:
 
 ```
 bp CreateFileW
 ```
 
-Khi chương trình gọi tới, debugger dừng ngay ở đầu hàm, trước khi nó chạy. Lúc này các tham số đang nằm nguyên trong `rcx`, `rdx`, `r8`, `r9` và trên stack. Nhìn cửa sổ register, right-click `rcx` chọn "Follow in Dump" là thấy ngay chuỗi tên file. Đây là cách nhanh nhất để biết "lúc này nó đang mở cái gì".
+When the program calls it, the debugger stops at the start of the function, before it runs. At this point the parameters are sitting intact in `rcx`, `rdx`, `r8`, `r9` and on the stack. In the register window, right-click `rcx` and choose "Follow in Dump" and you see the file name string right away. This is the fastest way to find out "what is it opening right now".
 
-Công cụ chuyên dụng hơn là **API Monitor**: nó bắt mọi lời gọi API kèm tham số đã được giải nghĩa sẵn, bày ra thành bảng, bạn không phải đọc thanh ghi thủ công. Rất tiện khi muốn xem bức tranh tổng thể một chương trình đụng vào những gì. Đổi lại nó ồn ào, phải biết lọc.
+A more specialized tool is API Monitor: it catches every API call with the parameters already decoded, laid out in a table, so you don't have to read registers manually. Very handy when you want the big picture of what a program touches. The tradeoff is that it's noisy, so you need to know how to filter.
 
-## Khi API bị giấu
+## When the API is hidden
 
-Người viết phần mềm (nhất là malware) không phải lúc nào cũng gọi API lộ liễu qua IAT. Hai chiêu hay gặp:
+Software authors (malware especially) don't always call APIs openly through the IAT. There are two tricks you'll see often.
 
-- **Gọi gián tiếp qua GetProcAddress.** Thay vì import `CreateFileW` thẳng, chương trình gọi `LoadLibrary("kernel32.dll")` rồi `GetProcAddress(h, "CreateFileW")` để lấy địa chỉ hàm lúc chạy, sau đó `call` qua con trỏ. Trong IAT tĩnh bạn không thấy `CreateFileW` đâu cả. Dấu hiệu: thấy `GetProcAddress` được gọi nhiều lần, hoặc một con trỏ hàm được gọi `call rax` mà không rõ tên. Cách xử lý là đặt breakpoint tại `GetProcAddress` xem nó đang xin hàm nào, hoặc chạy tới lời gọi gián tiếp rồi xem `rax` trỏ vào đâu.
-- **Hashed API / API hashing.** Tinh vi hơn: chương trình không chứa cả chuỗi tên API, mà chỉ chứa một giá trị hash của tên, rồi tự duyệt bảng export của DLL, băm từng tên và so khớp. Mục đích là giấu hẳn tên API khỏi strings và IAT. Khi thấy một vòng lặp duyệt danh sách module trong PEB (xem bài [1.11](/posts/tr-1-11-windows-internals-2-peb-teb-handle-token/)) rồi tính hash, bạn đang gặp chiêu này. Công cụ như **Apiscout** hoặc các script resolve hash (so hash với bảng tên API dựng sẵn) giúp khôi phục tên thật. Chủ đề này quay lại kỹ ở phần malware.
+The first is calling indirectly via GetProcAddress. Instead of importing `CreateFileW` directly, the program calls `LoadLibrary("kernel32.dll")` then `GetProcAddress(h, "CreateFileW")` to get the function address at runtime, then `call`s through the pointer. In the static IAT you won't see `CreateFileW` anywhere. The tell is `GetProcAddress` getting called many times, or a function pointer getting called with `call rax` and no clear name. To deal with it, set a breakpoint at `GetProcAddress` to see which function it's asking for, or run to the indirect call and see where `rax` points.
 
-Không cần thành thạo mấy chiêu giấu API ngay bây giờ. Chỉ cần nhận ra "ủa sao chương trình này đụng file mà IAT chẳng có hàm file nào", đó là tín hiệu nó đang giấu, và bạn biết phải chuyển sang dynamic.
+The second is API hashing, which is more sophisticated. The program doesn't contain the API name string at all, only a hash of the name, then walks the DLL's export table itself, hashing each name and comparing. The point is to hide the API name completely from strings and the IAT. When you see a loop walking the module list in the PEB (see lesson [1.11](/posts/tr-1-11-windows-internals-2-peb-teb-handle-token/)) and then computing a hash, you're looking at this trick. Tools like Apiscout or hash-resolving scripts (compare the hash against a prebuilt table of API names) help recover the real names. This topic comes back in detail in the malware part.
 
-## Lab tự làm
+You don't need to master the API-hiding tricks right now. Just notice "wait, this program touches files but the IAT has no file function", that's the signal it's hiding something, and you know to switch to dynamic.
 
-Bài tập ở [labs/1.13/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/1.13): tự build một chương trình C nhỏ gọi `CreateFileW` và `RegOpenKeyExW`, rồi dùng x64dbg đặt breakpoint tại hai API đó và đọc đủ tham số theo đúng thứ tự thanh ghi, so với output của API Monitor. Lời giải trong `solution.md`, nhưng tự đọc tham số trước đã.
+## Lab
 
-## Checklist ghi nhớ
-- Luôn tra prototype trên MSDN trước, để biết số và kiểu tham số.
-- Win64: tham số 1 tới 4 ở `rcx rdx r8 r9`, tham số 5 trở đi ở `[rsp+0x20]` tăng dần, trả về ở `rax`.
-- Đọc ngược từ lệnh `call` lên để gom các tham số được chuẩn bị.
-- Hằng số (0x80000000, 3...) là macro Windows, tra MSDN hoặc để IDA/Ghidra dịch sang tên hằng.
-- Tham số chỉ biết lúc chạy: `bp CreateFileW` trong x64dbg rồi đọc thanh ghi, hoặc dùng API Monitor.
-- IAT không có API mong đợi: nghi gọi gián tiếp qua GetProcAddress hoặc API hashing, chuyển sang dynamic.
+The exercise is at [labs/1.13/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/1.13): build a small C program that calls `CreateFileW` and `RegOpenKeyExW`, then use x64dbg to set breakpoints at those two APIs and read all the parameters in the right register order, and compare with the API Monitor output. The solution is in `solution.md`, but read the parameters yourself first.
+
+## Key takeaways
+Always look up the prototype on MSDN first, to know the number and types of parameters. On Win64, parameters 1 to 4 are in `rcx rdx r8 r9`, parameter 5 onwards is at `[rsp+0x20]` going up, and the return is in `rax`. Read backwards from the `call` instruction to gather the prepared parameters.
+
+Constants (0x80000000, 3...) are Windows macros, so look them up on MSDN or let IDA/Ghidra translate them into constant names. For parameters only known at runtime, use `bp CreateFileW` in x64dbg and read the registers, or use API Monitor. If the IAT lacks the API you expected, suspect indirect calls via GetProcAddress or API hashing, and switch to dynamic.

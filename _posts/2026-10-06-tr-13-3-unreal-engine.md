@@ -1,104 +1,79 @@
 ---
-title: "Bài 13.3: Reverse game Unreal Engine"
+title: "Lesson 13.3: Reversing Unreal Engine games"
 date: 2026-10-06 09:17:00 +0700
-categories: ["Technique Reverse", "Phần 13 · Game: Unity, Unreal, Lua"]
+categories: ["Technique Reverse", "Part 13 · Games: Unity, Unreal, Lua"]
 tags: [reverse-engineering, game-hacking]
 render_with_liquid: false
 ---
-Unity cho bạn file DLL đọc gần như ra source. Unreal thì không hào phóng thế. Unreal Engine viết bằng C++, biên dịch thẳng ra native, nên toàn bộ logic nằm trong một file exe to đùng mà bạn phải mở bằng IDA/Ghidra như một chương trình C++ bình thường (quay lại Phần 4 là vừa). Bù lại, UE có hệ thống phản chiếu (reflection) riêng và một hệ sinh thái tool cộng đồng rất mạnh, nên vẫn có nhiều đường vào. Bài này vẽ bản đồ đó.
+Unity gives you DLLs that read almost like source. Unreal isn't that generous. Unreal Engine is written in C++ and compiled straight to native, so all the logic sits in one huge exe that you have to open in IDA/Ghidra like a normal C++ program (going back to Part 4 helps). In return, UE has its own reflection system and a very strong community tool ecosystem, so there are still plenty of ways in. This lesson draws that map.
 
-Phạm vi: nội dung dành cho game offline/single-player của chính bạn, mục đích học và nghiên cứu. Đụng vào game online nhiều người chơi là chuyện anti-cheat và điều khoản dịch vụ, không nằm trong phạm vi series.
+Scope: this is for your own offline/single-player games, for learning and research. Touching online multiplayer games is a matter of anti-cheat and terms of service, and is outside the scope of this series.
 
-## Nhận ra một game Unreal
+## Recognizing an Unreal game
 
-Trước khi làm gì, xác nhận đây đúng là Unreal. Các dấu hiệu gần như không lẫn được:
+Before doing anything, confirm it's really Unreal. The signs are almost unmistakable. The executable is usually named like `GameName-Win64-Shipping.exe`, inside `GameName/Binaries/Win64/`. There's a `Content/Paks/` folder with `.pak` files (sometimes `.utoc` and `.ucas` with the newer IoStore format). Loose assets, if not packed into a pak, have the extensions `.uasset` and `.umap`. And the exe's strings are full of things like `/Game/`, `/Engine/`, class names starting with `U`, `A`, `F` (UObject, AActor, FVector), and the engine version string.
 
-- File chạy thường tên dạng `GameName-Win64-Shipping.exe`, nằm trong `GameName/Binaries/Win64/`.
-- Có thư mục `Content/Paks/` chứa các file `.pak` (đôi khi `.utoc` và `.ucas` với định dạng IoStore mới).
-- Asset rời (nếu chưa đóng pak) có đuôi `.uasset`, `.umap`.
-- Trong strings của exe đầy chuỗi kiểu `/Game/`, `/Engine/`, tên class bắt đầu bằng `U`, `A`, `F` (UObject, AActor, FVector), và chuỗi phiên bản engine.
+Knowing the UE version (UE4.x or UE5.x) matters a lot because community tools are tightly tied to versions. The strings in the exe or a `.version` file usually say it clearly.
 
-Biết được phiên bản UE (UE4.x hay UE5.x) rất quan trọng vì tool cộng đồng gắn chặt với phiên bản. Chuỗi trong exe hoặc file `.version` thường nói rõ.
+## The three worlds of an Unreal game
 
-## Ba thế giới của một game Unreal
+When reversing Unreal you work on three different fronts, and you pick the front based on what you need. The first is assets in .pak files: models, textures, audio, and what matters to a reverser, Blueprints and DataTables, using FModel/UModel. The second is native C++ code in the exe: core logic, engine functions, anti-analysis, using IDA/Ghidra helped by an SDK dump. The third is runtime, where you inject into the running game to call functions, read objects, and script, using UE4SS.
 
-Khi reverse Unreal, bạn làm việc trên ba mặt trận khác nhau, chọn mặt trận theo thứ bạn cần:
+### .pak files and AES encryption
 
-1. **Asset trong file .pak**: model, texture, âm thanh, và quan trọng với reverser là Blueprint và DataTable. Dùng FModel/UModel.
-2. **Code C++ native trong exe**: logic lõi, hàm engine, chống phân tích. Dùng IDA/Ghidra, hỗ trợ bởi SDK dump.
-3. **Runtime**: inject vào game đang chạy để gọi hàm, đọc object, scripting. Dùng UE4SS.
+A `.pak` is an archive that packs all the assets. Many games leave it unencrypted, and then FModel/UModel opens it directly. But quite a few games encrypt the index (and sometimes the contents too) with AES-256. Then you need the AES key to browse it.
 
-### File .pak và chuyện mã hoá AES
+That key is somewhere in the exe, loaded at runtime. There are two common ways to get it. You can use a tool that scans the exe for the key (AES key finders for UE, which look for a 32-byte pattern in regions that often hold keys). Or you can dump the key from memory while the game runs, or set a breakpoint at the pak decryption function. Once you have the key, load it into FModel and you can browse the asset tree like folders.
 
-`.pak` là archive gói toàn bộ asset. Nhiều game để nguyên không mã hoá, khi đó FModel/UModel mở thẳng. Nhưng không ít game mã hoá index (và đôi khi cả nội dung) bằng **AES-256**. Lúc đó bạn cần **AES key** mới duyệt được.
+### FModel and UModel
 
-Key đó nằm đâu đó trong exe, được nạp vào lúc chạy. Hai cách lấy phổ biến:
+FModel is a modern asset browser. It supports the IoStore format (.utoc/.ucas) of newer UE, previews, exports textures/models/audio, and can read DataTables (the game's data tables, where item stats, recipes, and so on often live). This is the best place to start. UModel (UE Viewer) is the long-established one, strong at extracting models and textures to view or convert.
 
-- Dùng tool quét exe tìm key (các AES key finder cho UE, chúng tìm pattern 32 byte ở vùng hay chứa key).
-- Dump key từ bộ nhớ lúc game chạy, hoặc đặt breakpoint tại hàm giải mã pak.
-
-Có key rồi, nạp vào FModel là duyệt được cây asset như duyệt thư mục.
-
-### FModel và UModel
-
-- **FModel**: trình duyệt asset hiện đại, hỗ trợ cả định dạng IoStore (.utoc/.ucas) của UE mới, xem preview, export texture/model/âm thanh, và đọc được DataTable (bảng dữ liệu game, nơi hay chứa chỉ số vật phẩm, công thức, v.v.). Đây là nơi bắt đầu tốt nhất.
-- **UModel (UE Viewer)**: lâu đời, mạnh về trích model và texture để xem/chuyển định dạng.
-
-Với reverser, DataTable và Blueprint trong pak thường trả lời được nhiều câu hỏi mà không cần mở exe.
+For a reverser, DataTables and Blueprints in the pak often answer a lot of questions without opening the exe.
 
 ### Blueprint
 
-Blueprint là visual scripting của Unreal, biên dịch thành một dạng bytecode chạy trên VM của engine (Kismet bytecode). Nó không phải native code, nằm trong asset Blueprint. Đọc Blueprint bytecode khó chịu và tool còn hạn chế, nhưng nhiều logic gameplay nằm ở đây thay vì trong C++. FModel xem được cấu trúc Blueprint ở mức nào đó; để đọc sâu bytecode thì cần tool chuyên và kiên nhẫn.
+Blueprint is Unreal's visual scripting, compiled into a form of bytecode that runs on the engine's VM (Kismet bytecode). It's not native code, it lives in the Blueprint asset. Reading Blueprint bytecode is unpleasant and the tools are limited, but a lot of gameplay logic sits here instead of in C++. FModel can show the Blueprint structure to some extent; reading the bytecode in depth takes specialized tools and patience.
 
-## SDK dump: chìa khoá đọc exe
+## SDK dump: the key to reading the exe
 
-Mở exe Unreal trong IDA mà không chuẩn bị gì thì bạn chết chìm: hàng trăm nghìn hàm, không tên. Cứu cánh là hệ thống **reflection** của Unreal. Engine lưu thông tin về mọi UClass, UProperty, UFunction trong bộ nhớ lúc chạy (để serialize, để Blueprint gọi C++, để editor hoạt động). Một **SDK dumper** duyệt các cấu trúc đó và sinh ra header C++ mô tả toàn bộ class, offset field, và địa chỉ hàm của game cụ thể này.
+Open an Unreal exe in IDA with no preparation and you drown: hundreds of thousands of functions, no names. The lifeline is Unreal's reflection system. The engine stores info about every UClass, UProperty, UFunction in memory at runtime (to serialize, to let Blueprints call C++, to make the editor work). An SDK dumper walks those structures and generates C++ headers describing all the classes, field offsets, and function addresses of this specific game.
 
-Có SDK rồi, bạn biết:
-- Struct của các object quan trọng (vị trí người chơi nằm ở offset nào trong AActor, máu ở đâu).
-- Tên và địa chỉ các UFunction, map ngược vào IDA để đặt tên hàm.
+With the SDK, you know the structs of the important objects (what offset the player position is at in AActor, where health is). You also get the names and addresses of UFunctions, which you map back into IDA to name functions.
 
-Các dumper hoạt động bằng cách đi từ GObjects (mảng toàn cục mọi UObject) và GNames (bảng tên), hai global mà bạn phải tìm offset cho đúng phiên bản game. Cộng đồng có sẵn nhiều dumper, phổ biến nhất hiện nay tích hợp trong UE4SS.
+Dumpers work by starting from GObjects (the global array of every UObject) and GNames (the name table), two globals whose offsets you have to find correctly for the game version. The community has many dumpers, and the most popular one these days is built into UE4SS.
 
-## UE4SS: dao đa năng runtime
+## UE4SS: the runtime multi-tool
 
-**UE4SS** (Unreal Engine Scripting System) là một DLL inject vào game, cho bạn:
+UE4SS (Unreal Engine Scripting System) is a DLL injected into the game. It gives you an automatic SDK dump (C++ headers and also forms for other tools) and a live property viewer, where you browse the living UObject tree and view and edit properties directly. It also gives you Lua scripting, so you can write scripts that call UFunctions, hook functions, and change behavior without patching the exe, which is very powerful for quick experiments. On top of that there's a console and many modding utilities.
 
-- **Dump SDK** tự động (C++ header và cả dạng cho các tool khác).
-- **Live property viewer**: duyệt cây UObject đang sống, xem và sửa property trực tiếp.
-- **Scripting bằng Lua**: viết script gọi UFunction, hook hàm, thay đổi hành vi mà không cần patch exe. Rất mạnh để thử nghiệm nhanh.
-- Console và nhiều tiện ích modding.
+A typical workflow: inject UE4SS, dump the SDK, open the live viewer to find the objects and properties you care about, then either write a Lua script to intervene, or take the offsets/function addresses over to IDA for deeper static analysis.
 
-Workflow điển hình: inject UE4SS, dump SDK, mở live viewer tìm object và property bạn quan tâm, rồi hoặc viết Lua script để can thiệp, hoặc mang offset/địa chỉ hàm sang IDA để phân tích tĩnh sâu hơn.
-
-## Quy trình đặt cạnh nhau
+## The workflow side by side
 
 ```
-   Nhận diện UE (tên exe, Content/Paks, phiên bản)
+   Identify UE (exe name, Content/Paks, version)
             |
    +--------+-----------------------------+
    |                                      |
-  Asset?                               Logic?
+  Assets?                               Logic?
    |                                      |
   FModel/UModel                   UE4SS inject
-  (lấy AES key nếu cần)           dump SDK
+  (get the AES key if needed)     dump SDK
    |                                      |
   DataTable, Blueprint,          live viewer +
-  texture, model                 Lua script, hoặc
-                                 mang offset sang IDA/Ghidra
-                                 đọc C++ native (Phần 4)
+  texture, model                 Lua script, or
+                                 take offsets over to IDA/Ghidra
+                                 and read native C++ (Part 4)
 ```
 
-Điểm mấu chốt cần nhớ: Unreal khó hơn Unity vì không có bước "mở DLL đọc source". Nhưng hệ thống reflection của chính engine là điểm yếu bạn khai thác: nó buộc phải mô tả mọi class và hàm trong bộ nhớ để engine chạy, và SDK dumper chỉ việc đọc lại mô tả đó.
+The key point to remember: Unreal is harder than Unity because there's no "open the DLL and read the source" step. But the engine's own reflection system is the weak point you exploit: it has to describe every class and function in memory for the engine to run, and the SDK dumper just reads that description back.
 
-## Lab tự làm
+## Lab
 
-Xem [labs/13.3/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/13.3). Nhiệm vụ: với một game Unreal offline của bạn, duyệt `.pak` bằng FModel (lấy AES key nếu bị mã hoá), rồi inject UE4SS để dump SDK và tìm một class trong live viewer.
+See [labs/13.3/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/13.3). The task: with an offline Unreal game of yours, browse the `.pak` with FModel (get the AES key if it's encrypted), then inject UE4SS to dump the SDK and find a class in the live viewer.
 
-## Checklist ghi nhớ
-- Unreal là C++ native: logic trong exe to, mở bằng IDA/Ghidra như chương trình C++ (Phần 4).
-- Nhận diện qua `-Shipping.exe`, `Content/Paks/*.pak`, chuỗi `/Game/`, class U/A/F.
-- Asset trong .pak: FModel/UModel duyệt, cần AES key nếu index bị mã hoá.
-- Reflection của engine là điểm vào: SDK dumper đọc GObjects/GNames sinh header C++ với offset và địa chỉ hàm.
-- UE4SS inject runtime: dump SDK, live property viewer, scripting Lua.
-- Blueprint là bytecode riêng nằm trong asset, không phải native code.
+## Key takeaways
+Unreal is native C++, so the logic is in the big exe and you open it in IDA/Ghidra like a C++ program (Part 4). You identify it by `-Shipping.exe`, `Content/Paks/*.pak`, `/Game/` strings, and U/A/F classes. Assets in .pak are browsed with FModel/UModel, and you need the AES key if the index is encrypted.
+
+The engine's reflection is the way in: an SDK dumper reads GObjects/GNames and generates C++ headers with offsets and function addresses. UE4SS injects at runtime and gives you the SDK dump, a live property viewer, and Lua scripting. Blueprint is its own bytecode inside an asset, not native code.

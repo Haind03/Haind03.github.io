@@ -1,84 +1,74 @@
 ---
-title: "Bài 14.3: Dump tiến trình và rebuild IAT bằng Scylla"
+title: "Lesson 14.3: Dumping a process and rebuilding the IAT with Scylla"
 date: 2026-10-06 09:22:00 +0700
-categories: ["Technique Reverse", "Phần 14 · Packer & Obfuscation"]
+categories: ["Technique Reverse", "Part 14 · Packers and Obfuscation"]
 tags: [reverse-engineering, packer, obfuscation]
 render_with_liquid: false
 ---
-Ở [bài 14.2](/posts/tr-14-2-unpack-upx-oep/) bạn đã lần được tới OEP, nghĩa là stub giải nén đã chạy xong và code gốc đang nằm nguyên vẹn trong bộ nhớ. Bước tự nhiên tiếp theo là lấy nó ra thành một file chạy được. Nghe đơn giản: cứ dump vùng nhớ ra đĩa là xong chứ gì. Thử đi, rồi bạn sẽ thấy file dump ra chạy là crash ngay. Bài này giải thích vì sao, và cách Scylla sửa nó.
+In [lesson 14.2](/posts/tr-14-2-unpack-upx-oep/) you traced your way to the OEP, which means the unpacking stub has finished running and the original code is sitting intact in memory. The natural next step is to get it out as a runnable file. Sounds simple: just dump the memory region to disk, right? Try it, and you'll see the dumped file crashes as soon as you run it. This lesson explains why, and how Scylla fixes it.
 
-## Vì sao dump thô không chạy được
+## Why a raw dump doesn't run
 
-Vấn đề nằm ở IAT (Import Address Table), bảng chứa địa chỉ các hàm API mà chương trình gọi.
+The problem is the IAT (Import Address Table), the table holding the addresses of the API functions the program calls.
 
-Khi Windows nạp một file PE bình thường, loader đọc import directory (danh sách "tôi cần hàm `MessageBoxA` từ `user32.dll`"), tự tìm địa chỉ thật của từng hàm rồi điền vào IAT. Lúc chạy, chương trình gọi API qua bảng này.
+When Windows loads a normal PE file, the loader reads the import directory (the list of "I need the function `MessageBoxA` from `user32.dll`"), finds the real address of each function itself, and fills it into the IAT. At runtime, the program calls APIs through this table.
 
-Giờ xét file đã unpack trong bộ nhớ:
+Now look at the unpacked file in memory. The IAT in memory already holds the real addresses, because the unpacking stub resolved them at runtime. But the import directory that describes "which function from which DLL" was thrown away or damaged by the packer, since it doesn't need it anymore.
 
-- IAT trong bộ nhớ đã chứa **địa chỉ thật** rồi, vì stub giải nén đã resolve xong lúc chạy.
-- Nhưng cái import directory mô tả "cần hàm nào từ DLL nào" thì packer đã vứt đi hoặc làm hỏng, vì nó không cần nữa.
+So when you dump it raw to disk and run it again, on another machine (or after ASLR changes the DLL base), the real addresses in the IAT become meaningless, and the loader has no import directory to resolve them again. The program calls into garbage addresses and dies.
 
-Nên khi bạn dump thô ra đĩa và chạy lại, trên máy khác (hoặc sau khi ASLR đổi base DLL), những địa chỉ thật trong IAT trở thành vô nghĩa, mà loader lại không có import directory để resolve lại. Chương trình gọi vào địa chỉ rác và chết.
+In short: the dump has the IAT values but lost the description needed to rebuild the IAT. Scylla's job is to rebuild that description.
 
-Tóm lại: dump có **giá trị IAT** nhưng mất **bản mô tả để tái tạo IAT**. Việc của Scylla là dựng lại bản mô tả đó.
+## What Scylla does
 
-## Scylla làm gì
+Scylla (the x64 version is Scylla x64, often used as a plugin inside x64dbg) follows exactly the logic above. First you attach to the process stopped at the OEP (or pick it from the process list). Note the process has to be alive and stopped at the right spot, so don't let it keep running or exit. Then you set the OEP by typing the address you just found into the OEP field, which becomes the entry point of the new file.
 
-Scylla (phiên bản x64 là Scylla x64, hay dùng kèm plugin trong x64dbg) đi theo đúng logic trên:
+Next comes IAT Autosearch, where Scylla scans memory around the code region to find the IAT (a run of pointers into system DLLs) and guesses the start and the size. Get Imports then takes each pointer in the IAT, looks up which function of which DLL that address belongs to, and rebuilds the full import list. This is the step that rebuilds the lost description.
 
-1. **Attach** vào tiến trình đang dừng ở OEP (hoặc chọn nó từ danh sách process). Lưu ý tiến trình phải đang sống và dừng đúng chỗ, đừng để nó chạy tiếp hay thoát.
-2. **Đặt OEP**: điền địa chỉ OEP bạn vừa tìm được vào ô OEP. Đây sẽ là entry point của file mới.
-3. **IAT Autosearch**: Scylla quét bộ nhớ quanh vùng code để tìm ra bảng IAT (một dãy con trỏ trỏ vào các DLL hệ thống). Nó đoán điểm đầu và kích thước.
-4. **Get Imports**: từ mỗi con trỏ trong IAT, Scylla tra ngược xem địa chỉ đó thuộc hàm nào của DLL nào, dựng lại danh sách import đầy đủ. Đây là bước tái tạo "bản mô tả" đã mất.
-5. **Dump**: ghi vùng nhớ của module ra file.
-6. **Fix Dump**: ghép file dump vừa tạo với import directory mới dựng, thêm một section chứa bảng import, và sửa PE header (đặt lại entry point về OEP, trỏ Import Directory tới bảng mới).
+After that, Dump writes the module's memory out to a file. Finally Fix Dump merges the dump you just made with the newly built import directory, adds a section holding the import table, and fixes the PE header (setting the entry point back to the OEP and pointing the Import Directory at the new table).
 
-Kết quả là một file PE chạy độc lập, loader Windows resolve import lại được như một file bình thường.
+The result is a standalone PE file, and the Windows loader can resolve its imports again like any normal file.
 
-## Đọc kết quả Get Imports
+## Reading the Get Imports result
 
-Sau khi Get Imports, Scylla hiện một cây: mỗi DLL và các hàm của nó. Thứ cần để ý là các dòng được đánh dấu đỏ hoặc "not found". Chúng là con trỏ trong IAT mà Scylla không map được về hàm nào. Vài khả năng:
+After Get Imports, Scylla shows a tree: each DLL and its functions. What to watch for are lines marked red or "not found". Those are pointers in the IAT that Scylla couldn't map back to any function. A few possibilities exist.
 
-- **IAT Autosearch bắt dư**: vùng nó đoán là IAT lẫn cả dữ liệu không phải con trỏ import. Thu hẹp lại điểm đầu hoặc kích thước.
-- **Redirected imports**: một số protector không để IAT trỏ thẳng vào DLL mà trỏ vào một đoạn stub trung gian của riêng nó (thunk che import), rồi stub mới nhảy vào hàm thật. Scylla thấy con trỏ trỏ vào vùng của packer chứ không vào user32/kernel32 nên chịu. Scylla có tuỳ chọn "Trace redirected imports" cố đi xuyên qua stub, nhưng với IAT bị che tinh vi thì phải sửa tay hoặc dùng công cụ khác.
+One is that IAT Autosearch grabbed too much, so the region it guessed as the IAT also includes data that isn't import pointers. Narrow the start or the size. Another is redirected imports: some protectors don't let the IAT point straight at the DLL but at an intermediate stub of their own (an import-hiding thunk), and that stub then jumps to the real function. Scylla sees a pointer into the packer's region rather than into user32/kernel32, so it gives up. Scylla has a "Trace redirected imports" option that tries to walk through the stub, but with a cleverly hidden IAT you have to fix it by hand or use another tool.
 
-Nguyên tắc: xoá các entry rác (right-click, cut thunk) trước khi Fix Dump, nếu không bảng import mới sẽ chứa mục hỏng và file vẫn không chạy.
+Rule of thumb: delete the junk entries (right-click, cut thunk) before Fix Dump, otherwise the new import table will contain broken entries and the file still won't run.
 
-## Khi Autosearch không ra
+## When Autosearch finds nothing
 
-Nếu IAT Autosearch tìm không đúng, bạn tự xác định IAT bằng cách nhìn trong x64dbg: tới một lời gọi API trong code đã unpack (ví dụ `call [0x00407120]`), thì `0x00407120` chính là một ô trong IAT. Follow địa chỉ đó trong dump, cuộn lên xuống để thấy ranh giới của dãy con trỏ trỏ vào DLL, rồi điền thủ công điểm đầu và kích thước vào Scylla.
+If IAT Autosearch gets it wrong, you can identify the IAT yourself by looking in x64dbg: go to an API call in the unpacked code (for example `call [0x00407120]`), and `0x00407120` is one slot in the IAT. Follow that address in the dump, scroll up and down to see the boundaries of the run of pointers into DLLs, then enter the start and size into Scylla by hand.
 
-## Quy trình gọn
+## Short workflow
 
 ```
-x64dbg: unpack tới OEP (bài 14.2)
+x64dbg: unpack to the OEP (lesson 14.2)
    |
 Scylla: Attach process
    |
-đặt OEP = địa chỉ OEP
+set OEP = the OEP address
    |
 IAT Autosearch  ->  Get Imports
    |
-dọn các entry đỏ / redirected
+clean up red / redirected entries
    |
 Dump  ->  Fix Dump
    |
-chạy thử file _dump_SCY.exe
+run the _dump_SCY.exe file
 ```
 
-## Cạm bẫy thường gặp
+## Common pitfalls
 
-- **Dump trước khi tới OEP**: code chưa giải nén xong, dump ra là rác. Luôn chắc chắn đã ở OEP.
-- **Quên Fix Dump**: file Dump thô vẫn thiếu import, phải Fix Dump mới ghép bảng import vào.
-- **Sai OEP vài byte**: entry point lệch, chương trình chạy sai ngay từ đầu. OEP phải là đúng lệnh đầu của code gốc (thường là prologue chuẩn hoặc call tới CRT init).
-- **Section không đủ quyền**: đôi khi phải chỉnh characteristics của section cho đúng (readable/executable) nếu file dump bị lỗi quyền.
+If you dump before reaching the OEP, the code isn't fully unpacked yet and the dump is garbage, so always make sure you're at the OEP. Forgetting Fix Dump leaves the raw Dump file without imports, since only Fix Dump merges the import table in.
 
-## Checklist ghi nhớ
-- Dump thô không chạy vì có giá trị IAT nhưng mất import directory để loader tái tạo.
-- Scylla: Attach, đặt OEP, IAT Autosearch, Get Imports, Dump, Fix Dump.
-- Dọn các entry đỏ và xử lý redirected imports trước khi Fix Dump.
-- Nếu Autosearch sai, tìm IAT thủ công từ một `call [address]` trong code đã unpack.
-- Luôn dump ở đúng OEP, sai OEP là hỏng cả file.
+A wrong OEP, even by a few bytes, shifts the entry point and the program runs wrong right from the start. The OEP has to be the exact first instruction of the original code (usually a standard prologue or a call to the CRT init). Sometimes you also have to adjust the section characteristics (readable/executable) if the dumped file has permission errors.
 
-## Lab tự làm
-Xem [labs/14.3/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/14.3/README.md). Tiếp nối file đã unpack thủ công ở lab 14.2, dùng Scylla để dump và fix IAT thành file chạy độc lập.
+## Key takeaways
+A raw dump doesn't run because it has the IAT values but lost the import directory the loader needs to rebuild them. With Scylla you attach, set the OEP, run IAT Autosearch, Get Imports, Dump, and Fix Dump. Clean up red entries and handle redirected imports before Fix Dump.
+
+If Autosearch is wrong, find the IAT by hand from a `call [address]` in the unpacked code. Always dump at the correct OEP, because a wrong OEP ruins the whole file.
+
+## Lab
+See [labs/14.3/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/14.3/README.md). Continuing from the file you unpacked by hand in lab 14.2, use Scylla to dump it and fix the IAT into a standalone runnable file.

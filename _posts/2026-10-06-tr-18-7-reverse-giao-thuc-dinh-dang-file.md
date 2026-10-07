@@ -1,19 +1,19 @@
 ---
-title: "Bài 18.7: Reverse giao thức mạng và định dạng file độc quyền"
+title: "Lesson 18.7: Reversing network protocols and proprietary file formats"
 date: 2026-10-06 09:53:00 +0700
-categories: ["Technique Reverse", "Phần 18 · Nâng cao"]
+categories: ["Technique Reverse", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
 render_with_liquid: false
 ---
-Có một loại bài toán không nằm trong binary mà nằm trong dữ liệu: một file save game không ai mô tả, một giao thức mạng tự chế giữa client và server, một định dạng cấu hình nhị phân. Không có spec, không có tài liệu. Việc của bạn là nhìn vào các mẫu dữ liệu và dựng lại cái spec đó, đủ chính xác để tự đọc và tự tạo ra dữ liệu hợp lệ. Bài này là cách làm.
+There's a kind of problem that doesn't live in a binary but in data: a save game file nobody has documented, a homemade network protocol between client and server, a binary config format. No spec, no documentation. Your job is to look at the data samples and rebuild that spec, accurately enough to read it yourself and produce valid data yourself. This lesson is how to do that.
 
-Có hai nguồn thông tin, và người giỏi dùng cả hai: **bản thân dữ liệu** (so sánh nhiều mẫu), và **code xử lý dữ liệu** (lần theo hàm parse trong binary). Dữ liệu cho bạn giả thuyết nhanh, code xác nhận.
+There are two sources of information, and good people use both: **the data itself** (comparing many samples), and **the code that handles the data** (following the parse function in the binary). The data gives you quick hypotheses, the code confirms them.
 
-## Nguyên tắc differential: đổi một thứ, xem byte nào nhảy
+## The differential principle: change one thing, see which byte jumps
 
-Đây là kỹ thuật mạnh nhất và dễ nhất. Bạn tạo ra nhiều mẫu chỉ khác nhau một chi tiết, rồi so hex xem byte nào đổi theo. Byte đổi chính là field chứa chi tiết đó.
+This is the strongest and easiest technique. You create several samples that differ in just one detail, then compare the hex to see which bytes change with it. The byte that changes is the field holding that detail.
 
-Lấy ví dụ thật từ lab: một định dạng save game `.sav`. Hai file `save_alice.sav` và `save_rich.sav` chỉ khác nhau ở lượng vàng (1500 so với 999999) và một cờ. So hex:
+Take a real example from the lab: a `.sav` save game format. Two files `save_alice.sav` and `save_rich.sav` differ only in the amount of gold (1500 versus 999999) and a flag. Compare the hex:
 
 ```
 alice: 5341 5645 0200 0100 0700 0000 dc05 0000  SAVE............
@@ -22,64 +22,64 @@ rich:  5341 5645 0200 0300 0700 0000 3f42 0f00  SAVE............
                       offset 6       offset 12
 ```
 
-Hai chỗ khác: offset 6 (`0100` thành `0300`) và offset 12 (`dc05 0000` thành `3f42 0f00`). Vàng 1500 = `0x05DC`, đọc little-endian là `dc 05`, khớp offset 12. Vàng 999999 = `0x000F423F`, little-endian là `3f 42 0f 00`, cũng khớp. Vậy offset 12 là trường gold kiểu u32 little-endian. Offset 6 là cờ (alice không cheat, rich có). Bạn vừa tìm ra hai field mà không cần đọc một dòng code nào.
+Two places differ: offset 6 (`0100` becomes `0300`) and offset 12 (`dc05 0000` becomes `3f42 0f00`). Gold 1500 = `0x05DC`, read little-endian it's `dc 05`, matching offset 12. Gold 999999 = `0x000F423F`, little-endian `3f 42 0f 00`, also matching. So offset 12 is the gold field as a little-endian u32. Offset 6 is a flag (alice didn't cheat, rich did). You just found two fields without reading a single line of code.
 
-Làm tương tự với `save_alice.sav` và `save_bob.sav` (chỉ khác tên): byte đổi bắt đầu từ offset 18, và ngay trước đó có một giá trị cho biết độ dài tên. Đó là cách bạn tìm ra cặp length-prefix + chuỗi.
+Do the same with `save_alice.sav` and `save_bob.sav` (differing only in name): the changed bytes start at offset 18, and right before that there's a value giving the name length. That's how you discover the length-prefix + string pair.
 
-## Tìm magic và neo cấu trúc
+## Finding the magic and anchoring the structure
 
-Gần như mọi định dạng mở đầu bằng một magic number cố định để nhận dạng. Nhìn vài byte đầu giống nhau ở mọi mẫu là ra. Trong ví dụ trên, bốn byte `53 41 56 45` là ASCII "SAVE". Magic là mỏ neo: biết nó rồi bạn mới định nghĩa được các offset tiếp theo.
+Almost every format starts with a fixed magic number for identification. Look at the first few bytes that are the same across all samples and you've got it. In the example above, the four bytes `53 41 56 45` are the ASCII "SAVE". The magic is the anchor: once you know it you can define the following offsets.
 
-Sau magic thường là version (một số nhỏ, thường tăng dần qua các bản), rồi tới các field. Phân biệt field cố định (giống nhau ở mọi mẫu) với field thay đổi (khác nhau), và trong field thay đổi, phân biệt số (little-endian trên x86, đọc ngược, xem lại [Bài 1.1](/posts/tr-1-1-hex-endian-bitwise/)) với chuỗi (cột ASCII bên phải đọc ra chữ).
+After the magic there's usually a version (a small number, often increasing across releases), then the fields. Separate fixed fields (the same in every sample) from variable fields (different), and among variable fields, tell numbers (little-endian on x86, read backwards, see [Lesson 1.1](/posts/tr-1-1-hex-endian-bitwise/) again) from strings (the ASCII column on the right reads out as text).
 
-## Ba mẫu hay gặp
+## Three common patterns
 
-Khi dò, bạn sẽ gặp đi gặp lại ba khuôn:
+When probing, you'll meet three molds over and over:
 
-- **Fixed field**: luôn cùng kích thước, ví dụ một u32 cho level, một u16 cho flags. Dễ nhất.
-- **Length-prefixed**: một giá trị độ dài, theo sau là đúng số byte đó. Chuỗi và mảng hay dùng kiểu này. Trong lab, `name_len` (u16) đứng trước tên, và `n_items` (u16) đứng trước danh sách item. Thấy một số nhỏ rồi đúng chừng ấy byte dữ liệu phía sau là nhận ra ngay.
-- **TLV (type-length-value)** hoặc record lặp: một khối lặp nhiều lần, mỗi khối có cấu trúc giống nhau. Danh sách item `(item_id u16, qty u16)` lặp `n_items` lần là một dạng đơn giản của nó.
+- **Fixed field**: always the same size, for example a u32 for level, a u16 for flags. The easiest.
+- **Length-prefixed**: a length value followed by exactly that many bytes. Strings and arrays often use this. In the lab, `name_len` (u16) comes before the name, and `n_items` (u16) comes before the item list. Seeing a small number followed by exactly that many bytes of data is instantly recognizable.
+- **TLV (type-length-value)** or repeated records: a block repeated many times, each with the same structure. An item list `(item_id u16, qty u16)` repeated `n_items` times is a simple form of it.
 
-Và rất hay ở cuối file có một **checksum** (tổng byte, CRC32, hoặc hash) để chương trình phát hiện file bị sửa. Nếu bạn định tạo file hợp lệ của riêng mình, phải tính lại checksum cho đúng, nếu không chương trình từ chối. Đây là lý do một parser tốt luôn kiểm checksum (trong lab, trường cuối là tổng mọi byte phía trước mod 2^32).
+And very often at the end of the file there's a **checksum** (byte sum, CRC32, or a hash) so the program can detect a modified file. If you plan to create your own valid file, you have to recompute the checksum correctly, or the program rejects it. This is why a good parser always checks the checksum (in the lab, the last field is the sum of all preceding bytes mod 2^32).
 
-## Công cụ mô tả cấu trúc
+## Tools for describing structure
 
-Khi đã có giả thuyết, viết nó ra dưới dạng template để tool tự parse và highlight:
+Once you have a hypothesis, write it down as a template so a tool can parse and highlight it:
 
-- **010 Editor Binary Template** và **ImHex pattern** (xem [Bài 2.7](/posts/tr-2-7-hex-editor-template/)): bạn khai báo struct, tool tô màu từng field trên file thật, sai ở đâu thấy ngay.
-- **Kaitai Struct**: mô tả định dạng bằng một file YAML, nó sinh ra parser cho nhiều ngôn ngữ (Python, C++, Java...). Hợp khi định dạng phức tạp và bạn muốn parser dùng lại được.
+- **010 Editor Binary Template** and **ImHex pattern** (see [Lesson 2.7](/posts/tr-2-7-hex-editor-template/)): you declare a struct, the tool colors each field on the real file, and you see where it's wrong immediately.
+- **Kaitai Struct**: describe the format in a YAML file, and it generates parsers for many languages (Python, C++, Java...). Good when the format is complex and you want a reusable parser.
 
-Cuối cùng, viết một parser nhỏ bằng Python với `struct.unpack` là cách xác nhận spec chắc nhất: nếu parser đọc đúng mọi mẫu và checksum khớp, spec của bạn đúng. Lab có sẵn `parse_savefile.py` làm mẫu.
+Finally, writing a small parser in Python with `struct.unpack` is the surest way to confirm the spec: if the parser reads every sample correctly and the checksums match, your spec is right. The lab has `parse_savefile.py` as a sample.
 
-## Xác nhận bằng code: lần theo hàm parse
+## Confirming with code: following the parse function
 
-So sánh dữ liệu cho giả thuyết, nhưng có chỗ mơ hồ chỉ code mới trả lời được: field này là signed hay unsigned, số này là độ dài hay là một ID, checksum tính theo thuật toán nào. Lúc đó mở binary xử lý file trong IDA/Ghidra:
+Comparing data gives hypotheses, but some ambiguities only code can answer: is this field signed or unsigned, is this number a length or an ID, which algorithm is the checksum computed with. Then open the binary that handles the file in IDA/Ghidra:
 
-- Đặt breakpoint tại `CreateFile`/`fopen`/`ReadFile`/`fread` (xem [Bài 1.13](/posts/tr-1-13-nhan-dien-windows-api/)) để bắt đúng lúc nó đọc file, rồi lần theo buffer.
-- Tìm chỗ so sánh magic (một `cmp` với hằng số trông như "SAVE" đảo byte), đó là đầu hàm parse.
-- Đọc tiếp sẽ thấy nó cộng offset, đọc u16/u32, nhân độ dài, lặp qua record. Mỗi phép đọc xác nhận một field trong spec của bạn.
-- Hàm tính checksum lộ ra thuật toán thật (tổng đơn giản, hay CRC với bảng 256 entry, nối [Bài 16.1](/posts/tr-16-1-nhan-dien-hang-so-crypto/)).
+- Set a breakpoint at `CreateFile`/`fopen`/`ReadFile`/`fread` (see [Lesson 1.13](/posts/tr-1-13-nhan-dien-windows-api/)) to catch the moment it reads the file, then follow the buffer.
+- Find where the magic is compared (a `cmp` with a constant that looks like "SAVE" with its bytes reversed), that's the start of the parse function.
+- Reading on you'll see it add offsets, read u16/u32, multiply lengths, loop over records. Each read confirms a field in your spec.
+- The checksum function reveals the real algorithm (a simple sum, or CRC with a 256-entry table, connecting to [Lesson 16.1](/posts/tr-16-1-nhan-dien-hang-so-crypto/)).
 
-## Giao thức mạng: cùng tư duy, thêm Wireshark
+## Network protocols: same thinking, plus Wireshark
 
-Giao thức mạng chỉ là định dạng dữ liệu di chuyển theo thời gian. Khác biệt là bạn bắt nó bằng **Wireshark** thay vì mở file:
+A network protocol is just a data format moving through time. The difference is you capture it with **Wireshark** instead of opening a file:
 
-- Bắt lưu lượng giữa client và server, xem từng gói ở dạng hex.
-- Áp đúng ba mẫu trên: mỗi message thường có header (magic/version), một trường length (tổng chiều dài phần còn lại, cực hay gặp để biết đọc tới đâu), rồi payload. Tìm trường length bằng cách so độ dài gói thật với con số trong header.
-- Dùng differential: làm cùng một hành động trong app hai lần, so hai gói, phần khác là dữ liệu động (timestamp, session id, nonce), phần giống là khung cố định.
-- Nếu payload trông như rác (entropy cao), nó bị mã hoá. Lúc này lần theo code trong binary: đặt breakpoint tại `send`/`WSASend` và `recv`, đi ngược lên sẽ thấy hàm mã hoá chạy ngay trước `send` (và giải mã ngay sau `recv`). Hook đúng chỗ trước khi mã hoá (hoặc sau khi giải mã) bằng Frida ([Bài 17.2](/posts/tr-17-2-frida-toan-tap/)) là bạn thấy payload dạng rõ, không cần bẻ thuật toán.
+- Capture the traffic between client and server, view each packet in hex.
+- Apply the same three patterns: each message usually has a header (magic/version), a length field (the total length of the rest, extremely common so you know how far to read), then the payload. Find the length field by comparing the real packet length with the number in the header.
+- Use differential: do the same action in the app twice, compare the two packets, the differing parts are dynamic data (timestamp, session id, nonce), the identical parts are the fixed frame.
+- If the payload looks like junk (high entropy), it's encrypted. At this point follow the code in the binary: set breakpoints at `send`/`WSASend` and `recv`, and going back up you'll see the encryption function running right before `send` (and decryption right after `recv`). Hook the right spot before encryption (or after decryption) with Frida ([Lesson 17.2](/posts/tr-17-2-frida-toan-tap/)) and you see the payload in the clear, no need to break the algorithm.
 
-Kỹ thuật này chính là nền của việc trích config và hiểu giao thức C2 của malware, sẽ dùng lại ở [Bài 19.4](/posts/tr-19-4-trich-config-c2/).
+This technique is the foundation of extracting configs and understanding malware C2 protocols, and will be used again in [Lesson 19.4](/posts/tr-19-4-trich-config-c2/).
 
-## Lab tự làm
+## Lab
 
-Thư mục [`labs/18.7/`](https://github.com/Haind03/Technique-Reverse/tree/main/labs/18.7). Bạn sẽ chạy `make_savefile.py` tạo ba file `.sav` khác nhau một chi tiết, dùng differential trên hexdump để tự suy ra cấu trúc, viết parser của riêng mình, rồi so với `parse_savefile.py`. Có cả phần dựng pattern cho ImHex.
+The folder [`labs/18.7/`](https://github.com/Haind03/Technique-Reverse/tree/main/labs/18.7). You'll run `make_savefile.py` to create three `.sav` files that differ in one detail each, use differential on the hexdump to work out the structure yourself, write your own parser, then compare with `parse_savefile.py`. There's also a part on building an ImHex pattern.
 
-## Checklist ghi nhớ
-- Differential là vũ khí số một: tạo nhiều mẫu khác nhau một chi tiết, byte nào đổi là field đó.
-- Mọi định dạng neo vào magic number ở đầu, tìm nó trước tiên.
-- Ba khuôn hay gặp: fixed field, length-prefixed (số độ dài rồi dữ liệu), record lặp/TLV.
-- Số nhiều byte đọc little-endian (đảo byte), chuỗi đọc thẳng ở cột ASCII.
-- Checksum ở cuối: muốn tạo dữ liệu hợp lệ phải tính lại cho đúng.
-- Dữ liệu cho giả thuyết, code (hàm parse, hàm send/recv) xác nhận chi tiết mơ hồ.
-- Giao thức mạng = định dạng theo thời gian: Wireshark + differential, payload mã hoá thì hook quanh send/recv.
+## Key takeaways
+- Differential is weapon number one: create samples that differ in one detail, the byte that changes is that field.
+- Every format anchors on a magic number at the start, find it first.
+- Three common molds: fixed field, length-prefixed (a length number then data), repeated records/TLV.
+- Multi-byte numbers are read little-endian (bytes reversed), strings read directly in the ASCII column.
+- Checksum at the end: to create valid data you have to recompute it correctly.
+- Data gives hypotheses, code (parse function, send/recv functions) confirms the ambiguous details.
+- A network protocol is a format over time: Wireshark + differential, and for encrypted payloads hook around send/recv.

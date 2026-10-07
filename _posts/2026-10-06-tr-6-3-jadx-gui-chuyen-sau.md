@@ -1,88 +1,88 @@
 ---
-title: "Bài 6.3: JADX-GUI chuyên sâu, công cụ số một để mổ APK"
+title: "Lesson 6.3: JADX-GUI in depth, the number one tool for taking apart APKs"
 date: 2026-10-06 08:46:00 +0700
-categories: ["Technique Reverse", "Phần 6 · Java / Kotlin / Android (JADX)"]
+categories: ["Technique Reverse", "Part 06 · Java, Kotlin and Android"]
 tags: [reverse-engineering, android, java]
 render_with_liquid: false
 ---
-Nếu reverse .NET có dnSpy thì reverse Android có JADX. Mở một APK lên, chờ vài giây, và bạn có gần như toàn bộ source Java hiện ra. Nhưng phần lớn người mới chỉ dùng JADX ở mức "mở ra rồi cuộn đọc", bỏ phí những tính năng làm nên khác biệt giữa ngồi cả buổi và tìm ra chỗ cần trong mười phút. Bài này là những tính năng đó.
+If .NET reversing has dnSpy, Android reversing has JADX. Open an APK, wait a few seconds, and almost the whole Java source shows up. But most beginners only use JADX at the level of "open it and scroll to read", wasting the features that make the difference between sitting there for a whole session and finding what you need in ten minutes. This lesson is about those features.
 
-JADX đã có sẵn trong repo này tại `jadx-gui-1.5.1-win`, chạy `jadx-gui.exe` là xong, không cần cài gì.
+JADX is already in this repo at `jadx-gui-1.5.1-win`, just run `jadx-gui.exe`, no installation needed.
 
-## Mở cái gì được
+## What it can open
 
-JADX nuốt khá nhiều định dạng, kéo thả vào là chạy:
+JADX swallows quite a lot of formats, drag and drop and it runs:
 
-- **APK**: nó tự giải nén, gộp mọi `classes.dex` (kể cả multidex), decompile ra Java, và parse luôn `AndroidManifest.xml` cùng resource.
-- **DEX**: file bytecode Android trần.
-- **JAR / .class**: bytecode JVM thường.
-- **AAB, ZIP, XAPK**: các dạng đóng gói khác.
+- **APK**: it unpacks it itself, merges every `classes.dex` (including multidex), decompiles to Java, and also parses `AndroidManifest.xml` and the resources.
+- **DEX**: a bare Android bytecode file.
+- **JAR / .class**: ordinary JVM bytecode.
+- **AAB, ZIP, XAPK**: other packaging forms.
 
-Với APK, việc đầu tiên nên làm là mở `AndroidManifest.xml` trong cây **Resources**, tìm activity có `android.intent.action.MAIN` để biết màn hình khởi động, đó là điểm vào của app. Thói quen này giống như tìm `main` khi reverse native.
+With an APK, the first thing to do is open `AndroidManifest.xml` in the **Resources** tree and look for the activity with `android.intent.action.MAIN` to know the launch screen, which is the app's entry point. This habit is like looking for `main` when reversing native code.
 
-## Cây bên trái và hai cách nhìn code
+## The left tree and two ways of viewing code
 
-Panel trái có hai nhánh chính: **Source code** (các package Java đã decompile) và **Resources** (manifest, string, layout, file trong assets). Click một class, panel phải hiện Java.
+The left panel has two main branches: **Source code** (the decompiled Java packages) and **Resources** (manifest, strings, layouts, files in assets). Click a class and the right panel shows Java.
 
-Điều nhiều người không biết: bạn xem được **smali song song**. Chuột phải vào class, chọn xem bytecode/smali, hoặc bật chế độ hiển thị cả hai. Khi JADX decompile sai (gặp code rối hoặc obfuscated), smali là sự thật, Java chỉ là bản dịch có thể lỗi. Lúc nghi ngờ, tụt xuống smali đối chiếu.
+Something many people don't know: you can view **smali side by side**. Right-click a class and choose to view bytecode/smali, or turn on the mode that shows both. When JADX decompiles wrong (with tangled or obfuscated code), smali is the truth and Java is just a translation that can be faulty. When in doubt, drop down to smali to cross-check.
 
-## Ba phím tắt làm nên tốc độ
+## Three shortcuts that make the speed
 
-Giống bộ ba `N`/`X`/comment trong IDA, JADX có bộ phím của nó. Xem thêm [cheatsheet](/posts/tr-tai-nguyen-cheatsheet/).
+Like the `N`/`X`/comment trio in IDA, JADX has its own set of keys. See also the [cheatsheet](/posts/tr-tai-nguyen-cheatsheet/).
 
-- **Tìm kiếm toàn cục (Ctrl+Shift+F)**: tìm text trong toàn bộ code đã decompile. Đây là vũ khí số một. Thấy app hiện "License invalid"? Search chuỗi đó, nhảy thẳng tới class dùng nó.
-- **Find usage (x)**: đặt con trỏ lên một method/field/class rồi nhấn `x` để xem mọi nơi dùng nó. Đây chính là xref của JADX, cách bạn lần ngược từ một hàm tới nơi gọi nó.
-- **Rename (n)**: đổi tên class/method/field/biến cho dễ đọc. JADX nhớ tên bạn đặt trong suốt phiên, và mỗi cái tên tốt làm code quanh nó sáng ra. Với app bị obfuscate thành `a.a.a`, rename là cách duy nhất giữ cho đầu bạn không nổ.
+- **Global search (Ctrl+Shift+F)**: search text across all the decompiled code. This is the number one weapon. See the app show "License invalid"? Search that string and jump straight to the class that uses it.
+- **Find usage (x)**: put the cursor on a method/field/class and press `x` to see everywhere it's used. This is JADX's xref, how you trace backwards from a function to where it's called.
+- **Rename (n)**: rename classes/methods/fields/variables to make them readable. JADX remembers the names you set for the whole session, and each good name makes the code around it light up. For an app obfuscated into `a.a.a`, rename is the only way to keep your head from exploding.
 
-## Đi từ chuỗi, kỹ thuật vào việc nhanh nhất
+## Start from strings, the fastest way into the work
 
-Giống mọi nền tảng khác, cách nhanh nhất tìm logic quan trọng là đi từ chuỗi người dùng thấy. Trên Android chuỗi thường nằm hai nơi:
+Like every other platform, the fastest way to find important logic is to start from strings the user sees. On Android, strings usually live in two places:
 
-- Hard-code trong code: search thẳng bằng Ctrl+Shift+F.
-- Trong `res/values/strings.xml`: nếu chuỗi hiển thị là một resource, tìm tên resource (ví dụ `login_failed`), lấy resource ID, rồi search ID đó (dạng `R.string.login_failed` hoặc giá trị hex `0x7f...`) trong code.
+- Hard-coded in code: search directly with Ctrl+Shift+F.
+- In `res/values/strings.xml`: if the displayed string is a resource, find the resource name (for example `login_failed`), get the resource ID, then search for that ID (as `R.string.login_failed` or the hex value `0x7f...`) in the code.
 
-Tìm được chuỗi "Sai mật khẩu" hay "Premium activated" là tìm được gần đúng chỗ kiểm tra. Từ đó nhấn `x` lần ngược lên hàm gọi.
+Finding a string like "Wrong password" or "Premium activated" gets you almost exactly to the check. From there press `x` to trace back up to the calling function.
 
-## Deobfuscation tự động
+## Automatic deobfuscation
 
-App thật gần như luôn chạy qua R8/ProGuard, biến tên thành `a`, `b`, `c`. JADX có tính năng đổi tên tự động: vào Preferences, bật **Deobfuscation**, đặt ngưỡng độ dài tên tối thiểu/tối đa. JADX sẽ sinh tên giả nhất quán (như `C0001a`) thay cho các tên một ký tự trùng nhau, giúp phân biệt được chúng. Nó không trả lại tên gốc (tên gốc đã mất khi build), nhưng làm code bớt loạn và cho phép bạn rename dần.
+Real apps almost always go through R8/ProGuard, turning names into `a`, `b`, `c`. JADX has an automatic renaming feature: go to Preferences, turn on **Deobfuscation**, and set the minimum/maximum name length thresholds. JADX will generate consistent fake names (like `C0001a`) in place of colliding one-character names, helping you tell them apart. It doesn't restore the original names (they were lost at build time), but it makes the code less chaotic and lets you rename gradually.
 
-Mức obfuscation nặng hơn (string encryption, control flow) thì JADX bó tay phần đó, phải sang hướng động (Frida, xem [Bài 6.6](https://github.com/Haind03/Technique-Reverse/blob/main/phan-06-java-kotlin-android/6.6-frida-android-hook-bypass.md)) hoặc công cụ khác. Chi tiết các loại obfuscation ở [Bài 6.8](https://github.com/Haind03/Technique-Reverse/blob/main/phan-06-java-kotlin-android/6.8-obfuscation-android-r8-packer.md).
+For heavier obfuscation (string encryption, control flow) JADX gives up on that part, and you have to go the dynamic route (Frida, see [Lesson 6.6](https://github.com/Haind03/Technique-Reverse/blob/main/phan-06-java-kotlin-android/6.6-frida-android-hook-bypass.md)) or other tools. Details on the types of obfuscation are in [Lesson 6.8](https://github.com/Haind03/Technique-Reverse/blob/main/phan-06-java-kotlin-android/6.8-obfuscation-android-r8-packer.md).
 
-## Copy as Frida snippet, cầu nối sang hook động
+## Copy as Frida snippet, the bridge to dynamic hooking
 
-Đây là tính năng JADX mà dân mobile rất thích. Chuột phải vào một method, chọn **Copy as Frida snippet**, JADX sinh sẵn đoạn JavaScript hook method đó bằng Frida, đúng tên class, đúng signature tham số. Bạn chỉ việc dán vào script Frida, thêm logic in tham số hoặc đổi giá trị trả về.
+This is a JADX feature mobile people really like. Right-click a method and choose **Copy as Frida snippet**, and JADX generates a ready-made piece of JavaScript that hooks that method with Frida, with the right class name and the right parameter signature. You just paste it into a Frida script and add logic to print the parameters or change the return value.
 
-Ví dụ nó sinh ra khung kiểu:
+For example it generates a skeleton like:
 
 ```javascript
 Java.perform(function () {
     var LoginActivity = Java.use("com.example.app.LoginActivity");
     LoginActivity.checkPassword.implementation = function (input) {
-        console.log("checkPassword được gọi với: " + input);
+        console.log("checkPassword called with: " + input);
         var ret = this.checkPassword(input);
-        console.log("trả về: " + ret);
+        console.log("returned: " + ret);
         return ret;
     };
 });
 ```
 
-Đây là cách nối tĩnh (JADX đọc code) với động (Frida quan sát/sửa lúc chạy). Tìm hàm trong JADX, sinh snippet, hook để xem giá trị thật hoặc ép nó trả về `true`.
+This is how you connect static (JADX reading the code) to dynamic (Frida observing/modifying at runtime). Find the function in JADX, generate the snippet, hook it to see the real values or force it to return `true`.
 
-## Xuất source ra để grep
+## Export the source to grep
 
-Khi muốn tìm kiếm mạnh hơn tìm trong GUI, hoặc muốn mở trong editor quen thuộc, dùng **File > Save all** (Ctrl+Shift+S) để JADX xuất toàn bộ source Java ra thư mục. Sau đó `grep -r` thoải mái, hoặc mở bằng VS Code để điều hướng. Rất tiện khi muốn tìm pattern phức tạp (ví dụ mọi nơi gọi `Cipher.getInstance`).
+When you want stronger searching than the GUI offers, or want to open it in a familiar editor, use **File > Save all** (Ctrl+Shift+S) so JADX exports the whole Java source to a folder. Then `grep -r` freely, or open it in VS Code to navigate. Very handy when you want to find a complex pattern (for example everywhere that calls `Cipher.getInstance`).
 
-## Lab tự làm
+## Lab
 
-Làm trong [labs/6.3/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/6.3): mở một APK bằng JADX-GUI, đi từ một chuỗi tới code, rename cho dễ đọc, sinh Frida snippet cho một method, và xuất source ra để grep.
+Do it in [labs/6.3/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/6.3): open an APK with JADX-GUI, go from a string to the code, rename things to make them readable, generate a Frida snippet for a method, and export the source to grep.
 
-## Checklist ghi nhớ
-- JADX mở APK/DEX/JAR/AAB, tự gộp multidex và parse manifest.
-- Mở AndroidManifest tìm MAIN activity để biết điểm vào app.
-- Ba phím chủ lực: Ctrl+Shift+F (search toàn cục), `x` (find usage, chính là xref), `n` (rename).
-- Đi từ chuỗi người dùng thấy, qua resource ID nếu cần, rồi `x` lần ngược tới hàm kiểm tra.
-- Bật Deobfuscation để làm dịu tên một ký tự, nhưng tên gốc đã mất.
-- Copy as Frida snippet để nối sang hook động.
-- Save all để xuất source ra grep ngoài GUI.
-- Khi Java decompile trông sai, đối chiếu smali.
+## Key takeaways
+- JADX opens APK/DEX/JAR/AAB, merges multidex automatically and parses the manifest.
+- Open AndroidManifest and look for the MAIN activity to know the app's entry point.
+- Three main keys: Ctrl+Shift+F (global search), `x` (find usage, which is the xref), `n` (rename).
+- Start from strings the user sees, through the resource ID if needed, then `x` to trace back to the check function.
+- Turn on Deobfuscation to soften one-character names, but the original names are gone.
+- Copy as Frida snippet to connect to dynamic hooking.
+- Save all to export the source for grepping outside the GUI.
+- When the decompiled Java looks wrong, cross-check with smali.

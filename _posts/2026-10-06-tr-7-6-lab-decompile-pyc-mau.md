@@ -1,17 +1,17 @@
 ---
-title: "Bài 7.6: Lab, decompile các file .pyc mẫu bằng pycdc"
+title: "Lesson 7.6: Lab, decompiling sample .pyc files with pycdc"
 date: 2026-10-06 08:58:00 +0700
-categories: ["Technique Reverse", "Phần 7 · Python (pycdc)"]
+categories: ["Technique Reverse", "Part 07 · Python"]
 tags: [reverse-engineering, python]
 render_with_liquid: false
 ---
-Lý thuyết của Phần 7 giờ đem ra dùng thật. Repo này có sẵn thư mục `pycdc-master` kèm ba file `.pyc` mẫu, và ba file đó không hẹn mà gặp lại đúng ba tình huống bạn sẽ đụng ngoài đời: một file hỏng, một file không có header, và một file viết bằng phiên bản Python mới hơn cái pycdc hỗ trợ. Mỗi file dạy một bài khác nhau, nên đừng bỏ file nào.
+Time to put the theory of Part 7 to real use. This repo has a `pycdc-master` folder with three sample `.pyc` files, and those three happen to cover exactly the three situations you'll hit in the wild: a broken file, a file with no header, and a file written in a newer Python version than pycdc supports. Each file teaches a different lesson, so don't skip any.
 
-Toàn bộ output trong bài này là kết quả chạy thật trên máy, không phải minh hoạ bịa. Bạn chạy lại sẽ ra y hệt.
+All the output in this lesson is the result of real runs on my machine, not made-up illustrations. If you rerun it you'll get exactly the same.
 
-## Chuẩn bị: build pycdc
+## Setup: build pycdc
 
-Binary dựng sẵn trong repo có thể không chạy trên máy bạn (lệch phiên bản GLIBC, đúng vấn đề gặp khi viết bài này). Build lại từ source cho chắc:
+The prebuilt binary in the repo may not run on your machine (a GLIBC version mismatch, exactly the problem I hit while writing this lesson). Rebuild from source to be safe:
 
 ```bash
 cd pycdc-master/pycdc-master
@@ -19,11 +19,11 @@ cmake . -DCMAKE_BUILD_TYPE=Release
 make -j4
 ```
 
-Xong bạn có hai binary: `pycdc` (decompile ra Python source) và `pycdas` (disassemble ra bytecode đọc được). Nhớ nguyên tắc từ [Bài 7.2](/posts/tr-7-2-pycdc-pycdas/): pycdc cho ra source đẹp khi thành công, pycdas luôn chạy được và là phao cứu sinh khi pycdc bó tay.
+When done you have two binaries: `pycdc` (decompiles to Python source) and `pycdas` (disassembles to readable bytecode). Remember the principle from [Lesson 7.2](/posts/tr-7-2-pycdc-pycdas/): pycdc gives nice source when it succeeds, pycdas always runs and is the lifeline when pycdc is helpless.
 
-## File 1: ok.pyc, bài học về cái file rỗng
+## File 1: ok.pyc, the lesson of the empty file
 
-Chạy thử:
+Try running it:
 
 ```
 $ ./pycdc ok.pyc
@@ -31,29 +31,29 @@ Bad MAGIC!
 Could not load file .../ok.pyc
 ```
 
-Trước khi đổ lỗi cho tool, kiểm tra file. `ls -l` cho thấy `ok.pyc` nặng đúng 0 byte. Nó rỗng. Không có gì để decompile cả.
+Before blaming the tool, check the file. `ls -l` shows `ok.pyc` weighs exactly 0 bytes. It's empty. There's nothing to decompile.
 
-Nghe ngớ ngẩn nhưng đây là lỗi thật bạn sẽ gặp: file tải về dở, extract hỏng, hoặc ghi đè nhầm. "Bad MAGIC!" không phải lúc nào cũng nghĩa là sai phiên bản, đôi khi chỉ là file không có nổi 4 byte magic để đọc. Bài học rẻ tiền nhưng tiết kiệm cả giờ ngồi nghi oan cho pycdc.
+Sounds silly but this is a real error you'll hit: a half-finished download, a broken extraction, or an accidental overwrite. "Bad MAGIC!" doesn't always mean the wrong version, sometimes the file just doesn't even have 4 magic bytes to read. A cheap lesson but it saves you an hour of wrongly suspecting pycdc.
 
-## File 2: apple_collector_game.pyc, file không có header
+## File 2: apple_collector_game.pyc, a file with no header
 
 ```
 $ ./pycdc apple_collector_game.pyc
 Bad MAGIC!
 ```
 
-Lại "Bad MAGIC!". Nhưng file này nặng 11KB, không rỗng. Xem byte đầu:
+"Bad MAGIC!" again. But this file weighs 11KB, it's not empty. Look at the first bytes:
 
 ```
 $ xxd apple_collector_game.pyc | head -1
 00000000: e300 0000 0000 0000 0000 0000 0005 0000
 ```
 
-Một file `.pyc` chuẩn phải bắt đầu bằng 4 byte magic (xem [Bài 7.1](/posts/tr-7-1-bytecode-python-pyc-magic/)). Đây bắt đầu bằng `e3`. Byte `0xe3` chính là mã marshal cho một code object (`TYPE_CODE` = `0x63` = `'c'`, cộng cờ ref `0x80`). Nói cách khác, đây không phải `.pyc` đầy đủ, mà là một **code object đã marshal trần trụi**, bị lột mất 16 byte header.
+A standard `.pyc` file must start with 4 magic bytes (see [Lesson 7.1](/posts/tr-7-1-bytecode-python-pyc-magic/)). This one starts with `e3`. The byte `0xe3` is the marshal code for a code object (`TYPE_CODE` = `0x63` = `'c'`, plus the ref flag `0x80`). In other words, this isn't a complete `.pyc`, it's a **bare marshaled code object**, with the 16-byte header stripped off.
 
-Chuyện này rất hay gặp khi bạn trích `.pyc` ra từ PyInstaller: nhiều phiên bản cắt header đi. pycdc có cờ cho đúng ca này: `-c` (nạp code object trần) kèm `-v` (chỉ định phiên bản Python, vì không còn magic để tự đoán).
+This is very common when you extract `.pyc` files from PyInstaller: many versions cut the header off. pycdc has flags for exactly this case: `-c` (load a bare code object) plus `-v` (specify the Python version, since there's no magic left to guess from).
 
-Vấn đề: phiên bản nào? Khi không có magic, cách nhanh nhất là thử. Chạy pycdas với vài phiên bản cho tới khi nó nạp được:
+The problem: which version? When there's no magic, the fastest way is to try. Run pycdas with a few versions until it loads:
 
 ```
 $ ./pycdas -c -v 3.10 apple_collector_game.pyc
@@ -67,13 +67,13 @@ apple_collector_game.pyc (Python 3.11)
     ...
 ```
 
-3.10 trở xuống nổ tung, 3.11 nạp sạch và còn lộ tên file gốc `apple_collector_game.py`. Vậy là Python 3.11. Giờ decompile:
+3.10 and below blow up, 3.11 loads cleanly and even reveals the original file name `apple_collector_game.py`. So it's Python 3.11. Now decompile:
 
 ```
 $ ./pycdc -c -v 3.11 apple_collector_game.pyc
 ```
 
-Kết quả ra gần như trọn vẹn:
+The result comes out almost complete:
 
 ```python
 import os
@@ -94,20 +94,20 @@ class G:
         self.fl = os.getenv('CTF_FLAG')
 ```
 
-Đọc được là hiểu ngay: đây là một game pygame "Apple Collector", và nó là một challenge CTF. Hàm `R0` kiểm tra `sys._MEIPASS`, dấu hiệu chắc chắn chương trình từng được đóng gói bằng **PyInstaller** (xem [Bài 7.4](/posts/tr-7-4-unpack-pyinstaller-py2exe/)). Flag nằm trong biến môi trường `CTF_FLAG`, nạp từ file `flag.env` đi kèm. Vậy với challenge này, "giải" không phải đọc code mà là tìm ra file `flag.env` trong gói PyInstaller.
+Reading it you understand right away: this is a pygame game "Apple Collector", and it's a CTF challenge. The `R0` function checks `sys._MEIPASS`, a sure sign the program was packaged with **PyInstaller** (see [Lesson 7.4](/posts/tr-7-4-unpack-pyinstaller-py2exe/)). The flag is in the environment variable `CTF_FLAG`, loaded from the accompanying `flag.env` file. So for this challenge, "solving" isn't reading code but finding the `flag.env` file in the PyInstaller bundle.
 
-Để ý pycdc có in vài dòng `Unsupported opcode: BEFORE_WITH` và `JUMP_BACKWARD`, và một số hàm kết thúc bằng `# WARNING: Decompyle incomplete`. Đây là giới hạn thật của pycdc với Python 3.11: nó vấp khối `with` và một số dạng vòng lặp. Nhưng phần decompile được đã quá đủ để hiểu chương trình. Chỗ nào incomplete thì mở pycdas đọc bytecode của riêng hàm đó.
+Notice pycdc prints a few lines of `Unsupported opcode: BEFORE_WITH` and `JUMP_BACKWARD`, and some functions end with `# WARNING: Decompyle incomplete`. This is a real limit of pycdc on Python 3.11: it stumbles on `with` blocks and some loop forms. But the part it decompiled is more than enough to understand the program. Wherever it's incomplete, open pycdas and read the bytecode of just that function.
 
-## File 3: out_sequencer.pyc, phiên bản mới hơn pycdc
+## File 3: out_sequencer.pyc, a version newer than pycdc
 
-File này có header đàng hoàng:
+This file has a proper header:
 
 ```
 $ xxd out_sequencer.pyc | head -1
 00000000: f30d 0d0a 0000 0000 240e d668 ...
 ```
 
-Magic `f3 0d 0d 0a`, tức `0x0df3` = 3571, là Python 3.13. Thử decompile:
+The magic `f3 0d 0d 0a`, i.e. `0x0df3` = 3571, is Python 3.13. Try decompiling:
 
 ```
 $ ./pycdc out_sequencer.pyc
@@ -120,9 +120,9 @@ if not None + None:
 # WARNING: Decompyle incomplete
 ```
 
-Thất bại gần như hoàn toàn. Python 3.13 quá mới so với pycdc, opcode `LOAD_FROM_DICT_OR_GLOBALS` chưa được hỗ trợ, và kết quả là rác. Đây đúng là tình huống [Bài 7.3](/posts/tr-7-3-decompiler-python-khac/) cảnh báo: không decompiler nào theo kịp mọi phiên bản.
+Almost a total failure. Python 3.13 is too new for pycdc, the opcode `LOAD_FROM_DICT_OR_GLOBALS` isn't supported yet, and the result is junk. This is exactly the situation [Lesson 7.3](/posts/tr-7-3-decompiler-python-khac/) warns about: no decompiler keeps up with every version.
 
-Nhưng đừng bỏ cuộc. Chuyển sang pycdas để đọc bytecode, nó luôn chạy:
+But don't give up. Switch to pycdas to read the bytecode, it always runs:
 
 ```
 $ ./pycdas out_sequencer.pyc
@@ -136,34 +136,34 @@ out_sequencer.pyc (Python 3.13)
         'marshalled_genetic_code'  'loads'
         'catalyst_code_object'  'FunctionType'  'globals'
     [Constants]
-        b'c$|e+O>7&-6`m!Rzak~llE|2<...'   (một blob base85 rất dài)
+        b'c$|e+O>7&-6`m!Rzak~llE|2<...'   (a very long base85 blob)
         '--- Calibrating Genetic Sequencer ---'
         'Decoding catalyst DNA strand...'
 ```
 
-Dù bytecode disassembly của 3.13 cũng hơi lệch (pycdc chưa map đúng hết opcode 3.13), phần `[Names]` và `[Constants]` vẫn đọc được, và chúng kể hết câu chuyện. Nhìn danh sách tên là dựng lại được logic: lấy `encoded_catalyst_strand` (blob base85), `base64.b85decode`, rồi `zlib.decompress`, rồi `marshal.loads` ra một code object, rồi `types.FunctionType` để biến nó thành hàm và chạy. Đây là một **loader tự giải mã**: nó giấu payload thật dưới ba lớp encode.
+Even though the bytecode disassembly for 3.13 is a bit off too (pycdc hasn't mapped all the 3.13 opcodes correctly), the `[Names]` and `[Constants]` parts are still readable, and they tell the whole story. Looking at the name list you can rebuild the logic: take `encoded_catalyst_strand` (the base85 blob), `base64.b85decode`, then `zlib.decompress`, then `marshal.loads` into a code object, then `types.FunctionType` to turn it into a function and run it. This is a **self-decoding loader**: it hides the real payload under three layers of encoding.
 
-## Khi tool bó tay, làm bằng tay
+## When the tool is helpless, do it by hand
 
-pycdc không đọc được 3.13, nhưng chính Python đọc được marshal của nó (với một chút linh hoạt). Ta tự lột từng lớp đúng như loader làm. Viết script (chạy với `python3 -I` cho an toàn, xem lưu ý đầu khoá học về thư mục chứa file lạ):
+pycdc can't read 3.13, but Python itself can read its marshal (with a bit of flexibility). We peel off each layer ourselves, exactly like the loader does. Write a script (run it with `python3 -I` to be safe, see the note at the start of the course about the folder holding unfamiliar files):
 
 ```python
 import sys, base64, zlib, marshal
 data = open('out_sequencer.pyc','rb').read()
-code = marshal.loads(data[16:])          # bỏ 16 byte header .pyc rồi unmarshal module
+code = marshal.loads(data[16:])          # drop the 16-byte .pyc header then unmarshal the module
 blob = [c for c in code.co_consts if isinstance(c, bytes)][0]
 inner = marshal.loads(zlib.decompress(base64.b85decode(blob)))
 print(inner.co_names)
 ```
 
-Kết quả thật:
+The real result:
 
 ```
 ('os', 'sys', 'emoji', 'random', 'asyncio', 'cowsay', 'pyjokes',
  'art', 'arc4', 'ARC4', 'activate_catalyst', 'run')
 ```
 
-Lớp trong là một code object khác, import `arc4.ARC4` (tức thuật toán RC4) và có hàm `activate_catalyst`. Đào sâu các hằng số của nó:
+The inner layer is another code object, importing `arc4.ARC4` (the RC4 algorithm) and with a function `activate_catalyst`. Digging into its constants:
 
 ```
 fn: activate_catalyst
@@ -176,18 +176,18 @@ fn: activate_catalyst
   str: 'AUTHENTICATION   FAILED'
 ```
 
-Giờ thì rõ: đây là challenge "Project Chimera". Payload thật mã hoá một "secret formula" bằng RC4, khoá sinh từ `os.getlogin()` (tên user, đóng vai "biometric scan"). pycdc chưa bao giờ hé được dòng nào, nhưng bằng cách tự lột ba lớp base85, zlib, marshal, ta khôi phục được toàn bộ cấu trúc và cả thuật toán. Đây chính là tinh thần [Bài 0.4](/posts/tr-0-4-quy-trinh-reverse/): tool chỉ là đòn bẩy, hiểu cơ chế mới là thứ cứu bạn khi tool gãy.
+Now it's clear: this is the "Project Chimera" challenge. The real payload encrypts a "secret formula" with RC4, with the key generated from `os.getlogin()` (the username, playing the role of the "biometric scan"). pycdc never revealed a single line, but by peeling off the three layers of base85, zlib, marshal ourselves, we recovered the whole structure and even the algorithm. This is exactly the spirit of [Lesson 0.4](/posts/tr-0-4-quy-trinh-reverse/): the tool is only leverage, understanding the mechanism is what saves you when the tool breaks.
 
-## Ba file, ba bài học
+## Three files, three lessons
 
-- **ok.pyc**: kiểm tra file trước khi nghi tool. "Bad MAGIC!" trên file 0 byte nghĩa là file rỗng.
-- **apple_collector_game.pyc**: code object trần (byte đầu `e3`, không có magic). Dùng `pycdc -c -v <ver>`, dò phiên bản bằng cách thử. Hoá ra là game PyInstaller giấu flag trong `flag.env`.
-- **out_sequencer.pyc**: Python 3.13 quá mới, pycdc fail. pycdas vẫn đọc được names/consts, và tự lột lớp base85 + zlib + marshal thì khôi phục được payload RC4 bên trong.
+- **ok.pyc**: check the file before suspecting the tool. "Bad MAGIC!" on a 0-byte file means the file is empty.
+- **apple_collector_game.pyc**: a bare code object (first byte `e3`, no magic). Use `pycdc -c -v <ver>`, find the version by trying. It turns out to be a PyInstaller game hiding the flag in `flag.env`.
+- **out_sequencer.pyc**: Python 3.13 is too new, pycdc fails. pycdas can still read names/consts, and peeling off the base85 + zlib + marshal layers yourself recovers the RC4 payload inside.
 
-## Checklist ghi nhớ
-- Build pycdc từ source nếu binary dựng sẵn không chạy (lệch GLIBC/GLIBCXX).
-- "Bad MAGIC!" có ba nguyên nhân hay gặp: file rỗng/hỏng, code object trần không header, hoặc phiên bản lạ.
-- Byte đầu `e3` (hoặc `63`) nghĩa là code object trần, dùng `-c -v`, dò phiên bản bằng pycdas.
-- pycdc fail thì pycdas gần như luôn còn đọc được names và consts, đủ để dựng lại logic.
-- Loader Python hay giấu payload qua base64/base85 + zlib + marshal. Lột đúng thứ tự đó là ra.
-- Khi mọi tool gãy, dùng chính `marshal` của Python để lột từng lớp bằng tay.
+## Key takeaways
+- Build pycdc from source if the prebuilt binary doesn't run (GLIBC/GLIBCXX mismatch).
+- "Bad MAGIC!" has three common causes: an empty/broken file, a bare code object with no header, or an unfamiliar version.
+- A first byte of `e3` (or `63`) means a bare code object, use `-c -v`, find the version with pycdas.
+- When pycdc fails, pycdas can almost always still read the names and consts, enough to rebuild the logic.
+- Python loaders often hide payloads via base64/base85 + zlib + marshal. Peel in that order and it comes out.
+- When every tool breaks, use Python's own `marshal` to peel off the layers by hand.

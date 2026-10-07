@@ -1,79 +1,70 @@
 ---
-title: "Bài 16.2: XOR, RC4 và Base64 custom, ba thứ bạn gặp nhiều nhất"
+title: "Lesson 16.2: XOR, RC4 and custom Base64, the three you'll meet most"
 date: 2026-10-06 09:37:00 +0700
-categories: ["Technique Reverse", "Phần 16 · Crypto & thuật toán"]
+categories: ["Technique Reverse", "Part 16 · Crypto and Algorithms"]
 tags: [reverse-engineering, crypto]
 render_with_liquid: false
 ---
-Nếu phải chọn ba kỹ thuật biến đổi dữ liệu mà bạn sẽ đụng nhiều nhất khi mổ crackme và malware, thì đây: XOR, RC4, và Base64 với bảng chữ bị xáo. Chúng chiếm phần lớn các ca "chuỗi trông như rác" mà bạn cần giải. Tin tốt là cả ba đều nhận ra được bằng mắt và giải lại bằng vài dòng Python. Bài này dạy bạn nhìn ra chúng và viết decode.
+If I had to pick the three data-transformation techniques you'll run into most when taking apart crackmes and malware, it'd be these: XOR, RC4, and Base64 with a shuffled alphabet. They make up most of the "the string looks like garbage" cases you need to solve. The good news is all three can be recognized by eye and reversed with a few lines of Python. This lesson teaches you to spot them and write the decoder.
 
-## XOR, phép toán quốc dân của obfuscation
+## XOR, the national operation of obfuscation
 
-Lý do XOR ở khắp nơi rất đơn giản: nó đảo ngược chính nó. `A ^ key ^ key == A`. Mã hoá và giải mã dùng chung một hàm, một dòng code, không cần thư viện. Kẻ viết malware lười, và XOR phục vụ sự lười đó hoàn hảo.
+The reason XOR is everywhere is simple: it reverses itself. `A ^ key ^ key == A`. Encryption and decryption share one function, one line of code, no library needed. Malware authors are lazy, and XOR serves that laziness perfectly.
 
-Trong assembly, một vòng lặp XOR trông rất đặc trưng:
+In assembly, an XOR loop looks very distinctive:
 
 ```asm
 loop:
-    mov  al, [rsi+rcx]      ; lấy một byte ciphertext
-    xor  al, dl             ; XOR với key (ở đây dl giữ 1 byte key)
-    mov  [rdi+rcx], al      ; ghi byte đã giải ra
+    mov  al, [rsi+rcx]      ; take one byte of ciphertext
+    xor  al, dl             ; XOR with the key (here dl holds a 1-byte key)
+    mov  [rdi+rcx], al      ; write out the decoded byte
     inc  rcx
-    cmp  rcx, rbx           ; đã hết độ dài chưa
+    cmp  rcx, rbx           ; reached the length yet
     jl   loop
 ```
 
-Thấy một vòng lặp đi qua một buffer và có `xor` một byte với một hằng số hay một giá trị lấy từ mảng key, gần như chắc đó là routine mã hoá/giải mã chuỗi. Có ba biến thể:
+If you see a loop that walks through a buffer and does an `xor` of a byte with a constant or a value taken from a key array, it's almost certainly a string encryption/decryption routine. There are three variants. With a single-byte key, every byte is XORed with the same value, which is the easiest, and you can even brute-force all 256 possibilities. With a multi-byte (rolling) key, each byte is XORed with `key[i % len(key)]`, the key repeating in a cycle, which is very common. In a rolling/running XOR, the next byte depends on the previous one (for example XOR with the byte just decoded), which is less common.
 
-- **Single-byte key**: mọi byte XOR với cùng một giá trị. Dễ nhất, thậm chí brute-force cả 256 khả năng là ra.
-- **Multi-byte key (rolling)**: XOR với `key[i % len(key)]`, key lặp vòng. Rất phổ biến.
-- **Rolling/running XOR**: byte sau phụ thuộc byte trước (ví dụ XOR với byte vừa giải). Ít gặp hơn.
+### Finding the key when you don't know it: known-plaintext
 
-### Tìm key khi chưa biết: known-plaintext
-
-Mẹo mạnh nhất với XOR là known-plaintext attack. Nếu bạn đoán được một phần plaintext (ví dụ flag luôn bắt đầu bằng `flag{`, hay config JSON luôn mở bằng `{"`), thì XOR phần ciphertext với phần plaintext đã biết sẽ lòi ra key:
+The most powerful trick with XOR is the known-plaintext attack. If you can guess part of the plaintext (for example the flag always starts with `flag{`, or a config JSON always opens with `{"`), then XORing that part of the ciphertext with the known plaintext reveals the key:
 
 ```
 key[i] = ciphertext[i] ^ plaintext[i]
 ```
 
-Làm vài byte đầu là lộ key, nếu key ngắn và lặp lại thì bạn thấy ngay chu kỳ. Lab cuối bài làm đúng chuyện này.
+Do the first few bytes and the key shows up. If the key is short and repeats, you see the period right away. The lab at the end of this lesson does exactly this.
 
-## RC4, kẻ không có magic constant
+## RC4, the one with no magic constant
 
-RC4 là stream cipher hay gặp trong malware vì nhỏ gọn và không cần thư viện. Cái khó là nó **không có hằng số đặc trưng** như AES hay SHA, nên findcrypt không bắt được. Bạn phải nhận ra nó qua cấu trúc.
+RC4 is a stream cipher often seen in malware because it's compact and needs no library. The hard part is that it has no distinctive constants like AES or SHA, so findcrypt can't catch it. You have to recognize it through its structure, and the signs can't be mistaken.
 
-Dấu hiệu nhận diện RC4, không thể nhầm:
+First, a 256-byte array (S-box) gets initialized with 0, 1, 2, ..., 255, and seeing a loop `S[i] = i` run 256 times is the first alarm bell. Second comes the KSA loop (Key Scheduling), a 256-iteration loop that permutes S based on the key: `j = (j + S[i] + key[i % keylen]) & 0xFF; swap(S[i], S[j])`. Third is the PRGA loop (keystream generation): `i = (i+1) & 0xFF; j = (j + S[i]) & 0xFF; swap; k = S[(S[i]+S[j]) & 0xFF]` and then XOR k with the data.
 
-1. **Một mảng 256 byte (S-box) được khởi tạo bằng 0, 1, 2, ..., 255.** Thấy một vòng lặp `S[i] = i` chạy 256 lần là chuông báo đầu tiên.
-2. **Vòng KSA (Key Scheduling)**: vòng lặp 256 lần hoán vị S dựa trên key: `j = (j + S[i] + key[i % keylen]) & 0xFF; swap(S[i], S[j])`.
-3. **Vòng PRGA (sinh keystream)**: `i = (i+1) & 0xFF; j = (j + S[i]) & 0xFF; swap; k = S[(S[i]+S[j]) & 0xFF]` rồi XOR k với dữ liệu.
+If you see a sequentially initialized 256 array, then swaps with AND 0xFF (that is, mod 256) all over the place, that's RC4. Because RC4 is symmetric, you only need to find the key (usually near the KSA section, or a hardcoded string in the binary) to decrypt. Copy the algorithm into Python, pass in the key, run it.
 
-Thấy mảng 256 khởi tạo tuần tự rồi hoán vị hai lần với phép AND 0xFF (tức mod 256) khắp nơi, đó là RC4. Vì RC4 đối xứng, chỉ cần tìm được key (thường nằm gần đoạn KSA, hoặc là một chuỗi cứng trong binary) là giải xong. Chép thuật toán vào Python, truyền key, chạy.
+## Custom Base64, the trap for people in a hurry
 
-## Base64 custom, cái bẫy của người vội
+Standard Base64 uses the 64-character alphabet `A-Za-z0-9+/`. Many programs change the order of this alphabet so the encoded string looks like Base64 but decodes to garbage with a standard tool. Beginners see a Base64-shaped string (letters, digits, sometimes `=` at the end), throw it into CyberChef, get garbage, and give up.
 
-Base64 chuẩn dùng bảng 64 ký tự `A-Za-z0-9+/`. Nhiều chương trình đổi thứ tự bảng này để chuỗi mã hoá trông giống Base64 nhưng decode bằng tool chuẩn ra rác. Người mới thấy chuỗi có dạng Base64 (chữ, số, có khi `=` ở cuối) bèn ném vào CyberChef, ra rác, rồi bỏ cuộc.
-
-Chìa khoá: tìm **bảng alphabet 64 ký tự** trong binary. Nó thường nằm trong `.rdata` dưới dạng một chuỗi 64 ký tự liền nhau, ví dụ `ZYXWVUTSRQPO...`. Khi có bảng custom, việc giải chỉ là ánh xạ ngược về bảng chuẩn rồi decode bình thường:
+The key is to find the 64-character alphabet table in the binary. It usually sits in `.rdata` as a string of 64 consecutive characters, for example `ZYXWVUTSRQPO...`. Once you have the custom table, decoding is just mapping back to the standard table and then decoding normally:
 
 ```python
 trans = bytes.maketrans(CUSTOM_ALPHABET, STANDARD_ALPHABET)
 plaintext = base64.b64decode(ciphertext.translate(trans))
 ```
 
-Dấu hiệu nhận Base64 custom: chuỗi output chỉ gồm 64 ký tự khác nhau, độ dài bội số 4 (có padding `=`), và khi bạn thử base64 chuẩn thì ra rác nhưng độ dài khớp. Lúc đó đi tìm bảng alphabet.
+You can suspect custom Base64 when the output string only has 64 distinct characters, the length is a multiple of 4 (with `=` padding), and standard base64 gives garbage but the length fits. At that point go hunting for the alphabet table.
 
-## Nguyên tắc chung: chép thuật toán, đừng chạy lại binary
+## General rule: copy the algorithm, don't rerun the binary
 
-Với cả ba thứ trên, cách làm nhanh nhất không phải debug từng byte trong binary mà là **đọc đủ để hiểu thuật toán rồi viết lại bằng Python**. Python có sẵn `base64`, số nguyên to tuỳ ý, và cú pháp bitwise gọn. Một routine mã hoá mất cả buổi để trace trong debugger thường chỉ là mười dòng Python khi bạn đã hiểu nó.
+For all three of the above, the fastest approach isn't to debug byte by byte in the binary but to read enough to understand the algorithm and then rewrite it in Python. Python has `base64` built in, arbitrary-size integers, and compact bitwise syntax. An encryption routine that takes a whole session to trace in a debugger is usually just ten lines of Python once you understand it.
 
-## Lab tự làm
+## Lab
 
-Trong `labs/16.2/` có `src/make_data.py` sinh ba chuỗi bị mã hoá (XOR multi-byte, RC4, Base64 custom) và `src/solve.py` giải cả ba. Nhiệm vụ: nhìn ba ciphertext, nhận ra từng loại, rồi tự viết Python decode trước khi mở lời giải. Tất cả đã chạy thật bằng Python 3.11, kết quả nằm trong [solution](https://github.com/Haind03/Technique-Reverse/blob/main/labs/16.2/solution.md).
+In `labs/16.2/` there's `src/make_data.py`, which generates three encrypted strings (multi-byte XOR, RC4, custom Base64), and `src/solve.py`, which solves all three. Task: look at the three ciphertexts, recognize each type, then write the Python decoder yourself before opening the solution. Everything was actually run with Python 3.11, and the results are in the [solution](https://github.com/Haind03/Technique-Reverse/blob/main/labs/16.2/solution.md).
 
-## Checklist ghi nhớ
-- Vòng lặp XOR một buffer với hằng số hoặc mảng key = routine mã hoá chuỗi. Dùng known-plaintext để lấy key.
-- RC4 không có magic constant: nhận qua mảng 256 khởi tạo 0..255 rồi hoán vị hai vòng với mod 256. Tìm key là giải được (đối xứng).
-- Base64 custom: tìm bảng alphabet 64 ký tự trong binary, ánh xạ về bảng chuẩn rồi decode.
-- Cách nhanh nhất: hiểu thuật toán rồi viết lại bằng Python, đừng trace từng byte.
+## Key takeaways
+A loop that XORs a buffer with a constant or key array is a string encryption routine, and known-plaintext gets you the key. RC4 has no magic constant: you recognize it by the 256 array initialized 0..255 and then the two permutation loops with mod 256, and finding the key is enough to decrypt because it's symmetric.
+
+For custom Base64, find the 64-character alphabet table in the binary, map it back to the standard table, then decode. The fastest way overall is to understand the algorithm and rewrite it in Python rather than trace byte by byte.

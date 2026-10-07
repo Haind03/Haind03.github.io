@@ -1,17 +1,17 @@
 ---
-title: "Bài 7.2: pycdc và pycdas, hai con dao mổ file .pyc"
+title: "Lesson 7.2: pycdc and pycdas, two scalpels for .pyc files"
 date: 2026-10-06 08:54:00 +0700
-categories: ["Technique Reverse", "Phần 7 · Python (pycdc)"]
+categories: ["Technique Reverse", "Part 07 · Python"]
 tags: [reverse-engineering, python]
 render_with_liquid: false
 ---
-Bài trước bạn đã biết một file `.pyc` là gì và cách đọc magic number của nó. Giờ tới lúc mở nó ra. Bộ công cụ chủ lực là Decompyle++ (tên repo là `pycdc`), gồm hai chương trình: `pycdc` cố dựng lại source Python, và `pycdas` xả ra bytecode dạng người đọc được. Cả hai đã nằm sẵn trong repo này tại `pycdc-master/pycdc-master`, kèm vài file `.pyc` mẫu để nghịch.
+In the last lesson you learned what a `.pyc` file is and how to read its magic number. Now it's time to open it up. The main toolset is Decompyle++ (the repo is called `pycdc`), made of two programs: `pycdc` tries to rebuild the Python source, and `pycdas` dumps the bytecode in a human-readable form. Both are already in this repo at `pycdc-master/pycdc-master`, along with a few sample `.pyc` files to play with.
 
-Điểm khiến bộ này đáng giá: nó viết bằng C++, **không phụ thuộc runtime Python**. Các decompiler khác như uncompyle6 chạy bằng chính Python và thường chỉ decompile được `.pyc` cùng dòng phiên bản với interpreter đang chạy. pycdc thì đọc trực tiếp cấu trúc file, nên trên máy chỉ có Python 3.11 bạn vẫn thử được `.pyc` của 2.7 hay 3.6. Đổi lại, nó phải tự cài hiểu biết cho từng phiên bản bytecode, nên các phiên bản mới nhất (3.12, 3.13) hỗ trợ chưa đầy đủ. Phần dưới sẽ thấy rõ cả mặt mạnh lẫn mặt yếu đó, bằng kết quả chạy thật.
+What makes this set worth it: it's written in C++ and **doesn't depend on a Python runtime**. Other decompilers like uncompyle6 run on Python itself and can usually only decompile a `.pyc` from the same version line as the interpreter running them. pycdc reads the file structure directly, so on a machine with only Python 3.11 you can still try a `.pyc` from 2.7 or 3.6. In return, it has to implement its own knowledge of each bytecode version, so the newest versions (3.12, 3.13) aren't fully supported. Below you'll see both the strength and the weakness clearly, with real run results.
 
-## Build trong năm phút
+## Build in five minutes
 
-pycdc dùng CMake. Trên Linux/WSL:
+pycdc uses CMake. On Linux/WSL:
 
 ```sh
 cd pycdc-master/pycdc-master
@@ -19,17 +19,17 @@ cmake . -DCMAKE_BUILD_TYPE=Release
 make -j4
 ```
 
-Xong bạn có hai file thực thi `pycdc` và `pycdas` ngay trong thư mục. Repo này có kèm bản build sẵn, nhưng nếu nó báo lỗi thiếu `GLIBC`/`GLIBCXX` (bản build trên máy khác, glibc cũ hơn), cứ build lại như trên là hết. Trên Windows dùng Visual Studio hoặc MinGW, quy trình CMake tương tự.
+When done you have two executables, `pycdc` and `pycdas`, right in the folder. This repo includes a prebuilt version, but if it complains about a missing `GLIBC`/`GLIBCXX` (built on another machine with an older glibc), just rebuild as above and that goes away. On Windows use Visual Studio or MinGW, with a similar CMake process.
 
-## pycdc: cố dựng lại source
+## pycdc: try to rebuild the source
 
-Cú pháp đơn giản nhất:
+The simplest syntax:
 
 ```sh
-./pycdc duong_dan_file.pyc
+./pycdc path_to_file.pyc
 ```
 
-Nó in thẳng source dựng lại ra stdout. Với một file bytecode 3.8 sạch sẽ trong bộ test của repo, kết quả gần như hoàn hảo:
+It prints the rebuilt source straight to stdout. With a clean 3.8 bytecode file from the repo's test suite, the result is nearly perfect:
 
 ```
 $ ./pycdc tests/compiled/test_calls.3.8.pyc
@@ -45,11 +45,11 @@ print(eval('4 * 13'))
 print()
 ```
 
-Đọc như source gốc. Đây là trường hợp lý tưởng: phiên bản được hỗ trợ tốt, code không obfuscate.
+It reads like the original source. This is the ideal case: a well-supported version and code that isn't obfuscated.
 
-## Khi pycdc bó tay: mặt yếu với Python mới
+## When pycdc gives up: the weakness with new Python
 
-Repo kèm file `out_sequencer.pyc`. Chạy pycdc:
+The repo comes with a file `out_sequencer.pyc`. Run pycdc:
 
 ```
 $ ./pycdc out_sequencer.pyc
@@ -62,11 +62,11 @@ if not None + None:
 # WARNING: Decompyle incomplete
 ```
 
-Đây là bài học thực tế quan trọng nhất của cả bài. File này là Python 3.13 (magic `f3 0d 0d 0a`), và pycdc gặp opcode `LOAD_FROM_DICT_OR_GLOBALS` mà nó chưa hiểu, nên đầu hàng và in ra thứ vô nghĩa (`if not None + None`). Đừng tin output kiểu này. Khi thấy dòng `Unsupported opcode` hoặc `WARNING: Decompyle incomplete`, nghĩa là bạn không thể dựa vào source nó in ra. Lúc đó chuyển sang `pycdas` đọc bytecode thô.
+This is the most important practical lesson of the whole post. This file is Python 3.13 (magic `f3 0d 0d 0a`), and pycdc hit the opcode `LOAD_FROM_DICT_OR_GLOBALS` which it doesn't understand yet, so it surrendered and printed nonsense (`if not None + None`). Don't trust output like this. When you see the line `Unsupported opcode` or `WARNING: Decompyle incomplete`, it means you can't rely on the source it printed. At that point switch to `pycdas` to read the raw bytecode.
 
-## pycdas: xả bytecode khi decompile thất bại
+## pycdas: dump the bytecode when decompiling fails
 
-`pycdas` không cố dựng source, nó chỉ liệt kê mọi thứ trong file: tên biến, hằng số, chuỗi, và bytecode. Khi pycdc thất bại, đây là phao cứu sinh vì nó hầu như luôn đọc được phần metadata.
+`pycdas` doesn't try to rebuild source, it just lists everything in the file: variable names, constants, strings, and bytecode. When pycdc fails, this is a lifeline because it almost always can read the metadata part.
 
 ```
 $ ./pycdas out_sequencer.pyc
@@ -90,15 +90,15 @@ out_sequencer.pyc (Python 3.13)
         'FunctionType'
 ```
 
-Nhìn danh sách `[Names]` là đoán ra ngay kịch bản, dù chưa đọc một dòng logic nào: file này `b85decode` một chuỗi, `zlib.decompress`, rồi `marshal.loads` để dựng lại một code object và biến nó thành hàm bằng `types.FunctionType`. Đây là mẫu loader tự giải mã kinh điển: lớp ngoài chỉ là vỏ, code thật bị nén và marshal giấu trong một blob base85 (bạn cũng thấy blob đó nằm trong phần `[Constants]` của pycdas). Muốn đi tiếp, bạn trích blob ra, tự `b85decode` + `zlib.decompress` + `marshal.loads` trong một phiên Python để lấy code object bên trong, rồi lại mang vào pycdc. Kỹ thuật bóc lớp này gặp lại ở bài về unpack ([7.4](/posts/tr-7-4-unpack-pyinstaller-py2exe/)).
+Looking at the `[Names]` list you can guess the whole scenario right away, even without reading a line of logic: this file does `b85decode` on a string, `zlib.decompress`, then `marshal.loads` to rebuild a code object and turn it into a function with `types.FunctionType`. This is the classic self-decoding loader pattern: the outer layer is just a shell, and the real code is compressed and marshaled, hidden in a base85 blob (you also see that blob in the `[Constants]` section of pycdas). To go further, you extract the blob and do `b85decode` + `zlib.decompress` + `marshal.loads` yourself in a Python session to get the code object inside, then bring that back into pycdc. This layer-peeling technique comes up again in the post on unpacking ([7.4](/posts/tr-7-4-unpack-pyinstaller-py2exe/)).
 
-Lưu ý: với file 3.13 này, ngay cả phần `[Disassembly]` của pycdas cũng hiện opcode sai lệch (nó gán nhầm tên opcode vì chưa map đúng bảng 3.13). Nhưng phần `[Names]` và `[Constants]` vẫn đủ để hiểu ý đồ. Bài học: tool có thể sai ở tầng này mà đúng ở tầng kia, đừng vứt bỏ toàn bộ output chỉ vì một phần hỏng.
+Note: with this 3.13 file, even the `[Disassembly]` section of pycdas shows skewed opcodes (it assigns wrong opcode names because it hasn't mapped the 3.13 table correctly). But the `[Names]` and `[Constants]` sections are still enough to understand the intent. The lesson: a tool can be wrong at one level and right at another, so don't throw away the whole output just because one part is broken.
 
-## Hai cái bẫy về header, qua file mẫu thật
+## Two header traps, through real sample files
 
-Repo còn hai file minh hoạ hai lỗi hay gặp:
+The repo has two more files illustrating two common errors:
 
-`ok.pyc` nặng 0 byte. Chạy gì cũng ra:
+`ok.pyc` is 0 bytes. Whatever you run gives:
 
 ```
 $ ./pycdc ok.pyc
@@ -106,32 +106,32 @@ Bad MAGIC!
 Could not load file ok.pyc
 ```
 
-File rỗng hoặc cụt thì không có magic để đọc. Trước khi đổ lỗi cho tool, kiểm tra kích thước file.
+An empty or truncated file has no magic to read. Before blaming the tool, check the file size.
 
-`apple_collector_game.pyc` thì thú vị hơn, cũng báo `Bad MAGIC!` nhưng file không hề rỗng (gần 12 KB). Xem bốn byte đầu:
+`apple_collector_game.pyc` is more interesting. It also reports `Bad MAGIC!` but the file isn't empty at all (nearly 12 KB). Look at the first four bytes:
 
 ```
 $ xxd -l 4 apple_collector_game.pyc
 00000000: e300 0000
 ```
 
-Một `.pyc` hợp lệ phải mở đầu bằng magic number (ví dụ `f3 0d 0d 0a` cho 3.13). Byte `e3` ở đây chính là opcode marshal cho một code object. Nói cách khác, file này không phải `.pyc` đầy đủ mà là một **code object đã marshal thô**, bị tước mất phần header 16 byte. pycdc cần header để biết phiên bản nên nó từ chối. Cách xử lý: tự đắp lại header (ghép magic number đúng phiên bản + phần đệm vào trước), hoặc đọc thẳng bằng module `marshal` của Python. Đây là thủ thuật giấu đơn giản mà hiệu quả, và giờ bạn nhận ra nó chỉ qua bốn byte đầu.
+A valid `.pyc` must start with a magic number (for example `f3 0d 0d 0a` for 3.13). The byte `e3` here is the marshal opcode for a code object. In other words, this file isn't a complete `.pyc` but a **raw marshaled code object**, with the 16-byte header stripped off. pycdc needs the header to know the version, so it refuses. How to handle it: patch the header back on yourself (prepend the correct magic number for the version plus padding), or read it directly with Python's `marshal` module. This is a simple but effective hiding trick, and now you can recognize it from just the first four bytes.
 
-## Nhịp làm việc gợi ý
+## A suggested working rhythm
 
-1. `pycdas file.pyc` trước để biết phiên bản và nhìn tổng thể Names/Constants, kể cả khi định dùng pycdc.
-2. `pycdc file.pyc` để lấy source. Nếu sạch, xong.
-3. Thấy `Unsupported opcode` hoặc `WARNING: Decompyle incomplete`: quay lại đọc bytecode bằng pycdas, hoặc thử một decompiler khác ([7.3](/posts/tr-7-3-decompiler-python-khac/)).
-4. Thấy `Bad MAGIC!`: kiểm tra file rỗng, hay là marshal thô mất header, hay đã bị mã hoá.
+1. `pycdas file.pyc` first to learn the version and look at Names/Constants overall, even when you plan to use pycdc.
+2. `pycdc file.pyc` to get the source. If it's clean, done.
+3. If you see `Unsupported opcode` or `WARNING: Decompyle incomplete`: go back to reading bytecode with pycdas, or try another decompiler ([7.3](/posts/tr-7-3-decompiler-python-khac/)).
+4. If you see `Bad MAGIC!`: check for an empty file, or raw marshal with the header missing, or whether it's been encrypted.
 
-## Lab tự làm
+## Lab
 
-Thư mục [labs/7.2/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/7.2) có hướng dẫn build pycdc và chạy trên đúng các file mẫu trong repo (`ok.pyc`, `out_sequencer.pyc`, `apple_collector_game.pyc`) để bạn tự tay thấy cả ba kết cục: decompile sạch, decompile thất bại vì phiên bản mới, và lỗi header. `solution.md` kèm output thật.
+The folder [labs/7.2/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/7.2) has instructions to build pycdc and run it on exactly the sample files in the repo (`ok.pyc`, `out_sequencer.pyc`, `apple_collector_game.pyc`) so you can see all three outcomes yourself: a clean decompile, a failed decompile because of a new version, and a header error. `solution.md` comes with the real output.
 
-## Checklist ghi nhớ
-- pycdc dựng source, pycdas xả bytecode. Cả hai không cần runtime Python đúng phiên bản.
-- Build bằng cmake + make trong vài phút nếu bản dựng sẵn lỗi thư viện.
-- `Unsupported opcode` hoặc `WARNING: Decompyle incomplete` nghĩa là đừng tin source pycdc in ra, chuyển sang pycdas.
-- pycdc yếu với Python 3.12/3.13, đây là hạn chế thật, không phải bạn làm sai.
-- `Bad MAGIC!` có ba nguyên nhân hay gặp: file rỗng/cụt, marshal thô mất header, hoặc file đã mã hoá.
-- Luôn đọc `[Names]` và `[Constants]` của pycdas: nhiều khi chúng tiết lộ cả kịch bản (loader base64/zlib/marshal) trước khi bạn đọc logic.
+## Key takeaways
+- pycdc rebuilds source, pycdas dumps bytecode. Neither needs a Python runtime of the exact version.
+- Build with cmake + make in a few minutes if the prebuilt version has library errors.
+- `Unsupported opcode` or `WARNING: Decompyle incomplete` means don't trust the source pycdc printed, switch to pycdas.
+- pycdc is weak with Python 3.12/3.13, this is a real limitation, you didn't do anything wrong.
+- `Bad MAGIC!` has three common causes: an empty/truncated file, raw marshal with the header missing, or an encrypted file.
+- Always read the `[Names]` and `[Constants]` of pycdas: often they reveal the whole scenario (a base64/zlib/marshal loader) before you read the logic.

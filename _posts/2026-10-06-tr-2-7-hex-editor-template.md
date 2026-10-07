@@ -1,58 +1,58 @@
 ---
-title: "Bài 2.7: Hex editor và template, khi bạn cần nhìn tận byte"
+title: "Lesson 2.7: Hex editors and templates, when you need to see every byte"
 date: 2026-10-06 08:23:00 +0700
-categories: ["Technique Reverse", "Phần 2 · Làm quen bộ công cụ"]
+categories: ["Technique Reverse", "Part 02 · The Toolkit"]
 tags: [reverse-engineering, tools]
 render_with_liquid: false
 ---
-Disassembler cho bạn cái nhìn ở mức lệnh, debugger cho bạn cái nhìn lúc chạy. Nhưng có những lúc bạn chỉ muốn mở toạc file ra và nhìn thẳng từng byte một: sửa một magic number bị hỏng, vá một byte để qua check, hay đọc một định dạng file lạ hoắc chẳng ai viết parser. Đó là lúc hex editor lên tiếng. Nó là con dao mổ thô nhất nhưng cũng trung thực nhất trong bộ đồ nghề.
+A disassembler gives you a view at the instruction level, a debugger gives you a view at runtime. But sometimes you just want to crack a file open and look straight at every byte: fix a broken magic number, patch one byte to get past a check, or read some weird file format nobody wrote a parser for. That's when a hex editor speaks up. It's the crudest scalpel in the toolkit but also the most honest one.
 
-Bài này không dạy bạn thuộc từng nút của ba phần mềm. Nó chỉ cho bạn biết khi nào cần hex editor, chọn cái nào, và quan trọng nhất là khái niệm template/pattern biến một đống byte thành cấu trúc đọc được.
+This lesson won't teach you every button of the three programs. It only tells you when you need a hex editor, which one to pick, and most importantly the template/pattern concept that turns a pile of bytes into a readable structure.
 
-## Khi nào thật sự cần hex editor
+## When you really need a hex editor
 
-Phần lớn thời gian bạn không mở hex editor, vì IDA và x64dbg đã có cửa sổ hex riêng. Nhưng có vài tình huống mà một hex editor độc lập nhanh và gọn hơn hẳn:
+Most of the time you won't open a hex editor, because IDA and x64dbg already have their own hex windows. But there are a few situations where a standalone hex editor is much faster and tidier:
 
-- **Patch byte trực tiếp trên file.** Bạn đã tìm ra trong debugger rằng cần đổi một `jne` (opcode `75`) thành `je` (opcode `74`), giờ muốn sửa thẳng vào file trên đĩa để bản vá tồn tại vĩnh viễn. Mở hex editor, nhảy tới offset, gõ đè, lưu. Xong. Chi tiết patch ở [Bài 17.1](https://github.com/Haind03/Technique-Reverse/tree/main/phan-17-patch-hook-frida).
-- **Sửa magic number hoặc header.** Một file bị hỏng vài byte đầu, hoặc ai đó cố tình đổi magic để giấu loại file. Bạn khôi phục bằng tay.
-- **Đọc định dạng file không ai biết.** Một file cấu hình nhị phân, một save game, một container tự chế. Không có parser, bạn tự lần cấu trúc qua hex.
-- **Kiểm tra nhanh một file.** Bốn byte đầu là gì? `4D 5A` là PE, `7F 45 4C 46` là ELF, `50 4B` là ZIP. Nhiều khi chỉ cần liếc đầu file là biết.
+- **Patching bytes directly in a file.** You found in the debugger that a `jne` (opcode `75`) needs to become `je` (opcode `74`), and now you want to edit the file on disk directly so the patch lasts. Open the hex editor, jump to the offset, type over it, save. Done. Patch details are in [Lesson 17.1](https://github.com/Haind03/Technique-Reverse/tree/main/phan-17-patch-hook-frida).
+- **Fixing a magic number or header.** A file has a few corrupted bytes at the start, or someone deliberately changed the magic to hide the file type. You restore it by hand.
+- **Reading a file format nobody knows.** A binary config file, a save game, a homemade container. With no parser, you work out the structure yourself through hex.
+- **Quickly checking a file.** What are the first four bytes? `4D 5A` is PE, `7F 45 4C 46` is ELF, `50 4B` is ZIP. Often a glance at the start of the file is all you need.
 
-## Ba lựa chọn, chọn theo nhu cầu
+## Three options, pick by need
 
-### HxD, nhẹ và đủ xài
+### HxD, light and good enough
 
-HxD là hex editor Windows miễn phí, nhẹ, mở nhanh. Nó làm tốt những việc cơ bản: xem, sửa byte, tìm kiếm chuỗi hex hoặc text, so sánh hai file, mở cả ổ đĩa và bộ nhớ tiến trình. Nếu bạn chỉ cần vá vài byte hay soi nhanh một file, HxD là đủ và không có gì phải nghĩ thêm. Điểm yếu: nó không hiểu cấu trúc, với nó mọi thứ chỉ là byte.
+HxD is a free Windows hex editor, light and quick to open. It does the basics well: view, edit bytes, search for hex or text strings, compare two files, and open disks and process memory too. If you only need to patch a few bytes or quickly look at a file, HxD is enough and there's nothing more to think about. Weakness: it doesn't understand structure, to it everything is just bytes.
 
-### 010 Editor, vua của Binary Template
+### 010 Editor, the king of Binary Templates
 
-010 Editor là phần mềm thương mại (có bản dùng thử), và thứ làm nó đáng tiền là **Binary Template**. Đây là tính năng để đời. Thay vì nhìn byte trần, bạn chạy một template (một script mô tả cấu trúc file) và 010 sẽ phân rã file thành các trường có tên, có kiểu, có màu. File PE trở thành một cây gồm DOS header, NT headers, section table, mỗi trường ghi rõ giá trị. Cộng đồng đã viết template cho hàng trăm định dạng (PE, ELF, ZIP, PNG, PCAP...), tải về chạy là xong.
+010 Editor is commercial software (with a trial version), and what makes it worth the money is **Binary Template**. This is a standout feature. Instead of looking at bare bytes, you run a template (a script describing the file's structure) and 010 breaks the file into fields with names, types, and colors. A PE file becomes a tree of the DOS header, NT headers, section table, with each field's value clearly shown. The community has written templates for hundreds of formats (PE, ELF, ZIP, PNG, PCAP...), so you download one and run it.
 
-Nếu công việc của bạn hay phải đọc cấu trúc file, 010 tiết kiệm hàng giờ dò byte thủ công.
+If your work often involves reading file structures, 010 saves hours of manual byte hunting.
 
-### ImHex, dành riêng cho reverser và miễn phí
+### ImHex, built for reversers and free
 
-ImHex là hex editor mã nguồn mở, sinh ra cho dân RE. Nó có gần hết thứ hay của 010 mà không tốn tiền:
+ImHex is an open source hex editor, born for RE people. It has nearly all the nice things of 010 without the cost:
 
-- **Pattern language** tương đương Binary Template, mô tả cấu trúc file bằng cú pháp giống C.
-- **Data inspector**: đặt con trỏ tại một byte, nó hiện ngay giá trị nếu diễn giải thành u8/u16/u32, float, thời gian, ở cả little và big endian. Cực tiện để đoán kiểu dữ liệu.
-- **Disassembler tích hợp**, biểu đồ entropy, xem nhiều kiểu encoding.
-- Giao diện node để xử lý dữ liệu, và kho pattern có sẵn tải trong app.
+- **Pattern language** equivalent to Binary Template, describing file structure with C-like syntax.
+- **Data inspector**: put the cursor on a byte and it immediately shows the value if interpreted as u8/u16/u32, float, time, in both little and big endian. Extremely handy for guessing data types.
+- **A built-in disassembler**, an entropy graph, and views in many encodings.
+- A node interface for processing data, and a store of ready-made patterns you can download in the app.
 
-Với người mới không muốn chi tiền, ImHex là lựa chọn mặc định tốt nhất. Phần còn lại của bài dùng ImHex làm ví dụ.
+For beginners who don't want to spend money, ImHex is the best default choice. The rest of this lesson uses ImHex as the example.
 
-## Template/pattern: biến byte thành cấu trúc
+## Template/pattern: turning bytes into structure
 
-Đây là ý tưởng quan trọng nhất của bài. Một file nhị phân thực ra là các trường có kiểu xếp liền nhau: một số 4 byte ở đây, một chuỗi ở kia, một mảng struct phía sau. Mắt thường nhìn hex khó mà tách ra. Template là cách bạn nói cho công cụ biết bố cục đó, rồi nó tô màu và gắn nhãn giúp.
+This is the most important idea in the lesson. A binary file is really typed fields laid out one after another: a 4-byte number here, a string there, an array of structs behind it. The naked eye looking at hex has a hard time separating them. A template is how you tell the tool about that layout, and then it colors and labels things for you.
 
-Lấy phần đầu một file PE làm ví dụ. Chuẩn PE bắt đầu bằng DOS header, trong đó hai trường quan trọng là magic `MZ` ở offset 0 và `e_lfanew` ở offset 0x3C (trỏ tới NT headers). Bằng pattern language của ImHex, bạn mô tả như sau:
+Take the start of a PE file as an example. The PE standard begins with a DOS header, in which two important fields are the magic `MZ` at offset 0 and `e_lfanew` at offset 0x3C (pointing to the NT headers). With ImHex's pattern language, you describe it like this:
 
 ```c
-// Pattern ImHex rút gọn cho phần đầu PE
+// Trimmed-down ImHex pattern for the start of a PE
 struct DosHeader {
-    char     magic[2];   // phải là "MZ"
-    u8       rest[58];    // bỏ qua phần giữa
-    u32      e_lfanew;    // offset tới NT headers
+    char     magic[2];   // must be "MZ"
+    u8       rest[58];    // skip the middle part
+    u32      e_lfanew;    // offset to the NT headers
 };
 
 struct NtHeaders {
@@ -61,34 +61,34 @@ struct NtHeaders {
     u16      numberOfSections;
 };
 
-DosHeader dos @ 0x00;              // đặt DosHeader tại offset 0
-NtHeaders nt  @ dos.e_lfanew;      // đặt NtHeaders tại offset mà e_lfanew chỉ ra
+DosHeader dos @ 0x00;              // place DosHeader at offset 0
+NtHeaders nt  @ dos.e_lfanew;      // place NtHeaders at the offset that e_lfanew points to
 ```
 
-Chạy pattern này trên một file `.exe`, ImHex sẽ hiện `dos.magic = "MZ"`, `dos.e_lfanew = 0x100` (chẳng hạn), rồi nhảy tới đó đọc `nt.signature = "PE"`, `nt.machine = 0x8664`. Bạn vừa đọc được loại kiến trúc và số section mà không phải đếm byte bằng tay. Cú pháp `@ địa_chỉ` là nét duyên của pattern language: bạn đặt một struct tại đúng offset, kể cả offset lấy từ một trường khác.
+Run this pattern on an `.exe` file and ImHex shows `dos.magic = "MZ"`, `dos.e_lfanew = 0x100` (say), then jumps there and reads `nt.signature = "PE"`, `nt.machine = 0x8664`. You just read the architecture and the number of sections without counting bytes by hand. The `@ address` syntax is the charm of the pattern language: you place a struct at an exact offset, even an offset taken from another field.
 
-Hiểu được ý này rồi, bạn áp cho mọi định dạng: tự viết pattern cho một save game, một file config nhị phân, và công cụ sẽ phân rã giúp. Đây chính là bước đầu của reverse định dạng file, chủ đề [Bài 18.7](https://github.com/Haind03/Technique-Reverse/tree/main/phan-18-nang-cao).
+Once you get this idea, you apply it to every format: write a pattern yourself for a save game, a binary config file, and the tool takes it apart for you. This is exactly the first step of reversing file formats, the topic of [Lesson 18.7](https://github.com/Haind03/Technique-Reverse/tree/main/phan-18-nang-cao).
 
-## So sánh nhanh ba tool
+## Quick comparison of the three tools
 
 | | HxD | 010 Editor | ImHex |
 |---|---|---|---|
-| Giá | free | thương mại | free, mã nguồn mở |
-| Nền tảng | Windows | đa nền | đa nền |
-| Template/pattern | không | Binary Template (mạnh, nhiều sẵn) | Pattern language (mạnh, miễn phí) |
-| Data inspector | cơ bản | có | rất tốt |
-| Disasm/entropy | không | một phần | có |
-| Hợp với | vá byte nhanh | đọc cấu trúc chuyên nghiệp | reverser nói chung, người mới |
+| Price | free | commercial | free, open source |
+| Platform | Windows | cross-platform | cross-platform |
+| Template/pattern | none | Binary Template (strong, lots ready-made) | Pattern language (strong, free) |
+| Data inspector | basic | yes | very good |
+| Disasm/entropy | none | partial | yes |
+| Good for | quick byte patching | professional structure reading | reversers in general, beginners |
 
-Lời khuyên gọn: cài HxD để vá nhanh, cài ImHex làm chủ lực. 010 chỉ cần khi bạn làm nhiều với định dạng file và muốn kho template khổng lồ của nó.
+Short advice: install HxD for quick patches, install ImHex as your main tool. You only need 010 when you work a lot with file formats and want its huge library of templates.
 
-## Lab tự làm
+## Lab
 
-Bài tập và writeup ở [labs/2.7/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/2.7). Bạn sẽ dùng ImHex (hoặc 010) parse header một file PE bằng pattern, vá một byte trong file nhỏ rồi quan sát thay đổi, và tự viết pattern cho một định dạng file đơn giản.
+The exercises and writeup are at [labs/2.7/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/2.7). You'll use ImHex (or 010) to parse a PE file header with a pattern, patch a byte in a small file and observe the change, and write a pattern yourself for a simple file format.
 
-## Checklist ghi nhớ
-- Hex editor dùng khi cần nhìn và sửa tận byte: vá byte, sửa magic/header, đọc định dạng lạ.
-- Nhận diện nhanh đầu file: `4D 5A` = PE, `7F 45 4C 46` = ELF, `50 4B` = ZIP.
-- HxD nhẹ cho việc vá nhanh, ImHex miễn phí và mạnh cho reverser, 010 Editor mạnh nhất về template nhưng trả phí.
-- Template/pattern biến byte trần thành trường có tên và kiểu, đây là chìa khoá đọc cấu trúc file.
-- Cú pháp `@ offset` của ImHex cho bạn đặt struct tại đúng vị trí, kể cả vị trí lấy từ trường khác.
+## Key takeaways
+- A hex editor is for when you need to see and edit down to the byte: patching bytes, fixing magic/headers, reading unfamiliar formats.
+- Quickly recognizing the start of a file: `4D 5A` = PE, `7F 45 4C 46` = ELF, `50 4B` = ZIP.
+- HxD is light for quick patching, ImHex is free and strong for reversers, 010 Editor is strongest for templates but paid.
+- Templates/patterns turn bare bytes into named, typed fields, and this is the key to reading file structure.
+- ImHex's `@ offset` syntax lets you place a struct at an exact position, even one taken from another field.

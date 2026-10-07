@@ -1,85 +1,85 @@
 ---
-title: "Bài 18.3: Symbolic execution, bắt máy tính tự giải crackme cho bạn"
+title: "Lesson 18.3: Symbolic execution, making the computer solve the crackme for you"
 date: 2026-10-06 09:49:00 +0700
-categories: ["Technique Reverse", "Phần 18 · Nâng cao"]
+categories: ["Technique Reverse", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
 render_with_liquid: false
 ---
-Ở [bài 16.4](/posts/tr-16-4-viet-lai-python-z3/) bạn viết constraint bằng tay rồi thả cho Z3 giải. Nhưng viết constraint tay nghĩa là phải đọc hiểu từng phép so sánh trong binary, chép lại không sai một dấu. Với một hàm check dài vài chục nhánh, việc đó mệt và dễ lỗi. Symbolic execution làm hộ bạn khâu chép đó: nó tự chạy binary với input là biến ký hiệu, tự thu thập constraint dọc đường, rồi gọi solver. Bạn chỉ cần nói "tìm đường tới chỗ in Correct".
+In [lesson 16.4](/posts/tr-16-4-viet-lai-python-z3/) you wrote constraints by hand and let Z3 solve them. But writing constraints by hand means reading and understanding every comparison in the binary and copying it down without a single wrong sign. With a check function that has a few dozen branches, that's tiring and error-prone. Symbolic execution does the copying for you: it runs the binary with the input as symbolic variables, collects constraints along the way, then calls a solver. You only need to say "find the path to the spot that prints Correct".
 
-## Ý tưởng cốt lõi
+## The core idea
 
-Chạy bình thường thì input là giá trị cụ thể, ví dụ `s[0] = 0x41`. Symbolic execution thay nó bằng một biến ký hiệu (symbol), gọi là `c0`. Khi gặp lệnh `s[0] ^ 0x41`, máy không tính ra số mà ghi lại biểu thức `c0 ^ 0x41`. Khi gặp nhánh `if (... == 0)`, nó tách làm hai đường: một đường thêm constraint `c0 ^ 0x41 == 0`, đường kia thêm `c0 ^ 0x41 != 0`, rồi đi tiếp cả hai.
+In a normal run, the input is a concrete value, for example `s[0] = 0x41`. Symbolic execution replaces it with a symbolic variable (a symbol), call it `c0`. When it meets the instruction `s[0] ^ 0x41`, the machine doesn't compute a number but records the expression `c0 ^ 0x41`. When it meets a branch `if (... == 0)`, it splits into two paths: one path adds the constraint `c0 ^ 0x41 == 0`, the other adds `c0 ^ 0x41 != 0`, and it continues down both.
 
-Cứ thế, mỗi đường thực thi tích luỹ một tập constraint. Tới đích (chỗ in "Correct"), ta có đủ ràng buộc mô tả "input nào dẫn tới đây", đưa cho SMT solver là ra input cụ thể. Bạn không đọc logic, không chép constraint, chỉ chỉ đích và chỉ chỗ cần tránh.
+Like this, each execution path accumulates a set of constraints. When it reaches the goal (the spot that prints "Correct"), we have enough constraints describing "which input leads here", and handing that to an SMT solver gives a concrete input. You don't read the logic, you don't copy constraints, you only point at the goal and at the spots to avoid.
 
-Thuật ngữ:
-- **Symbolic execution**: chạy với biến ký hiệu, khám phá đường bằng cách tách nhánh.
-- **Concolic** (concrete + symbolic): vừa chạy với giá trị thật vừa theo dõi ký hiệu, cân bằng giữa chính xác và tốc độ. Triton theo hướng này.
-- **Path explosion**: số đường tăng theo cấp số mũ với số nhánh, đây là tử huyệt của phương pháp.
+Terms:
+- **Symbolic execution**: run with symbolic variables, explore paths by splitting branches.
+- **Concolic** (concrete + symbolic): runs with real values while tracking symbols, balancing accuracy and speed. Triton goes this way.
+- **Path explosion**: the number of paths grows exponentially with the number of branches, this is the method's weak spot.
 
-## angr, con dao chủ lực
+## angr, the main knife
 
-**angr** là framework Python mở, phổ biến nhất cho symbolic execution trên binary. Khung làm việc luôn gồm bốn thứ:
+**angr** is an open Python framework, the most popular for symbolic execution on binaries. The workflow always involves four things:
 
-1. **Project**: nạp binary.
-2. **State**: trạng thái ban đầu (register, memory, input ký hiệu).
-3. **Simulation manager** (`simgr`): bộ máy đẩy các state đi tới, phân loại found/active/deadended.
-4. **explore(find=..., avoid=...)**: nói đích cần tới và chỗ cần tránh.
+1. **Project**: load the binary.
+2. **State**: the initial state (registers, memory, symbolic input).
+3. **Simulation manager** (`simgr`): the machinery that pushes states forward, sorting them into found/active/deadended.
+4. **explore(find=..., avoid=...)**: say the goal to reach and the spots to avoid.
 
-Ví dụ giải một crackme nhận serial qua `argv[1]`:
+An example solving a crackme that takes a serial through `argv[1]`:
 
 ```python
 import angr, claripy
 
 proj = angr.Project("./crackme", auto_load_libs=False)
 
-# 8 byte serial, mỗi byte một BitVec 8-bit
+# 8-byte serial, each byte an 8-bit BitVec
 chars  = [claripy.BVS(f"c{i}", 8) for i in range(8)]
 serial = claripy.Concat(*chars)
 
 state = proj.factory.full_init_state(args=["./crackme", serial])
-for c in chars:                       # ép ký tự in được cho gọn
+for c in chars:                       # force printable characters to keep it tidy
     state.solver.add(c >= 0x20, c <= 0x7e)
 
 simgr = proj.factory.simulation_manager(state)
 simgr.explore(
-    find =lambda s: b"Correct" in s.posix.dumps(1),   # tới chỗ in Correct
-    avoid=lambda s: b"Nope"    in s.posix.dumps(1),    # tránh chỗ in Nope
+    find =lambda s: b"Correct" in s.posix.dumps(1),   # reach the spot that prints Correct
+    avoid=lambda s: b"Nope"    in s.posix.dumps(1),    # avoid the spot that prints Nope
 )
 
 found = simgr.found[0]
 print(found.solver.eval(serial, cast_to=bytes))
 ```
 
-`find` và `avoid` nhận stdout của tiến trình mô phỏng (`posix.dumps(1)` là file descriptor 1). Thay vì chỉ địa chỉ tay, ta để angr tự chạy tới khi stdout chứa "Correct". Chạy xong, `found.solver.eval` hỏi solver "serial nào thoả mọi constraint trên đường này" và trả về bytes.
+`find` and `avoid` take the stdout of the simulated process (`posix.dumps(1)` is file descriptor 1). Instead of just hand-picked addresses, we let angr run until stdout contains "Correct". When it finishes, `found.solver.eval` asks the solver "which serial satisfies every constraint on this path" and returns bytes.
 
-Chạy trên crackme của lab này, angr in ra đúng serial trong vài giây mà ta không hề đọc hàm `check`.
+Run on this lab's crackme, angr prints the exact serial in a few seconds without us ever reading the `check` function.
 
-## Triton và các lựa chọn khác
+## Triton and other options
 
-- **Triton** (Quarkslab): thiên về concolic và tích hợp DBI (nối [bài 17.7](/posts/tr-17-7-dbi-pin-dynamorio-tinyinst/)). Mạnh khi bạn muốn trace một đường thực thi thật rồi suy ký hiệu dọc theo nó, tránh path explosion.
-- **Miasm**, **maat**, **manticore**: các framework khác, mỗi cái một thế mạnh.
-- Dưới đáy tất cả vẫn là một SMT solver (thường là Z3).
+- **Triton** (Quarkslab): leans toward concolic and integrates DBI (tying to [lesson 17.7](/posts/tr-17-7-dbi-pin-dynamorio-tinyinst/)). Strong when you want to trace one real execution path and then derive symbols along it, avoiding path explosion.
+- **Miasm**, **maat**, **manticore**: other frameworks, each with its own strength.
+- At the bottom of all of them is still an SMT solver (usually Z3).
 
-## Khi nào dùng angr, khi nào quay về Z3 tay
+## When to use angr, when to go back to hand-written Z3
 
-angr thắng khi: logic check nhiều nhánh nhưng mỗi nhánh đơn giản, bạn lười đọc, và không gian input vừa phải. Nó tự lo khâu dịch binary sang constraint.
+angr wins when: the check logic has many branches but each branch is simple, you're too lazy to read it, and the input space is moderate. It handles the translation from binary to constraints for you.
 
-angr thua (và Z3 tay hoặc cách khác thắng) khi:
-- **Path explosion**: vòng lặp lớn, nhiều nhánh lồng nhau làm số đường bùng nổ. Lúc này giới hạn vùng khám phá, hoặc chỉ symbolic hoá đúng hàm check (dùng `call_state` gọi thẳng hàm thay vì chạy từ main).
-- **Crypto nặng hoặc hash một chiều**: băm MD5/SHA, AES nhiều vòng tạo constraint khổng lồ mà solver không kham. Với hash một chiều thì về lý thuyết không giải được bằng solver, phải brute hoặc tìm hướng khác (nối [bài 16.4](/posts/tr-16-4-viet-lai-python-z3/)).
-- **Syscall/môi trường phức tạp**: angr phải mô phỏng được những gì chương trình gọi; thiếu hook thì lạc.
+angr loses (and hand-written Z3 or another approach wins) when:
+- **Path explosion**: big loops and many nested branches blow up the number of paths. Then limit the exploration area, or symbolize only the check function (use `call_state` to call the function directly instead of running from main).
+- **Heavy crypto or one-way hashes**: hashing MD5/SHA, multi-round AES produce huge constraints the solver can't handle. A one-way hash can't in theory be solved by a solver, you have to brute force or find another route (tying back to [lesson 16.4](/posts/tr-16-4-viet-lai-python-z3/)).
+- **Syscalls/complex environment**: angr has to be able to simulate whatever the program calls; without hooks it gets lost.
 
-Quy tắc thực dụng: thử angr trước vì rẻ công, nếu nó treo hoặc bùng nổ thì thu hẹp phạm vi, không được nữa thì đọc tay và viết Z3.
+Pragmatic rule: try angr first because it's cheap, if it hangs or explodes narrow the scope, if that doesn't work read by hand and write Z3.
 
-## Lab tự làm
+## Lab
 
-Thư mục [labs/18.3/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/18.3). `src/crackme.c` kiểm serial 8 ký tự qua một chuỗi ràng buộc trên các byte. Nhiệm vụ: build, rồi để `solve_angr.py` tự tìm serial, không đọc hàm `check`. So kết quả với cách đọc tay. Lời giải và serial đúng ở `solution.md` (serial này đã được angr thật tìm ra, xem writeup).
+The folder [labs/18.3/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/18.3). `src/crackme.c` checks an 8-character serial through a chain of constraints on the bytes. The task: build it, then let `solve_angr.py` find the serial by itself, without reading the `check` function. Compare the result with the hand-read approach. The solution and the correct serial are in `solution.md` (this serial was actually found by angr, see the writeup).
 
-## Checklist ghi nhớ
-- Symbolic execution thay input bằng biến ký hiệu, tách nhánh để khám phá, rồi dùng SMT solver tìm input tới đích.
-- angr: Project, State (input ký hiệu bằng `claripy.BVS`), simulation manager, `explore(find=, avoid=)`.
-- `find`/`avoid` có thể bắt theo stdout, không cần địa chỉ tay.
-- Tử huyệt là path explosion và crypto/hash nặng; khi đó thu hẹp phạm vi hoặc quay về Z3 tay.
-- Thử angr trước vì rẻ công, không được thì đọc tay.
+## Key takeaways
+- Symbolic execution replaces the input with symbolic variables, splits branches to explore, then uses an SMT solver to find the input that reaches the goal.
+- angr: Project, State (symbolic input via `claripy.BVS`), simulation manager, `explore(find=, avoid=)`.
+- `find`/`avoid` can match on stdout, no hand-picked addresses needed.
+- The weak spots are path explosion and heavy crypto/hashes; then narrow the scope or go back to hand-written Z3.
+- Try angr first because it's cheap, if it fails read by hand.

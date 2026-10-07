@@ -1,79 +1,55 @@
 ---
-title: "Bài 15.7: Anti-attach, anti-dump, anti-hook, ba lớp chống công cụ của bạn"
+title: "Lesson 15.7: Anti-attach, anti-dump, anti-hook, three layers against your tools"
 date: 2026-10-06 09:32:00 +0700
-categories: ["Technique Reverse", "Phần 15 · Anti-Reverse chuyên sâu và cách vượt qua"]
+categories: ["Technique Reverse", "Part 15 · Anti-Reversing and Bypasses"]
 tags: [reverse-engineering, anti-debug]
 render_with_liquid: false
 ---
-Ba bài trước nói về anti-debug: làm sao chương trình biết nó đang bị debug. Bài này đi một bước xa hơn, về những thủ thuật nhắm thẳng vào ba thao tác cụ thể bạn hay làm: attach debugger vào một tiến trình đang chạy, dump bộ nhớ ra file, và hook API. Mỗi thứ chặn một công cụ khác nhau, nên hiểu riêng từng cái mới gỡ đúng.
+The previous three lessons covered anti-debug: how a program knows it's being debugged. This lesson goes one step further, to tricks aimed straight at three specific things you often do: attach a debugger to a running process, dump memory to a file, and hook APIs. Each one blocks a different tool, so you have to understand each separately to undo it properly.
 
-Như mọi bài trong phần này, góc nhìn ở đây là của người phân tích: hiểu cơ chế để nhận ra và vượt qua khi gặp trong mẫu của mình, chứ không phải để đi gài vào phần mềm người khác.
+Like every lesson in this part, the point of view here is the analyst's: understand the mechanism so you can recognize and get past it when you meet it in your own samples, not to plant it in other people's software.
 
-## Anti-attach: khóa cửa sau khi vào nhà
+## Anti-attach: locking the back door after you're in the house
 
-Bình thường bạn có hai cách đưa debugger vào một chương trình: chạy nó từ debugger ngay từ đầu (spawn), hoặc để nó chạy rồi mới attach vào sau. Anti-attach nhắm vào cách thứ hai.
+Normally there are two ways to get a debugger into a program: run it from the debugger from the start (spawn), or let it run and attach later. Anti-attach targets the second way.
 
-Mẹo kinh điển nhất dựa trên một giới hạn của Windows: **một tiến trình chỉ có đúng một debugger tại một thời điểm.** Nếu chương trình tự debug chính nó (hoặc đẻ ra một tiến trình con rồi để con debug lại cha), thì cái slot debugger đã bị chiếm. Debugger thật của bạn attach vào sẽ bị từ chối với lỗi kiểu "a debugger is already attached". Kỹ thuật self-debugging này đã nói ở [Bài 15.4](/posts/tr-15-4-anti-debug-selfdebug-tls/), ở đây nó phục vụ mục đích anti-attach.
+The most classic trick relies on a Windows limitation: a process can have only one debugger at a time. If the program debugs itself (or spawns a child process and lets the child debug the parent), the debugger slot is already taken. Your real debugger attaching will be refused with an error like "a debugger is already attached". The self-debugging technique was covered in [Lesson 15.4](/posts/tr-15-4-anti-debug-selfdebug-tls/), here it serves the anti-attach purpose.
 
-Cách thứ hai tinh hơn: khi Windows attach một debugger, nó gọi `DbgUiRemoteBreakin` trong `ntdll` để tạo thread breakin trong tiến trình đích. Chương trình chỉ cần vá hàm này (ghi đè đầu hàm bằng một lời gọi `ExitProcess` hoặc một `ret` làm hỏng logic) là mỗi lần có ai cố attach, tiến trình tự thoát thay vì dừng lại cho bạn. Tương tự với `DbgBreakPoint`.
+The second way is subtler: when Windows attaches a debugger, it calls `DbgUiRemoteBreakin` in `ntdll` to create a breakin thread in the target process. The program just needs to patch this function (overwrite the start of the function with a call to `ExitProcess` or a `ret` that breaks the logic) and every time someone tries to attach, the process exits instead of stopping for you. Same with `DbgBreakPoint`.
 
-Cách thứ ba đơn giản mà phiền: **kiểm tra định kỳ.** Một thread chạy nền cứ vài giây lại chạy lại toàn bộ các check anti-debug ở ba bài trước (BeingDebugged, NtQueryInformationProcess...). Bạn attach sạch sẽ xong, vài giây sau nó phát hiện và thoát.
+The third way is simple but annoying: periodic checks. A background thread re-runs all the anti-debug checks from the previous three lessons (BeingDebugged, NtQueryInformationProcess...) every few seconds. You attach cleanly, and a few seconds later it detects you and exits.
 
-Cách vượt chung cho anti-attach:
-- **Attach sớm, hoặc đừng attach.** Nếu có thể, chạy chương trình thẳng từ debugger ngay từ đầu (spawn) thay vì attach sau. Lúc đó slot debugger là của bạn trước khi code anti-attach kịp chạy.
-- **Vô hiệu hóa vòng kiểm tra định kỳ.** Tìm thread làm việc đó, patch hàm check trả về "không có debugger", hoặc dùng ScyllaHide/TitanHide che luôn (xem [Bài 15.9](https://github.com/Haind03/Technique-Reverse/blob/main/phan-15-anti-reverse/15.9-vuot-qua-scyllahide-titanhide.md)).
-- **Khôi phục `DbgUiRemoteBreakin`** về nguyên bản trong bộ nhớ trước khi attach, nếu nó bị vá.
+The general ways around anti-attach start with attaching early, or not attaching at all. If you can, run the program straight from the debugger from the start (spawn) instead of attaching later, and then the debugger slot is yours before the anti-attach code gets to run. To disable the periodic check loop, find the thread doing it and patch the check function to return "no debugger", or use ScyllaHide/TitanHide to hide it entirely (see [Lesson 15.9](https://github.com/Haind03/Technique-Reverse/blob/main/phan-15-anti-reverse/15.9-vuot-qua-scyllahide-titanhide.md)). If `DbgUiRemoteBreakin` was patched, restore it to its original in memory before attaching.
 
-## Anti-dump: làm cho bản dump thành rác
+## Anti-dump: turning your dump into garbage
 
-Khi bạn unpack một mẫu bằng cách chạy tới OEP rồi dump bộ nhớ (quy trình ở [Bài 14.3](/posts/tr-14-3-dump-rebuild-iat-scylla/)), tool dump như Scylla đọc PE header trong bộ nhớ để biết section nằm đâu, kích thước bao nhiêu, dựng lại file. Anti-dump phá chính cái header đó.
+When you unpack a sample by running to the OEP and dumping memory (the workflow in [Lesson 14.3](/posts/tr-14-3-dump-rebuild-iat-scylla/)), a dump tool like Scylla reads the PE header in memory to know where the sections are and how big they are, and rebuilds the file. Anti-dump breaks exactly that header.
 
-Những chiêu hay gặp:
-- **Xóa chữ ký MZ và PE.** Sau khi loader đã nạp xong và không cần header nữa, chương trình ghi đè hai byte `4D 5A` ("MZ") ở đầu và chữ ký `50 45` ("PE") bằng số 0 hoặc rác. Tool dump quét bộ nhớ không còn thấy một PE hợp lệ để bám vào.
-- **Làm sai SizeOfImage.** Sửa trường `SizeOfImage` trong Optional Header thành một giá trị khổng lồ hoặc quá nhỏ. Tool dump tin theo rồi dump thiếu hoặc dump tràn sang vùng rác.
-- **Bôi bẩn section table.** Sửa số section, địa chỉ ảo, kích thước thô của các section để việc dựng lại file sai bố cục.
-- **Giữ code quan trọng ở vùng cấp phát động** (VirtualAlloc) không thuộc image chính, để một bản dump image thường bỏ sót.
+You see a few tricks often. After the loader has finished loading and no longer needs the header, the program can wipe the MZ and PE signatures by overwriting the two bytes `4D 5A` ("MZ") at the start and the `50 45` ("PE") signature with zeros or junk, and a dump tool scanning memory no longer sees a valid PE to anchor on. It can also falsify SizeOfImage by changing that field in the Optional Header to a huge or too-small value, so the dump tool trusts it and dumps too little, or overflows into junk regions. Modifying the section count, virtual addresses, and raw sizes smears the section table so rebuilding the file gets the layout wrong. Finally, the important code can be kept in dynamically allocated regions (VirtualAlloc) that don't belong to the main image, so a normal image dump misses it.
 
-Nhận ra anti-dump không khó: bạn dump ra một file, mở bằng PE-bear hay CFF Explorer thì nó báo header hỏng, hoặc file dump không chạy dù bạn chắc chắn đã tới đúng OEP.
+Recognizing anti-dump isn't hard: you dump a file, open it in PE-bear or CFF Explorer and it reports a broken header, or the dumped file doesn't run even though you're sure you reached the right OEP.
 
-Cách vượt:
-- **Dựng lại header bằng tay.** Bạn biết ImageBase (từ Memory Map trong debugger) và biết PE header gốc trông thế nào. Chép lại hai byte MZ, chữ ký PE, và sửa SizeOfImage về giá trị đúng. Scylla có tùy chọn rebuild giúp phần này.
-- **Dump sớm hơn.** Nếu code xóa header chạy sau OEP, đặt breakpoint ngay tại OEP và dump trước khi nó kịp phá.
-- **Lấy header từ một nguồn sạch.** Với một số packer, header gốc còn nằm đâu đó trong bộ nhớ trước khi bị ghi đè, hoặc bạn có thể vá nhánh thực hiện việc xóa (NOP nó đi) rồi mới để chạy tiếp.
-- **PE-sieve** thường tự xử lý được nhiều trường hợp header hỏng khi dump module bị unpack.
+To get around it, you can rebuild the header by hand. You know the ImageBase (from the Memory Map in the debugger) and you know what the original PE header looks like, so copy back the two MZ bytes and the PE signature, and fix SizeOfImage to the correct value. Scylla has a rebuild option that helps with this part. You can also dump earlier: if the header-wiping code runs after the OEP, put a breakpoint right at the OEP and dump before it gets a chance to break things. With some packers the original header is still somewhere in memory before being overwritten, or you can patch the branch that does the wiping (NOP it out) and only then let it continue. PE-sieve also often handles many broken-header cases on its own when dumping an unpacked module.
 
-## Anti-hook: soi gương xem có bị sờ vào không
+## Anti-hook: checking the mirror to see if someone touched it
 
-Khi bạn hook một API bằng inline hook (Detours, MinHook) hay khi Frida/một EDR gắn vào, cách phổ biến nhất là ghi đè vài byte đầu của hàm (prologue) bằng một lệnh `jmp` nhảy sang code của bạn. Anti-hook lợi dụng chính điều đó: nó tự kiểm tra xem đầu các hàm quan trọng có còn nguyên vẹn không.
+When you hook an API with an inline hook (Detours, MinHook), or when Frida/an EDR attaches, the most common way is to overwrite the first few bytes of the function (the prologue) with a `jmp` instruction that jumps to your code. Anti-hook exploits exactly that: it checks whether the starts of important functions are still intact.
 
-Cơ chế:
-- **So prologue với giá trị mong đợi.** Chương trình biết `NtProtectVirtualMemory` hay `VirtualProtect` bình thường bắt đầu bằng những byte nào. Nó đọc mấy byte đầu hàm lúc chạy, nếu thấy một `jmp` (`E9 ...`) hay `push/ret` lạ thì biết đang bị hook.
-- **So với bản sạch trên đĩa.** Tinh hơn: nó tự đọc file `ntdll.dll` từ đĩa, map lại một bản sạch, rồi so từng byte prologue giữa bản trong bộ nhớ (có thể đã bị hook) với bản sạch trên đĩa. Khác là có hook.
-- **Đếm tầng.** Một số mẫu còn so cả `kernel32` gọi xuống `ntdll` để phát hiện hook nằm ở tầng nào.
+The simplest mechanism is comparing the prologue to the expected value. The program knows which bytes `NtProtectVirtualMemory` or `VirtualProtect` normally start with, reads the first few bytes of the function at runtime, and if it sees a strange `jmp` (`E9 ...`) or `push/ret` it knows it's hooked. A subtler way is comparing to a clean copy on disk: it reads the `ntdll.dll` file from disk itself, maps a clean copy, and compares the prologue bytes one by one between the in-memory copy (possibly hooked) and the clean copy. A difference means a hook. Some samples also compare `kernel32` calling down into `ntdll` to detect which layer the hook sits at.
 
-Đây chính là cách nhiều malware phát hiện EDR, và cũng là cách một chương trình phát hiện Frida đang gắn vào.
+This is exactly how a lot of malware detects EDR, and also how a program detects Frida attached.
 
-Cách vượt:
-- **Hook ẩn hơn.** Thay vì inline hook ghi đè prologue, dùng **hardware breakpoint** (thanh ghi DR0 tới DR3) để bắt lời gọi mà không sửa một byte nào của code. Không có gì để so sánh nên anti-hook kiểu prologue-check mù.
-- **Hook sâu hơn tầng bị kiểm.** Nếu nó chỉ check prologue `kernel32`, hook ở tầng `ntdll` hoặc ngược lại.
-- **Vô hiệu hóa chính hàm check.** Tìm hàm so sánh prologue, patch nó luôn báo "sạch".
-- **Khôi phục prologue trước khi check, hook lại sau.** Phức tạp hơn, ít dùng.
+To get around it, hook more quietly. Instead of an inline hook overwriting the prologue, use a hardware breakpoint (registers DR0 to DR3) to catch the call without modifying a single byte of code. There's nothing to compare, so prologue-check anti-hook is blind. You can also hook deeper than the checked layer: if it only checks the `kernel32` prologue, hook at the `ntdll` layer, or vice versa. Another option is to find the function that compares prologues and patch it to always report "clean". Restoring the prologue before the check and hooking again after is more complicated and rarely used.
 
-Để ý mối liên hệ: anti-hook kiểm tra prologue chính là lý do dân RE thích hardware breakpoint. Nó mạnh vì không để lại dấu vết trong code.
+Note the connection: anti-hook checking the prologue is exactly why RE people like hardware breakpoints. They're powerful because they leave no trace in the code.
 
-## Ba thứ này hay đi cùng nhau
+## These three often come together
 
-Trong một protector nghiêm túc (Themida, VMProtect với full option), bạn sẽ gặp cả ba lớp cùng lúc, chồng lên anti-debug ở các bài trước. Thứ tự xử lý hợp lý:
-1. Vượt anti-debug cơ bản trước để chạy được dưới debugger (ScyllaHide).
-2. Spawn thay vì attach để né anti-attach.
-3. Hook bằng hardware breakpoint để né anti-hook.
-4. Tới OEP thì dump sớm và dựng lại header để né anti-dump.
+In a serious protector (Themida, VMProtect with full options) you'll meet all three layers at once, stacked on top of the anti-debug from the earlier lessons. A reasonable order of handling is to get past the basic anti-debug first so it can run under the debugger (ScyllaHide), then spawn instead of attach to dodge anti-attach, then hook with hardware breakpoints to dodge anti-hook, and finally, at the OEP, dump early and rebuild the header to dodge anti-dump.
 
-Chiến lược tổng khi gặp nhiều lớp sẽ nói kỹ ở [Bài 15.10](/posts/tr-15-10-chien-luoc-nhieu-lop-anti/).
+The overall strategy for multiple layers is covered in [Lesson 15.10](/posts/tr-15-10-chien-luoc-nhieu-lop-anti/).
 
-## Checklist ghi nhớ
-- Anti-attach chặn việc attach sau khi chạy: tự chiếm debug slot, vá `DbgUiRemoteBreakin`, hoặc check định kỳ. Vượt bằng spawn thay vì attach.
-- Anti-dump phá PE header trong bộ nhớ (xóa MZ/PE, sai SizeOfImage) để bản dump thành rác. Vượt bằng dump sớm và dựng lại header (Scylla/PE-sieve).
-- Anti-hook so prologue API với bản sạch trên đĩa để phát hiện inline hook/EDR/Frida. Vượt bằng hardware breakpoint (không sửa byte nào).
-- Hardware breakpoint là bạn thân khi gặp anti-hook, vì nó không để lại dấu trong code.
-- Protector mạnh gộp cả ba lớp, xử lý theo thứ tự anti-debug, anti-attach, anti-hook, anti-dump.
+## Key takeaways
+Anti-attach blocks attaching after the program runs, by occupying the debug slot itself, patching `DbgUiRemoteBreakin`, or checking periodically, and you get around it by spawning instead of attaching. Anti-dump breaks the PE header in memory (wiping MZ/PE, wrong SizeOfImage) so the dump becomes garbage, and you get around it by dumping early and rebuilding the header (Scylla/PE-sieve).
+
+Anti-hook compares API prologues against the clean copy on disk to detect inline hooks, EDR, or Frida. Hardware breakpoints are your best friend here, since they modify no bytes and leave no trace in the code. Strong protectors combine all three layers, so handle them in the order anti-debug, anti-attach, anti-hook, anti-dump.

@@ -1,130 +1,130 @@
 ---
-title: "Bài 19.3: Phân tích maldoc và loader, nơi cuộc tấn công bắt đầu"
+title: "Lesson 19.3: Analyzing maldocs and loaders, where the attack begins"
 date: 2026-10-06 09:57:00 +0700
-categories: ["Technique Reverse", "Phần 19 · Phân tích mã độc cơ bản (phòng thủ)"]
+categories: ["Technique Reverse", "Part 19 · Malware Analysis Basics"]
 tags: [reverse-engineering, malware]
 render_with_liquid: false
 ---
-Phần lớn các vụ nhiễm không mở màn bằng một file `.exe` đập thẳng vào mặt nạn nhân. Nó mở màn bằng một thứ trông vô hại: một file Word đính kèm email, một PDF hoá đơn, một shortcut `.lnk` giả làm thư mục. Những thứ này không phải malware thật sự, chúng là loader, nhiệm vụ duy nhất là kéo payload tầng sau về và chạy. Reverse được khâu này là bạn chặn được cuộc tấn công từ gốc, nên đây là kỹ năng blue team dùng hằng ngày.
+Most infections don't start with an `.exe` slapped in the victim's face. They start with something that looks harmless: a Word file attached to an email, a PDF invoice, a `.lnk` shortcut pretending to be a folder. These aren't the real malware, they're loaders, and their only job is to pull down the next-stage payload and run it. If you can reverse this step you stop the attack at the root, so this is a skill the blue team uses every day.
 
-Cả bài này đứng ở góc phòng thủ: ta phân tích để hiểu và phát hiện, mọi ví dụ đều lành tính và chạy trong lab cô lập (xem [Bài 0.3](/posts/tr-0-3-dung-lab-an-toan/)).
+This whole lesson is from the defensive angle: we analyze to understand and detect, every example is benign and runs in an isolated lab (see [Lesson 0.3](/posts/tr-0-3-dung-lab-an-toan/)).
 
-## Bốn loại loader hay gặp
+## Four common types of loader
 
-Trước khi mổ, biết mình cầm cái gì. Dùng `file`, đọc magic, nhìn phần mở rộng thật:
+Before taking it apart, know what you're holding. Use `file`, read the magic, look at the real extension:
 
-- **Office macro** trong `.doc/.docm/.xls/.xlsm`: VBA nhúng, tự chạy khi mở.
-- **PDF độc**: JavaScript nhúng hoặc launch action gọi lệnh ngoài.
-- **LNK độc**: shortcut giấu một dòng lệnh dài trong trường arguments.
-- **Script loader**: PowerShell, JS, HTA, VBS, thường obfuscate nhiều tầng.
+- **Office macro** in `.doc/.docm/.xls/.xlsm`: embedded VBA, runs automatically on open.
+- **Malicious PDF**: embedded JavaScript or a launch action calling an external command.
+- **Malicious LNK**: a shortcut hiding a long command line in the arguments field.
+- **Script loader**: PowerShell, JS, HTA, VBS, usually obfuscated in many layers.
 
-Cả bốn có chung một khuôn: một mồi (file người dùng mở) kéo theo một chuỗi lệnh bị che, chuỗi đó tải payload thật về. Việc của bạn là lột từng lớp cho tới khi thấy URL hoặc payload tầng sau.
+All four share one mold: a lure (the file the user opens) that pulls in a chain of hidden commands, and that chain downloads the real payload. Your job is to peel layer by layer until you see the URL or the next-stage payload.
 
-## Office macro, kẻ kinh điển
+## Office macro, the classic
 
-File Office hiện đại (`.docx`) là ZIP chứa XML. Nhưng bản có macro (`.docm`, hoặc `.doc` cũ dạng OLE) nhúng VBA. Bộ công cụ số một là **oletools** (Python):
-
-```
-olevba mau.doc        # trích toàn bộ macro VBA ra text
-oleid mau.doc         # tóm tắt dấu hiệu khả nghi
-mraptor mau.doc       # chấm điểm khả năng độc (auto-exec + ghi + chạy)
-```
-
-Khi đọc macro, tìm ba thứ:
-
-1. **Auto-exec trigger**: `AutoOpen`, `Document_Open`, `Workbook_Open`, `AutoClose`. Đây là hàm chạy ngay khi mở file mà không cần người dùng bấm gì. olevba đánh dấu sẵn các hàm này.
-2. **Chuỗi bị obfuscate**: tác giả hay nối chuỗi (`"po" & "wer" & "shell"`), `Chr()` từng ký tự, hoặc base64. olevba có cờ trích các chuỗi này ra.
-3. **Lệnh chạy ngoài**: `Shell`, `CreateObject("WScript.Shell").Run`, `WMI`, thường kết thúc bằng một lời gọi `powershell` tải payload.
-
-Mẹo: olevba còn có tính năng giải mã một số encode phổ biến ngay trong output. Nhưng obfuscation tuỳ biến thì bạn phải tự gỡ, chép đoạn VBA ra, thay `Shell`/`Run` bằng một lệnh in ra (hoặc dịch sang Python) để lấy chuỗi cuối mà không thực thi.
-
-## PDF độc
-
-PDF là một chuỗi object đánh số, nối bằng cross-reference table. Phần nguy hiểm nằm ở:
-
-- **JavaScript nhúng** (`/JS`, `/JavaScript`): chạy khi mở, thường khai thác lỗ hổng reader hoặc decode một payload.
-- **Launch action** (`/Launch`, `/OpenAction`, `/AA`): gọi một chương trình ngoài.
-- **Embedded file** (`/EmbeddedFile`): giấu payload ngay trong PDF.
-
-Công cụ: **pdf-parser** (liệt kê object, lọc theo từ khoá) và **peepdf**:
+A modern Office file (`.docx`) is a ZIP containing XML. But the macro-enabled version (`.docm`, or the old OLE-style `.doc`) embeds VBA. The number one toolset is **oletools** (Python):
 
 ```
-pdf-parser.py --stats mau.pdf          # thống kê loại object
-pdf-parser.py --search JavaScript mau.pdf
-pdf-parser.py --object 12 --filter mau.pdf   # giải stream của object 12
+olevba sample.doc        # extract all the VBA macros as text
+oleid sample.doc         # summary of suspicious indicators
+mraptor sample.doc       # score how likely it is malicious (auto-exec + write + execute)
 ```
 
-Quy trình: tìm `/OpenAction` trỏ tới object nào, mở object đó, giải stream (nhiều stream nén FlateDecode nên cần `--filter`), đọc JavaScript, giải tiếp nếu nó encode.
+When reading a macro, look for three things:
 
-## LNK độc
+1. **Auto-exec triggers**: `AutoOpen`, `Document_Open`, `Workbook_Open`, `AutoClose`. These are functions that run right when the file opens without the user clicking anything. olevba flags these functions for you.
+2. **Obfuscated strings**: authors often concatenate strings (`"po" & "wer" & "shell"`), use `Chr()` for each character, or base64. olevba has a flag to extract these strings.
+3. **External execution**: `Shell`, `CreateObject("WScript.Shell").Run`, `WMI`, usually ending in a `powershell` call that downloads a payload.
 
-File `.lnk` là shortcut Windows, nhưng trường target và arguments chứa được một dòng lệnh dài mà người dùng không thấy (Explorer cắt bớt phần hiển thị). Kẻ tấn công nhét cả một lệnh PowerShell vào đó, icon thì giả làm PDF hay folder.
+Tip: olevba can also decode some common encodings right in its output. But custom obfuscation you have to undo yourself: copy the VBA out, replace `Shell`/`Run` with a print command (or translate it to Python) to get the final string without executing it.
 
-Phân tích bằng **lnkparse** (Python) hoặc **LECmd** (Eric Zimmerman):
+## Malicious PDF
+
+A PDF is a series of numbered objects linked by a cross-reference table. The dangerous parts are:
+
+- **Embedded JavaScript** (`/JS`, `/JavaScript`): runs on open, usually exploiting a reader vulnerability or decoding a payload.
+- **Launch action** (`/Launch`, `/OpenAction`, `/AA`): calls an external program.
+- **Embedded file** (`/EmbeddedFile`): hides a payload right inside the PDF.
+
+Tools: **pdf-parser** (lists objects, filters by keyword) and **peepdf**:
 
 ```
-lnkparse mau.lnk      # in target, arguments, working dir, icon
+pdf-parser.py --stats sample.pdf          # stats on object types
+pdf-parser.py --search JavaScript sample.pdf
+pdf-parser.py --object 12 --filter sample.pdf   # decode the stream of object 12
 ```
 
-Nhìn vào `arguments`: nếu thấy `powershell -enc ...` hoặc `cmd /c ... & start ...` thì rõ là loader. Chuỗi trong đó lại thường base64, gỡ tiếp theo mục dưới.
+Process: find which object `/OpenAction` points to, open that object, decode the stream (many streams are FlateDecode compressed so you need `--filter`), read the JavaScript, decode further if it's encoded.
 
-## Script loader và gỡ obfuscation từng tầng
+## Malicious LNK
 
-Dù đi qua macro, PDF hay LNK, điểm cuối gần như luôn là một script bị che nhiều tầng. Pattern hay gặp nhất là PowerShell với `-EncodedCommand` (hay `-enc`): tham số đằng sau là chuỗi UTF-16LE đã base64.
+A `.lnk` file is a Windows shortcut, but its target and arguments fields can hold a long command line that the user doesn't see (Explorer truncates the displayed part). Attackers stuff an entire PowerShell command in there, with an icon pretending to be a PDF or folder.
 
-Nguyên tắc gỡ: **lột từng lớp, mỗi lớp decode rồi đọc, không bao giờ thực thi.** Các lớp hay gặp:
+Analyze with **lnkparse** (Python) or **LECmd** (Eric Zimmerman):
 
-- `base64` (PowerShell encoded command dùng UTF-16LE, khác base64 thường).
-- `gzip`/`deflate` nén bên trong base64.
-- `XOR` với một khoá nhỏ.
-- `-join`, `Reverse`, replace ký tự, format string.
+```
+lnkparse sample.lnk      # print target, arguments, working dir, icon
+```
 
-Thấy `IEX` (Invoke-Expression), `DownloadString`, `DownloadFile`, `New-Object Net.WebClient`, `Start-BitsTransfer` là bạn đang tới gần URL payload. Thay `IEX` bằng `Write-Output` (hoặc chép sang Python) để in ra tầng tiếp theo thay vì chạy nó.
+Look at `arguments`: if you see `powershell -enc ...` or `cmd /c ... & start ...` it's clearly a loader. The string inside is often base64, so continue unpacking following the next section.
 
-Ví dụ gỡ một tầng base64 UTF-16LE bằng Python (an toàn, chỉ in):
+## Script loaders and unpacking obfuscation layer by layer
+
+Whether it came through a macro, PDF or LNK, the end point is almost always a script hidden in many layers. The most common pattern is PowerShell with `-EncodedCommand` (or `-enc`): the parameter after it is a base64'd UTF-16LE string.
+
+The unpacking principle: **peel layer by layer, decode each layer and read it, never execute.** Common layers:
+
+- `base64` (PowerShell's encoded command uses UTF-16LE, different from plain base64).
+- `gzip`/`deflate` compression inside base64.
+- `XOR` with a small key.
+- `-join`, `Reverse`, character replace, format strings.
+
+Seeing `IEX` (Invoke-Expression), `DownloadString`, `DownloadFile`, `New-Object Net.WebClient`, `Start-BitsTransfer` means you're getting close to the payload URL. Replace `IEX` with `Write-Output` (or copy it to Python) to print the next layer instead of running it.
+
+Example of unpacking one layer of UTF-16LE base64 with Python (safe, only prints):
 
 ```python
 import base64
-enc = "VwByAGkAdABlAC0ASABvAHMAdAAg..."   # chuỗi sau -enc
+enc = "VwByAGkAdABlAC0ASABvAHMAdAAg..."   # the string after -enc
 print(base64.b64decode(enc).decode("utf-16-le"))
 ```
 
-Nếu tầng trong lại là base64 + gzip:
+If the inner layer is base64 + gzip:
 
 ```python
 import base64, gzip
 print(gzip.decompress(base64.b64decode(enc)).decode())
 ```
 
-Lab [19.3](https://github.com/Haind03/Technique-Reverse/tree/main/labs/19.3) có chuỗi mẫu lành tính để bạn luyện đúng hai pattern này.
+Lab [19.3](https://github.com/Haind03/Technique-Reverse/tree/main/labs/19.3) has benign sample strings for you to practice exactly these two patterns.
 
-## Quy trình gọn
+## A compact workflow
 
 ```
-1. Nhận diện loại file (file, magic, phần mở rộng thật)
-2. Trích phần thực thi:
+1. Identify the file type (file, magic, real extension)
+2. Extract the executable part:
      macro -> olevba        PDF -> pdf-parser/peepdf
-     LNK   -> lnkparse      script -> mở bằng editor
-3. Gỡ obfuscation từng tầng (decode, KHÔNG execute)
-4. Tìm IOC tầng sau: URL, IP, tên file payload, mutex
-5. Ghi IOC và viết rule phát hiện (YARA/Sigma, xem Bài 19.2)
+     LNK   -> lnkparse      script -> open in an editor
+3. Unpack obfuscation layer by layer (decode, do NOT execute)
+4. Find next-stage IOCs: URL, IP, payload file name, mutex
+5. Record the IOCs and write detection rules (YARA/Sigma, see Lesson 19.2)
 ```
 
-Thứ bạn săn ở cuối chuỗi là URL tải payload và cách nó chạy payload đó. Có hai thứ này là đủ để chặn và truy vết, chưa cần đụng tới payload tầng sau.
+What you're hunting at the end of the chain is the payload download URL and how it runs that payload. Having these two is enough to block and trace, you don't need to touch the next-stage payload yet.
 
-## Checklist ghi nhớ
-- Loader (maldoc/LNK/script) khác payload: nó chỉ kéo payload về, mổ nó là chặn từ gốc.
-- Macro: olevba trích, tìm AutoOpen/Document_Open, chuỗi obfuscate, Shell/Run.
-- PDF: pdf-parser/peepdf, soi /OpenAction, /JS, /Launch, giải stream FlateDecode.
-- LNK: lnkparse đọc arguments, lệnh thật giấu ở đó.
-- Script: gỡ từng tầng (base64 UTF-16LE, gzip, XOR), thay IEX bằng in ra, không chạy.
-- Luôn làm trong lab cô lập, mục tiêu là lấy URL/IOC tầng sau.
+## Key takeaways
+- A loader (maldoc/LNK/script) differs from a payload: it only pulls the payload down, and taking it apart stops things at the root.
+- Macro: extract with olevba, look for AutoOpen/Document_Open, obfuscated strings, Shell/Run.
+- PDF: pdf-parser/peepdf, inspect /OpenAction, /JS, /Launch, decode FlateDecode streams.
+- LNK: read the arguments with lnkparse, the real command is hidden there.
+- Script: unpack layer by layer (base64 UTF-16LE, gzip, XOR), replace IEX with a print, don't run it.
+- Always work in an isolated lab, the goal is to get the next-stage URL/IOCs.
 
-## Cạm bẫy thường gặp
-- Quên PowerShell `-enc` dùng UTF-16LE chứ không phải UTF-8, decode base64 thường ra chữ dính cách.
-- Vô tình chạy script khi "thử cho nhanh", luôn thay execute bằng print.
-- Dừng ở tầng đầu, nhiều loader lồng ba bốn tầng mới lộ URL.
+## Common pitfalls
+- Forgetting that PowerShell `-enc` uses UTF-16LE and not UTF-8, so plain base64 decoding gives letters with gaps between them.
+- Accidentally running the script when "trying it quickly", always replace execute with print.
+- Stopping at the first layer, many loaders nest three or four layers before the URL shows up.
 
-## Đọc thêm
-- Tài liệu oletools (decalage.info), didierstevens.com (pdf-parser, base64dump).
-- CyberChef để gỡ nhanh nhiều tầng encode bằng giao diện kéo thả (bài [tài nguyên công cụ](/posts/tr-tai-nguyen-cong-cu/)).
+## Further reading
+- The oletools docs (decalage.info), didierstevens.com (pdf-parser, base64dump).
+- CyberChef for quickly unpacking many encoding layers with a drag-and-drop interface (see the [tool resources](/posts/tr-tai-nguyen-cong-cu/) post).

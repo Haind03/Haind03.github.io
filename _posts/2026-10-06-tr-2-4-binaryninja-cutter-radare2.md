@@ -1,84 +1,84 @@
 ---
-title: "Bài 2.4: Binary Ninja, Cutter và radare2, khi IDA và Ghidra không phải lựa chọn duy nhất"
+title: "Lesson 2.4: Binary Ninja, Cutter and radare2, when IDA and Ghidra aren't the only options"
 date: 2026-10-06 08:20:00 +0700
-categories: ["Technique Reverse", "Phần 2 · Làm quen bộ công cụ"]
+categories: ["Technique Reverse", "Part 02 · The Toolkit"]
 tags: [reverse-engineering, tools]
 render_with_liquid: false
 ---
-Hỏi mười người làm RE dùng tool gì, chín người nhắc IDA hoặc Ghidra. Nhưng dừng ở đó là bỏ sót cả một hệ sinh thái, và đôi khi chính cái tool "không phổ biến" lại hợp việc của bạn hơn. Bài này điểm qua ba cái tên đáng có trong túi đồ nghề: Binary Ninja, Cutter, và radare2/rizin. Không phải để bạn bỏ IDA, mà để biết khi nào với sang cái khác.
+Ask ten people who do RE what tool they use and nine will say IDA or Ghidra. But stopping there misses a whole ecosystem, and sometimes the "unpopular" tool fits your job better. This lesson covers three names worth having in your toolbox: Binary Ninja, Cutter, and radare2/rizin. Not so you drop IDA, but so you know when to reach for something else.
 
-Lưu ý nhỏ trước khi vào: tôi không cố thuyết phục bạn "cái nào tốt nhất". Tool tốt nhất là cái bạn thạo và hợp bài toán. Mục tiêu ở đây là cho bạn đủ thông tin để thử và tự quyết.
+A small note before we start: I'm not trying to convince you which one is "best". The best tool is the one you're good with and that fits the problem. The goal here is to give you enough information to try them and decide yourself.
 
-## Binary Ninja, kẻ thách thức trẻ
+## Binary Ninja, the young challenger
 
-Binary Ninja (hay gọi tắt BN) là disassembler thương mại ra sau, nên nó học được bài của đàn anh và làm UI gọn gàng, mượt mà hơn hẳn. Nhưng điểm khiến dân kỹ thuật mê nó không nằm ở giao diện, mà ở **BNIL**, hệ thống trung gian nhiều tầng (intermediate language).
+Binary Ninja (BN for short) is a commercial disassembler that came out later, so it learned from its elders and built a much cleaner, smoother UI. But what makes technical people love it isn't the interface, it's **BNIL**, its multi-level intermediate language system.
 
-Ý tưởng của IL là thế này: assembly thô rất rối và khác nhau giữa các kiến trúc. BN dịch assembly lên nhiều tầng trừu tượng dần:
+The idea of an IL is this: raw assembly is messy and differs between architectures. BN lifts assembly up through progressively more abstract levels:
 
-- **LLIL** (Low Level IL): sát assembly nhưng đã chuẩn hoá, bỏ bớt rác đặc thù kiến trúc.
-- **MLIL** (Medium Level IL): có biến, tham số, bỏ chi tiết thanh ghi và stack.
-- **HLIL** (High Level IL): gần như pseudocode kiểu C, dễ đọc.
+- **LLIL** (Low Level IL): close to assembly but normalized, with architecture-specific junk removed.
+- **MLIL** (Medium Level IL): has variables and parameters, with register and stack details gone.
+- **HLIL** (High Level IL): nearly C-style pseudocode, easy to read.
 
-Bạn chuyển qua lại giữa các tầng để nhìn cùng một hàm ở độ chi tiết khác nhau. Khi cần soi từng lệnh thì xuống LLIL, khi muốn nắm logic tổng thể thì lên HLIL. Đây là thứ làm việc viết script phân tích tự động trên BN rất dễ chịu, vì API Python của nó thao tác thẳng trên các tầng IL này thay vì trên assembly thô.
+You switch back and forth between levels to look at the same function at different levels of detail. When you need to inspect every instruction, go down to LLIL; when you want the overall logic, go up to HLIL. This is what makes writing automated analysis scripts on BN so pleasant, since its Python API works directly on these IL levels instead of on raw assembly.
 
-Vài điểm thực tế về BN:
-- Có bản thương mại (trả tiền một lần, cập nhật theo năm) và một bản **cloud miễn phí** chạy trên trình duyệt, đủ để bạn thử nghiệm và học mà không tốn đồng nào. Người mới cứ vào bản cloud nghịch trước.
-- API Python được khen là sạch và dễ dùng nhất trong các disassembler, hợp nếu bạn định tự động hoá nhiều.
-- Decompiler (ra HLIL) tốt, tuy độ "chín" của việc nhận diện kiểu phức tạp vẫn sau Hex-Rays của IDA một bậc.
+A few practical points about BN:
+- There's a commercial version (a one-time payment, updates by year) and a **free cloud version** that runs in the browser, enough to experiment and learn without spending a cent. Beginners can just play with the cloud version first.
+- The Python API is praised as the cleanest and easiest to use among disassemblers, which suits you if you plan to automate a lot.
+- The decompiler (producing HLIL) is good, though its handling of complex types is still a notch behind IDA's Hex-Rays.
 
-Chọn BN khi: bạn muốn UI hiện đại, hay viết script phân tích, và thích làm việc trên IL nhiều tầng.
+Pick BN when: you want a modern UI, often write analysis scripts, and like working on a multi-level IL.
 
-## radare2 và rizin, sức mạnh của dòng lệnh
+## radare2 and rizin, the power of the command line
 
-radare2 (viết tắt r2) là bộ công cụ RE mã nguồn mở hoàn toàn, điều khiển bằng dòng lệnh. Nó nổi tiếng vừa mạnh vừa khó học, vì cú pháp lệnh ngắn tới mức khó nhớ. **rizin** là một nhánh (fork) tách ra từ r2, dọn dẹp lại cho nhất quán và dễ tiếp cận hơn, nên nếu mới bắt đầu bạn có thể cân nhắc rizin.
+radare2 (r2 for short) is a fully open source RE toolkit driven from the command line. It's famous for being both powerful and hard to learn, because its command syntax is so short it's hard to remember. **rizin** is a fork split off from r2, cleaned up to be more consistent and approachable, so if you're just starting you may want to consider rizin.
 
-Triết lý của r2 là mọi thứ là một lệnh ngắn, ghép lại thành phiên làm việc. Nghe đáng sợ nhưng bạn chỉ cần thuộc chừng năm lệnh là làm được việc cơ bản:
+The philosophy of r2 is that everything is a short command, combined into a working session. Sounds scary, but you only need to know about five commands to do the basics:
 
-| Lệnh | Tác dụng |
+| Command | What it does |
 |---|---|
-| `aaa` | Phân tích toàn bộ file (analyze all). Gần như luôn chạy đầu tiên |
-| `afl` | Liệt kê các hàm đã tìm được (analyze function list) |
-| `s <địa chỉ hoặc tên>` | Seek, nhảy con trỏ tới đó, ví dụ `s main` |
-| `pdf` | Print disassembly of function, in disassembly của hàm hiện tại |
-| `VV` | Vào chế độ graph view trực quan (nhấn `q` để thoát) |
+| `aaa` | Analyze the whole file (analyze all). Almost always run first |
+| `afl` | List the functions found (analyze function list) |
+| `s <address or name>` | Seek, move the cursor there, for example `s main` |
+| `pdf` | Print disassembly of function, prints the disassembly of the current function |
+| `VV` | Enter the visual graph view (press `q` to quit) |
 
-Cách đọc tên lệnh giúp đỡ nhớ nhiều: chữ đầu là nhóm (`a` analyze, `p` print, `s` seek, `V` visual), các chữ sau thu hẹp dần. `pdf` là print (p), disassembly (d), function (f). Hiểu quy luật này thì không phải học thuộc.
+Reading the command names helps a lot with remembering: the first letter is the group (`a` analyze, `p` print, `s` seek, `V` visual), and the later letters narrow it down. `pdf` is print (p), disassembly (d), function (f). Once you understand this pattern you don't have to memorize.
 
-Điểm mạnh của r2/rizin:
-- Hoàn toàn miễn phí và mở, chạy ở mọi nơi kể cả qua SSH trên server không có GUI.
-- Kịch bản hoá cực mạnh, ghép với shell và pipe thoải mái.
-- Có `r2pipe` để điều khiển r2 từ Python, C, nhiều ngôn ngữ.
+Strengths of r2/rizin:
+- Completely free and open, runs anywhere including over SSH on a server with no GUI.
+- Extremely strong scripting, and combines freely with the shell and pipes.
+- `r2pipe` lets you drive r2 from Python, C, and many other languages.
 
-Điểm yếu: đường học dốc, và khi phân tích file lớn bằng mắt thì dòng lệnh thuần mệt hơn GUI.
+Weaknesses: a steep learning curve, and when analyzing a big file by eye, a pure command line is more tiring than a GUI.
 
-Chọn r2/rizin khi: bạn thích dòng lệnh, cần làm trên môi trường không GUI, hoặc muốn tự động hoá bằng script nhỏ nhanh gọn.
+Pick r2/rizin when: you like the command line, need to work in an environment with no GUI, or want to automate with small quick scripts.
 
-## Cutter, bộ mặt đồ hoạ của rizin
+## Cutter, the graphical face of rizin
 
-Nếu bạn thích sức mạnh của rizin nhưng không chịu nổi dòng lệnh, Cutter là câu trả lời. Đây là GUI chính thức xây trên rizin, cho bạn cửa sổ disassembly, graph, hex, strings, imports giống IDA, nhưng engine bên dưới là rizin và hoàn toàn miễn phí.
+If you like the power of rizin but can't stand the command line, Cutter is the answer. It's the official GUI built on rizin, giving you disassembly, graph, hex, strings, imports windows like IDA, but the engine underneath is rizin and it's completely free.
 
-Điểm đáng giá nhất: Cutter tích hợp sẵn **decompiler jsdec** (và cắm được decompiler của Ghidra), nên bạn có pseudocode mà không tốn tiền. Với người mới ngại cả r2 lẫn giá IDA, Cutter là điểm vào rất hợp lý: giao diện quen thuộc, công cụ mở, lại vẫn gõ được lệnh rizin ở ô command khi cần.
+The most valuable point: Cutter has the **jsdec decompiler** built in (and can plug in Ghidra's decompiler), so you get pseudocode without paying. For beginners put off by both r2 and IDA's price, Cutter is a very reasonable entry point: a familiar interface, open tooling, and you can still type rizin commands in the command box when needed.
 
-Chọn Cutter khi: bạn muốn trải nghiệm GUI miễn phí đầy đủ, hoặc muốn dùng rizin nhưng thích chuột hơn bàn phím.
+Pick Cutter when: you want a full free GUI experience, or want to use rizin but prefer the mouse over the keyboard.
 
-## Vậy cuối cùng chọn gì
+## So what to pick in the end
 
-Không có câu trả lời đúng tuyệt đối, nhưng đây là cách tôi hay khuyên:
+There's no absolutely right answer, but here's what I usually recommend:
 
-- Người mới, ít tiền: bắt đầu bằng **Ghidra** (bài 2.3) hoặc **Cutter**, cả hai miễn phí và có decompiler.
-- Thích UI đẹp, hay viết script, có ngân sách hoặc dùng bản cloud: thử **Binary Ninja**.
-- Dân dòng lệnh, làm nhiều trên server, mê tự động hoá: **radare2/rizin**.
-- Môi trường chuyên nghiệp, cần Hex-Rays mạnh nhất: **IDA Pro** (bài 2.2).
+- Beginners on a small budget: start with **Ghidra** (lesson 2.3) or **Cutter**, both free and with a decompiler.
+- Like a nice UI, often write scripts, have a budget or use the cloud version: try **Binary Ninja**.
+- Command-line people, doing a lot on servers, in love with automation: **radare2/rizin**.
+- Professional environments needing the strongest Hex-Rays: **IDA Pro** (lesson 2.2).
 
-Điều quan trọng hơn chọn tool nào: đừng nhảy tool liên tục khi mới học. Chọn một cái, dùng cho thạo tới mức phím tắt thành bản năng, rồi mới thử cái khác. Nhảy qua nhảy lại là cách chắc chắn để không giỏi cái nào.
+More important than which tool you choose: don't keep jumping between tools while learning. Pick one, use it until the shortcuts become instinct, and only then try another. Jumping back and forth is a sure way to not get good at any of them.
 
-## Lab tự làm
+## Lab
 
-Xem [labs/2.4/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/2.4). Bạn sẽ mổ cùng một binary nhỏ bằng radare2 dòng lệnh với chuỗi lệnh `aaa`, `afl`, `pdf`, rồi mở lại trong Cutter để thấy cùng dữ liệu đó dưới dạng GUI, và nếu có điều kiện thì thử bản Binary Ninja cloud. Mục tiêu là thấy ba tool nhìn cùng một file theo ba cách khác nhau.
+See [labs/2.4/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/2.4). You'll take apart the same small binary with command-line radare2 using the command chain `aaa`, `afl`, `pdf`, then reopen it in Cutter to see the same data as a GUI, and if you can, try the Binary Ninja cloud version. The goal is to see three tools look at the same file in three different ways.
 
-## Checklist ghi nhớ
-- Binary Ninja: UI hiện đại, IL nhiều tầng (LLIL/MLIL/HLIL), API Python đẹp, có bản cloud free để thử.
-- radare2/rizin: dòng lệnh, miễn phí, mạnh về tự động hoá. Năm lệnh cốt lõi: `aaa`, `afl`, `s`, `pdf`, `VV`.
-- Tên lệnh r2 có quy luật (nhóm + thu hẹp), hiểu quy luật đỡ phải học thuộc.
-- Cutter: GUI miễn phí trên nền rizin, có decompiler jsdec, hợp người mới ngại dòng lệnh.
-- Chọn một tool và dùng cho thạo trước khi đổi, đừng nhảy liên tục.
+## Key takeaways
+- Binary Ninja: modern UI, multi-level IL (LLIL/MLIL/HLIL), a nice Python API, and a free cloud version to try.
+- radare2/rizin: command line, free, strong at automation. Five core commands: `aaa`, `afl`, `s`, `pdf`, `VV`.
+- r2 command names follow a pattern (group + narrowing), and understanding the pattern saves memorizing.
+- Cutter: a free GUI on top of rizin, with the jsdec decompiler, good for beginners who dislike the command line.
+- Pick one tool and get good with it before switching, don't keep jumping.

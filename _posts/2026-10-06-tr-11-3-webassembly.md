@@ -1,87 +1,71 @@
 ---
-title: "Bài 11.3: WebAssembly, đọc bytecode chạy trong trình duyệt"
+title: "Lesson 11.3: WebAssembly, reading bytecode that runs in the browser"
 date: 2026-10-06 09:11:00 +0700
-categories: ["Technique Reverse", "Phần 11 · JavaScript, Electron, WebAssembly"]
+categories: ["Technique Reverse", "Part 11 · JavaScript, Electron, WebAssembly"]
 tags: [reverse-engineering, javascript, wasm]
 render_with_liquid: false
 ---
-Khi một trang web làm việc nặng (game, crypto, mã hoá, xử lý ảnh) mà JavaScript thuần không kham nổi, người ta đẩy phần đó xuống WebAssembly (WASM). Với dân reverse, WASM vừa quen vừa lạ: quen vì nó là bytecode của một máy ảo stack-based, giống JVM hay CPython bạn gặp ở Phần 6 và 7, lạ vì nó không giữ tên biến và nhiều khi cố tình giấu logic quan trọng. Bài này dạy bạn mở một file `.wasm` ra đọc.
+When a web page does heavy work (games, crypto, encryption, image processing) that plain JavaScript can't handle, people push that part down to WebAssembly (WASM). For reversers, WASM is both familiar and strange: familiar because it's bytecode for a stack-based VM, like the JVM or CPython you met in Parts 6 and 7, strange because it doesn't keep variable names and often deliberately hides the important logic. This lesson teaches you to open up a `.wasm` file and read it.
 
-## WASM là gì, dưới góc nhìn reverse
+## What WASM is, from a reverse angle
 
-WASM là một định dạng bytecode nhỏ gọn, chạy trong một sandbox trên trình duyệt (hoặc runtime như wasmtime, Node). Hai điều cần nhớ ngay:
+WASM is a compact bytecode format that runs in a sandbox in the browser (or in a runtime like wasmtime or Node). Two things to remember right away. It's stack-based: instructions push and pop operands on a stack, like Python bytecode, with no registers like x86. And it comes in two forms: `.wasm` is the binary (what the browser downloads) and `.wat` is the equivalent text that humans can read. Your first job is almost always turning `.wasm` into `.wat`.
 
-- Nó là **stack-based**: lệnh đẩy và lấy toán hạng trên một stack, giống bytecode Python. Không có thanh ghi kiểu x86.
-- Nó có **hai dạng**: `.wasm` là binary (thứ trình duyệt tải về), `.wat` là text tương đương mà con người đọc được. Công việc đầu tiên của bạn gần như luôn là biến `.wasm` thành `.wat`.
+Unlike native code, WASM can't access system memory arbitrarily. It has a linear memory region (a flat byte array, growing in 64KB pages), a table (an array of function references, used for indirect calls), and it talks to JavaScript through imports/exports. The exported functions are the entry points you should start reading from.
 
-Khác với native, WASM không truy cập bộ nhớ hệ thống tuỳ tiện. Nó có một vùng **linear memory** (một mảng byte phẳng, lớn dần theo trang 64KB), một **table** (mảng tham chiếu hàm, dùng cho gọi gián tiếp), và giao tiếp với JavaScript qua **import/export**. Hàm được export ra chính là cửa vào mà bạn nên bắt đầu đọc.
+## Getting the .wasm file from the web
 
-## Lấy file .wasm từ web
+If the target is a web page, open the browser's DevTools. In the Network tab, filter by `wasm` or look for a request ending in `.wasm`, then right-click to save. In the Sources tab, Chrome lists the loaded WASM modules, and you can view and save from there. Once you've saved the `.wasm` file you can work offline, no web page needed.
 
-Nếu mục tiêu là một trang web, mở DevTools của trình duyệt:
+## The wabt toolkit, a must-have
 
-- Tab **Network**: lọc theo `wasm` hoặc tìm request có đuôi `.wasm`, bấm chuột phải để lưu.
-- Tab **Sources**: Chrome liệt kê module WASM đã nạp, có thể xem và lưu từ đây.
-
-Lưu được file `.wasm` rồi là có thể làm việc offline, không cần trang web nữa.
-
-## Bộ công cụ wabt, món phải có
-
-**wabt** (WebAssembly Binary Toolkit) là bộ dao chính. Những lệnh dùng nhiều nhất:
+wabt (WebAssembly Binary Toolkit) is the main set of knives. The most used commands:
 
 ```bash
-wasm2wat app.wasm -o app.wat      # binary sang text đọc được (bước đầu tiên)
-wasm-objdump -x app.wasm          # xem header: import, export, section, type
-wasm-decompile app.wasm -o app.dcmp  # sinh giả C, dễ đọc hơn WAT nhiều
-wasm2c app.wasm -o app.c          # sang C, để biên dịch lại hoặc phân tích sâu
+wasm2wat app.wasm -o app.wat      # binary to readable text (first step)
+wasm-objdump -x app.wasm          # view headers: import, export, section, type
+wasm-decompile app.wasm -o app.dcmp  # generate pseudo-C, much easier to read than WAT
+wasm2c app.wasm -o app.c          # to C, to recompile or analyze deeper
 ```
 
-Trong đó `wasm2wat` cho bạn sự thật từng lệnh, còn `wasm-decompile` cho bạn một bản giả C gần với logic cấp cao. Người có kinh nghiệm đọc cả hai: dùng bản decompile để nắm ý, tụt xuống WAT khi cần chính xác.
+`wasm2wat` gives you the truth of every instruction, while `wasm-decompile` gives you pseudo-C close to the high-level logic. Experienced people read both: use the decompiled version to get the idea, drop down to WAT when you need precision.
 
-Nếu muốn đồ nặng hơn, **Ghidra** có plugin WASM (nạp `.wasm` như một kiến trúc riêng, dùng decompiler quen thuộc), và có các tool như **wasmdec**. Nhưng với phần lớn bài web và CTF, wabt là đủ.
+If you want heavier tools, Ghidra has a WASM plugin (loads `.wasm` as its own architecture, using the familiar decompiler), and there are tools like wasmdec. But for most web and CTF challenges, wabt is enough.
 
-## Đọc một đoạn WAT
+## Reading a piece of WAT
 
-Giả sử một challenge web kiểm tra key bằng WASM. Sau `wasm2wat`, bạn thấy đại loại:
+Say a web challenge checks a key using WASM. After `wasm2wat`, you see something like:
 
 ```wat
 (module
-  (func $check (param $p0 i32) (result i32)   ;; nhận con trỏ tới chuỗi, trả 0/1
+  (func $check (param $p0 i32) (result i32)   ;; takes a pointer to the string, returns 0/1
     (local $i i32)
     ...
     local.get $p0
-    i32.load8_u            ;; đọc 1 byte từ linear memory tại địa chỉ $p0
+    i32.load8_u            ;; read 1 byte from linear memory at address $p0
     i32.const 42
     i32.xor                ;; byte XOR 42
     i32.const 0x5b
-    i32.eq                 ;; so với 0x5b
+    i32.eq                 ;; compare with 0x5b
     ...
   )
-  (export "check" (func $check))   ;; đây là cửa vào
+  (export "check" (func $check))   ;; this is the entry point
   (memory (export "memory") 1)
 )
 ```
 
-Cách đọc không khác gì bytecode Python hay Java bạn đã quen:
+Reading it is no different from the Python or Java bytecode you already know. `local.get $p0` pushes the parameter onto the stack. `i32.load8_u` takes the address on top of the stack, reads 1 byte from linear memory there, and pushes the value. `i32.const 42` then `i32.xor` XORs the byte just read with 42. `i32.const 0x5b` then `i32.eq` compares it with 0x5b and pushes the 0/1 result.
 
-- `local.get $p0` đẩy tham số lên stack.
-- `i32.load8_u` lấy địa chỉ trên đỉnh stack, đọc 1 byte từ linear memory tại đó, đẩy giá trị lên.
-- `i32.const 42` rồi `i32.xor`: byte vừa đọc XOR với 42.
-- `i32.const 0x5b` rồi `i32.eq`: so sánh với 0x5b, đẩy kết quả 0/1.
+Translated into meaning: for each character, `char ^ 42 == 0x5b`, so `char == 0x5b ^ 42 == 0x71 == 'q'`. Reading the WASM and deducing the right character at the same time, that's reversing. Seeing an XOR pattern in a loop is almost certainly a check or string decode routine, just like the experience from Lesson 1.1.
 
-Dịch ra ý: với mỗi ký tự, `char ^ 42 == 0x5b`, tức `char == 0x5b ^ 42 == 0x71 == 'q'`. Vừa đọc WASM vừa suy ra ký tự đúng, đó chính là reverse. Thấy pattern XOR trong một vòng lặp là gần như chắc đang gặp routine kiểm tra hoặc giải mã chuỗi, đúng như kinh nghiệm từ Bài 1.1.
+## Tip for when the logic lives in linear memory
 
-## Mẹo khi logic nằm trong linear memory
+Strings and constants are often not in the instructions but in the data section, preloaded into linear memory. `wasm-objdump -x` lists the data segments with their offsets. When the code does an `i32.load` at a fixed offset, look that offset up in the data section to see what string it's reading. This step is often missed and leaves beginners stuck.
 
-Chuỗi và hằng số thường không nằm trong lệnh mà ở **data section**, được nạp sẵn vào linear memory. `wasm-objdump -x` liệt kê các đoạn data kèm offset. Khi code làm `i32.load` tại một offset cố định, tra offset đó trong data section để biết nó đọc chuỗi gì. Đây là bước hay bị bỏ sót khiến người mới bế tắc.
+## Key takeaways
+WASM is stack-based bytecode, read much like Python/JVM bytecode. The first step is `wasm2wat` to get text, then `wasm-decompile` to get pseudo-C, and you can get the `.wasm` from the DevTools Network or Sources tab. Start from the exported functions, since that's the entry point.
 
-## Checklist ghi nhớ
-- WASM là bytecode stack-based, giống bytecode Python/JVM về cách đọc.
-- Việc đầu tiên: `wasm2wat` để có text, rồi `wasm-decompile` để có giả C.
-- Lấy `.wasm` từ DevTools tab Network hoặc Sources.
-- Bắt đầu từ hàm được **export**, đó là cửa vào.
-- Chuỗi và hằng số nằm trong data section của linear memory, tra bằng `wasm-objdump -x`.
-- Pattern XOR trong vòng lặp thường là kiểm tra hoặc giải mã chuỗi.
+Strings and constants are in the data section of linear memory, so look them up with `wasm-objdump -x`. An XOR pattern in a loop is usually a check or string decode.
 
-## Lab tự làm
-Mã và hướng dẫn: [labs/11.3/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/11.3). Tóm tắt: lấy một file `.wasm`, chạy `wasm2wat` đọc, tìm hàm export kiểm tra key, dùng `wasm-decompile` để đối chiếu, rồi suy ra key.
+## Lab
+Code and instructions: [labs/11.3/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/11.3). In short: take a `.wasm` file, run `wasm2wat` and read it, find the exported function that checks the key, use `wasm-decompile` to cross-check, then work out the key.

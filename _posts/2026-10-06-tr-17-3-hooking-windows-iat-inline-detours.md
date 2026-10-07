@@ -1,84 +1,76 @@
 ---
-title: "Bài 17.3: Hooking trên Windows, IAT hook và inline hook"
+title: "Lesson 17.3: Hooking on Windows, IAT hooks and inline hooks"
 date: 2026-10-06 09:42:00 +0700
-categories: ["Technique Reverse", "Phần 17 · Patch, Hook, Injection & Instrumentation"]
+categories: ["Technique Reverse", "Part 17 · Patching, Hooking, Injection"]
 tags: [reverse-engineering, frida, hooking]
 render_with_liquid: false
 ---
-Hook nghĩa là chen vào giữa một lời gọi hàm để lời gọi đó chạy qua code của bạn trước. Nghe giống chuyện của malware, nhưng thực ra đây là nền tảng của rất nhiều thứ hợp pháp: EDR giám sát hành vi bằng hook, Frida instrument bằng hook, tool tương thích vá API cũ bằng hook, và chính bạn khi phân tích sẽ hook để xem tham số. Hiểu cơ chế hook giúp bạn vừa dùng được nó, vừa phát hiện được khi người khác dùng nó.
+A hook means wedging yourself into a function call so the call runs through your code first. It sounds like a malware thing, but it's actually the foundation of a lot of legitimate stuff: EDRs monitor behavior with hooks, Frida instruments with hooks, compatibility tools patch old APIs with hooks, and you yourself will hook to see parameters when analyzing. Understanding how hooking works lets you both use it and spot it when someone else does.
 
-Có hai họ hook trên Windows mà bạn gặp suốt: IAT hook và inline hook. Chúng khác nhau về chỗ chen vào.
+There are two families of hooks on Windows that you'll meet all the time: IAT hooks and inline hooks. They differ in where they wedge in.
 
-## IAT hook: đổi địa chỉ trong bảng import
+## IAT hook: change the address in the import table
 
-Nhớ lại [Bài 1.7](/posts/tr-1-7-dinh-dang-pe/): khi một chương trình gọi `MessageBoxW`, nó không nhảy thẳng tới hàm trong user32.dll. Nó đọc địa chỉ từ một ô trong Import Address Table (IAT), rồi `call` qua ô đó. Loader điền sẵn địa chỉ thật vào ô này lúc nạp.
+Recall [Lesson 1.7](/posts/tr-1-7-dinh-dang-pe/): when a program calls `MessageBoxW`, it doesn't jump straight to the function in user32.dll. It reads the address from a slot in the Import Address Table (IAT), then `call`s through that slot. The loader fills in the real address when it loads the program.
 
-IAT hook lợi dụng đúng chỗ đó: tìm ô IAT của hàm muốn chặn, ghi đè địa chỉ thật bằng địa chỉ hàm của bạn. Từ đó mọi lời gọi qua IAT sẽ chạy vào hàm bạn. Hàm bạn làm việc của mình (log, sửa tham số) rồi gọi tiếp địa chỉ thật đã lưu.
-
-```
-Trước hook:   call [IAT_MessageBoxW]  ->  user32!MessageBoxW
-Sau hook:     call [IAT_MessageBoxW]  ->  my_hook  ->  (gọi tiếp) user32!MessageBoxW
-```
-
-Ưu điểm: sạch, không sửa code của hàm đích, dễ gỡ. Nhược điểm quyết định: chỉ chặn được lời gọi **đi qua IAT**. Nếu chương trình lấy địa chỉ hàm bằng `GetProcAddress` rồi gọi trực tiếp, hoặc gọi hàm nội bộ không có trong IAT, thì IAT hook không thấy gì. Vì thế IAT hook hợp cho giám sát ở mức thô, không toàn diện.
-
-## Inline hook: ghi đè đầu hàm bằng một jump
-
-Inline hook (còn gọi trampoline hook hoặc detour) chen vào tận thân hàm đích, nên bắt được mọi lời gọi dù đi đường nào.
-
-Ý tưởng: ghi đè vài byte đầu của hàm đích bằng một lệnh `jmp` nhảy tới hook của bạn. Nhưng làm vậy thì mất mấy byte gốc, không gọi lại hàm thật được nữa. Nên trước khi ghi đè, bạn chép mấy byte đầu đó ra một vùng riêng gọi là trampoline, rồi nối thêm một `jmp` quay lại phần còn lại của hàm đích. Muốn gọi hàm thật, bạn gọi trampoline.
+An IAT hook takes advantage of exactly that spot: find the IAT slot of the function you want to intercept and overwrite the real address with the address of your function. From then on every call through the IAT runs into your function. Your function does its thing (log, modify parameters) and then calls the saved real address.
 
 ```
-Hàm gốc (prologue điển hình Win64):
-    mov  [rsp+8], rcx      ; 4 byte
+Before hook:   call [IAT_MessageBoxW]  ->  user32!MessageBoxW
+After hook:    call [IAT_MessageBoxW]  ->  my_hook  ->  (calls on to) user32!MessageBoxW
+```
+
+The upside is that it's clean, doesn't modify the target function's code, and is easy to remove. The deciding downside is that it only catches calls that go through the IAT. If the program gets the function address with `GetProcAddress` and calls it directly, or calls an internal function that isn't in the IAT, the IAT hook sees nothing. That's why IAT hooks suit coarse monitoring, not full coverage.
+
+## Inline hook: overwrite the start of the function with a jump
+
+An inline hook (also called a trampoline hook or detour) wedges into the body of the target function itself, so it catches every call no matter which route it takes.
+
+The idea: overwrite the first few bytes of the target function with a `jmp` that jumps to your hook. But doing that destroys those original bytes, and you can no longer call the real function. So before overwriting, you copy those first bytes into a separate area called a trampoline, and then append a `jmp` back to the rest of the target function. To call the real function, you call the trampoline.
+
+```
+Original function (typical Win64 prologue):
+    mov  [rsp+8], rcx      ; 4 bytes
     push rdi               ; ...
 
-Sau inline hook, đầu hàm bị thay bằng:
-    jmp  my_hook           ; thường E9 + offset 32-bit, hoặc FF25 jmp [addr] 64-bit
+After the inline hook, the function start is replaced with:
+    jmp  my_hook           ; usually E9 + 32-bit offset, or FF25 jmp [addr] on 64-bit
 
-Trampoline (vùng riêng) giữ lại việc đã mất rồi quay về:
-    mov  [rsp+8], rcx      ; byte gốc đã chép ra
-    jmp  func+N            ; nhảy về hàm gốc sau phần đã ghi đè
+Trampoline (separate area) keeps the lost work and then returns:
+    mov  [rsp+8], rcx      ; the original bytes that were copied out
+    jmp  func+N            ; jump back to the original function after the overwritten part
 ```
 
-Chi tiết phiền phức: lệnh x86 dài ngắn khác nhau, nên bạn phải chép trọn các lệnh bị đè chứ không cắt giữa lệnh (cần một disassembler độ dài nhỏ, gọi là length disassembler). Nếu trong mấy byte đó có lệnh dùng địa chỉ tương đối (`rip`-relative, `call rel32`), chép thô sang chỗ khác sẽ sai, phải sửa lại offset. Mấy thư viện dưới đây lo hết việc này cho bạn.
+The annoying details: x86 instructions have varying lengths, so you have to copy whole overwritten instructions and never cut in the middle of one (you need a small length disassembler). If those bytes contain an instruction that uses a relative address (`rip`-relative, `call rel32`), copying it raw to another place will be wrong, and you have to fix the offset. The libraries below handle all of this for you.
 
-## Thư viện làm sẵn
+## Ready-made libraries
 
-Không ai tự tay vá byte trong thực tế. Ba thư viện hay gặp:
+Nobody patches bytes by hand in practice. Microsoft Detours is the classic, from Microsoft itself, with a compact API (`DetourAttach`/`DetourDetach`) that handles trampolines and relocation automatically. MinHook is small, light, open source, and has good x86 and x64 support, and it's very popular in the community, with the API `MH_CreateHook` and `MH_EnableHook`. PolyHook2 is a modern C++ library with many hook types (inline, IAT, VMT for C++ vtables).
 
-- **Microsoft Detours**: kinh điển, của chính Microsoft, API gọn (`DetourAttach`/`DetourDetach`), xử lý trampoline và relocation tự động.
-- **MinHook**: nhỏ, nhẹ, mã nguồn mở, hỗ trợ x86 và x64 tốt, rất phổ biến trong cộng đồng. API `MH_CreateHook`, `MH_EnableHook`.
-- **PolyHook2**: hiện đại, nhiều kiểu hook (inline, IAT, VMT cho C++ vtable), C++.
+When you reverse a binary and see it linking or embedding one of these, it's almost certainly hooking something, and it's worth looking at what.
 
-Khi reverse một binary, thấy nó link hoặc nhúng một trong mấy cái này là gần như chắc nó đang đi hook thứ gì đó, đáng để xem nó hook cái gì.
+## EDRs and the detection angle
 
-## EDR và góc nhìn phát hiện
+Endpoint security software (EDR) often inline-hooks sensitive APIs in ntdll (like `NtAllocateVirtualMemory`, `NtWriteVirtualMemory`) to observe suspicious behavior. That's why, when you open ntdll on a machine with an EDR in a debugger, the start of many `Nt*` functions is a strange `jmp` instead of the standard prologue.
 
-Phần mềm bảo mật endpoint (EDR) thường inline hook các API nhạy cảm trong ntdll (như `NtAllocateVirtualMemory`, `NtWriteVirtualMemory`) để quan sát hành vi đáng ngờ. Đây là lý do khi bạn mở ntdll của một máy có EDR trong debugger, đầu nhiều hàm `Nt*` lại là một `jmp` lạ thay vì prologue chuẩn.
-
-Và đó cũng chính là cách **phát hiện** hook, nối lại [Bài 15.7](/posts/tr-15-7-anti-attach-dump-hook/): so byte đầu của hàm trong bộ nhớ với byte gốc đọc từ file DLL trên đĩa. Khác nhau ở prologue, nhất là một `jmp` (`E9` hoặc `FF 25`) nằm ngay đầu, là dấu hiệu hàm đã bị hook.
+And that's also exactly how to detect a hook, tying back to [Lesson 15.7](/posts/tr-15-7-anti-attach-dump-hook/): compare the first bytes of the function in memory with the original bytes read from the DLL file on disk. A difference in the prologue, especially a `jmp` (`E9` or `FF 25`) right at the start, is the sign the function has been hooked.
 
 ```
-Đầu hàm sạch:     mov [rsp+8], rcx   (48 89 4C 24 08 ...)
-Đầu hàm bị hook:  jmp <somewhere>    (E9 xx xx xx xx ...)
+Clean function start:   mov [rsp+8], rcx   (48 89 4C 24 08 ...)
+Hooked function start:  jmp <somewhere>    (E9 xx xx xx xx ...)
 ```
 
-Malware tinh vi phát hiện EDR hook theo cách này rồi tự khôi phục byte gốc (unhook) để né giám sát. Bạn khi phân tích cũng dùng chính kỹ thuật so sánh đó để biết hàm nào đang bị can thiệp.
+Sophisticated malware detects EDR hooks this way and then restores the original bytes itself (unhooking) to dodge monitoring. When analyzing, you use the same comparison technique to know which functions are being tampered with.
 
-## Phân biệt nhanh hai loại khi phân tích
+## Telling the two apart quickly during analysis
 
-- Thấy một ô trong IAT trỏ tới vùng không thuộc DLL gốc (ví dụ trỏ vào một module lạ hay vùng cấp phát động): nghi IAT hook.
-- Thấy đầu một API là `jmp`/`push+ret` bất thường thay vì prologue quen: nghi inline hook.
-- Cả hai đều dẫn bạn tới hàm hook, cứ follow để biết nó làm gì.
+If you see an IAT slot pointing to a region that doesn't belong to the original DLL (for example pointing into a strange module or a dynamically allocated region), suspect an IAT hook. If you see the start of an API as an unusual `jmp`/`push+ret` instead of the familiar prologue, suspect an inline hook. Both lead you to the hook function, so just follow it to see what it does.
 
-## Lab tự làm
+## Lab
 
-Xem [labs/17.3/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/17.3): quan sát một inline hook trong bộ nhớ, nhận ra `jmp` ở đầu hàm, và so prologue để phân biệt hàm bị hook với hàm sạch.
+See [labs/17.3/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/17.3): observe an inline hook in memory, recognize the `jmp` at the start of a function, and compare prologues to tell a hooked function from a clean one.
 
-## Checklist ghi nhớ
-- Hook = chen vào giữa lời gọi hàm, nền tảng của EDR, Frida, tool tương thích, và phân tích.
-- IAT hook: đổi con trỏ trong Import Address Table, chỉ bắt lời gọi qua IAT, sạch nhưng không toàn diện.
-- Inline hook: ghi đè đầu hàm bằng `jmp`, trampoline giữ byte gốc để gọi lại hàm thật, bắt mọi lời gọi.
-- Inline hook phải chép trọn lệnh và sửa địa chỉ tương đối, nên dùng Detours/MinHook/PolyHook2.
-- Phát hiện hook: so prologue trong bộ nhớ với byte gốc trên đĩa, một `jmp` (E9 / FF 25) ở đầu hàm là cờ đỏ.
+## Key takeaways
+A hook wedges into a function call, and it's the foundation of EDRs, Frida, compatibility tools, and analysis. An IAT hook changes a pointer in the Import Address Table, so it only catches calls through the IAT: clean but not comprehensive. An inline hook overwrites the start of a function with `jmp`, and a trampoline keeps the original bytes to call the real function, so it catches every call.
+
+Inline hooks have to copy whole instructions and fix relative addresses, which is why people use Detours/MinHook/PolyHook2. To detect hooks, compare the prologue in memory with the original bytes on disk, and treat a `jmp` (E9 / FF 25) at the function start as a red flag.

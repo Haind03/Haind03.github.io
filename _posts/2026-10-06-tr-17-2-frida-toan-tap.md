@@ -1,147 +1,147 @@
 ---
-title: "Bài 17.2: Frida toàn tập, soi và sửa chương trình lúc nó đang chạy"
+title: "Lesson 17.2: Frida in full, inspecting and modifying a program while it runs"
 date: 2026-10-06 09:41:00 +0700
-categories: ["Technique Reverse", "Phần 17 · Patch, Hook, Injection & Instrumentation"]
+categories: ["Technique Reverse", "Part 17 · Patching, Hooking, Injection"]
 tags: [reverse-engineering, frida, hooking]
 render_with_liquid: false
 ---
-Có những lúc đọc code tĩnh mãi không ra, mà đặt breakpoint trong debugger thì chậm và dễ bị anti-debug phát hiện. Frida sinh ra cho đúng tình huống đó: bạn tiêm một đoạn JavaScript nhỏ vào tiến trình đang chạy, bảo nó "mỗi khi hàm này được gọi, in cho tôi tham số ra", và thế là xong. Không cần sửa file trên đĩa, không cần recompile, chạy được trên Windows, Linux, macOS, Android, iOS với cùng một bộ API.
+Sometimes static reading gets you nowhere, and setting breakpoints in a debugger is slow and easily caught by anti-debug. Frida was made for exactly that situation: you inject a small piece of JavaScript into the running process, tell it "every time this function is called, print its parameters", and that's it. No editing files on disk, no recompiling, and it runs on Windows, Linux, macOS, Android, iOS with the same API.
 
-Bài này là Frida ở mức bạn dùng được ngay cho RE. Phạm vi: phân tích hành vi, kiểm thử bảo mật phần mềm của chính mình, giải crackme/CTF. Dùng để quan sát và hiểu, không phải để phá.
+This lesson covers Frida at the level you can use right away for RE. Scope: behavior analysis, security testing of your own software, solving crackmes/CTFs. Use it to observe and understand, not to wreck things.
 
-## Frida nhìn từ trên xuống
+## Frida from the top down
 
-Về bản chất Frida nhét một engine tên là **gum** vào tiến trình đích, rồi engine đó chạy đoạn script JavaScript (gọi là agent) của bạn ngay bên trong không gian địa chỉ của tiến trình. Vì script chạy *bên trong* tiến trình nên nó thấy mọi hàm, mọi vùng nhớ, mọi thanh ghi như chính tiến trình thấy.
+In essence Frida stuffs an engine called **gum** into the target process, and that engine runs your JavaScript script (called an agent) right inside the process's address space. Because the script runs *inside* the process, it sees every function, every memory region, every register the way the process itself does.
 
-Hai cách đưa script vào:
-- **attach**: gắn vào một tiến trình đang chạy sẵn. Dùng khi chương trình đã khởi động và bạn muốn soi từ giữa chừng.
-- **spawn**: Frida tự khởi chạy chương trình trong trạng thái tạm dừng, nạp script, rồi mới cho chạy. Dùng khi cần hook thứ gì đó xảy ra rất sớm (trước main, trong hàm khởi tạo).
+Two ways to get the script in:
+- **attach**: attach to an already running process. Use it when the program has started and you want to look in from the middle.
+- **spawn**: Frida launches the program itself in a suspended state, loads the script, and only then lets it run. Use it when you need to hook something that happens very early (before main, in an init function).
 
-Công cụ dòng lệnh đi kèm bạn sẽ gõ nhiều:
-- `frida-ps -U` liệt kê tiến trình (cờ `-U` cho thiết bị USB như Android, bỏ đi là máy local).
-- `frida -l hook.js -f ./target` spawn `target` và nạp `hook.js`.
-- `frida -l hook.js target` attach vào tiến trình tên `target`.
-- `frida-trace` sinh hook tự động (nói ở cuối bài).
+The command-line tools you'll type a lot:
+- `frida-ps -U` lists processes (the `-U` flag is for a USB device like Android, drop it for the local machine).
+- `frida -l hook.js -f ./target` spawns `target` and loads `hook.js`.
+- `frida -l hook.js target` attaches to the process named `target`.
+- `frida-trace` generates hooks automatically (covered at the end).
 
-## Interceptor, trái tim của Frida
+## Interceptor, the heart of Frida
 
-99% việc hook của bạn đi qua `Interceptor.attach`. Nó nhận một địa chỉ hàm và hai callback: `onEnter` chạy khi vào hàm (lúc này đọc được tham số), `onLeave` chạy khi hàm sắp return (lúc này đọc và sửa được giá trị trả về).
+99% of your hooking goes through `Interceptor.attach`. It takes a function address and two callbacks: `onEnter` runs on entering the function (you can read the parameters now), `onLeave` runs when the function is about to return (you can read and change the return value now).
 
-Tìm địa chỉ hàm thế nào? Nếu hàm được export (như API hệ thống) thì dùng tên:
+How do you find the function address? If the function is exported (like system APIs), use the name:
 
 ```javascript
-// Hook CreateFileW trên Windows để xem chương trình mở file nào
+// Hook CreateFileW on Windows to see which files the program opens
 const pCreateFileW = Module.findExportByName("kernel32.dll", "CreateFileW");
 
 Interceptor.attach(pCreateFileW, {
     onEnter(args) {
-        // Tham số đầu của CreateFileW là lpFileName (con trỏ chuỗi UTF-16)
+        // The first parameter of CreateFileW is lpFileName (pointer to a UTF-16 string)
         this.name = args[0].readUtf16String();
-        console.log("[CreateFileW] mo file: " + this.name);
+        console.log("[CreateFileW] opening file: " + this.name);
     },
     onLeave(retval) {
-        // retval là HANDLE trả về; INVALID_HANDLE_VALUE = -1
+        // retval is the returned HANDLE; INVALID_HANDLE_VALUE = -1
         console.log("   -> handle: " + retval);
     }
 });
 ```
 
-Vài điều quan trọng trong đoạn trên:
-- `args` là mảng tham số. **Frida tự lo calling convention cho bạn**: `args[0]` là tham số đầu bất kể trên Windows nó nằm ở rcx hay Linux nằm ở rdi. Đây là lý do cùng một script chạy đa nền.
-- Mỗi `args[i]` là một `NativePointer`, nên bạn phải tự diễn giải: `.readUtf16String()` cho chuỗi Windows wide, `.readCString()` cho chuỗi C, `.toInt32()` cho số.
-- `this` dùng chung giữa `onEnter` và `onLeave`, nên lưu giá trị ở onEnter để dùng lại ở onLeave (như `this.name`).
+A few important things in the snippet above:
+- `args` is the parameter array. **Frida handles the calling convention for you**: `args[0]` is the first parameter whether on Windows it's in rcx or on Linux it's in rdi. This is why the same script runs cross-platform.
+- Each `args[i]` is a `NativePointer`, so you have to interpret it yourself: `.readUtf16String()` for Windows wide strings, `.readCString()` for C strings, `.toInt32()` for numbers.
+- `this` is shared between `onEnter` and `onLeave`, so save values in onEnter to reuse in onLeave (like `this.name`).
 
-### Sửa tham số và giá trị trả về
+### Changing parameters and return values
 
-Hook không chỉ để xem, bạn sửa được. Ví dụ bắt một hàm kiểm tra license luôn trả về "hợp lệ":
+Hooks aren't just for looking, you can modify. For example, make a license check function always return "valid":
 
 ```javascript
 Interceptor.attach(pCheckLicense, {
     onLeave(retval) {
-        console.log("check tra ve that: " + retval);
-        retval.replace(1);   // ep tra ve 1 (hop le)
+        console.log("check really returned: " + retval);
+        retval.replace(1);   // force return 1 (valid)
     }
 });
 ```
 
-Hoặc sửa tham số trước khi hàm xử lý, trong onEnter:
+Or change a parameter before the function processes it, in onEnter:
 
 ```javascript
 onEnter(args) {
-    // ep tham so thu 2 (do kho) ve 0
+    // force the 2nd parameter (difficulty) to 0
     args[1] = ptr(0);
 }
 ```
 
-### Interceptor.replace, thay nguyên hàm
+### Interceptor.replace, replacing the whole function
 
-Khi muốn thay hẳn toàn bộ hàm bằng cài đặt của mình (không chỉ xem/sửa), dùng `Interceptor.replace`:
+When you want to replace the entire function with your own implementation (not just look/modify), use `Interceptor.replace`:
 
 ```javascript
 const origStrcmp = new NativeFunction(pStrcmp, 'int', ['pointer', 'pointer']);
 Interceptor.replace(pStrcmp, new NativeCallback((a, b) => {
     console.log("strcmp: " + a.readCString() + " vs " + b.readCString());
-    return origStrcmp(a, b);   // van goi ban goc
+    return origStrcmp(a, b);   // still call the original
 }, 'int', ['pointer', 'pointer']));
 ```
 
-## NativeFunction và NativePointer, gọi ngược vào tiến trình
+## NativeFunction and NativePointer, calling back into the process
 
-Đôi khi bạn không chỉ muốn hook mà muốn *chủ động gọi* một hàm có sẵn trong tiến trình, ví dụ để thử hàm giải mã với input của mình. `NativeFunction` bọc một địa chỉ thành hàm gọi được từ JS:
+Sometimes you don't just want to hook but to *actively call* a function that already exists in the process, for example to try the decryption function with your own input. `NativeFunction` wraps an address into a function callable from JS:
 
 ```javascript
 const decrypt = new NativeFunction(ptr("0x401500"), 'pointer', ['pointer', 'int']);
-const buf = Memory.allocUtf8String("du lieu ma hoa");
+const buf = Memory.allocUtf8String("encrypted data");
 const result = decrypt(buf, 14);
-console.log("giai ma: " + result.readCString());
+console.log("decrypted: " + result.readCString());
 ```
 
-`NativePointer` (viết tắt `ptr(...)`) là kiểu con trỏ của Frida, có đủ `.readByteArray()`, `.writeUtf8String()`, `.add(offset)`, `.readPointer()` để bạn đọc ghi bộ nhớ thoải mái. `Memory.alloc` cấp vùng nhớ mới trong tiến trình khi cần truyền buffer.
+`NativePointer` (shortened to `ptr(...)`) is Frida's pointer type, with `.readByteArray()`, `.writeUtf8String()`, `.add(offset)`, `.readPointer()` so you can read and write memory freely. `Memory.alloc` allocates new memory in the process when you need to pass a buffer.
 
-## Stalker, trace từng lệnh
+## Stalker, tracing every instruction
 
-`Interceptor` hook tại ranh giới hàm. Khi bạn cần theo dõi *luồng thực thi bên trong* một hàm (mỗi basic block, mỗi lệnh nào chạy, đo code coverage), đó là việc của `Stalker`. Nó theo một thread và báo lại từng block được thực thi. Dùng nhiều cho fuzzing và để tìm "code nào chạy khi tôi nhập serial đúng so với sai":
+`Interceptor` hooks at function boundaries. When you need to follow the *execution flow inside* a function (each basic block, which instructions run, measuring code coverage), that's the job of `Stalker`. It follows a thread and reports each block executed. It's used a lot for fuzzing and for finding "which code runs when I enter the right serial versus the wrong one":
 
 ```javascript
 Stalker.follow(Process.getCurrentThreadId(), {
     events: { block: true },
     onReceive(events) {
-        // danh sach block vua chay, dung de do coverage
+        // list of blocks that just ran, used to measure coverage
     }
 });
 ```
 
-Stalker mạnh nhưng nặng và phức tạp hơn Interceptor nhiều, nên để dành cho khi thật sự cần coverage, không dùng cho hook thông thường.
+Stalker is powerful but heavy and much more complex than Interceptor, so save it for when you really need coverage, don't use it for ordinary hooks.
 
-## frida-trace, lười mà hiệu quả
+## frida-trace, lazy but effective
 
-Không muốn viết script tay? `frida-trace` sinh sẵn handler cho bạn:
+Don't want to write a script by hand? `frida-trace` generates handlers for you:
 
 ```
 frida-trace -f ./target -i "strcmp" -i "CreateFileW"
 ```
 
-Cờ `-i` chọn hàm theo tên (có wildcard, ví dụ `-i "str*"` bắt mọi hàm bắt đầu bằng str). Frida tạo một file JS cho mỗi hàm trong thư mục `__handlers__`, bạn mở ra sửa để in thêm tham số. Đây là cách nhanh nhất để có cái nhìn tổng thể "chương trình gọi những API nào".
+The `-i` flag picks functions by name (with wildcards, for example `-i "str*"` catches every function starting with str). Frida creates a JS file for each function in the `__handlers__` folder, and you open it to edit and print more parameters. This is the fastest way to get an overall view of "which APIs the program calls".
 
-## Trên Android thì sao
+## What about Android
 
-Nền tảng giống hệt, chỉ khác bạn hook method Java qua `Java.perform` và `Java.use` thay vì hàm native. Phần đó đã nói kỹ ở [Bài 6.6](/posts/tr-6-6-frida-android-hook/). Với thư viện native `.so` trong app Android thì lại quay về `Interceptor.attach` như bài này. Nhớ cần `frida-server` chạy trên thiết bị và dùng cờ `-U`.
+The foundation is identical, the only difference is you hook Java methods via `Java.perform` and `Java.use` instead of native functions. That part is covered in detail in [Lesson 6.6](/posts/tr-6-6-frida-android-hook/). For the native `.so` libraries in an Android app you go back to `Interceptor.attach` like this lesson. Remember you need `frida-server` running on the device and the `-U` flag.
 
-## Vài cạm bẫy hay gặp
+## A few common pitfalls
 
-- **Lệch phiên bản**: Frida host và frida-server (trên Android/iOS) phải cùng version, lệch là lỗi khó hiểu.
-- **Hook quá sớm**: nếu module chưa được nạp, `Module.findExportByName` trả null. Dùng `spawn` hoặc chờ module trong một số trường hợp.
-- **Anti-Frida**: phần mềm bảo vệ có thể dò cổng 27042, chuỗi "frida", hoặc thread lạ. Gặp vậy thì xem [Bài 15.7](/posts/tr-15-7-anti-attach-dump-hook/) về anti-hook và cân nhắc Frida ở chế độ ẩn hơn.
-- **Đọc sai kiểu con trỏ**: `args[0]` là con trỏ, in thẳng ra địa chỉ chứ không phải nội dung. Phải gọi `.readUtf8String()` hay tương tự.
+- **Version mismatch**: the Frida host and frida-server (on Android/iOS) must be the same version, a mismatch gives confusing errors.
+- **Hooking too early**: if the module isn't loaded yet, `Module.findExportByName` returns null. Use `spawn` or in some cases wait for the module.
+- **Anti-Frida**: protected software may probe port 27042, the string "frida", or odd threads. When you hit that, see [Lesson 15.7](/posts/tr-15-7-anti-attach-dump-hook/) on anti-hook and consider running Frida in a stealthier mode.
+- **Reading the wrong pointer type**: `args[0]` is a pointer, printing it directly gives an address and not the content. You have to call `.readUtf8String()` or similar.
 
-## Lab tự làm
+## Lab
 
-Xem [labs/17.2/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/17.2). Nhiệm vụ: dùng Frida hook hàm so sánh của một chương trình nhỏ để lộ chuỗi đúng mà nó đang so với input của bạn, rồi thử ép giá trị trả về cho qua check. File `hook.js` mẫu có sẵn trong `src/`.
+See [labs/17.2/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/17.2). The task: use Frida to hook the compare function of a small program to expose the correct string it's comparing against your input, then try forcing the return value to get past the check. A sample `hook.js` is provided in `src/`.
 
-## Checklist ghi nhớ
-- Frida tiêm agent JS vào tiến trình đang chạy, thấy mọi thứ từ bên trong, chạy đa nền.
-- `Interceptor.attach` với `onEnter` (tham số) và `onLeave` (giá trị trả về) là công cụ chính.
-- `args[i]` đánh số theo thứ tự tham số logic, Frida tự lo calling convention. Mỗi cái là NativePointer, phải tự diễn giải kiểu.
-- `retval.replace(x)` sửa giá trị trả về, gán `args[i]` sửa tham số.
-- `NativeFunction` để tự gọi hàm trong tiến trình; `Stalker` để trace từng block; `frida-trace` để sinh hook nhanh.
-- Android hook Java qua `Java.use` (Bài 6.6), native `.so` vẫn dùng Interceptor.
+## Key takeaways
+- Frida injects a JS agent into the running process, sees everything from the inside, and works cross-platform.
+- `Interceptor.attach` with `onEnter` (parameters) and `onLeave` (return value) is the main tool.
+- `args[i]` is numbered by logical parameter order, Frida handles the calling convention. Each is a NativePointer, you have to interpret the type yourself.
+- `retval.replace(x)` changes the return value, assigning to `args[i]` changes a parameter.
+- `NativeFunction` to call functions in the process yourself; `Stalker` to trace each block; `frida-trace` to generate hooks quickly.
+- On Android, hook Java via `Java.use` (Lesson 6.6), native `.so` still uses Interceptor.

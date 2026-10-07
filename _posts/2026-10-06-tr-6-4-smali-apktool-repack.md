@@ -1,40 +1,40 @@
 ---
-title: "Bài 6.4: Smali và apktool, sửa app Android rồi đóng gói lại"
+title: "Lesson 6.4: Smali and apktool, modifying an Android app and repacking it"
 date: 2026-10-06 08:47:00 +0700
-categories: ["Technique Reverse", "Phần 6 · Java / Kotlin / Android (JADX)"]
+categories: ["Technique Reverse", "Part 06 · Java, Kotlin and Android"]
 tags: [reverse-engineering, android, java]
 render_with_liquid: false
 ---
-JADX cho bạn đọc code Android dưới dạng Java đẹp đẽ, nhưng nó chỉ để đọc. Khi muốn thật sự sửa hành vi của app rồi cài lại, bạn không sửa cái Java đó được. Lý do đơn giản: không có đường ngược sạch sẽ từ Java đã decompile về lại DEX. Thứ sửa được, và đóng gói lại được, là smali. Bài này là quy trình patch kinh điển mà gần như bài crackme Android nào cũng dùng tới.
+JADX lets you read Android code as nice Java, but it's only for reading. When you really want to change the app's behavior and reinstall it, you can't edit that Java. The reason is simple: there's no clean path back from decompiled Java to DEX. What you can edit, and repack, is smali. This lesson is the classic patching workflow that almost every Android crackme ends up using.
 
-## Smali là gì, vì sao phải học
+## What smali is, and why you have to learn it
 
-Android không chạy JVM bytecode mà chạy DEX bytecode (Dalvik/ART). Smali là ngôn ngữ assembly cho DEX: mỗi lệnh smali ứng với một lệnh bytecode, một đổi một. Nó là mức thấp nhất mà con người còn đọc và sửa thoải mái.
+Android doesn't run JVM bytecode but DEX bytecode (Dalvik/ART). Smali is the assembly language for DEX: each smali instruction corresponds to one bytecode instruction, one for one. It's the lowest level a human can still read and edit comfortably.
 
-Khác biệt cần nhớ so với assembly x86 ở các bài trước: DEX là register-based chứ không stack-based. Nghĩa là thay vì push/pop lên stack, mỗi method có sẵn một dãy thanh ghi ảo đánh số, và lệnh thao tác trực tiếp trên chúng.
+The difference to remember compared with the x86 assembly in earlier lessons: DEX is register-based, not stack-based. Meaning instead of push/pop on a stack, each method has a numbered series of virtual registers ready, and instructions operate on them directly.
 
-Có hai nhóm thanh ghi:
-- `p0, p1, p2...` là tham số (parameter) truyền vào method. Với method không static, `p0` chính là `this`.
-- `v0, v1, v2...` là thanh ghi cục bộ (local) để tính toán.
+There are two groups of registers:
+- `p0, p1, p2...` are the parameters passed into the method. For a non-static method, `p0` is `this`.
+- `v0, v1, v2...` are local registers for computation.
 
-Đầu mỗi method khai báo cần bao nhiêu thanh ghi local, ví dụ `.registers 4` hoặc `.locals 2`.
+At the start of each method it declares how many local registers it needs, for example `.registers 4` or `.locals 2`.
 
-## Cú pháp smali cơ bản
+## Basic smali syntax
 
-Không cần thuộc hết, chỉ cần nhận ra nhóm hay gặp:
+You don't need to memorize it all, just recognize the common groups:
 
 ```smali
-.method public check(Ljava/lang/String;)Z   # nhận String, trả về boolean (Z)
-    .registers 3                              # p0=this, p1=tham số, v0=local
+.method public check(Ljava/lang/String;)Z   # takes a String, returns boolean (Z)
+    .registers 3                              # p0=this, p1=parameter, v0=local
 
     const-string v0, "secret123"              # v0 = "secret123"
     invoke-virtual {p1, v0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
-    move-result v0                            # lấy kết quả equals() vào v0
-    return v0                                 # trả về v0
+    move-result v0                            # put the result of equals() into v0
+    return v0                                 # return v0
 .end method
 ```
 
-Đối chiếu Java:
+Compare with Java:
 
 ```java
 public boolean check(String input) {
@@ -42,70 +42,70 @@ public boolean check(String input) {
 }
 ```
 
-Mấy chữ viết tắt kiểu `Z`, `Ljava/lang/String;` là type descriptor của DEX: `Z`=boolean, `I`=int, `V`=void, `Ljava/lang/String;`=class String. Quen dần là đọc trôi.
+Those abbreviations like `Z`, `Ljava/lang/String;` are DEX type descriptors: `Z`=boolean, `I`=int, `V`=void, `Ljava/lang/String;`=class String. You'll read them smoothly once you're used to them.
 
-Nhóm lệnh hay đụng khi patch:
-- `const/4 v0, 0x1` nạp hằng số nhỏ (ở đây 1) vào v0.
-- `const/4 v0, 0x0` nạp 0.
-- `invoke-virtual {...}, ...` gọi method.
-- `move-result v0` lấy giá trị trả về của lời gọi vừa rồi vào v0 (giống "rax là giá trị trả về" ở assembly x86).
-- `if-eqz v0, :label` nhảy tới label nếu v0 bằng 0 (equal zero). `if-nez` là khác 0.
-- `return v0` / `return-void` trả về.
+The group of instructions you touch often when patching:
+- `const/4 v0, 0x1` loads a small constant (here 1) into v0.
+- `const/4 v0, 0x0` loads 0.
+- `invoke-virtual {...}, ...` calls a method.
+- `move-result v0` puts the return value of the last call into v0 (like "rax is the return value" in x86 assembly).
+- `if-eqz v0, :label` jumps to the label if v0 equals 0 (equal zero). `if-nez` is not zero.
+- `return v0` / `return-void` returns.
 
-Nhận ra cặp `invoke` rồi `move-result` rồi `if-eqz` là bạn đang nhìn đúng một câu if dựa trên kết quả hàm, y như cặp `cmp`/`je` bên x86.
+Recognizing the `invoke` then `move-result` then `if-eqz` sequence means you're looking at exactly an if statement based on a function's result, just like the `cmp`/`je` pair in x86.
 
-## Quy trình patch kinh điển
+## The classic patching workflow
 
-![Quy trình patch APK: apktool d, sửa smali, apktool b, ký lại](/assets/img/technique-reverse/assets/phan-06/smali-patch-flow.svg)
+![APK patching workflow: apktool d, edit smali, apktool b, re-sign](/assets/img/technique-reverse/assets/phan-06/smali-patch-flow.svg)
 
-Giả sử app có một hàm kiểm tra license trả về boolean, false là chặn. Mục tiêu: bắt nó luôn trả true.
+Say the app has a license check function that returns a boolean, and false blocks you. The goal: make it always return true.
 
-Bốn bước, nhớ là làm được:
+Four steps, remember them and you can do it:
 
-1. Giải APK ra smali:
+1. Unpack the APK into smali:
    ```
    apktool d target.apk -o target_out
    ```
-   apktool dịch classes.dex thành cây thư mục `.smali`, và giải mã luôn AndroidManifest về dạng đọc được.
+   apktool translates classes.dex into a tree of `.smali` folders, and also decodes AndroidManifest into a readable form.
 
-2. Tìm hàm kiểm tra. Dùng JADX đọc Java để biết tên class/method trước, rồi mở đúng file smali tương ứng trong `target_out/smali/...`. Grep tên method cho nhanh.
+2. Find the check function. Use JADX to read the Java to learn the class/method names first, then open the matching smali file in `target_out/smali/...`. Grep the method name to be quick.
 
-3. Sửa smali để hàm luôn trả true. Cách sạch nhất là thay toàn bộ thân hàm bằng trả về 1:
+3. Edit the smali so the function always returns true. The cleanest way is to replace the whole function body with a return of 1:
    ```smali
    .method public isLicensed()Z
        .registers 2
-       const/4 v0, 0x1      # ép v0 = true
-       return v0            # trả về true luôn
+       const/4 v0, 0x1      # force v0 = true
+       return v0            # just return true
    .end method
    ```
-   Hoặc nếu chỉ muốn đảo một nhánh, tìm chỗ `if-eqz`/`if-nez` và đổi qua lại, hoặc đổi `const/4 v0, 0x0` thành `const/4 v0, 0x1` ngay trước return. Giữ số thanh ghi khai báo đủ lớn kẻo build lỗi.
+   Or if you only want to flip one branch, find the `if-eqz`/`if-nez` and swap them, or change `const/4 v0, 0x0` to `const/4 v0, 0x1` right before the return. Keep the declared register count large enough or the build fails.
 
-4. Build lại và ký. Đây là chỗ người mới hay quên:
+4. Rebuild and sign. This is where beginners often forget:
    ```
    apktool b target_out -o patched.apk
    ```
-   APK vừa build CHƯA ký, Android từ chối cài app không chữ ký. Phải ký lại:
+   The APK you just built is NOT signed, and Android refuses to install an unsigned app. You have to sign it again:
    ```
    apksigner sign --ks my.keystore patched.apk
    ```
-   hoặc dùng `uber-apk-signer -a patched.apk` cho nhanh (nó tự tạo key debug). Ký xong mới `adb install patched.apk` được.
+   or use `uber-apk-signer -a patched.apk` to be quick (it creates a debug key itself). Only after signing can you `adb install patched.apk`.
 
-Cái bẫy lớn nhất của cả quy trình không nằm ở smali mà ở chữ ký: quên ký là cài không nổi, và nếu app có kiểm tra chữ ký của chính nó (anti-tamper) thì ký lại bằng key khác sẽ bị phát hiện. Chuyện vượt anti-tamper để bài obfuscation [6.8](/posts/tr-6-8-obfuscation-android/) và phần Frida lo.
+The biggest trap in the whole workflow isn't in the smali but in the signature: forget to sign and it won't install, and if the app checks its own signature (anti-tamper) then re-signing with a different key gets detected. Getting past anti-tamper is left to the obfuscation lesson [6.8](/posts/tr-6-8-obfuscation-android/) and the Frida part.
 
-## Khi nào patch smali, khi nào dùng Frida
+## When to patch smali, when to use Frida
 
-Patch smali cho ra một APK sửa vĩnh viễn, cài là chạy, không cần công cụ lúc runtime. Nhược điểm: phải build và ký lại, và vướng anti-tamper.
+Patching smali produces a permanently modified APK, install it and it runs, no tools needed at runtime. The downside: you have to rebuild and re-sign, and you run into anti-tamper.
 
-Frida (bài [6.6](/posts/tr-6-6-frida-android-hook/)) hook lúc chạy, không cần sửa file, linh hoạt hơn nhiều khi thử nghiệm, nhưng cần Frida server chạy trên máy/thiết bị. Dân Android RE dùng cả hai: Frida để nghiên cứu nhanh, patch smali khi muốn bản sửa đứng một mình.
+Frida (lesson [6.6](/posts/tr-6-6-frida-android-hook/)) hooks at runtime, needs no file edits, and is much more flexible for experimenting, but needs the Frida server running on the machine/device. Android RE folks use both: Frida for quick research, smali patching when they want a modified build that stands on its own.
 
-## Lab tự làm
+## Lab
 
-Xem [labs/6.4/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/6.4). Bạn sẽ lấy một APK có hàm kiểm tra, dùng apktool giải nó ra smali, tìm và patch hàm đó luôn trả true, build lại, ký, rồi kiểm. Lời giải ở `solution.md`.
+See [labs/6.4/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/6.4). You'll take an APK with a check function, use apktool to unpack it into smali, find and patch that function to always return true, rebuild, sign, then verify. The solution is in `solution.md`.
 
-## Checklist ghi nhớ
-- Android chạy DEX (register-based), không phải JVM bytecode. Smali là assembly cho DEX.
-- Sửa smali chứ không sửa Java decompiled, vì không có đường ngược sạch từ Java về DEX.
-- Thanh ghi: `p0` là this (method không static), `p1...` là tham số, `v0...` là local.
-- `move-result` lấy giá trị trả về của lời gọi vừa rồi, giống rax bên x86.
-- Patch "luôn trả true": `const/4 v0, 0x1` rồi `return v0`.
-- Quy trình: `apktool d`, sửa smali, `apktool b`, rồi BẮT BUỘC ký lại (apksigner/uber-apk-signer).
+## Key takeaways
+- Android runs DEX (register-based), not JVM bytecode. Smali is the assembly for DEX.
+- Edit smali, not the decompiled Java, because there's no clean path from Java back to DEX.
+- Registers: `p0` is this (non-static method), `p1...` are parameters, `v0...` are locals.
+- `move-result` takes the return value of the last call, like rax in x86.
+- Patch "always return true": `const/4 v0, 0x1` then `return v0`.
+- Workflow: `apktool d`, edit smali, `apktool b`, then you MUST re-sign (apksigner/uber-apk-signer).

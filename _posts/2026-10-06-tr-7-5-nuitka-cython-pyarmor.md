@@ -1,73 +1,73 @@
 ---
-title: "Bài 7.5: Khi Python không còn là .pyc dễ nuốt"
+title: "Lesson 7.5: When Python is no longer an easy-to-swallow .pyc"
 date: 2026-10-06 08:57:00 +0700
-categories: ["Technique Reverse", "Phần 7 · Python (pycdc)"]
+categories: ["Technique Reverse", "Part 07 · Python"]
 tags: [reverse-engineering, python]
 render_with_liquid: false
 ---
-Mấy bài trước cho bạn cảm giác Python là mồi ngon: kéo .pyc vào pycdc là gần như có lại source. Đúng, nhưng chỉ đúng khi tác giả để nguyên bytecode. Một khi họ dùng Nuitka, Cython hay PyArmor, bữa tiệc kết thúc. pycdc trả về rỗng, uncompyle6 báo lỗi, và bạn nhận ra mình không còn đang reverse Python nữa.
+The last few lessons gave you the feeling that Python is easy prey: drag a .pyc into pycdc and you almost have the source back. True, but only when the author leaves the bytecode as is. Once they use Nuitka, Cython or PyArmor, the party's over. pycdc returns nothing, uncompyle6 throws errors, and you realize you're no longer reversing Python.
 
-Đây là bước ngoặt giống hệt NativeAOT bên .NET (Bài 5.6): công cụ chuyên ngành vô dụng, phải lùi về reverse native bằng IDA/Ghidra, hoặc chuyển sang đánh runtime. Bài này dạy bạn nhận ra mình đang đối mặt với loại nào, vì chọn sai hướng là mất cả buổi.
+This is the same turning point as NativeAOT on the .NET side (Lesson 5.6): the language-specific tools are useless, you have to fall back to native reversing with IDA/Ghidra, or switch to attacking the runtime. This lesson teaches you to recognize which kind you're facing, because picking the wrong direction costs a whole session.
 
-## Ba kẻ phá đám, ba bản chất khác nhau
+## Three spoilers, three different natures
 
-![Python đóng gói: PyInstaller dễ decompile, Nuitka/Cython/PyArmor khó](/assets/img/technique-reverse/assets/phan-07/python-packaging.svg)
+![Python packaging: PyInstaller is easy to decompile, Nuitka/Cython/PyArmor are hard](/assets/img/technique-reverse/assets/phan-07/python-packaging.svg)
 
-Điều quan trọng nhất phải nắm: ba thứ này khác nhau về bản chất, nên cách xử lý cũng khác hẳn.
+The most important thing to grasp: these three are different in nature, so the handling is completely different too.
 
-- **Nuitka** biên dịch Python sang C rồi biên dịch tiếp ra machine code native. Bytecode Python biến mất hoàn toàn.
-- **Cython** cũng dịch Python (hoặc cú pháp Cython) sang C rồi ra một C extension (`.pyd` trên Windows, `.so` trên Linux). Native nốt.
-- **PyArmor** thì khác: nó vẫn chạy bytecode Python, nhưng mã hoá và bọc lại, chỉ giải mã trong bộ nhớ lúc chạy. Bản chất vẫn là Python, chỉ bị khoá.
+- **Nuitka** compiles Python to C and then compiles on to native machine code. The Python bytecode disappears completely.
+- **Cython** also translates Python (or Cython syntax) to C and then to a C extension (`.pyd` on Windows, `.so` on Linux). Native too.
+- **PyArmor** is different: it still runs Python bytecode, but encrypts and wraps it, only decrypting in memory at runtime. At its core it's still Python, just locked.
 
-Nói cách khác: Nuitka và Cython đẩy bạn sang thế giới native. PyArmor giữ bạn trong thế giới Python nhưng dựng một bức tường.
+In other words: Nuitka and Cython push you into the native world. PyArmor keeps you in the Python world but builds a wall.
 
-## Nuitka: Python mặc áo C
+## Nuitka: Python in a C coat
 
-Nuitka lấy chương trình Python của bạn, sinh ra code C gọi vào CPython API, rồi biên dịch thành exe (hoặc một thư mục chứa exe và DLL). Kết quả là một native binary thực thụ, không có co_code, không có PYZ archive, pycdc nhìn vào chịu chết.
+Nuitka takes your Python program, generates C code calling into the CPython API, then compiles it to an exe (or a folder holding an exe and DLLs). The result is a genuine native binary, no co_code, no PYZ archive, and pycdc is dead on arrival.
 
-Nhưng Nuitka không giấu được dấu vân tay của nó. Trong binary vẫn đầy lời gọi tới CPython runtime: những cái tên như `PyObject_`, `PyTuple_New`, `Py_INCREF`, `PyImport_`. Và quan trọng hơn, Nuitka nhúng một bảng module cùng rất nhiều chuỗi lộ tên hàm, tên biến, tên module Python gốc. Nghĩa là dù phải đọc assembly, bạn vẫn có nhiều mỏ neo hơn so với reverse một chương trình C thuần.
+But Nuitka can't hide its fingerprint. The binary is still full of calls to the CPython runtime: names like `PyObject_`, `PyTuple_New`, `Py_INCREF`, `PyImport_`. And more importantly, Nuitka embeds a module table along with lots of strings that leak the original Python function, variable and module names. That means even though you have to read assembly, you still have more anchors than when reversing a pure C program.
 
-Chiến lược với Nuitka: coi như một binary C/C++. Mở bằng IDA/Ghidra, dựa vào các lời gọi CPython API để hiểu từng bước đang thao tác object Python gì. Ví dụ thấy `PyObject_RichCompare` ngay sau khi nạp input là đang so sánh, rất giống logic check password quen thuộc. Dùng lại mọi thứ đã học ở Phần 3 và 4.
+The strategy with Nuitka: treat it like a C/C++ binary. Open it in IDA/Ghidra, and rely on the CPython API calls to understand which Python object is being manipulated at each step. For example, seeing `PyObject_RichCompare` right after loading the input means a comparison is happening, very much like the familiar password check logic. Reuse everything you learned in Parts 3 and 4.
 
-## Cython: cùng một câu chuyện, gói nhỏ hơn
+## Cython: the same story, a smaller package
 
-Cython thường không tạo ra cả một exe mà tạo một module đã biên dịch (`.pyd`/`.so`) được import từ một script Python mỏng. Phần code nhạy cảm nằm trong module native đó, phần còn lại có khi vẫn là .pyc đọc được.
+Cython usually doesn't produce a whole exe but a compiled module (`.pyd`/`.so`) imported from a thin Python script. The sensitive code lives in that native module, and the rest may still be readable .pyc.
 
-Nhận ra Cython: trong module có các symbol kiểu `__pyx_`, `__Pyx_`, tên hàm wrapper như `__pyx_pf_...`. Cũng đầy CPython API như Nuitka. Chiến lược giống hệt: mở `.pyd`/`.so` bằng Ghidra/IDA, lần theo `__pyx_` và CPython API. Đừng phí thời gian tìm decompiler Python, không có đâu.
+Recognizing Cython: the module has symbols like `__pyx_`, `__Pyx_`, and wrapper function names like `__pyx_pf_...`. It's also full of CPython API like Nuitka. The strategy is exactly the same: open the `.pyd`/`.so` in Ghidra/IDA, and follow `__pyx_` and the CPython API. Don't waste time looking for a Python decompiler, there isn't one.
 
-## PyArmor: vẫn là Python, nhưng bị khoá
+## PyArmor: still Python, but locked
 
-PyArmor đi đường khác. Nó không biên dịch sang native. Nó mã hoá bytecode và thêm một lớp runtime (một module C đi kèm, hay thấy tên `pytransform` ở bản cũ hoặc `pyarmor_runtime` ở bản mới) để giải mã và nạp code trong bộ nhớ ngay trước khi chạy. Trên đĩa bạn chỉ thấy rác; code thật chỉ tồn tại trong RAM lúc thực thi.
+PyArmor takes a different road. It doesn't compile to native. It encrypts the bytecode and adds a runtime layer (an accompanying C module, you often see the name `pytransform` in old versions or `pyarmor_runtime` in new ones) to decrypt and load the code in memory right before running. On disk you only see junk; the real code only exists in RAM during execution.
 
-Nhận ra PyArmor: script có dòng `from pytransform import pyarmor` hoặc `from pyarmor_runtime...`, kèm những blob dữ liệu mã hoá và một thư viện runtime gốc. pycdc dĩ nhiên bó tay.
+Recognizing PyArmor: the script has a line like `from pytransform import pyarmor` or `from pyarmor_runtime...`, along with encrypted data blobs and a native runtime library. pycdc is of course helpless.
 
-Chiến lược với PyArmor xoay quanh một ý: **để chính nó giải mã rồi lấy từ bộ nhớ.** Vì cuối cùng CPython vẫn phải có code object để chạy, bạn có thể can thiệp ở tầng đó. Vài hướng:
+The strategy with PyArmor revolves around one idea: **let it decrypt itself and then grab the code from memory.** Since CPython ultimately still needs a code object to run, you can intervene at that layer. A few directions:
 
-- **Bản cũ (PyArmor 5/6):** cộng đồng từng có script unpack, hook vào `pytransform` để chặn code object sau khi giải mã. Tìm theo đúng phiên bản.
-- **Bản mới (PyArmor 7/8+):** cứng hơn nhiều, có RFT mode và nhiều lớp. Hướng chung là hook hàm nạp code của CPython (ví dụ chặn `PyEval_EvalCodeEx`/`PyEval_EvalFrame` hoặc dùng một CPython đã vá để dump mọi code object được thực thi), rồi marshal các code object thu được ra .pyc để decompile.
-- Việc này cần hiểu runtime và thường phải chạy mẫu, nên làm trong VM cô lập nếu nguồn gốc đáng ngờ (Bài 0.3).
+- **Old versions (PyArmor 5/6):** the community once had unpack scripts that hook into `pytransform` to intercept the code object after decryption. Look for the exact version.
+- **New versions (PyArmor 7/8+):** much tougher, with RFT mode and multiple layers. The general direction is to hook CPython's code-loading functions (for example intercepting `PyEval_EvalCodeEx`/`PyEval_EvalFrame` or using a patched CPython to dump every executed code object), then marshal the collected code objects out to .pyc to decompile.
+- This requires understanding the runtime and usually running the sample, so do it in an isolated VM if the origin is suspicious (Lesson 0.3).
 
-## Nhận ra loại nào trong một phút
+## Recognizing which kind in a minute
 
-Trước khi đào, luôn triage để biết mình đang cầm gì. Quy trình nhanh:
+Before digging, always triage to know what you're holding. Quick workflow:
 
-1. Kéo vào **Detect It Easy** và chạy `strings`.
-2. Tìm dấu hiệu:
-   - Thấy `python3x.dll`/`libpython`, chuỗi `PyInstaller`, `MEI`, hoặc một archive PYZ: đây là **PyInstaller thường** (Bài 7.4), extract rồi decompile, dễ nhất.
-   - Thấy nhiều `Py_`, `PyObject_`, kèm bảng chuỗi tên module Python nhưng không có PYZ: nghi **Nuitka**.
-   - Thấy `__pyx_`, `__Pyx_` trong một `.pyd`/`.so`: **Cython**.
-   - Thấy `pytransform`, `pyarmor_runtime`, blob mã hoá: **PyArmor**.
-3. Chọn hướng theo bảng trong lab bên dưới.
+1. Drag it into **Detect It Easy** and run `strings`.
+2. Look for the tells:
+   - See `python3x.dll`/`libpython`, the strings `PyInstaller`, `MEI`, or a PYZ archive: this is **plain PyInstaller** (Lesson 7.4), extract then decompile, the easiest.
+   - See lots of `Py_`, `PyObject_`, with a table of Python module name strings but no PYZ: suspect **Nuitka**.
+   - See `__pyx_`, `__Pyx_` in a `.pyd`/`.so`: **Cython**.
+   - See `pytransform`, `pyarmor_runtime`, encrypted blobs: **PyArmor**.
+3. Pick a direction using the table in the lab below.
 
-Nhầm lẫn hay gặp: tưởng một binary Nuitka là PyInstaller rồi loay hoay tìm PYZ không có. Phân biệt nhanh: PyInstaller có archive gắn ở cuối file và bootloader để lại chuỗi rất đặc trưng; Nuitka thì không có archive, chỉ có native code và CPython API rải khắp.
+A common mix-up: thinking a Nuitka binary is PyInstaller and then fumbling around looking for a PYZ that isn't there. A quick way to tell: PyInstaller has an archive attached at the end of the file and the bootloader leaves very characteristic strings; Nuitka has no archive, only native code with the CPython API scattered throughout.
 
-## Vì sao đây là bước ngoặt
+## Why this is a turning point
 
-Toàn bộ Phần 7 tới giờ dạy bạn một kỹ năng hẹp: đọc và decompile Python bytecode. Nuitka và Cython xoá sạch kỹ năng đó và buộc bạn quay lại nền tảng native ở Phần 1 tới 4. Đó chính là lý do giáo trình xếp assembly và C/C++ lên trước: khi lớp vỏ ngôn ngữ bậc cao bị gỡ đi, bạn luôn rơi về native, và ai vững native thì không có đường cùng. PyArmor thì dạy một bài khác: khi code chỉ tồn tại trong bộ nhớ lúc chạy, câu trả lời nằm ở dynamic analysis chứ không phải static.
+All of Part 7 so far taught you one narrow skill: reading and decompiling Python bytecode. Nuitka and Cython wipe that skill out and force you back to the native foundation of Parts 1 to 4. That's exactly why the curriculum puts assembly and C/C++ first: when the high-level language shell is stripped away, you always fall back to native, and anyone solid on native has no dead end. PyArmor teaches a different lesson: when the code only exists in memory at runtime, the answer lies in dynamic analysis, not static.
 
-## Checklist ghi nhớ
-- Nuitka và Cython biên dịch Python ra native, hết bytecode, phải dùng IDA/Ghidra như với C.
-- Dấu vết để bám: CPython API (`Py_`, `PyObject_`) với Nuitka, `__pyx_`/`__Pyx_` với Cython.
-- PyArmor vẫn là Python nhưng mã hoá bytecode, giải mã trong RAM lúc chạy. Hướng xử lý là dump code object từ bộ nhớ.
-- Luôn triage bằng DIE và strings trước để biết đang gặp loại nào, đừng tìm nhầm PYZ trên một binary Nuitka.
-- Khi lớp vỏ ngôn ngữ bị gỡ, bạn luôn rơi về native. Nền tảng Phần 1 tới 4 là cứu cánh.
+## Key takeaways
+- Nuitka and Cython compile Python to native, no more bytecode, you have to use IDA/Ghidra like with C.
+- Traces to hold onto: CPython API (`Py_`, `PyObject_`) with Nuitka, `__pyx_`/`__Pyx_` with Cython.
+- PyArmor is still Python but encrypts the bytecode, decrypting in RAM at runtime. The approach is dumping code objects from memory.
+- Always triage with DIE and strings first to know which kind you're facing, don't look for a PYZ on a Nuitka binary.
+- When the language shell is stripped, you always fall back to native. The foundation of Parts 1 to 4 is the lifesaver.

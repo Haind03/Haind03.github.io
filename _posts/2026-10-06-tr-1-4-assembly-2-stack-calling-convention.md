@@ -1,132 +1,112 @@
 ---
-title: "Bài 1.4: Assembly x86/x64 (2), stack frame và calling convention"
+title: "Lesson 1.4: x86/x64 assembly (2), stack frames and calling conventions"
 date: 2026-10-06 08:07:00 +0700
-categories: ["Technique Reverse", "Phần 1 · Nền tảng máy tính cho RE"]
+categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
-Bài trước bạn đọc được một hàm đơn giản. Nhưng hàm thật nhận tham số, có biến cục bộ, gọi hàm khác. Tất cả những thứ đó diễn ra trên stack theo một bộ luật gọi là calling convention (quy ước gọi hàm). Nắm được bộ luật này, bạn nhìn vào một `call` là biết tham số nào đang được truyền, hàm trả về cái gì, và biến cục bộ nằm ở đâu. Không nắm, bạn sẽ đoán mò cả buổi.
+Last lesson you read a simple function. But real functions take parameters, have local variables, and call other functions. All of that happens on the stack following a set of rules called a calling convention. Once you know these rules, looking at a `call` tells you which parameters are being passed, what the function returns, and where the locals live. Without them, you'll be guessing all afternoon.
 
-![Stack frame của một lời gọi hàm: tham số, địa chỉ trở về, rbp cũ, biến cục bộ, shadow space](/assets/img/technique-reverse/assets/phan-01/stack-frame.svg)
+![Stack frame of a function call: parameters, return address, saved rbp, locals, shadow space](/assets/img/technique-reverse/assets/phan-01/stack-frame.svg)
 
-## Call và ret thật sự làm gì
+## What call and ret really do
 
-Hai lệnh này nghe tầm thường nhưng là xương sống của mọi lời gọi hàm, nên phải hiểu từng bước.
+These two instructions sound trivial but they're the backbone of every function call, so understand each step.
 
-Khi CPU chạy `call 0x401500`:
-1. Nó đẩy (push) địa chỉ của lệnh **ngay sau** `call` lên stack. Đây là địa chỉ trở về (return address), để lát nữa biết đường quay lại.
-2. Nó nhảy tới `0x401500`.
+When the CPU runs `call 0x401500`, it first pushes the address of the instruction right after the `call` onto the stack. This is the return address, so it knows the way back later. Then it jumps to `0x401500`.
 
-Khi hàm chạy xong và gặp `ret`:
-1. Nó lấy (pop) địa chỉ trở về khỏi stack.
-2. Nó nhảy về đó.
+When the function finishes and hits `ret`, it pops the return address off the stack and jumps there.
 
-Vậy stack giữ địa chỉ trở về, và đây chính là lý do stack dính chặt với lời gọi hàm. Nhớ từ bài 1.2: stack mọc xuống, nên `push` làm rsp giảm, `pop` làm rsp tăng.
+So the stack holds the return address, and that's exactly why the stack is so tied to function calls. Remember from lesson 1.2: the stack grows down, so `push` decreases rsp and `pop` increases rsp.
 
-## Prologue và epilogue, hai đoạn mở đầu kết thúc quen mặt
+## Prologue and epilogue, the familiar opening and closing
 
-Gần như mọi hàm (khi biên dịch không tối ưu, `-O0`) đều mở đầu bằng vài lệnh giống hệt nhau. Đây gọi là prologue (đoạn dựng khung) và epilogue (đoạn dọn khung):
+Almost every function (when compiled without optimization, `-O0`) opens with a few identical instructions. These are called the prologue (builds the frame) and the epilogue (tears the frame down):
 
 ```asm
 my_function:
-    push rbp            ; prologue: lưu base pointer cũ
-    mov  rbp, rsp       ; đặt base pointer mới = đỉnh stack hiện tại
-    sub  rsp, 0x20      ; chừa chỗ cho biến cục bộ (0x20 byte)
-    ...                 ; thân hàm
-    leave              ; epilogue: tương đương mov rsp,rbp; pop rbp
+    push rbp            ; prologue: save the old base pointer
+    mov  rbp, rsp       ; new base pointer = current top of stack
+    sub  rsp, 0x20      ; reserve space for locals (0x20 bytes)
+    ...                 ; function body
+    leave              ; epilogue: same as mov rsp,rbp; pop rbp
     ret
 ```
 
-Thấy cặp `push rbp` / `mov rbp, rsp` ở đầu là biết chắc đây là bắt đầu một hàm. Sau đó `sub rsp, N` là hàm đang chừa N byte trên stack để chứa biến cục bộ. Cuối hàm `leave` dọn sạch khung đó rồi `ret` quay về. Nhận ra bộ khung này giúp bạn khoanh vùng một hàm ngay cả khi IDA chưa nhận diện đúng.
+Seeing the `push rbp` / `mov rbp, rsp` pair at the top tells you for sure a function is starting. Then `sub rsp, N` means the function is reserving N bytes on the stack for locals. At the end `leave` cleans up that frame and `ret` goes back. Recognizing this skeleton lets you mark out a function even when IDA hasn't identified it correctly.
 
-Khối stack mà một hàm dùng (gồm biến cục bộ, base pointer đã lưu, địa chỉ trở về) gọi là stack frame (khung stack). Mỗi hàm đang chạy có một frame của riêng nó, xếp chồng lên frame của hàm đã gọi nó.
+The block of stack a function uses (locals, the saved base pointer, the return address) is called a stack frame. Every running function has its own frame, stacked on top of the frame of the function that called it.
 
-## Calling convention, bộ luật truyền tham số
+## Calling convention, the rules for passing parameters
 
-Đây là phần cốt lõi. Calling convention trả lời ba câu hỏi:
-1. Tham số truyền qua đâu? (thanh ghi hay stack)
-2. Giá trị trả về nằm ở đâu?
-3. Ai chịu trách nhiệm dọn tham số khỏi stack sau khi gọi xong? (bên gọi hay bên bị gọi)
+This is the core part. A calling convention answers three questions: where parameters get passed (registers or stack), where the return value goes, and who is responsible for cleaning the parameters off the stack after the call (the caller or the callee).
 
-Luật khác nhau theo kiến trúc (32 hay 64 bit) và theo hệ điều hành. Bạn không cần thuộc hết, chỉ cần nắm chắc hai cái dùng nhiều nhất hôm nay là Win64 và System V, rồi biết sơ mấy cái 32-bit cũ để không ngơ ngác khi gặp code cũ.
+The rules differ by architecture (32 or 64 bit) and by OS. You don't need to memorize all of them, just be solid on the two most used today, Win64 and System V, and know the old 32-bit ones in outline so you don't stand there confused when you meet old code.
 
-### Thế giới 64-bit (cái bạn gặp nhiều nhất)
+### The 64-bit world (what you'll meet most)
 
-Ở 64-bit, tham số được ưu tiên truyền qua thanh ghi cho nhanh, chỉ khi hết thanh ghi mới tràn ra stack. Hai bộ luật:
+On 64-bit, parameters are passed in registers first for speed, and only spill to the stack when registers run out. There are two sets of rules.
 
-**Microsoft x64 (Win64), dùng trên Windows:**
-- 4 tham số nguyên/con trỏ đầu tiên: `rcx`, `rdx`, `r8`, `r9` (đúng thứ tự này).
-- Tham số thứ 5 trở đi: đẩy lên stack.
-- Trả về: `rax`.
-- Có một đặc sản gọi là **shadow space** (vùng bóng): bên gọi phải chừa sẵn 32 byte (0x20) trên stack ngay trên địa chỉ trở về, kể cả khi hàm có ít hơn 4 tham số. Vùng này để hàm được gọi có chỗ lưu tạm 4 thanh ghi tham số nếu cần. Thấy `sub rsp, 0x28` hoặc các con số kiểu 0x20 cộng thêm trước một loạt `call` là dấu hiệu của shadow space. Lúc đầu nó làm người mới bối rối vì "sao chừa chỗ mà không dùng", biết tên nó rồi là hết thắc mắc.
+Microsoft x64 (Win64), used on Windows, passes the first 4 integer/pointer parameters in `rcx`, `rdx`, `r8`, `r9` (in exactly this order). The 5th parameter onward is pushed on the stack, and the return value is in `rax`. There's also a speciality called shadow space: the caller must reserve 32 bytes (0x20) on the stack right above the return address, even if the function has fewer than 4 parameters. This space gives the called function somewhere to spill the 4 parameter registers if it wants. Seeing `sub rsp, 0x28` or numbers like 0x20 plus something before a series of `call`s is a sign of shadow space. At first it confuses beginners ("why reserve space and not use it"), but once you know its name the question goes away.
 
-**System V AMD64, dùng trên Linux và macOS:**
-- 6 tham số nguyên/con trỏ đầu: `rdi`, `rsi`, `rdx`, `rcx`, `r8`, `r9`.
-- Tham số thứ 7 trở đi: stack.
-- Trả về: `rax`.
-- Không có shadow space, nhưng có "red zone" 128 byte ngay dưới rsp mà hàm lá được dùng thoải mái.
+System V AMD64, used on Linux and macOS, passes the first 6 integer/pointer parameters in `rdi`, `rsi`, `rdx`, `rcx`, `r8`, `r9`. The 7th parameter onward goes on the stack, and the return value is in `rax`. There's no shadow space, but there's a 128-byte "red zone" right below rsp that leaf functions can use freely.
 
-Nhìn hai danh sách là thấy ngay chúng khác nhau. Cùng một hàm `f(a, b, c)`, trên Windows `a` nằm ở rcx, trên Linux `a` nằm ở rdi. Đọc nhầm hệ điều hành là đọc nhầm hết tham số. Khi mở một binary, nhớ hỏi: đây là file Windows hay Linux?
+Looking at the two lists, you can see right away they differ. For the same function `f(a, b, c)`, on Windows `a` is in rcx and on Linux `a` is in rdi. Get the OS wrong and you read every parameter wrong. When you open a binary, remember to ask: is this a Windows or a Linux file?
 
-Một đoạn gọi hàm thật trên Win64:
+A real call sequence on Win64:
 
 ```asm
-; gọi add3(10, 20, 30) trên Windows x64
-mov  r8d, 30        ; tham số 3 -> r8
-mov  edx, 20        ; tham số 2 -> rdx
-mov  ecx, 10        ; tham số 1 -> rcx
+; call add3(10, 20, 30) on Windows x64
+mov  r8d, 30        ; parameter 3 -> r8
+mov  edx, 20        ; parameter 2 -> rdx
+mov  ecx, 10        ; parameter 1 -> rcx
 call add3
-; kết quả giờ nằm trong eax
+; the result is now in eax
 ```
 
-Cùng hàm đó trên Linux:
+The same function on Linux:
 
 ```asm
-mov  edx, 30        ; tham số 3 -> rdx
-mov  esi, 20        ; tham số 2 -> rsi
-mov  edi, 10        ; tham số 1 -> rdi
+mov  edx, 30        ; parameter 3 -> rdx
+mov  esi, 20        ; parameter 2 -> rsi
+mov  edi, 10        ; parameter 1 -> rdi
 call add3
 ```
 
-### Thế giới 32-bit (code cũ, vẫn gặp)
+### The 32-bit world (old code, still around)
 
-Ở 32-bit không có nhiều thanh ghi để xài nên tham số chủ yếu đẩy lên stack, thứ tự từ phải sang trái. Ba convention hay nghe tên:
+On 32-bit there aren't many registers to spare, so parameters mostly go on the stack, pushed right to left. Three conventions whose names you'll hear often.
 
-- **cdecl**: tham số đẩy lên stack phải-sang-trái, **bên gọi** dọn stack sau khi gọi (bạn sẽ thấy `add esp, N` ngay sau `call`). Mặc định của C trên 32-bit.
-- **stdcall**: cũng đẩy stack phải-sang-trái, nhưng **bên bị gọi** tự dọn (kết thúc bằng `ret N` thay vì `ret`). Đây là convention của hầu hết Win32 API. Thấy `ret 0xC` là biết hàm dọn 12 byte tham số, tức khoảng 3 tham số.
-- **fastcall**: 2 tham số đầu vào `ecx`, `edx`, còn lại lên stack. Nhanh hơn chút.
+With cdecl, parameters are pushed on the stack right-to-left and the caller cleans the stack after the call (you'll see `add esp, N` right after the `call`). It's the default for C on 32-bit. With stdcall, parameters are also pushed right-to-left, but the callee cleans up (ends with `ret N` instead of `ret`). This is the convention of most Win32 APIs, and seeing `ret 0xC` tells you the function cleans 12 bytes of parameters, so about 3 parameters. With fastcall, the first 2 parameters go in `ecx`, `edx` and the rest on the stack, which is slightly faster.
 
-Mẹo phân biệt nhanh khi đọc 32-bit: nhìn sau `call`. Có `add esp, N` là cdecl (caller dọn). Hàm kết thúc `ret N` là stdcall (callee dọn). Đây là cách bạn suy ra số tham số mà không cần đọc thân hàm.
+A quick trick for telling them apart when reading 32-bit: look after the `call`. An `add esp, N` means cdecl (caller cleans). A function ending in `ret N` is stdcall (callee cleans). This is how you work out the number of parameters without reading the function body.
 
-## Đọc stack frame trong IDA
+## Reading the stack frame in IDA
 
-IDA làm giúp bạn phần nặng nhất: nó phân tích frame rồi đặt tên tử tế cho các ô. Bạn sẽ thấy hai loại tên:
+IDA does the heaviest part for you: it analyzes the frame and gives the slots proper names. You'll see two kinds of names. `var_4`, `var_8`, `var_C`... are local variables, at negative offsets from rbp (`[rbp-4]`, `[rbp-8]`), and the number after `var_` is the offset, e.g. `var_4` is `[rbp-4]`. `arg_0`, `arg_4`, `arg_8`... are parameters passed on the stack (the spill, or on 32-bit), at positive offsets from rbp.
 
-- `var_4`, `var_8`, `var_C`...: đây là **biến cục bộ** (local variable), nằm ở các địa chỉ âm so với rbp (`[rbp-4]`, `[rbp-8]`). Số sau `var_` chính là độ lệch, ví dụ `var_4` là `[rbp-4]`.
-- `arg_0`, `arg_4`, `arg_8`...: đây là **tham số** được truyền qua stack (phần tràn, hoặc ở 32-bit), nằm ở địa chỉ dương so với rbp.
+When you double-click `var_8` in IDA and rename it to `password_len`, every use of that slot changes with it. This is how you turn a function full of unreadable `var_x` into code you can read like English. Whenever you figure out what a variable is, name it right away, don't save it for later.
 
-Khi bạn double-click vào `var_8` trong IDA và đổi tên nó thành `password_len`, mọi chỗ dùng ô đó đổi theo. Đây là cách bạn biến một hàm đầy `var_x` khó hiểu thành code đọc được như tiếng người. Cứ thấy một biến hiểu ra nó là gì thì đặt tên ngay, đừng để dành.
+One easy mistake: in a 64-bit function, parameters arrive through registers (rcx, rdx...) and not the stack, so at the top of the function the compiler usually copies them into stack variables for convenience. You'll see things like `mov [rbp-18h], rcx` right after the prologue, meaning "store parameter 1 in a local slot". Recognizing this pattern helps you trace which register the original parameter was in.
 
-Một điểm hay nhầm: với hàm 64-bit, tham số đến qua thanh ghi (rcx, rdx...) chứ không qua stack, nên ở đầu hàm compiler thường copy chúng vào biến stack để tiện dùng. Bạn sẽ thấy kiểu `mov [rbp-18h], rcx` ngay sau prologue, nghĩa là "cất tham số 1 vào một ô cục bộ". Nhận ra pattern này giúp bạn lần ra tham số gốc nằm ở thanh ghi nào.
-
-## Đọc thử một hàm có tham số
+## Reading a function with parameters
 
 ```asm
 ; Win64, -O0
 sum3:
     push rbp
     mov  rbp, rsp
-    mov  [rbp-18h], ecx    ; cất tham số 1 (a) vào biến cục bộ
-    mov  [rbp-14h], edx    ; tham số 2 (b)
-    mov  [rbp-10h], r8d    ; tham số 3 (c)
+    mov  [rbp-18h], ecx    ; store parameter 1 (a) in a local
+    mov  [rbp-14h], edx    ; parameter 2 (b)
+    mov  [rbp-10h], r8d    ; parameter 3 (c)
     mov  eax, [rbp-18h]    ; eax = a
     add  eax, [rbp-14h]    ; eax += b
     add  eax, [rbp-10h]    ; eax += c
     pop  rbp
-    ret                    ; trả về eax = a+b+c
+    ret                    ; returns eax = a+b+c
 ```
 
-Dịch ngược:
+Decompiled back:
 
 ```c
 int sum3(int a, int b, int c) {   // a=rcx, b=rdx, c=r8 (Win64)
@@ -134,16 +114,13 @@ int sum3(int a, int b, int c) {   // a=rcx, b=rdx, c=r8 (Win64)
 }
 ```
 
-Bạn vừa làm hai việc: nhận ra ba tham số từ rcx/rdx/r8 (nên biết đây là Win64), và theo dõi chúng được cộng dồn vào eax để trả về. Đó là toàn bộ nghề đọc hàm.
+You just did two things: recognized three parameters from rcx/rdx/r8 (so you know it's Win64), and followed them being accumulated into eax to return. That's the whole craft of reading functions.
 
-## Lab tự làm
+## Lab
 
-Thư mục [labs/1.4/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/1.4) có một file C với vài hàm số tham số khác nhau. Nhiệm vụ: build với `-O0` trên cả Windows (hoặc hình dung Win64) và Linux, rồi mở bằng IDA/Ghidra/objdump và tự xác nhận tham số nằm ở thanh ghi nào trên mỗi hệ, đâu là shadow space, đâu là biến cục bộ. Lời giải ở `solution.md`, nhưng tự so trước đã.
+The folder [labs/1.4/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/1.4) has a C file with a few functions taking different numbers of parameters. The task: build with `-O0` on both Windows (or picture Win64) and Linux, then open it in IDA/Ghidra/objdump and confirm yourself which registers the parameters are in on each system, where the shadow space is, and which are the locals. The answer is in `solution.md`, but try comparing on your own first.
 
-## Checklist ghi nhớ
-- `call` đẩy địa chỉ trở về lên stack rồi nhảy, `ret` lấy ra và quay về.
-- Prologue `push rbp; mov rbp, rsp` đánh dấu đầu hàm, `leave; ret` đánh dấu cuối.
-- Win64: tham số 1-4 ở `rcx, rdx, r8, r9`, có shadow space 32 byte. Trả về `rax`.
-- System V (Linux/macOS): tham số 1-6 ở `rdi, rsi, rdx, rcx, r8, r9`. Trả về `rax`.
-- 32-bit: tham số lên stack. `add esp, N` sau call = cdecl (caller dọn), `ret N` = stdcall (callee dọn).
-- Trong IDA: `var_x` là biến cục bộ (`[rbp-x]`), `arg_x` là tham số qua stack. Đổi tên ngay khi hiểu.
+## Key takeaways
+`call` pushes the return address on the stack then jumps, and `ret` pops it and goes back. The prologue `push rbp; mov rbp, rsp` marks the start of a function and `leave; ret` marks the end. On Win64, parameters 1-4 are in `rcx, rdx, r8, r9` with 32 bytes of shadow space and the return in `rax`. On System V (Linux/macOS), parameters 1-6 are in `rdi, rsi, rdx, rcx, r8, r9` and the return is in `rax`.
+
+On 32-bit, parameters go on the stack: `add esp, N` after a call means cdecl (caller cleans) and `ret N` means stdcall (callee cleans). In IDA, `var_x` is a local (`[rbp-x]`) and `arg_x` is a parameter passed on the stack, so rename as soon as you understand it.

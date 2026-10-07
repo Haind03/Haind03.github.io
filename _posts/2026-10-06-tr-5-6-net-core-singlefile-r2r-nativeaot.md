@@ -1,71 +1,71 @@
 ---
-title: "Bài 5.6: .NET hiện đại, khi món quà decompile bị lấy lại"
+title: "Lesson 5.6: Modern .NET, when the decompile gift gets taken back"
 date: 2026-10-06 08:42:00 +0700
-categories: ["Technique Reverse", "Phần 5 · C# / .NET (dnSpy, ILSpy)"]
+categories: ["Technique Reverse", "Part 05 · C# and .NET"]
 tags: [reverse-engineering, dotnet]
 render_with_liquid: false
 ---
-Mấy bài trước của Phần 5 cho bạn một cảm giác dễ chịu: mở dnSpy, bấm nút, ra gần như source gốc. Đó là thế giới .NET Framework cũ. Nhưng .NET Core và các bản .NET 5, 6, 7, 8 trở đi thêm vào nhiều kiểu publish, và có một kiểu trong số đó lấy lại toàn bộ món quà ấy, biến bài toán thành reverse native như C++. Bài này giúp bạn nhận ra mình đang cầm kiểu nào, để không phí cả buổi tìm IL trong một file chẳng còn IL.
+The earlier lessons in Part 5 gave you a comfortable feeling: open dnSpy, click a button, get nearly the original source. That's the world of the old .NET Framework. But .NET Core and .NET 5, 6, 7, 8 onwards add many publish modes, and one of them takes back that whole gift, turning the problem into native reversing like C++. This lesson helps you recognize which kind you're holding, so you don't waste a whole session looking for IL in a file that has no IL left.
 
-Ba kiểu đáng quan tâm: single-file, ReadyToRun, và NativeAOT. Mức độ khó tăng dần, và NativeAOT là bước ngoặt.
+Three modes worth caring about: single-file, ReadyToRun, and NativeAOT. The difficulty goes up in that order, and NativeAOT is the turning point.
 
-## Trước tiên: .NET Core khác .NET Framework ở đâu
+## First: how .NET Core differs from .NET Framework
 
-.NET Framework cũ chạy trên CLR cài sẵn trong Windows, một file `.exe` nhỏ gọi vào runtime hệ thống. .NET Core (và .NET 5+) thì tự mang runtime theo, nên cách đóng gói linh hoạt hơn nhiều. Một app .NET hiện đại có thể publish thành:
+The old .NET Framework runs on the CLR preinstalled in Windows, a small `.exe` file calling into the system runtime. .NET Core (and .NET 5+) carries its own runtime, so packaging is much more flexible. A modern .NET app can be published as:
 
-- **framework-dependent**: cần runtime cài sẵn trên máy, file nhỏ, vẫn là IL thuần. Dễ như .NET Framework.
-- **self-contained**: kèm cả runtime, nặng hơn nhưng vẫn là IL.
-- **single-file**: gộp mọi thứ vào một exe duy nhất.
-- **ReadyToRun (R2R)**: chèn sẵn native code cạnh IL.
-- **NativeAOT**: biên dịch thẳng ra native, vứt bỏ IL.
+- **framework-dependent**: needs the runtime installed on the machine, small file, still pure IL. As easy as .NET Framework.
+- **self-contained**: ships the runtime too, heavier but still IL.
+- **single-file**: merges everything into one exe.
+- **ReadyToRun (R2R)**: puts precompiled native code next to the IL.
+- **NativeAOT**: compiles straight to native, throwing away the IL.
 
-Ba cái sau là chỗ cần hiểu kỹ.
+The last three are where you need to understand things well.
 
-## Single-file: gộp tất cả vào một exe
+## Single-file: everything in one exe
 
-![So sánh single-file, ReadyToRun, NativeAOT về khả năng decompile](/assets/img/technique-reverse/assets/phan-05/dotnet-packaging.svg)
+![Comparing single-file, ReadyToRun, NativeAOT in terms of decompilability](/assets/img/technique-reverse/assets/phan-05/dotnet-packaging.svg)
 
-Khi publish với `PublishSingleFile=true`, toolchain nhét toàn bộ DLL phụ thuộc (và có khi cả runtime) vào trong một file `.exe` duy nhất cho gọn. Nghe như bị giấu, nhưng thực chất đây chỉ là một cái bundle: các DLL `.NET` vẫn nằm nguyên bên trong, chỉ bị đóng gói lại.
+When you publish with `PublishSingleFile=true`, the toolchain stuffs all the dependent DLLs (and sometimes the runtime too) into a single `.exe` file for tidiness. It sounds like hiding, but it's really just a bundle: the `.NET` DLLs are still intact inside, just repacked.
 
-Cách xử lý:
-- dnSpy và ILSpy bản mới nhiều khi mở thẳng được single-file và tự liệt kê các assembly bên trong.
-- Nếu không, dùng tool trích bundle như **ExtractAllTheThings** hoặc các script `dotnet-bundle extract`, chúng tách file ra lại thành từng DLL. Sau đó mở từng DLL như bình thường.
-- Dấu hiệu: file `.exe` khá to (vài chục MB nếu self-contained), và DIE hoặc một lần xem hex thấy dấu vết của nhiều assembly `.NET` ghép lại.
+How to handle it:
+- Newer dnSpy and ILSpy can often open single-file directly and list the assemblies inside on their own.
+- If not, use a bundle extraction tool like **ExtractAllTheThings** or `dotnet-bundle extract` scripts, which split the file back into individual DLLs. Then open each DLL as usual.
+- Signs: the `.exe` is fairly large (tens of MB if self-contained), and DIE or a look at the hex shows traces of several `.NET` assemblies glued together.
 
-Nói cách khác, single-file chỉ là lớp đóng gói. Món quà decompile vẫn còn nguyên, chỉ cần mở đúng cách.
+In other words, single-file is only a packaging layer. The decompile gift is still fully there, you just have to open it the right way.
 
-## ReadyToRun (R2R): native có sẵn, nhưng IL vẫn ở đó
+## ReadyToRun (R2R): native is there, but the IL is still there too
 
-R2R biên dịch trước (ahead-of-time) một phần IL thành native code để app khởi động nhanh hơn, không phải JIT lại từ đầu. Điểm mấu chốt cho người reverse: **R2R giữ cả hai**, có native code đã biên dịch sẵn, nhưng IL và metadata vẫn nằm trong file.
+R2R compiles part of the IL ahead of time into native code so the app starts faster, without having to JIT from scratch. The key point for a reverser: **R2R keeps both**, there's precompiled native code, but the IL and metadata are still in the file.
 
-Nghĩa là bạn vẫn decompile ra C# được. dnSpy/ILSpy đọc phần IL như thường. Phần native chỉ là bản sao đã biên dịch của chính IL đó, không chứa thông tin gì mới. Trừ khi bạn nghi ngờ runtime chạy native khác với IL (hiếm), cứ đọc IL là đủ.
+That means you can still decompile to C#. dnSpy/ILSpy read the IL part as usual. The native part is just a compiled copy of that same IL, with no new information. Unless you suspect the runtime executes native differently from the IL (rare), reading the IL is enough.
 
-Tóm lại R2R trông đáng sợ hơn thực tế. Vẫn là managed, vẫn decompile tốt.
+In short, R2R looks scarier than it is. It's still managed, still decompiles fine.
 
-## NativeAOT: đây mới là bước ngoặt
+## NativeAOT: this is the turning point
 
-NativeAOT (Native Ahead-Of-Time) biên dịch toàn bộ chương trình thẳng ra machine code native, giống như C++. Không còn CLR nạp IL lúc chạy, không còn JIT, và quan trọng nhất: **không còn IL, không còn metadata dạng managed để decompile.**
+NativeAOT (Native Ahead-Of-Time) compiles the whole program straight to native machine code, like C++. There's no CLR loading IL at runtime, no JIT, and most importantly: **no IL, no managed metadata left to decompile.**
 
-Hệ quả rất thật:
-- Mở một binary NativeAOT bằng dnSpy hay ILSpy sẽ thất bại, hoặc chỉ thấy một PE native trống rỗng phần managed. Đừng phí thời gian.
-- Bạn phải reverse nó **như một binary C++**: IDA, Ghidra, x64dbg, đọc assembly, khôi phục logic bằng tay. Mọi thứ đã học ở Phần 1 tới Phần 4 quay lại dùng ở đây.
-- Có chút an ủi: runtime .NET để lại vài dấu vết. Có thể còn một ít metadata cho reflection, tên type trong các bảng runtime, hoặc chuỗi đặc trưng của CoreCLR/NativeAOT runtime. Vài script cộng đồng cố khôi phục tên method từ các bảng này, nhưng đừng kỳ vọng ra C# đẹp đẽ như trước.
+The consequences are very real:
+- Opening a NativeAOT binary in dnSpy or ILSpy will fail, or only show a native PE with an empty managed part. Don't waste time.
+- You have to reverse it **like a C++ binary**: IDA, Ghidra, x64dbg, read the assembly, recover the logic by hand. Everything learned in Part 1 through Part 4 comes back into use here.
+- A small consolation: the .NET runtime leaves a few traces. There may be some metadata left for reflection, type names in runtime tables, or characteristic strings of the CoreCLR/NativeAOT runtime. A few community scripts try to recover method names from these tables, but don't expect nice C# like before.
 
-NativeAOT còn mới và chưa phổ biến bằng kiểu IL truyền thống, nhưng nó đang được dùng nhiều dần cho CLI tool và app cần khởi động nhanh. Gặp một "app .NET" mà dnSpy chịu thua, NativeAOT là nghi phạm số một.
+NativeAOT is still new and not as common as the traditional IL kind, but it's being used more and more for CLI tools and apps that need fast startup. If you meet a ".NET app" that dnSpy gives up on, NativeAOT is the prime suspect.
 
-## Nhận diện nhanh bằng Detect It Easy
+## Quick identification with Detect It Easy
 
-Bước triage (nhớ lại [Bài 2.1](/posts/tr-2-1-triage-die-strings-pebear/)) quyết định bạn đi hướng nào:
+The triage step (recall [Lesson 2.1](/posts/tr-2-1-triage-die-strings-pebear/)) decides which direction you go:
 
-- DIE báo **".NET"** kèm thông tin assembly, mở dnSpy thấy cây namespace: đây là IL thuần (framework-dependent, self-contained, hoặc R2R). Decompile thoải mái.
-- File rất to, DIE vẫn nhận ra dấu .NET nhưng mở hơi lạ: khả năng single-file bundle. Trích ra rồi mở.
-- DIE báo một **PE native bình thường** (ví dụ "C++" hoặc chỉ "PE") nhưng bạn biết chắc nguồn gốc là app .NET, hoặc thấy chuỗi liên quan tới CoreCLR/NativeAOT runtime, mutex, type name của .NET nằm trong một file không có managed header: rất có thể NativeAOT. Chuyển sang IDA/Ghidra.
+- DIE reports **".NET"** with assembly info, and dnSpy shows a namespace tree: this is pure IL (framework-dependent, self-contained, or R2R). Decompile freely.
+- The file is very large, DIE still recognizes the .NET signs but it opens a bit strangely: likely a single-file bundle. Extract it and then open.
+- DIE reports a **plain native PE** (for example "C++" or just "PE") but you know for sure the origin is a .NET app, or you see strings related to the CoreCLR/NativeAOT runtime, mutexes, .NET type names in a file with no managed header: very likely NativeAOT. Switch to IDA/Ghidra.
 
-Mẹo kiểm tra thủ công: một PE có managed code sẽ có một CLI header (Data Directory COM Descriptor khác 0). Native thuần thì mục này rỗng. PE-bear hoặc DIE cho bạn thấy điều này.
+A manual check tip: a PE with managed code has a CLI header (the COM Descriptor Data Directory is nonzero). Pure native has this entry empty. PE-bear or DIE shows you this.
 
-## Checklist ghi nhớ
-- .NET hiện đại có nhiều kiểu publish, khó dần: framework-dependent, self-contained, single-file, R2R, NativeAOT.
-- Single-file chỉ là bundle: trích ra (dnSpy, ExtractAllTheThings) rồi mở từng DLL. Vẫn là IL.
-- R2R giữ cả native lẫn IL: cứ đọc IL, decompile bình thường.
-- NativeAOT vứt bỏ IL/metadata managed: phải reverse như C++ bằng IDA/Ghidra. Đây là bước ngoặt.
-- Luôn triage bằng DIE trước: có CLI header (managed) hay không quyết định toàn bộ cách tiếp cận.
+## Key takeaways
+- Modern .NET has several publish modes, increasingly hard: framework-dependent, self-contained, single-file, R2R, NativeAOT.
+- Single-file is just a bundle: extract it (dnSpy, ExtractAllTheThings) then open each DLL. Still IL.
+- R2R keeps both native and IL: just read the IL, decompile as usual.
+- NativeAOT discards the IL/managed metadata: you have to reverse it like C++ with IDA/Ghidra. This is the turning point.
+- Always triage with DIE first: whether there's a CLI header (managed) decides the whole approach.

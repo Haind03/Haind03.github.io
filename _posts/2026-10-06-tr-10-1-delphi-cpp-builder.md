@@ -1,55 +1,46 @@
 ---
-title: "Bài 10.1: Reverse chương trình Delphi và C++Builder"
+title: "Lesson 10.1: Reversing Delphi and C++Builder programs"
 date: 2026-10-06 09:06:00 +0700
-categories: ["Technique Reverse", "Phần 10 · Ngôn ngữ legacy: Delphi, VB6, AutoIt, AHK"]
+categories: ["Technique Reverse", "Part 10 · Legacy: Delphi, VB6, AutoIt, AHK"]
 tags: [reverse-engineering, legacy]
 render_with_liquid: false
 ---
-Có một ngày bạn mở một file exe cũ trong IDA, decompiler nhả ra pseudocode nhưng mọi hàm đều là `sub_xxx`, không một cái tên quen thuộc, các chuỗi thì dính length phía trước, và cả nghìn hàm của một framework nào đó ngập màn hình. Khả năng cao bạn vừa gặp một binary Delphi. Đây là loại chương trình legacy vẫn còn sống khỏe trong phần mềm doanh nghiệp, POS, phần mềm kế toán Việt Nam, và kha khá malware. Nó không khó hơn C, chỉ là khác, và cần đúng công cụ.
+One day you open an old exe in IDA, the decompiler spits out pseudocode but every function is `sub_xxx`, there isn't one familiar name, the strings have a length stuck in front of them, and thousands of functions from some framework flood the screen. Chances are you just met a Delphi binary. This is a kind of legacy program that's still alive and well in enterprise software, POS, Vietnamese accounting software, and quite a bit of malware. It isn't harder than C, just different, and it needs the right tools.
 
-## Delphi là cái gì, và vì sao nó khác
+## What Delphi is, and why it's different
 
-Delphi (cùng người anh em C++Builder) dùng compiler của Borland, nay là Embarcadero. Code viết bằng Object Pascal, biên dịch thẳng ra native x86/x64, nên về bản chất bạn vẫn đang đọc assembly thường. Nhưng Delphi để lại vài dấu vân tay rất riêng khiến việc reverse lệch khỏi thói quen C:
+Delphi (along with its sibling C++Builder) uses the Borland compiler, now Embarcadero. The code is written in Object Pascal and compiled straight to native x86/x64, so at heart you're still reading plain assembly. But Delphi leaves a few very specific fingerprints that push reversing away from your C habits.
 
-- **Framework VCL** (Visual Component Library). Gần như mọi app Delphi kéo theo cả rừng hàm VCL (quản lý form, button, string, stream). Giống libc tĩnh trong C, phần lớn code bạn thấy không phải của tác giả mà là framework. Lọc được nó ra là thắng một nửa.
-- **Chuỗi kiểu Pascal**. Khác C dùng null-terminated, chuỗi Delphi (AnsiString, UnicodeString) có **length prefix**: độ dài và refcount nằm ngay trước con trỏ dữ liệu. Trong IDA bạn thấy chuỗi không kết thúc bằng `00` mà có mấy byte độ dài phía trước. Biết điều này mới đọc đúng.
-- **Form nhúng trong resource**. Giao diện được lưu dưới dạng DFM (Delphi Form Module) ngay trong resource section của exe. DFM mô tả từng component và quan trọng là tên các **event handler** (ví dụ `Button1Click`). Đây là mỏ vàng để lần ra logic.
-- **Calling convention register**. Delphi mặc định dùng `register` (fastcall riêng của Borland): ba tham số đầu qua EAX, EDX, ECX, khác cdecl/stdcall quen thuộc. Đọc nhầm convention là hiểu sai tham số.
+The first is the VCL framework (Visual Component Library). Almost every Delphi app drags in a whole forest of VCL functions for form management, buttons, strings, and streams. Like a statically linked libc in C, most of the code you see isn't the author's but the framework's, and filtering it out wins you half the battle.
 
-## Nhận ra Delphi trong một phút
+The second is Pascal-style strings. Unlike C's null-terminated strings, Delphi strings (AnsiString, UnicodeString) have a length prefix, with the length and refcount sitting right before the data pointer. In IDA you see strings that don't end in `00` but have a few length bytes in front, and you need to know this to read them right.
 
-Kéo file vào **Detect It Easy (DIE)**. Nó thường chỉ thẳng ra compiler là Borland Delphi hoặc Embarcadero, kèm cả phiên bản. Vài dấu hiệu khác cũng tố cáo Delphi:
+The UI is stored as DFM (Delphi Form Module) inside the exe's resource section. The DFM describes each component and, importantly, the names of the event handlers (for example `Button1Click`), which makes it a gold mine for tracing the logic. Finally, Delphi defaults to the `register` calling convention (Borland's own fastcall), where the first three parameters go through EAX, EDX, ECX, different from the familiar cdecl/stdcall. Misread the convention and you misunderstand the parameters.
 
-- Chuỗi `Borland` / `Embarcadero` / tên unit như `System`, `SysUtils`, `Classes`, `Vcl.Forms` trong strings.
-- Entry point gọi vào một hàm khởi tạo runtime rất đặc trưng (thiết lập VCL, gọi `InitExe`).
-- Resource section có các blob DFM (bạn sẽ thấy tên component, `TForm`, `TButton`).
+## Spotting Delphi in a minute
 
-Xác nhận được là Delphi thì đừng vội cắm đầu đọc assembly trong IDA. Lấy đúng đồ nghề đã.
+Drop the file into **Detect It Easy (DIE)**. It usually points straight at the compiler as Borland Delphi or Embarcadero, with the version. A few other signs give Delphi away too. You'll see the strings `Borland` or `Embarcadero` and unit names like `System`, `SysUtils`, `Classes`, `Vcl.Forms` in strings. The entry point calls a very characteristic runtime init function that sets up the VCL and calls `InitExe`. The resource section also has DFM blobs, where you'll see component names, `TForm`, `TButton`.
 
-## IDR: trợ thủ không thể thiếu
+Once you confirm it's Delphi, don't rush into reading assembly in IDA. Get the right gear first.
 
-Vấn đề của IDA thuần với Delphi là nó không biết hàng nghìn hàm kia là VCL, nên để nguyên `sub_xxx` và bạn chết chìm. **IDR (Interactive Delphi Reconstructor)** sinh ra để giải đúng chuyện này. IDR làm ba việc quan trọng:
+## IDR: the helper you can't do without
 
-1. **Khôi phục tên hàm VCL/RTL** đã biết, đặt lại tên như `TStringList.Add`, `ShowMessage`, để bạn bỏ qua chúng và tập trung vào code tác giả.
-2. **Dựng lại form và event handler** từ DFM. Bạn thấy được `Button1Click` nằm ở địa chỉ nào, tức là biết ngay chỗ xử lý khi người dùng bấm nút.
-3. **Xuất ra map/idc** để import ngược vào IDA, biến đống `sub_xxx` thành tên có nghĩa.
+The problem with plain IDA on Delphi is that it doesn't know those thousands of functions are VCL, so it leaves them as `sub_xxx` and you drown. **IDR (Interactive Delphi Reconstructor)** was built to solve exactly this. It recovers the names of known VCL/RTL functions, renaming them to things like `TStringList.Add` and `ShowMessage`, so you can skip them and focus on the author's code. It rebuilds the forms and event handlers from the DFM, so you see which address `Button1Click` lives at and know right away where the code runs when the user clicks a button. And it exports a map/idc to import back into IDA, turning the pile of `sub_xxx` into meaningful names.
 
-Quy trình thực tế: chạy IDR trên exe Delphi, để nó phân tích, xuất file hỗ trợ (ví dụ .idc hoặc .map), rồi nạp vào IDA. Sau bước này IDA của bạn đột nhiên đọc được. **DeDe** là công cụ cũ hơn cùng ý tưởng, chỉ hợp với Delphi rất xưa, giờ gần như luôn chọn IDR.
+The practical workflow: run IDR on the Delphi exe, let it analyze, export the helper file (for example .idc or .map), then load it into IDA. After this step your IDA is suddenly readable. **DeDe** is an older tool with the same idea, only good for very old Delphi, and these days I almost always pick IDR.
 
-Với C++Builder thì phức tạp hơn một chút vì trộn C++ (có name mangling, class, vtable như Phần 4) với runtime Borland, nhưng cách tiếp cận tương tự: nhận diện bằng DIE, dùng IDR cho phần VCL, rồi áp kiến thức C++ cho phần còn lại.
+C++Builder is a bit more complicated because it mixes C++ (with name mangling, classes, vtables as in Part 4) with the Borland runtime, but the approach is similar: identify with DIE, use IDR for the VCL part, then apply your C++ knowledge to the rest.
 
-## Đi từ event handler, không đi từ main
+## Start from event handlers, not from main
 
-Đây là mẹo quan trọng nhất của bài. Với app C bạn tìm `main`. Với app Delphi có giao diện, `main` chỉ là vòng lặp message của VCL, không có gì thú vị. Logic thật nằm trong các **event handler**: người dùng nhập serial rồi bấm nút OK, thì hàm `btnOKClick` (hay tên tương tự) mới là nơi kiểm tra.
+This is the most important tip of the lesson. With a C app you look for `main`. With a Delphi app that has a UI, `main` is just the VCL message loop, nothing interesting. The real logic lives in the **event handlers**: the user types a serial and clicks OK, so the `btnOKClick` function (or something with a similar name) is where the check happens.
 
-Nhờ IDR dựng lại form, bạn biết tên và địa chỉ các handler. Nhảy thẳng tới handler của nút liên quan là tới đúng chỗ, bỏ qua toàn bộ code khởi tạo UI. Nếu không có tên, hãy tìm theo chuỗi thông báo ("Sai mật khẩu", "Đăng ký thành công") rồi xref ngược, đúng như thói quen đã học ở các phần trước, chỉ nhớ chuỗi Delphi có length prefix nên khi tìm hãy tìm phần text chứ đừng kèm byte độ dài.
+Thanks to IDR rebuilding the forms, you know the names and addresses of the handlers. Jump straight to the handler of the relevant button and you're at the right place, skipping all the UI init code. If there are no names, search by message strings ("Wrong password", "Registration successful") and xref backwards, just like the habit from earlier parts, only remember that Delphi strings have a length prefix, so when searching, search for the text part and don't include the length byte.
 
-## Checklist ghi nhớ
-- Delphi/C++Builder là native x86/x64, nhưng kéo theo rừng hàm VCL và có dấu vân tay riêng.
-- Chuỗi Delphi có length prefix, không null-terminated. Đọc và tìm kiếm phải nhớ điều này.
-- Mặc định dùng calling convention register (EAX, EDX, ECX cho 3 tham số đầu).
-- Nhận diện bằng DIE, rồi dùng IDR để khôi phục tên VCL và dựng lại form/event handler.
-- Đi từ event handler (ví dụ Button1Click) chứ đừng đi từ main, vì main chỉ là message loop.
+## Key takeaways
+Delphi/C++Builder is native x86/x64, but it drags in a forest of VCL functions and has its own fingerprints. Delphi strings have a length prefix and are not null-terminated, and the default calling convention is register (EAX, EDX, ECX for the first 3 parameters), so keep both in mind when reading and searching.
 
-## Lab tự làm
-Xem [labs/10.1/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/10.1): nhận diện một exe Delphi bằng DIE, dùng IDR dựng lại form và event handler, rồi lần tới hàm xử lý nút OK.
+Identify with DIE, then use IDR to recover VCL names and rebuild forms and event handlers. Start from event handlers such as Button1Click rather than from main, because main is just the message loop.
+
+## Lab
+See [labs/10.1/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/10.1): identify a Delphi exe with DIE, use IDR to rebuild the forms and event handlers, then trace to the function that handles the OK button.

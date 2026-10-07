@@ -1,80 +1,80 @@
 ---
-title: "Bài 5.3: Debug .NET không cần source với dnSpy"
+title: "Lesson 5.3: Debugging .NET without source using dnSpy"
 date: 2026-10-06 08:39:00 +0700
-categories: ["Technique Reverse", "Phần 5 · C# / .NET (dnSpy, ILSpy)"]
+categories: ["Technique Reverse", "Part 05 · C# and .NET"]
 tags: [reverse-engineering, dotnet]
 render_with_liquid: false
 ---
-Ở native, muốn debug bạn phải vật lộn với địa chỉ, thanh ghi, stack frame. Ở .NET thì khác hẳn, và đây là lúc bạn thấy vì sao dân RE thích đụng phải một chương trình .NET: dnSpy cho bạn đặt breakpoint ngay trên dòng C# mà nó vừa decompile ra từ một file không hề có source, rồi chạy, dừng, xem biến, sửa biến, y như đang debug chính project của mình trong Visual Studio. Nghe hơi phi lý, nhưng đó là sự thật, và bài này chỉ bạn cách tận dụng.
+With native code, to debug you have to wrestle with addresses, registers, stack frames. With .NET it's completely different, and this is when you see why RE people like running into a .NET program: dnSpy lets you set a breakpoint right on the line of C# it just decompiled from a file with no source at all, then run, stop, look at variables, edit variables, just like debugging your own project in Visual Studio. It sounds a bit absurd, but it's true, and this lesson shows you how to take advantage of it.
 
-## Vì sao debug managed lại dễ đến vậy
+## Why managed debugging is so easy
 
-Nhớ lại [Bài 5.1](/posts/tr-5-1-net-ben-trong-clr-il-metadata/): assembly .NET mang theo đầy đủ metadata và IL. dnSpy decompile IL ra C#, nhưng quan trọng hơn, nó biết **từng dòng C# đó ứng với lệnh IL nào**. Khi bạn đặt breakpoint trên một dòng, dnSpy đặt breakpoint thật ở đúng offset IL tương ứng. CLR dừng tại đó, và vì metadata còn nguyên tên biến cục bộ, tham số, field, dnSpy hiển thị lại mọi thứ có tên tử tế.
+Recall [Lesson 5.1](/posts/tr-5-1-net-ben-trong-clr-il-metadata/): a .NET assembly carries full metadata and IL. dnSpy decompiles the IL into C#, but more importantly, it knows **which IL instructions each line of C# corresponds to**. When you set a breakpoint on a line, dnSpy sets a real breakpoint at the matching IL offset. The CLR stops there, and because the metadata keeps the names of local variables, parameters, and fields intact, dnSpy displays everything with proper names.
 
-So với native: ở x64dbg bạn nhìn `[rbp-4]` và phải tự đoán đó là biến gì. Ở dnSpy bạn thấy thẳng `int attempts = 3`. Khoảng cách đúng bằng khoảng cách giữa đọc hex và đọc chữ.
+Compared with native: in x64dbg you look at `[rbp-4]` and have to guess what variable that is. In dnSpy you see `int attempts = 3` directly. The gap is exactly the gap between reading hex and reading words.
 
-dnSpy đã có sẵn trong repo này tại thư mục cha `dnSpy-net-win64` (chạy `dnSpy.exe`), không cần cài gì thêm.
+dnSpy is already in this repo, in the parent folder `dnSpy-net-win64` (run `dnSpy.exe`), no extra installation needed.
 
-## Hai cách bắt đầu: Start và Attach
+## Two ways to start: Start and Attach
 
-Có hai tình huống:
+There are two situations:
 
-- **Start**: dnSpy tự khởi chạy chương trình dưới quyền debugger. Mở assembly trong dnSpy, bấm Start (F5), chọn đúng file thực thi. Dùng khi bạn muốn debug từ đầu, bắt được cả code chạy sớm.
-- **Attach**: chương trình đã chạy sẵn, bạn gắn debugger vào. Debug menu, Attach to Process, chọn tiến trình .NET. Dùng khi muốn bắt nó ở trạng thái đang chạy, hoặc chương trình được khởi động bởi thứ khác.
+- **Start**: dnSpy launches the program itself under a debugger. Open the assembly in dnSpy, click Start (F5), and pick the right executable. Use it when you want to debug from the beginning and catch code that runs early.
+- **Attach**: the program is already running and you attach the debugger. Debug menu, Attach to Process, pick the .NET process. Use it when you want to catch it in a running state, or when the program is started by something else.
 
-Với một crackme đơn giản, cứ Start cho gọn.
+For a simple crackme, just use Start to keep it tidy.
 
-## Đặt breakpoint ở đâu
+## Where to set breakpoints
 
-Quy trình giống hệt native nhưng dễ hơn: dùng static trước để khoanh vùng, rồi đặt breakpoint tại đó.
+The process is exactly like native but easier: use static first to narrow things down, then set a breakpoint there.
 
-1. Mở assembly, dùng search (Ctrl+Shift+K) hoặc duyệt cây để tìm chuỗi thông báo kiểu "Wrong" hoặc "Correct".
-2. Nhấn vào chuỗi, dùng Analyze để xem method nào dùng nó. Đó là hàm kiểm tra.
-3. Trong code C# đã decompile của hàm đó, click vào lề trái dòng cần dừng (hoặc đặt con trỏ rồi F9) để toggle breakpoint. Một chấm đỏ hiện ra.
-4. Chỗ đáng đặt nhất là ngay dòng so sánh: `if (input == password)` hoặc `if (CheckSerial(...))`.
+1. Open the assembly, use search (Ctrl+Shift+K) or browse the tree to find message strings like "Wrong" or "Correct".
+2. Click the string, and use Analyze to see which method uses it. That's the check function.
+3. In the decompiled C# of that function, click the left margin of the line you want to stop at (or put the cursor there and press F9) to toggle a breakpoint. A red dot appears.
+4. The best spot is right at the comparison line: `if (input == password)` or `if (CheckSerial(...))`.
 
-## Dừng rồi thì xem gì
+## Once stopped, what to look at
 
-Khi breakpoint trúng, chương trình đóng băng và dnSpy highlight dòng sắp chạy. Giờ bạn có mấy cửa sổ:
+When the breakpoint hits, the program freezes and dnSpy highlights the line about to run. Now you have several windows:
 
-- **Locals**: mọi biến cục bộ và tham số với giá trị hiện tại. Đây là nơi câu trả lời hay nằm. Nếu hàm so sánh `input` với một biến `expected`, nhìn Locals là thấy luôn `expected` chứa serial đúng.
-- **Watch**: tự thêm biểu thức muốn theo dõi, ví dụ gõ `input.Length`.
-- **Call Stack**: chuỗi hàm đã gọi tới đây, để biết mình đang ở đâu trong luồng.
-- **Immediate**: chạy biểu thức C# ngay lúc dừng.
+- **Locals**: every local variable and parameter with its current value. This is where the answer often sits. If the function compares `input` with a variable `expected`, looking at Locals shows you right away that `expected` holds the correct serial.
+- **Watch**: add expressions you want to track yourself, for example type `input.Length`.
+- **Call Stack**: the chain of functions that were called to get here, so you know where you are in the flow.
+- **Immediate**: run C# expressions right at the stop.
 
-Các phím điều khiển quen thuộc: F10 step over (bước qua, không vào trong hàm con), F11 step into (vào trong), Shift+F11 step out (chạy hết hàm hiện tại rồi dừng), F5 continue.
+The familiar control keys: F10 step over (step past, without going inside child functions), F11 step into (go inside), Shift+F11 step out (run to the end of the current function and then stop), F5 continue.
 
-## Chiêu mạnh nhất: sửa biến lúc chạy
+## The strongest trick: edit variables at runtime
 
-Đây là thứ làm debug .NET thành vũ khí. Khi dừng tại `if (input == password)`, bạn không cần biết password là gì để qua check. Trong cửa sổ Locals, double-click vào giá trị của biến điều kiện và sửa nó.
+This is what makes .NET debugging a weapon. When stopped at `if (input == password)`, you don't need to know what the password is to get past the check. In the Locals window, double-click the value of the condition variable and edit it.
 
-Ví dụ hàm trả về `bool isValid`. Bạn để nó chạy tới dòng `return isValid`, đặt breakpoint, khi dừng thì sửa `isValid` từ `false` thành `true` ngay trong Locals, rồi F5. Chương trình tưởng bạn nhập đúng. Đây là cách qua một check mà không cần hiểu thuật toán, hữu ích để xác nhận "đúng là chỗ này quyết định" trước khi ngồi đọc kỹ.
+For example, a function returns `bool isValid`. You let it run to the line `return isValid`, set a breakpoint, and when it stops, change `isValid` from `false` to `true` right in Locals, then F5. The program thinks you entered the right thing. This is a way to get past a check without understanding the algorithm, useful for confirming "this really is the spot that decides" before sitting down to read carefully.
 
-Cũng sửa được cả biến chuỗi: nếu thấy `expected = "S3cr3t"` trong Locals, bạn đã có đáp án, khỏi sửa gì.
+You can also edit string variables: if you see `expected = "S3cr3t"` in Locals, you already have the answer, nothing to edit.
 
-## Conditional breakpoint, khi vòng lặp chạy nhiều lần
+## Conditional breakpoints, when a loop runs many times
 
-Nếu hàm kiểm tra nằm trong vòng lặp chạy hàng trăm lần, dừng mỗi vòng thì mệt. Right-click breakpoint, chọn Edit Breakpoint (hoặc Settings), đặt điều kiện kiểu `i == 10` hoặc `c == 'X'`. dnSpy chỉ dừng khi điều kiện đúng. Giống conditional breakpoint của x64dbg nhưng viết bằng cú pháp C#, dễ chịu hơn nhiều.
+If the check function sits in a loop that runs hundreds of times, stopping on every iteration is exhausting. Right-click the breakpoint, choose Edit Breakpoint (or Settings), and set a condition like `i == 10` or `c == 'X'`. dnSpy only stops when the condition is true. Like x64dbg's conditional breakpoints but written in C# syntax, which is much nicer.
 
-## Nhịp làm việc gọn
+## A tidy working rhythm
 
-Ráp lại thành một quy trình bạn sẽ lặp đi lặp lại:
+Put together into a process you'll repeat over and over:
 
-1. Static trong dnSpy/ILSpy: tìm hàm kiểm tra qua chuỗi và Analyze.
-2. Đặt breakpoint tại dòng so sánh.
-3. Start, nhập thử một giá trị sai.
-4. Khi dừng, đọc Locals để lấy giá trị đúng, hoặc sửa biến điều kiện để qua.
-5. Nếu cần, dùng conditional breakpoint để bắt đúng lần lặp.
+1. Static in dnSpy/ILSpy: find the check function through strings and Analyze.
+2. Set a breakpoint at the comparison line.
+3. Start, and enter a wrong value to test.
+4. When it stops, read Locals to get the right value, or edit the condition variable to get past.
+5. If needed, use a conditional breakpoint to catch the right iteration.
 
-Phần lớn crackme .NET cấp nhập môn gục trước đúng năm bước này. Với mẫu đã bị obfuscate thì khó hơn, để [Bài 5.5](/posts/tr-5-5-obfuscator-net-de4dot/) lo.
+Most entry-level .NET crackmes fall to exactly these five steps. Samples that have been obfuscated are harder, and [Lesson 5.5](/posts/tr-5-5-obfuscator-net-de4dot/) handles those.
 
-## Lab tự làm
+## Lab
 
-Bài tập trong `labs/5.3/`: debug một crackme .NET nhỏ bằng dnSpy, đặt breakpoint tại chỗ so sánh, đọc biến để lấy đáp án, rồi thử cách sửa biến điều kiện để qua check mà không cần biết password. Có hướng dẫn build (cần dotnet SDK) và writeup từng bước trong `solution.md`.
+The exercise is in `labs/5.3/`: debug a small .NET crackme with dnSpy, set a breakpoint at the comparison, read the variables to get the answer, then try editing the condition variable to get past the check without knowing the password. There's a build guide (needs the dotnet SDK) and a step-by-step writeup in `solution.md`.
 
-## Checklist ghi nhớ
-- dnSpy map dòng C# decompile về đúng IL, nên đặt breakpoint thẳng trên code không có source được.
-- Start để chạy từ đầu, Attach để gắn vào tiến trình đang chạy.
-- Locals là nơi giá trị đúng hay lộ ra, nhìn trước khi ngồi đọc thuật toán.
-- Sửa biến điều kiện lúc chạy (ví dụ `isValid = true`) để qua check mà không cần hiểu logic.
-- Conditional breakpoint viết bằng cú pháp C#, tiện cho vòng lặp.
+## Key takeaways
+- dnSpy maps decompiled C# lines back to the exact IL, so you can set breakpoints directly on code with no source.
+- Start to run from the beginning, Attach to hook into a running process.
+- Locals is where the right value often shows up, look there before sitting down to read the algorithm.
+- Edit the condition variable at runtime (for example `isValid = true`) to get past a check without understanding the logic.
+- Conditional breakpoints are written in C# syntax, handy for loops.

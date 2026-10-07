@@ -1,17 +1,17 @@
 ---
-title: "Bài 1.1: Đọc hexdump như đọc chữ"
+title: "Lesson 1.1: Reading a hexdump like text"
 date: 2026-10-06 08:04:00 +0700
-categories: ["Technique Reverse", "Phần 1 · Nền tảng máy tính cho RE"]
+categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
-Trước khi chạm vào assembly, bạn phải quen với cách máy tính biểu diễn số. Nghe chán, nhưng mỗi lần bạn nhìn vào một hex editor mà thấy `48 65 6C 6C 6F` rồi tự dịch ra "Hello" trong đầu, đó là lúc hệ số đã thành bản năng. Bài này đưa bạn tới đó.
+Before you touch assembly, you need to get comfortable with how a computer represents numbers. Boring, I know, but the first time you look at a hex editor, see `48 65 6C 6C 6F` and translate it to "Hello" in your head, that's when number bases have become instinct. This lesson gets you there.
 
-## Vì sao là hệ 16 (hex)
+## Why base 16 (hex)
 
-Máy tính nghĩ bằng bit, từng con 0 và 1. Con người đọc nhị phân thì loạn mắt ngay: một byte là 8 bit, `01001000`, nhìn mãi không ra. Hệ 16 là cách viết gọn: mỗi 4 bit gộp thành một chữ số hex, nên một byte luôn vừa khít **2 chữ số hex**. Gọn, thẳng hàng, dễ đọc.
+Computers think in bits, just 0s and 1s. Reading binary makes your eyes cross right away: a byte is 8 bits, `01001000`, and you can stare at it forever without seeing anything. Base 16 is the short way to write it: every 4 bits collapse into one hex digit, so a byte always fits exactly into 2 hex digits. Short, aligned, easy to read.
 
-Bảng quy đổi 4 bit, thuộc được càng tốt:
+The 4-bit conversion table, the sooner you memorize it the better:
 
 ```
 0000=0  0001=1  0010=2  0011=3
@@ -20,91 +20,67 @@ Bảng quy đổi 4 bit, thuộc được càng tốt:
 1100=C  1101=D  1110=E  1111=F
 ```
 
-Vậy `0100 1000` = `48` hex = 72 thập phân. Ký hiệu hex thường viết `0x48` hoặc `48h`.
+So `0100 1000` = `48` hex = 72 decimal. Hex is usually written `0x48` or `48h`.
 
-Những mốc nên nhớ nằm lòng:
-- 1 byte = 8 bit = 2 chữ số hex, giá trị `0x00` tới `0xFF` (0 tới 255).
-- `0xFF` = 255, `0xFFFF` = 65535, `0xFFFFFFFF` = hơn 4 tỉ (giới hạn 32-bit).
-- `0x10` = 16, `0x100` = 256, `0x1000` = 4096. Thấy số tròn trong hex là thường có ý nghĩa (kích thước, căn lề).
+A few landmarks are worth knowing by heart. One byte is 8 bits, which is 2 hex digits, with values from `0x00` to `0xFF` (0 to 255). `0xFF` is 255, `0xFFFF` is 65535, and `0xFFFFFFFF` is just over 4 billion (the 32-bit limit). `0x10` is 16, `0x100` is 256, `0x1000` is 4096, and a round number in hex usually means something (a size, an alignment).
 
-## Byte, word, và mấy cái tên gây lú
+## Byte, word, and the confusing names
 
-Trong thế giới x86, kích thước có tên riêng mà bạn sẽ gặp suốt trong IDA:
+In the x86 world, sizes have their own names that you'll keep running into in IDA:
 
-| Tên | Số bit | Số byte | Hậu tố assembly |
+| Name | Bits | Bytes | Assembly suffix |
 |---|---|---|---|
 | byte | 8 | 1 | `db` |
 | word | 16 | 2 | `dw` |
 | dword (double word) | 32 | 4 | `dd` |
 | qword (quad word) | 64 | 8 | `dq` |
 
-Chữ "word" ở đây cố định 16 bit vì lý do lịch sử, đừng nhầm với kích thước thanh ghi. Trong IDA bạn thấy `dword_401000` nghĩa là "một biến 4 byte ở địa chỉ 0x401000".
+"Word" is fixed at 16 bits here for historical reasons, don't mix it up with register size. When you see `dword_401000` in IDA, it means "a 4-byte variable at address 0x401000".
 
-## ASCII: khi byte là chữ
+## ASCII: when a byte is a character
 
-Mỗi byte có thể là một ký tự theo bảng ASCII. Không cần thuộc cả bảng, chỉ cần vài mốc:
-- `0x41` = 'A', nên 'B' = 0x42, cứ thế tới 'Z' = 0x5A.
-- `0x61` = 'a', 'z' = 0x7A. Để ý chữ thường hơn chữ hoa đúng 0x20.
-- `0x30` = '0', tới '9' = 0x39.
-- `0x20` = dấu cách.
-- `0x00` = NUL, dùng để kết thúc chuỗi trong C (null-terminated string).
+Every byte can be a character in the ASCII table. You don't need the whole table, just a few landmarks. `0x41` is 'A', so 'B' is 0x42, and so on up to 'Z' at 0x5A. `0x61` is 'a' and 'z' is 0x7A, and notice lowercase is exactly 0x20 higher than uppercase. `0x30` is '0', up to '9' at 0x39. `0x20` is a space, and `0x00` is NUL, which ends a string in C (null-terminated string).
 
-Mẹo: hiệu 0x20 giữa chữ hoa và thường chính là lý do nhiều thuật toán đổi hoa/thường chỉ cần `xor 0x20` hoặc `or 0x20`. Thấy pattern đó trong code là đoán được ngay.
+That 0x20 difference between upper and lower case is why many case-flipping algorithms are just `xor 0x20` or `or 0x20`. See that pattern in code and you can guess right away.
 
-## Đọc một hexdump thật
+## Reading a real hexdump
 
-Đây là dạng bạn gặp trong HxD, ImHex, hay lệnh `xxd`:
+This is the format you get in HxD, ImHex, or the `xxd` command:
 
 ```
 Offset    Hex bytes                                         ASCII
 00000000  48 65 6C 6C 6F 2C 20 52 45 21 00 00 00 00 00 00   Hello, RE!......
 ```
 
-Ba cột: offset (vị trí tính từ đầu file), các byte ở dạng hex, và cùng những byte đó dịch sang ASCII (byte không in được hiện thành dấu chấm). Nhìn cột ASCII bên phải là cách nhanh nhất để soi chuỗi trong file. `48 65 6C 6C 6F` chính là "Hello", và `00` phía sau là ký tự kết thúc chuỗi.
+Three columns: the offset (position from the start of the file), the bytes in hex, and the same bytes decoded as ASCII (non-printable bytes show as dots). Looking at the ASCII column on the right is the fastest way to spot strings in a file. `48 65 6C 6C 6F` is "Hello", and the `00` after it is the string terminator.
 
-## Endianness, cái bẫy kinh điển của người mới
+## Endianness, the classic beginner trap
 
-![Little-endian: giá trị 0x12345678 lưu trong bộ nhớ thành 78 56 34 12](/assets/img/technique-reverse/assets/phan-01/little-endian.svg)
+![Little-endian: the value 0x12345678 is stored in memory as 78 56 34 12](/assets/img/technique-reverse/assets/phan-01/little-endian.svg)
 
-Đây là chỗ hầu hết người mới vấp. Câu hỏi: số 32-bit `0x12345678` được lưu trong bộ nhớ theo thứ tự byte nào?
+This is where most beginners trip. The question is in what byte order the 32-bit number `0x12345678` is stored in memory.
 
-Có hai cách:
-- **Big-endian**: byte quan trọng nhất trước, `12 34 56 78`. Giống cách ta viết số thường.
-- **Little-endian**: byte quan trọng nhất **sau cùng**, `78 56 34 12`. Ngược đời, nhưng đây lại là cách x86, x64 và ARM (thường) dùng.
+There are two ways. Big-endian puts the most significant byte first, `12 34 56 78`, like how we normally write numbers. Little-endian puts the most significant byte last, `78 56 34 12`. It's backwards, but this is what x86, x64 and ARM (usually) use.
 
-Nghĩa là khi bạn nhìn trong hex editor thấy bốn byte `78 56 34 12`, giá trị thật của nó là `0x12345678`. Phải đọc ngược lại.
+So when you look in a hex editor and see the four bytes `78 56 34 12`, the real value is `0x12345678`. You have to read it backwards.
 
-Ví dụ cụ thể hay làm người mới toát mồ hôi: tìm một địa chỉ `0x00401000` trong file. Bạn grep `00 40 10 00` thì không ra gì, vì trên đĩa nó nằm là `00 10 40 00`. Lộn byte là quên mất little-endian.
+A concrete example that makes beginners sweat is looking for the address `0x00401000` in a file. If you grep for `00 40 10 00` you find nothing, because on disk it sits as `00 10 40 00`. Scrambled bytes means you forgot little-endian.
 
-Quy tắc sống còn: **trên x86/x64, số nhiều byte luôn đọc ngược thứ tự byte.** Chuỗi ký tự thì không, vì chuỗi là dãy byte riêng lẻ chứ không phải một con số. Phân biệt được hai thứ này là qua được cái bẫy.
+The survival rule is that on x86/x64, multi-byte numbers are always read with the byte order reversed. Strings are not, because a string is a sequence of separate bytes, not a single number. Being able to tell these two apart gets you past the trap.
 
-## Bitwise, ngôn ngữ của xáo trộn dữ liệu
+## Bitwise, the language of scrambling data
 
-Reverse crypto và obfuscation là gặp phép toán bit liên tục. Bốn phép cốt lõi:
+Reversing crypto and obfuscation means running into bit operations constantly. There are four core ones. AND (`&`) gives 1 when both bits are 1, and it's used to "mask" out some bits, so `x & 0xFF` takes the lowest byte. OR (`|`) gives 1 when either bit is 1, and it's used to set bits. XOR (`^`) gives 1 when the two bits differ. This is the star of reversing: XOR a value twice with the same key and you get the original back, so it's the simplest and most common encryption in malware and crackmes, `A ^ key ^ key == A`. NOT (`~`) flips every bit.
 
-- **AND (`&`)**: cả hai bit là 1 thì ra 1. Dùng để "che" lấy một số bit (masking). `x & 0xFF` lấy byte thấp nhất.
-- **OR (`|`)**: một trong hai là 1 thì ra 1. Dùng để bật bit.
-- **XOR (`^`)**: hai bit khác nhau thì ra 1. Đây là ngôi sao của reverse: XOR một giá trị hai lần với cùng khoá thì về như cũ, nên nó là cách mã hoá đơn giản nhất và phổ biến nhất trong malware và crackme. `A ^ key ^ key == A`.
-- **NOT (`~`)**: lật mọi bit.
+Then there are shifts. Shift left (`<<`) doubles the value each step and shift right (`>>`) halves it each step. Compilers often replace multiplication/division by powers of 2 with shifts because it's faster, so seeing `shl eax, 3` means it's multiplying by 8.
 
-Và dịch bit:
-- **Shift trái (`<<`)** mỗi bước nhân đôi, **shift phải (`>>`)** mỗi bước chia đôi. Compiler hay thay phép nhân/chia cho lũy thừa 2 bằng shift vì nó nhanh hơn. Thấy `shl eax, 3` là biết đang nhân 8.
+Since XOR is everywhere, remember one thing: if you see a loop going through data and `xor`ing each byte with a constant or a key, 90% of the time it's a string encryption/decryption routine. Lesson [16.2](https://github.com/Haind03/Technique-Reverse/tree/main/phan-16-crypto-thuat-toan) goes deeper.
 
-Vì XOR xuất hiện khắp nơi, ghi nhớ một điều: thấy một vòng lặp đi qua dữ liệu và `xor` từng byte với một hằng số hay một khoá, 90% đó là routine mã hoá/giải mã chuỗi. Bài [16.2](https://github.com/Haind03/Technique-Reverse/tree/main/phan-16-crypto-thuat-toan) sẽ đào sâu.
+## Practice
 
-## Tự luyện
+No tools needed, do these in your head, then check with a programmer calculator (or Python). First, which two ASCII characters is `0x4D5A`? (Hint: it's the magic number at the start of every Windows PE file, "MZ".) Second, in a hex editor you see `90 1F 00 00`, a 32-bit little-endian number, so what's the decimal value? Third, what character is `'a' ^ 0x20`, and what about `'A' ^ 0x20`? Fourth, to get the low 4 bits of a byte, which hex value do you AND with?
 
-Không cần tool, làm nhẩm rồi kiểm bằng máy tính lập trình (hoặc Python):
-1. `0x4D5A` là hai ký tự ASCII gì? (Gợi ý: đây là magic number mở đầu mọi file PE Windows, "MZ".)
-2. Trong hex editor bạn thấy `90 1F 00 00`. Đây là số 32-bit little-endian, giá trị thập phân là bao nhiêu?
-3. `'a' ^ 0x20` ra ký tự gì? Còn `'A' ^ 0x20`?
-4. Muốn lấy 4 bit thấp của một byte thì AND với giá trị hex nào?
+Answers: 1) "MZ". 2) 0x00001F90 = 8080. 3) 'a'^0x20='A', 'A'^0x20='a' (XOR 0x20 flips the case). 4) `& 0x0F`.
 
-Đáp án: 1) "MZ". 2) 0x00001F90 = 8080. 3) 'a'^0x20='A', 'A'^0x20='a' (XOR 0x20 đổi hoa thường). 4) `& 0x0F`.
-
-## Checklist ghi nhớ
-- 1 byte = 2 chữ số hex, `0x00` tới `0xFF`.
-- byte/word/dword/qword = 1/2/4/8 byte.
-- x86/x64 là little-endian: số nhiều byte lưu ngược thứ tự byte, phải đọc ngược.
-- Chuỗi ký tự không bị đảo, chỉ số nhiều byte mới đảo.
-- XOR là phép toán bạn sẽ gặp nhiều nhất trong crypto và obfuscation.
+## Key takeaways
+One byte is 2 hex digits, `0x00` to `0xFF`, and byte/word/dword/qword are 1/2/4/8 bytes. x86/x64 is little-endian, so multi-byte numbers are stored with reversed byte order and you read them backwards, while strings are not reversed, only multi-byte numbers are. XOR is the operation you'll see most in crypto and obfuscation.

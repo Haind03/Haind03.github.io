@@ -1,51 +1,51 @@
 ---
-title: "Bài 18.8: AI hỗ trợ reverse engineering, dùng đúng chỗ thì nhanh gấp đôi"
+title: "Lesson 18.8: AI-assisted reverse engineering, twice as fast when used in the right place"
 date: 2026-10-06 09:54:00 +0700
-categories: ["Technique Reverse", "Phần 18 · Nâng cao"]
+categories: ["Technique Reverse", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
 render_with_liquid: false
 ---
-Reverse là nghề đọc nhiều: đọc pseudocode, đoán hàm này làm gì, đặt lại tên cho đống `sub_401000` và `v7`. Phần lớn việc đó lặp đi lặp lại và tốn thời gian. Đây chính là chỗ LLM chen vào được: nó đọc một hàm, đoán mục đích, đề xuất tên biến, giải thích một đoạn khó hiểu. Nó không reverse thay bạn, nhưng dọn đường để bạn đi nhanh hơn. Bài này nói về hai cách dùng AI trong RE, và quan trọng hơn là lúc nào đừng tin nó.
+Reversing is a lot of reading: reading pseudocode, guessing what a function does, renaming a pile of `sub_401000` and `v7`. Most of that is repetitive and eats time. This is exactly where an LLM can step in: it reads a function, guesses the purpose, suggests variable names, explains a confusing chunk. It doesn't reverse for you, but it clears the road so you can go faster. This lesson covers two ways to use AI in RE, and more importantly, when not to trust it.
 
-## Hai kiểu tích hợp AI
+## Two kinds of AI integration
 
-Có hai cách AI chui vào quy trình của bạn, khác nhau về độ sâu.
+There are two ways AI gets into your workflow, differing in depth.
 
-**Kiểu 1: plugin gọi LLM từ trong decompiler.** Bạn đang ở trong IDA hay Ghidra, chọn một hàm, bấm một phím, plugin gửi pseudocode lên một LLM rồi dán câu trả lời vào. Một chiều: tool hỏi, AI đáp. Đơn giản, đủ dùng cho việc "hàm này làm gì".
+The first kind is a plugin that calls an LLM from inside the decompiler. You're in IDA or Ghidra, select a function, press a key, and the plugin sends the pseudocode to an LLM and pastes the answer back. One direction: the tool asks, the AI answers. Simple, and enough for "what does this function do".
 
-**Kiểu 2: MCP server để AI tự điều khiển decompiler.** Đây là bước nhảy. Thay vì bạn copy từng hàm cho AI, một LLM agent (Claude, Cursor) nói chuyện trực tiếp với decompiler qua một MCP server: nó tự lấy danh sách hàm, tự đọc pseudocode, tự đổi tên, tự đặt comment, tự đi theo xref. Bạn ra lệnh bằng tiếng người ("tìm hàm kiểm tra license và giải thích thuật toán"), agent tự mò.
+The second kind is an MCP server so the AI drives the decompiler itself. This is the leap. Instead of you copying each function to the AI, an LLM agent (Cursor, Cline) talks directly to the decompiler through an MCP server: it gets the function list itself, reads the pseudocode itself, renames, adds comments, follows xrefs. You give commands in plain language ("find the license check function and explain the algorithm"), and the agent feels its way through.
 
-## Kiểu 1: plugin LLM trong decompiler
+## Type 1: LLM plugins in the decompiler
 
-Các plugin phổ biến, chia theo decompiler:
+Common plugins, by decompiler:
 
-| Decompiler | Plugin | Làm gì |
+| Decompiler | Plugin | What it does |
 |---|---|---|
-| IDA | **Gepetto** | Chọn hàm, nhờ LLM giải thích và đề xuất đổi tên biến hàng loạt ngay trong pseudocode |
-| Binary Ninja | **aiDAPal / Sidekick** | Trợ lý AI tích hợp, giải thích và gợi ý tên |
-| Ghidra | **GhidrAssist / G-3PO** | Gọi LLM giải thích hàm trong decompiler Ghidra |
+| IDA | **Gepetto** | Select a function, ask the LLM to explain it and suggest batch variable renames right in the pseudocode |
+| Binary Ninja | **aiDAPal / Sidekick** | Built-in AI assistant, explains and suggests names |
+| Ghidra | **GhidrAssist / G-3PO** | Calls an LLM to explain functions in Ghidra's decompiler |
 
-Cách dùng điển hình với Gepetto: mở một hàm `sub_14000C0A0` rối rắm, bấm phím tắt, Gepetto trả về "hàm này đọc một file config, giải mã bằng RC4 với khoá cứng, rồi parse thành cặp key-value", kèm đề xuất đổi `v3` thành `decrypted_config`, `v7` thành `rc4_key`. Bạn nhìn lướt, thấy hợp lý thì chấp nhận, thấy sai thì bỏ.
+Typical use with Gepetto: open a tangled function `sub_14000C0A0`, press the hotkey, and Gepetto returns "this function reads a config file, decrypts it with RC4 using a hardcoded key, then parses it into key-value pairs", along with suggestions to rename `v3` to `decrypted_config` and `v7` to `rc4_key`. You skim it, accept it if it looks right, drop it if it's wrong.
 
-Điểm mạnh là nhanh. Một hàm mà bạn phải đọc năm phút, LLM tóm trong năm giây. Điểm yếu nằm ở chữ "đề xuất": nó đoán, và đoán thì có lúc sai.
+The strength is speed. A function that takes you five minutes to read, the LLM summarizes in five seconds. The weakness is in the word "suggest": it guesses, and guesses are sometimes wrong.
 
-## Kiểu 2: MCP server cho RE
+## Type 2: MCP servers for RE
 
-MCP (Model Context Protocol) là một giao thức chuẩn để LLM agent gọi công cụ bên ngoài. Với RE, người ta viết các MCP server bắc cầu giữa agent và decompiler/debugger:
+MCP (Model Context Protocol) is a standard protocol for LLM agents to call external tools. For RE, people write MCP servers that bridge the agent and the decompiler/debugger:
 
-| MCP server | Nối tới | Agent làm được gì |
+| MCP server | Connects to | What the agent can do |
 |---|---|---|
-| **ida-pro-mcp** (mrexodia) | IDA Pro | Lấy decompile, xref, rename, comment, đọc/ghi qua Hex-Rays |
-| **GhidraMCP** (LaurieWired) | Ghidra | Liệt kê hàm, decompile, rename, đặt data type |
-| **Binary Ninja MCP** | Binary Ninja | Khai thác HLIL/MLIL qua hội thoại |
-| **r2mcp** | radare2/rizin | Chạy lệnh r2, phân tích theo hội thoại |
-| **frida-mcp** | Frida | Agent tự viết và nạp script Frida, đọc kết quả hook |
+| **ida-pro-mcp** (mrexodia) | IDA Pro | Get decompilation, xrefs, rename, comment, read/write through Hex-Rays |
+| **GhidraMCP** (LaurieWired) | Ghidra | List functions, decompile, rename, set data types |
+| **Binary Ninja MCP** | Binary Ninja | Work with HLIL/MLIL through conversation |
+| **r2mcp** | radare2/rizin | Run r2 commands, analyze through conversation |
+| **frida-mcp** | Frida | The agent writes and loads Frida scripts itself, reads the hook results |
 
-Danh sách đầy đủ hơn nằm ở [kho công cụ, mục 23b](/posts/tr-tai-nguyen-cong-cu/#23-ai-hỗ-trợ-re).
+A fuller list is in the [tools repository, section 23b](/posts/tr-tai-nguyen-cong-cu/#23-ai-hỗ-trợ-re).
 
-### Cấu hình cơ bản
+### Basic configuration
 
-MCP server khai báo trong file cấu hình của client (Claude Desktop, Cline, Cursor). Mẫu chung kiểu:
+The MCP server is declared in the client's config file (Cline, Cursor). A common template looks like:
 
 ```json
 {
@@ -58,42 +58,31 @@ MCP server khai báo trong file cấu hình của client (Claude Desktop, Cline,
 }
 ```
 
-Chi tiết từng server khác nhau (có cái chạy như plugin trong IDA mở sẵn port, client nối vào; có cái là một process riêng). Đọc README của đúng server bạn cài. Sau khi nối xong, bạn hỏi agent bằng tiếng tự nhiên và nó tự gọi các hàm MCP (list functions, decompile, rename...) để trả lời.
+The details differ per server (some run as a plugin inside an already open IDA and expose a port that the client connects to, others are a separate process). Read the README of the exact server you install. Once connected, you ask the agent in natural language and it calls the MCP functions itself (list functions, decompile, rename...) to answer.
 
-Trải nghiệm thực tế: mở một binary lạ, bảo agent "khảo sát và đổi tên các hàm chính cho dễ đọc", vài phút sau cả cây hàm `sub_*` đã có tên gợi ý. Bạn rà lại, sửa chỗ sai, và tiết kiệm được cả buổi đặt tên tay.
+The real experience: open an unfamiliar binary, tell the agent "survey and rename the main functions so they're easier to read", and a few minutes later the whole `sub_*` function tree has suggested names. You review it, fix the wrong parts, and save yourself a whole session of naming by hand.
 
-## Giới hạn: AI đoán, và đoán thì sai được
+## The limit: AI guesses, and guesses can be wrong
 
-Đây là phần quan trọng nhất của bài, đọc kỹ.
+This is the most important part of the lesson, read it carefully.
 
-LLM không chạy code, không chứng minh gì cả. Nó đoán dựa trên pattern đã thấy. Hệ quả:
+An LLM doesn't run code and doesn't prove anything. It guesses based on patterns it has seen, and the consequences are real. It can hallucinate: it may confidently say "this is AES" when it's actually an XOR loop, or make up a function name that sounds reasonable but is completely wrong. Wrong names also spread. If you accept a wrong name without checking, the functions that call it will be read by the AI through that wrong name, and errors stack on errors. And it can't replace the analyst, because AI is good at summarizing and naming but bad at multi-step reasoning, subtle logic, and anything that depends on runtime values it can't see.
 
-- **Ảo giác (hallucination).** Nó có thể tự tin nói "đây là AES" trong khi thực ra là một XOR loop. Nó có thể bịa ra một tên hàm nghe hợp lý nhưng sai hoàn toàn.
-- **Tên sai lan truyền.** Nếu bạn nhận một cái tên sai mà không kiểm, các hàm gọi nó sẽ được AI đọc theo cái tên sai đó, và sai chồng sai.
-- **Không thay được người phân tích.** AI giỏi tóm tắt và đặt tên, dở ở suy luận nhiều bước, logic tinh vi, và những thứ phụ thuộc giá trị runtime mà nó không thấy.
+The survival rule: **treat the AI's output as a hypothesis, not a fact.** It says "this function decrypts RC4"? Good, now you confirm by finding the KSA/PRGA in the code (lesson [16.2](/posts/tr-16-2-xor-rc4-base64-custom/)), or by running it dynamically to see the input and output. If the hypothesis is right keep it, if wrong drop it, but always check.
 
-Quy tắc sống còn: **coi output của AI là một giả thuyết, không phải sự thật.** Nó nói "hàm này giải mã RC4"? Tốt, giờ bạn xác nhận bằng cách tìm KSA/PRGA trong code (bài [16.2](/posts/tr-16-2-xor-rc4-base64-custom/)), hoặc chạy động xem đầu vào đầu ra. Giả thuyết đúng thì giữ, sai thì bỏ, nhưng luôn kiểm.
+## Safety when analyzing malware
 
-## An toàn khi phân tích malware
+MCP gives the agent permission to run tools on your machine. When the target is malware, this is dangerous. Run the client and the MCP server in an isolated VM (see lesson [0.3](/posts/tr-0-3-dung-lab-an-toan/)), the same lab you already use for malware. Don't let the agent execute the sample on its own: a "proactive" agent might decide to run the binary to see what it does, and with malware that's an infection. Limit the agent's permissions to reading and static analysis, or supervise closely if you let it run dynamically in a sandbox. Also be careful with data sent to the cloud. For a malware sample, or an internal company binary, sending pseudocode to a cloud LLM means handing data out, so for sensitive samples consider a locally running LLM.
 
-MCP cho agent quyền chạy công cụ trên máy bạn. Khi mục tiêu là malware, điều này nguy hiểm:
+## When AI is worth using, when not
 
-- **Chạy client và MCP server trong VM cô lập** (xem bài [0.3](/posts/tr-0-3-dung-lab-an-toan/)), đúng cái lab bạn vẫn dùng cho malware.
-- **Đừng để agent tự thực thi mẫu.** Một agent "chủ động" có thể quyết định chạy thử binary để xem nó làm gì. Với malware, đó là lây nhiễm. Giới hạn quyền của agent ở đọc và phân tích tĩnh, hoặc giám sát chặt khi cho chạy động trong sandbox.
-- **Cẩn thận dữ liệu gửi lên cloud.** Mẫu malware, hay binary nội bộ của công ty, gửi pseudocode lên một LLM cloud là đưa dữ liệu ra ngoài. Với mẫu nhạy cảm, cân nhắc LLM chạy local.
+Worth using: batch renaming, quickly summarizing an unfamiliar function, explaining an unfamiliar API, generating boilerplate scripts (IDAPython, Frida), suggesting directions when you're stuck. It's a speed springboard.
 
-## Khi nào AI đáng dùng, khi nào không
+Don't rely on it for: the final conclusion about a crypto algorithm, security logic that has to be exactly right, or any claim you'll put in a report without checking it yourself. Those are still your job.
 
-Đáng dùng: đặt tên hàng loạt, tóm tắt nhanh một hàm lạ, giải thích một API không quen, sinh script boilerplate (IDAPython, Frida), gợi ý hướng khi bí. Nó là bàn đạp tốc độ.
+AI makes reversing faster, not easier. You still need to understand everything in the earlier parts of the series to know when the AI is talking nonsense.
 
-Đừng dựa vào nó cho: kết luận cuối về thuật toán crypto, logic bảo mật phải chính xác tuyệt đối, hay bất cứ claim nào bạn sẽ đưa vào báo cáo mà chưa tự kiểm. Những thứ đó vẫn là việc của bạn.
+## Key takeaways
+There are two kinds of AI integration: one-way LLM plugins (Gepetto, GhidrAssist) and MCP servers so an agent drives the decompiler itself (ida-pro-mcp, GhidraMCP, r2mcp, frida-mcp). MCP is declared in the client config, and then you give commands in natural language. AI output is a hypothesis, so always verify by hand or by running dynamically before trusting it. Hallucination and spreading wrong names are the biggest risks.
 
-AI làm reverse nhanh hơn, không làm reverse dễ hơn. Bạn vẫn phải hiểu mọi thứ trong các phần trước của series thì mới biết lúc nào AI đang nói nhảm.
-
-## Checklist ghi nhớ
-- Hai kiểu: plugin LLM một chiều (Gepetto, GhidrAssist) và MCP server để agent tự điều khiển decompiler (ida-pro-mcp, GhidraMCP, r2mcp, frida-mcp).
-- MCP khai báo trong cấu hình client, rồi ra lệnh bằng tiếng tự nhiên.
-- Output AI là giả thuyết, luôn kiểm lại bằng tay hoặc chạy động trước khi tin.
-- Ảo giác và tên sai lan truyền là rủi ro lớn nhất.
-- Phân tích malware: client + MCP trong VM cô lập, không để agent tự chạy mẫu, cẩn thận dữ liệu gửi cloud.
-- AI tăng tốc, không thay thế hiểu biết nền tảng.
+For malware analysis, keep the client and MCP in an isolated VM, don't let the agent run the sample on its own, and be careful with data sent to the cloud. AI speeds you up, it doesn't replace foundational knowledge.

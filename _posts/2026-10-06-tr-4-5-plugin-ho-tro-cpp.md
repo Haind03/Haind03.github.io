@@ -1,75 +1,69 @@
 ---
-title: "Bài 4.5: Plugin dựng lại class C++, để máy làm phần nhàm chán"
+title: "Lesson 4.5: Plugins that rebuild C++ classes, let the machine do the boring part"
 date: 2026-10-06 08:35:00 +0700
-categories: ["Technique Reverse", "Phần 4 · C++"]
+categories: ["Technique Reverse", "Part 04 · C++"]
 tags: [reverse-engineering, cpp]
 render_with_liquid: false
 ---
-Bài 4.2 bạn đã dựng cây class bằng tay: tìm vtable, đọc RTTI, gán kiểu, lần kế thừa. Làm một hai class thì vui, làm một chương trình C++ thật với vài chục class thì đó là cả ngày trời lặp đi lặp lại một việc. Đây đúng là loại việc nên giao cho plugin. Chúng không thay bạn hiểu logic, nhưng dọn sạch phần cơ học để bạn tập trung vào code của tác giả.
+In lesson 4.2 you built the class tree by hand: find the vtable, read the RTTI, assign types, trace inheritance. Doing one or two classes is fun, but a real C++ program with a few dozen classes is a whole day of repeating the same job. This is exactly the kind of job to hand to a plugin. They don't understand the logic for you, but they clear out the mechanical part so you can focus on the author's code.
 
-Bài này điểm qua các plugin chủ lực cho IDA và Ghidra, và quan trọng hơn là biết khi nào tin chúng, khi nào phải xắn tay làm lại.
+This lesson goes over the main plugins for IDA and Ghidra, and more importantly when to trust them and when to roll up your sleeves and do it again by hand.
 
-## Vì sao tự động hoá được
+## Why it can be automated
 
-Nhớ lại bài 4.2: một binary C++ build với RTTI (Run-Time Type Information) bật mang theo sẵn rất nhiều manh mối có cấu trúc. Mỗi class có virtual function sẽ có một `type_info`, một chuỗi tên class đã mangle, và một vtable trỏ tới nó. Những thứ này nằm theo khuôn cố định do ABI quy định (Itanium trên Linux, MSVC ABI trên Windows). Khuôn cố định nghĩa là máy quét được. Plugin chỉ việc đi dọc các cấu trúc RTTI, đọc tên class, nối vtable với class, suy ra cha con từ bảng base class.
+Recall lesson 4.2: a C++ binary built with RTTI (Run-Time Type Information) carries a lot of structured clues. Each class with virtual functions has a `type_info`, a mangled class name string, and a vtable pointing to it. These sit in a fixed layout dictated by the ABI (Itanium on Linux, MSVC ABI on Windows). A fixed layout means a machine can scan it. The plugin just walks along the RTTI structures, reads class names, connects vtables to classes, and infers parent and child from the base class table.
 
-Hệ quả thực tế: nếu binary **có RTTI**, plugin làm được 80% việc dựng cây class trong vài giây. Nếu RTTI bị tắt (`/GR-` trên MSVC, `-fno-rtti` trên g++) hoặc bị obfuscate, plugin đuối hẳn và bạn quay về làm tay như bài 4.2.
+The practical consequence: if the binary has RTTI, a plugin does 80% of building the class tree in a few seconds. If RTTI is turned off (`/GR-` on MSVC, `-fno-rtti` on g++) or obfuscated, plugins run out of steam and you go back to doing it by hand like in lesson 4.2.
 
-## Phía IDA
+## On the IDA side
 
 ### Class Informer
 
-Class Informer là plugin quét toàn bộ binary tìm cấu trúc RTTI rồi liệt kê mọi class nó thấy, kèm địa chỉ vtable và quan hệ kế thừa. Chạy một lần, bạn có ngay một danh sách class thật với tên thật (`Animal`, `Dog`, `BankAccount`) thay vì `sub_` và `off_`. Nó cũng đánh dấu từng vtable trong IDA để bạn nhảy tới xem các virtual function.
+Class Informer is a plugin that scans the whole binary for RTTI structures and lists every class it finds, with vtable addresses and inheritance relationships. Run it once and you immediately have a list of real classes with real names (`Animal`, `Dog`, `BankAccount`) instead of `sub_` and `off_`. It also marks each vtable in IDA so you can jump to see the virtual functions.
 
-Đây thường là bước đầu tiên khi mở một binary C++ lớn trong IDA: chạy Class Informer để có bản đồ class, rồi mới đi sâu.
+This is usually the first step when opening a large C++ binary in IDA: run Class Informer to get the class map, and only then go deeper.
 
 ### HexRaysPyTools
 
-Nếu Class Informer cho bạn danh sách class, HexRaysPyTools giúp bạn biến danh sách đó thành type dùng được trong decompiler. Vài tính năng hay dùng:
+If Class Informer gives you the list of classes, HexRaysPyTools helps you turn that list into types usable in the decompiler. It can build a struct from usage: put the cursor on a variable that the decompiler shows as `a1` with a pile of `*(a1 + 8)`, `*(a1 + 16)`, and the plugin gathers those offsets and proposes a struct. Accept it and Hex-Rays immediately shows `obj->field_8` instead of raw pointer arithmetic. It also recognizes vtables and creates vtable structs, hooking virtual methods up in the right place, and it can scan multiple functions to merge what you've learned about the same type.
 
-- **Dựng struct từ cách dùng.** Đặt con trỏ vào một biến mà decompiler đang hiển thị là `a1` với một đống `*(a1 + 8)`, `*(a1 + 16)`, plugin gom các offset đó lại và đề xuất một struct. Bạn chấp nhận là Hex-Rays lập tức hiển thị `obj->field_8` thay cho số học con trỏ thô.
-- **Nhận diện vtable** và tạo struct vtable, nối method ảo vào đúng chỗ.
-- **Scan nhiều hàm** để gộp hiểu biết về cùng một kiểu.
-
-Cặp Class Informer (tìm class) cộng HexRaysPyTools (biến thành type) là combo tiêu chuẩn cho C++ RE trên IDA. Xem thêm ở [kho công cụ](/posts/tr-tai-nguyen-cong-cu/).
+The pair Class Informer (finds classes) plus HexRaysPyTools (turns them into types) is the standard combo for C++ RE on IDA. See also the [tool collection](/posts/tr-tai-nguyen-cong-cu/).
 
 ### Virtuailor
 
-Một vấn đề riêng: lời gọi virtual trong asm là `call [rax+offset]`, decompiler không biết hàm cụ thể nào được gọi vì nó phụ thuộc runtime. Virtuailor cố giải quyết bằng cách lần theo vtable để gán tên hàm cho các virtual call, giúp bạn thấy `call Dog::speak` thay vì `call qword ptr [rax+0x10]`.
+A problem of its own: a virtual call in asm is `call [rax+offset]`, and the decompiler doesn't know which specific function is called because it depends on runtime. Virtuailor tries to solve this by following the vtable to assign function names to virtual calls, so you see `call Dog::speak` instead of `call qword ptr [rax+0x10]`.
 
-## Phía Ghidra
+## On the Ghidra side
 
-### RTTIAnalyzer có sẵn
+### The built-in RTTIAnalyzer
 
-Ghidra không cần cài thêm gì cho bước cơ bản. Trong lúc auto-analysis, nếu bạn bật các analyzer liên quan RTTI (tên kiểu "Windows x86 PE RTTI Analyzer" hoặc phần phân tích C++ class), Ghidra tự tạo các cấu trúc type_info, đặt tên vtable, và dựng một phần hierarchy. Kiểm trong Data Type Manager sau khi phân tích, bạn sẽ thấy các class đã được tạo.
+Ghidra needs nothing extra for the basic step. During auto-analysis, if you enable the RTTI-related analyzers (named something like "Windows x86 PE RTTI Analyzer" or the C++ class analysis part), Ghidra creates the type_info structures, names the vtables, and builds part of the hierarchy. Check the Data Type Manager after analysis and you'll see the classes that were created.
 
-### OOAnalyzer và Kaiju
+### OOAnalyzer and Kaiju
 
-Với binary không có RTTI (chỗ RTTIAnalyzer bó tay), có các hướng mạnh hơn. OOAnalyzer (thuộc bộ Pharos của CERT) dùng phân tích tĩnh suy ra class, member, method kể cả khi không có RTTI, rồi xuất kết quả nạp vào Ghidra qua plugin. Kaiju (CERT) là bộ tiện ích Ghidra gói nhiều phân tích nhị phân, trong đó có phần hỗ trợ OOAnalyzer. Cài đặt nặng tay hơn plugin thường, nhưng khi gặp binary C++ to mà không có RTTI thì đáng.
+For binaries without RTTI (where RTTIAnalyzer is helpless), there are stronger approaches. OOAnalyzer (part of CERT's Pharos suite) uses static analysis to infer classes, members, and methods even without RTTI, then exports the results to load into Ghidra via a plugin. Kaiju (CERT) is a Ghidra utility suite bundling many binary analyses, including the part that supports OOAnalyzer. The setup is heavier than an ordinary plugin, but it's worth it when you hit a big C++ binary without RTTI.
 
-Ngoài ra Ghidra scriptable (Java/Python), nên có nhiều script cộng đồng khôi phục class, gán vtable, đặt tên theo RTTI. Khi plugin có sẵn không vừa ý, viết script là lối thoát.
+Ghidra is also scriptable (Java/Python), so there are many community scripts that recover classes, assign vtables, and name things from RTTI. When the ready-made plugins don't fit, writing a script is the way out.
 
-## Khi nào plugin giúp, khi nào phải làm tay
+## When plugins help, when to do it by hand
 
-Plugin không phải nút thần kỳ. Nắm ranh giới để khỏi tin nhầm:
+Plugins aren't a magic button. Know the boundaries so you don't trust them wrongly:
 
-| Tình huống | Plugin giúp được? |
+| Situation | Can a plugin help? |
 |---|---|
-| Binary có RTTI, không obfuscate | Rất tốt, dựng cây class gần như tự động |
-| RTTI bị tắt (`-fno-rtti`, `/GR-`) | Kém, phải suy class từ vtable và cách dùng, làm tay như bài 4.2 |
-| Có packer/obfuscator giấu vtable | Phải unpack trước (Phần 14), plugin vô dụng trên code chưa lộ |
-| Chỉ cần hiểu một hàm, không cần cả cây class | Nhiều khi làm tay nhanh hơn, khỏi chạy plugin |
-| Class khổng lồ, nhiều kế thừa | Plugin tiết kiệm hàng giờ |
+| Binary has RTTI, not obfuscated | Very well, the class tree is built almost automatically |
+| RTTI turned off (`-fno-rtti`, `/GR-`) | Poorly, you have to infer classes from vtables and usage, by hand like lesson 4.2 |
+| A packer/obfuscator hides the vtables | Unpack first (Part 14), plugins are useless on code that isn't exposed |
+| You only need to understand one function, not the whole class tree | Often faster by hand, no need to run a plugin |
+| Huge classes, lots of inheritance | A plugin saves hours |
 
-Một cạm bẫy: plugin đặt tên theo RTTI, mà RTTI phản ánh tên class **lúc compile**, không đảm bảo logic. Dựng được cây class đẹp không có nghĩa bạn đã hiểu chương trình làm gì. Tên class chỉ là điểm khởi đầu để đọc, không phải đích đến.
+A pitfall: plugins name things from RTTI, but RTTI reflects the class name at compile time, with no guarantee about the logic. Building a pretty class tree doesn't mean you understand what the program does. A class name is only a starting point for reading, not the destination.
 
-## Lab tự làm
+## Lab
 
-Lab ở [labs/4.5/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/4.5): dùng lại binary C++ có RTTI từ lab 4.2, chạy Class Informer (hoặc Ghidra RTTIAnalyzer) rồi so sánh thời gian và kết quả với lần bạn dựng tay ở 4.2.
+The lab is at [labs/4.5/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/4.5): reuse the C++ binary with RTTI from lab 4.2, run Class Informer (or Ghidra's RTTIAnalyzer), then compare the time and results with when you built it by hand in 4.2.
 
-## Checklist ghi nhớ
-- Plugin dựng class dựa chủ yếu vào RTTI. Có RTTI thì nhanh, không RTTI thì đuối.
-- IDA: Class Informer (liệt kê class từ RTTI) + HexRaysPyTools (biến thành type trong decompiler) là combo tiêu chuẩn. Virtuailor cho virtual call.
-- Ghidra: RTTIAnalyzer có sẵn cho bước cơ bản, OOAnalyzer/Kaiju cho binary không RTTI.
-- Plugin dọn phần cơ học, không thay bạn hiểu logic. Tên class chỉ là điểm khởi đầu.
-- Obfuscate hoặc packed thì phải xử lý trước, plugin không chạy trên code chưa lộ.
+## Key takeaways
+Class-building plugins mainly rely on RTTI, so with RTTI they're fast and without it they run out of steam. On IDA the standard combo is Class Informer (lists classes from RTTI) plus HexRaysPyTools (turns them into types in the decompiler), with Virtuailor for virtual calls. On Ghidra the built-in RTTIAnalyzer covers the basic step and OOAnalyzer/Kaiju cover binaries without RTTI.
+
+Plugins clear the mechanical part but don't understand the logic for you, and a class name is only a starting point. If the binary is obfuscated or packed, deal with that first, because plugins don't run on code that isn't exposed.

@@ -1,98 +1,98 @@
 ---
-title: "Bài 18.6: Reverse code ring-0, driver Windows và kernel module Linux"
+title: "Lesson 18.6: Reversing ring-0 code, Windows drivers and Linux kernel modules"
 date: 2026-10-06 09:52:00 +0700
-categories: ["Technique Reverse", "Phần 18 · Nâng cao"]
+categories: ["Technique Reverse", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
 render_with_liquid: false
 ---
-Tới giờ mọi thứ ta mổ đều chạy ở ring-3, user-mode, nơi một lỗi chỉ làm sập một tiến trình. Bước xuống ring-0, kernel-mode, là một thế giới khác: code ở đây chạy với toàn quyền, một lỗi nhỏ không làm sập chương trình mà làm sập cả máy (BSOD trên Windows, kernel panic trên Linux). Rootkit, anti-cheat, nhiều driver anti-debug (như TitanHide ở bài 15.9) sống ở đây, nên sớm muộn bạn cũng phải xuống.
+So far everything we've taken apart ran in ring-3, user-mode, where a bug only crashes one process. Stepping down to ring-0, kernel-mode, is a different world: code here runs with full privileges, and a small bug doesn't crash the program, it crashes the whole machine (a BSOD on Windows, a kernel panic on Linux). Rootkits, anti-cheat, and many anti-debug drivers (like TitanHide in lesson 15.9) live here, so sooner or later you have to go down.
 
-Bài này không dạy viết driver, mà dạy đọc một driver bạn không có source, và làm sao debug nó mà không đốt cháy máy.
+This lesson doesn't teach writing drivers, it teaches reading a driver you don't have the source for, and how to debug it without burning your machine.
 
-## Nguyên tắc đầu tiên: luôn làm trong VM
+## First rule: always work in a VM
 
-Nhắc lại cho chắc: reverse code ring-0 là lúc lab VM của bài 0.3 không còn là lựa chọn mà là bắt buộc. Lý do kỹ thuật: debug kernel cần dừng toàn bộ hệ điều hành lại, nên bạn cần hai máy, một máy chạy driver (target) và một máy điều khiển debugger (host). VM giải quyết việc này gọn gàng: target là VM, host là máy thật, nối với nhau qua named pipe hoặc network. Driver lỗi thì chỉ VM sập, snapshot lại trong vài giây.
+A reminder to be sure: when reversing ring-0 code, the VM lab from lesson 0.3 is no longer an option but a requirement. The technical reason: debugging the kernel needs to halt the whole operating system, so you need two machines, one running the driver (the target) and one running the debugger (the host). A VM solves this neatly: the target is a VM, the host is the real machine, connected through a named pipe or network. If the driver breaks, only the VM crashes, and you restore a snapshot in a few seconds.
 
-Đừng bao giờ nạp một driver lạ lên máy thật để xem nó làm gì. Một lần là đủ nhớ.
+Never load an unknown driver onto your real machine to see what it does. Once is enough to remember.
 
-## Windows kernel driver: file .sys
+## Windows kernel driver: the .sys file
 
-Một driver Windows (`.sys`) vẫn là file PE, y như `.exe` và `.dll` ở bài 1.7, chỉ khác subsystem là Native và nó link với `ntoskrnl.exe` thay vì `kernel32.dll`. Mở bằng IDA hay Ghidra như bình thường, nhưng các API bạn thấy sẽ là họ hàng kernel: `IoCreateDevice`, `ObReferenceObjectByHandle`, `MmGetSystemRoutineAddress`, `ZwOpenKey`, chứ không phải `CreateFileW`.
+A Windows driver (`.sys`) is still a PE file, just like the `.exe` and `.dll` in lesson 1.7, except the subsystem is Native and it links against `ntoskrnl.exe` instead of `kernel32.dll`. Open it in IDA or Ghidra as usual, but the APIs you see will be kernel relatives: `IoCreateDevice`, `ObReferenceObjectByHandle`, `MmGetSystemRoutineAddress`, `ZwOpenKey`, not `CreateFileW`.
 
-### DriverEntry, điểm vào thật
+### DriverEntry, the real entry point
 
-Điểm vào của driver không phải `main` mà là `DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath)`. Đây là nơi bắt đầu đọc. Trong `DriverEntry`, driver thường làm mấy việc đáng chú ý:
+A driver's entry point isn't `main` but `DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath)`. This is where you start reading. In `DriverEntry`, a driver usually does a few notable things:
 
-- Tạo device object (`IoCreateDevice`) và symbolic link (`IoCreateSymbolicLink`) để user-mode gọi tới được. Tên device (ví dụ `\\Device\\MyDriver`) là manh mối tìm chương trình user-mode điều khiển nó.
-- Gán các major function vào bảng `DriverObject->MajorFunction[]`. Đây là chỗ quan trọng nhất.
+- Creates a device object (`IoCreateDevice`) and a symbolic link (`IoCreateSymbolicLink`) so user-mode can reach it. The device name (for example `\\Device\\MyDriver`) is a clue for finding the user-mode program that controls it.
+- Assigns the major functions into the `DriverObject->MajorFunction[]` table. This is the most important spot.
 
-### Bảng MajorFunction và IOCTL
+### The MajorFunction table and IOCTLs
 
-Driver giao tiếp với user-mode qua cơ chế IRP (I/O Request Packet). `DriverObject->MajorFunction` là một mảng con trỏ hàm, mỗi slot ứng với một loại request:
+A driver communicates with user-mode through the IRP (I/O Request Packet) mechanism. `DriverObject->MajorFunction` is an array of function pointers, each slot matching one kind of request:
 
 ```
 MajorFunction[IRP_MJ_CREATE]         = DriverCreateClose;   // index 0
 MajorFunction[IRP_MJ_CLOSE]          = DriverCreateClose;   // index 2
-MajorFunction[IRP_MJ_DEVICE_CONTROL] = DriverDeviceControl; // index 14, quan trọng nhất
+MajorFunction[IRP_MJ_DEVICE_CONTROL] = DriverDeviceControl; // index 14, the most important
 ```
 
-Slot `IRP_MJ_DEVICE_CONTROL` (giá trị 0xE) gần như luôn là trái tim của driver, vì đây là nơi xử lý `DeviceIoControl` từ user-mode. Khi reverse, tìm chỗ gán slot 0xE trong `DriverEntry` rồi nhảy tới hàm đó là bạn vào ngay phần logic chính.
+The `IRP_MJ_DEVICE_CONTROL` slot (value 0xE) is almost always the heart of the driver, because this is where `DeviceIoControl` from user-mode gets handled. When reversing, find where slot 0xE gets assigned in `DriverEntry` and jump to that function and you're straight into the main logic.
 
-Trong hàm device control, driver đọc IOCTL code từ IRP (qua `IoGetCurrentIrpStackLocation`, trường `Parameters.DeviceIoControl.IoControlCode`) rồi switch theo từng mã. Mỗi IOCTL là một lệnh mà user-mode gửi xuống. Dựng lại bảng IOCTL code tương ứng với hành vi là đã hiểu được API riêng của driver.
+Inside the device control function, the driver reads the IOCTL code from the IRP (through `IoGetCurrentIrpStackLocation`, the field `Parameters.DeviceIoControl.IoControlCode`) and then switches on each code. Each IOCTL is a command that user-mode sends down. Rebuild the table of IOCTL codes against behavior and you've understood the driver's private API.
 
-### Lần ngược từ phía user-mode
+### Working backwards from the user-mode side
 
-Mẹo thực chiến: nếu bạn có cả chương trình user-mode điều khiển driver, hãy tìm lời gọi `DeviceIoControl` trong đó. Tham số thứ hai là IOCTL code, tham số buffer vào/ra cho bạn biết cấu trúc dữ liệu. Ghép hai phía user và kernel lại là hiểu trọn giao thức. Đây là lý do nhiều khi reverse driver dễ hơn khi có kèm phần user-mode.
+A practical tip: if you also have the user-mode program that controls the driver, look for the `DeviceIoControl` call in it. The second parameter is the IOCTL code, and the input/output buffer parameters tell you the data structures. Put the user and kernel sides together and you understand the whole protocol. That's why reversing a driver is often easier when the user-mode part comes with it.
 
-### Debug bằng WinDbg kernel mode
+### Debugging with WinDbg in kernel mode
 
-Debug driver dùng WinDbg (nhắc ở bài 2.6) ở chế độ kernel:
+Debug a driver with WinDbg (mentioned in lesson 2.6) in kernel mode:
 
-- Trên VM target, bật kernel debugging: `bcdedit /debug on` và cấu hình transport (`bcdedit /dbgsettings net ...` hoặc serial/named pipe), rồi khởi động lại.
-- Trên host, mở WinDbg, attach vào kernel qua đúng transport.
-- Vài lệnh hay dùng: `lm` liệt kê module đã nạp (tìm driver của bạn), `!drvobj MyDriver 7` xem driver object và bảng major function, `bp MyDriver!DriverDeviceControl` đặt breakpoint, `!irp` xem IRP hiện tại, `dt` đọc struct.
+- On the target VM, turn on kernel debugging: `bcdedit /debug on` and configure the transport (`bcdedit /dbgsettings net ...` or serial/named pipe), then reboot.
+- On the host, open WinDbg and attach to the kernel over the same transport.
+- A few commonly used commands: `lm` lists loaded modules (find your driver), `!drvobj MyDriver 7` shows the driver object and the major function table, `bp MyDriver!DriverDeviceControl` sets a breakpoint, `!irp` shows the current IRP, `dt` reads a struct.
 
-VM target sẽ đứng hình khi bị breakpoint, đó là bình thường, host điều khiển mọi thứ.
+The target VM will freeze when a breakpoint hits, that's normal, the host controls everything.
 
-## Linux kernel module: file .ko
+## Linux kernel module: the .ko file
 
-Bên Linux, kernel module là file `.ko`, một ELF relocatable (nhắc bài 1.8). Mở bằng Ghidra/IDA như ELF thường.
+On Linux, a kernel module is a `.ko` file, a relocatable ELF (mentioned in lesson 1.8). Open it in Ghidra/IDA like a normal ELF.
 
-Hai điểm vào do macro định nghĩa:
+Two entry points defined by macros:
 
-- `module_init(ham)` đăng ký hàm chạy khi nạp module (`insmod`). Đây là `DriverEntry` của Linux.
-- `module_exit(ham)` chạy khi gỡ (`rmmod`).
+- `module_init(func)` registers the function that runs when the module is loaded (`insmod`). This is Linux's `DriverEntry`.
+- `module_exit(func)` runs on removal (`rmmod`).
 
-Thông tin module (tên, license, tác giả, tham số) nằm trong section `.modinfo`, đọc nhanh bằng `modinfo file.ko`. Symbol thường còn khá nhiều vì kernel module hay giữ tên hàm, nên đọc dễ hơn driver Windows stripped.
+Module info (name, license, author, parameters) sits in the `.modinfo` section, quickly read with `modinfo file.ko`. Symbols are often still fairly intact because kernel modules tend to keep function names, so it's easier to read than a stripped Windows driver.
 
-Những gì module hay làm và đáng soi:
+What modules often do and are worth inspecting:
 
-- Đăng ký character device hoặc entry trong `/proc`, `/sys` để nói chuyện với user-mode (tương đương device object + IOCTL của Windows). Tìm `file_operations` struct với các con trỏ `.read`, `.write`, `.unlocked_ioctl`.
-- Hook syscall (một kỹ thuật rootkit kinh điển: sửa `sys_call_table` để chặn `getdents` giấu file, hoặc `kill` nhận lệnh ẩn). Thấy module đọc/ghi `sys_call_table` là cờ đỏ cần đọc kỹ.
+- Register a character device or an entry in `/proc`, `/sys` to talk to user-mode (the equivalent of Windows' device object + IOCTL). Look for the `file_operations` struct with the `.read`, `.write`, `.unlocked_ioctl` pointers.
+- Hook syscalls (a classic rootkit technique: modify `sys_call_table` to intercept `getdents` to hide files, or `kill` to receive hidden commands). Seeing a module read/write `sys_call_table` is a red flag to read carefully.
 
-Debug: `kgdb` nối từ một máy khác (hoặc QEMU, nối bài 18.5), hoặc dùng `qemu` chạy kernel với gdbstub (`-s -S`) rồi attach gdb từ host. In log bằng `printk` xem qua `dmesg` là cách quan sát nhẹ nhàng nhất khi chưa cần dừng kernel.
+Debug: `kgdb` connected from another machine (or QEMU, tying into lesson 18.5), or use `qemu` to run the kernel with the gdbstub (`-s -S`) and attach gdb from the host. Printing logs with `printk` and reading through `dmesg` is the gentlest way to observe when you don't need to halt the kernel yet.
 
-## Vì sao ring-0 khác hẳn
+## Why ring-0 is so different
 
-Vài thứ làm người quen user-mode vấp:
+A few things that trip up people used to user-mode:
 
-- Không có libc hay Win32 quen thuộc, chỉ có API kernel. Phải tra tên hàm kernel để hiểu (nối bài 1.13).
-- Địa chỉ kernel dùng chung cho mọi tiến trình, không cô lập như user-mode (bài 1.2). KASLR làm base kernel ngẫu nhiên mỗi lần boot.
-- Một lỗi là sập cả máy, nên vòng lặp thử sai chậm hơn nhiều. Đọc tĩnh kỹ trước khi chạy động là xứng công.
-- Driver thường nhỏ và tập trung, nên một khi tìm được hàm device control thì phần còn lại gọn.
+- No familiar libc or Win32, only the kernel API. You have to look up kernel function names to understand them (tying into lesson 1.13).
+- Kernel addresses are shared across all processes, not isolated like user-mode (lesson 1.2). KASLR randomizes the kernel base on every boot.
+- One bug crashes the whole machine, so the trial-and-error loop is much slower. Reading statically with care before running dynamically pays off.
+- Drivers are usually small and focused, so once you find the device control function, the rest is compact.
 
-## Phạm vi và đạo đức
+## Scope and ethics
 
-Nhắc lại tinh thần bài 0.2: phân tích một driver để hiểu nó làm gì, kiểm tra an toàn sản phẩm của mình, hay nghiên cứu một rootkit trong lab phòng thủ đều ổn. Dùng kiến thức này để vô hiệu hoá anti-cheat của game online hay viết rootkit thì không, cả về luật lẫn về nghề. Code ring-0 là nơi ranh giới giữa nghiên cứu và phá hoại mỏng nhất, nên giữ mình cẩn thận.
+A reminder of the spirit of lesson 0.2: analyzing a driver to understand what it does, testing the security of your own product, or studying a rootkit in a defensive lab are all fine. Using this knowledge to disable the anti-cheat of an online game or to write a rootkit is not, both legally and professionally. Ring-0 code is where the line between research and sabotage is thinnest, so be careful.
 
-## Lab tự làm
+## Lab
 
-Xem `labs/18.6/`: đọc một kernel module Linux đơn giản (có source kèm để đối chiếu), build thành `.ko`, rồi mở `.ko` trong Ghidra để tìm `module_init`, `file_operations` và hàm ioctl, so với source.
+See `labs/18.6/`: read a simple Linux kernel module (source included for comparison), build it into a `.ko`, then open the `.ko` in Ghidra to find `module_init`, `file_operations` and the ioctl function, and compare with the source.
 
-## Checklist ghi nhớ
-- Reverse ring-0 luôn làm trong VM: target là VM, host chạy debugger, snapshot trước khi nạp driver.
-- Windows `.sys` là PE, điểm vào `DriverEntry`, trái tim là `MajorFunction[IRP_MJ_DEVICE_CONTROL]` (slot 0xE) xử lý IOCTL.
-- Lần ngược từ `DeviceIoControl` phía user-mode để hiểu IOCTL code và cấu trúc buffer.
-- Linux `.ko` là ELF, điểm vào `module_init`, tìm `file_operations` và dấu hiệu hook `sys_call_table`.
-- Debug: WinDbg kernel mode (Windows), kgdb hoặc QEMU gdbstub (Linux).
-- Một lỗi ring-0 là sập máy, nên đọc tĩnh kỹ trước khi chạy động.
+## Key takeaways
+- Always reverse ring-0 in a VM: the target is a VM, the host runs the debugger, take a snapshot before loading the driver.
+- A Windows `.sys` is a PE, the entry point is `DriverEntry`, and the heart is `MajorFunction[IRP_MJ_DEVICE_CONTROL]` (slot 0xE) handling IOCTLs.
+- Work backwards from `DeviceIoControl` on the user-mode side to understand IOCTL codes and buffer structures.
+- A Linux `.ko` is an ELF, the entry point is `module_init`, look for `file_operations` and signs of `sys_call_table` hooking.
+- Debugging: WinDbg kernel mode (Windows), kgdb or QEMU gdbstub (Linux).
+- One ring-0 bug crashes the machine, so read statically with care before running dynamically.

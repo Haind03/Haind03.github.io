@@ -1,136 +1,136 @@
 ---
-title: "Kho kỹ thuật Reverse Engineering (bản đồ)"
+title: "Reverse Engineering technique repository (map)"
 date: 2026-10-06 14:02:00 +0700
-categories: ["Technique Reverse", "Tài nguyên"]
+categories: ["Technique Reverse", "Resources"]
 tags: [reverse-engineering, resources]
 render_with_liquid: false
 ---
-> Toàn bộ kỹ thuật trong series, nhóm theo chủ đề. Mỗi kỹ thuật ghi: *dùng khi nào* và *bài học tương ứng*.
-> Ký hiệu bài: ví dụ `15.5` = Phần 15, Bài 5 (xem [README](/technique-reverse/)).
+> Every technique in the series, grouped by topic. Each technique lists *when to use it* and the *matching lesson*.
+> Lesson notation: for example `15.5` = Part 15, Lesson 5 (see the [README](/technique-reverse/)).
 
-## A. Phân tích tĩnh (Static analysis)
-Không chạy file, chỉ đọc.
+## A. Static analysis
+Don't run the file, just read.
 
-| Kỹ thuật | Dùng khi | Bài |
+| Technique | Use when | Lesson |
 |---|---|---|
-| Triage / fingerprinting | Bước đầu luôn làm: biết loại file, compiler, packer | 2.1, 14.1 |
-| Đọc chuỗi (strings) & stacked/encoded string | Tìm manh mối nhanh: URL, path, thông báo lỗi, flag | 2.1 |
-| Phân tích import/export | Suy chức năng từ API được gọi | 1.7, 1.13 |
-| Đọc disassembly | Hiểu từng lệnh máy | 1.3,1.5 |
-| Đọc decompiler output | Hiểu nhanh ở mức C/pseudocode | 2.2, 2.3 |
-| Khôi phục kiểu dữ liệu & struct | Làm pseudocode dễ đọc | 3.3, 4.2 |
-| Cross-reference (xref) | Lần theo nơi dùng hàm/biến/chuỗi | 2.2 |
-| Nhận diện calling convention | Đọc đúng tham số | 1.4 |
-| Nhận diện cấu trúc điều khiển (if/loop/switch) | Dịch assembly ngược về logic | 1.5 |
-| FLIRT / library signature | Bỏ qua code thư viện, tập trung code người viết | 3.4 |
-| Control Flow Graph (CFG) | Nhìn tổng thể luồng hàm | 2.2, 2.3 |
+| Triage / fingerprinting | Always the first step: know the file type, compiler, packer | 2.1, 14.1 |
+| Reading strings & stacked/encoded strings | Quick clues: URLs, paths, error messages, flags | 2.1 |
+| Import/export analysis | Infer functionality from the APIs called | 1.7, 1.13 |
+| Reading disassembly | Understand each machine instruction | 1.3,1.5 |
+| Reading decompiler output | Quick understanding at the C/pseudocode level | 2.2, 2.3 |
+| Recovering data types & structs | Make pseudocode readable | 3.3, 4.2 |
+| Cross-reference (xref) | Trace where a function/variable/string is used | 2.2 |
+| Identifying the calling convention | Read parameters correctly | 1.4 |
+| Identifying control structures (if/loop/switch) | Translate assembly back to logic | 1.5 |
+| FLIRT / library signatures | Skip library code, focus on the author's code | 3.4 |
+| Control Flow Graph (CFG) | See the overall flow of a function | 2.2, 2.3 |
 
-## B. Phân tích động (Dynamic analysis)
-Chạy file trong môi trường kiểm soát.
+## B. Dynamic analysis
+Run the file in a controlled environment.
 
-| Kỹ thuật | Dùng khi | Bài |
+| Technique | Use when | Lesson |
 |---|---|---|
-| Debugging (breakpoint, step, watch) | Quan sát giá trị thật lúc chạy | 2.5, 2.6 |
-| Breakpoint theo API | Dừng tại GetProcAddress, CreateFile… | 2.5, 15.9 |
-| Memory breakpoint / hardware breakpoint | Bắt truy cập vùng nhớ | 2.5 |
-| Dump bộ nhớ | Lấy code đã giải mã/unpack | 14.2, 14.3 |
-| Trace (API/syscall/thư viện) | Hiểu hành vi tổng thể | 2.8, 17.2 |
-| Giám sát hệ thống (Procmon…) | Thấy tác động file/registry/network | 2.8, 19.1 |
-| Time Travel Debugging | Tua ngược để tìm nguồn giá trị | 2.6 |
-| Giám sát mạng | Hiểu giao thức C2/API | 2.8, 18.7 |
+| Debugging (breakpoint, step, watch) | Observe real values at runtime | 2.5, 2.6 |
+| API breakpoints | Stop at GetProcAddress, CreateFile... | 2.5, 15.9 |
+| Memory breakpoint / hardware breakpoint | Catch accesses to a memory region | 2.5 |
+| Memory dump | Get code that has been decrypted/unpacked | 14.2, 14.3 |
+| Tracing (API/syscall/library) | Understand overall behavior | 2.8, 17.2 |
+| System monitoring (Procmon...) | See file/registry/network effects | 2.8, 19.1 |
+| Time Travel Debugging | Rewind to find where a value came from | 2.6 |
+| Network monitoring | Understand the C2/API protocol | 2.8, 18.7 |
 
-## C. Theo ngôn ngữ / nền tảng
-| Nền tảng | Kỹ thuật đặc thù | Bài |
+## C. By language / platform
+| Platform | Specific techniques | Lesson |
 |---|---|---|
-| C/C++ native | Khôi phục struct, vtable, RTTI, name mangling | 3.x, 4.x |
-| .NET | Decompile ILC#, debug không source, patch IL | 5.x |
-| Java/Android | DEXJava, smali patch, ký lại APK, hook Java | 6.x |
-| Python | .pycsource, unpack PyInstaller | 7.x |
-| Go | Phục hồi symbol từ pclntab | 8.x |
-| Rust | Demangle, nhận diện pattern Result/Option | 9.x |
-| JS/Electron/WASM | Deobfuscate, giải asar, wasm2wat | 11.x |
-| Apple | ObjC runtime, Swift demangle | 12.x |
-| Game | IL2CPP dump, Cheat Engine, Lua decompile | 13.x |
+| C/C++ native | Recovering structs, vtables, RTTI, name mangling | 3.x, 4.x |
+| .NET | Decompile IL to C#, debug without source, patch IL | 5.x |
+| Java/Android | DEX to Java, smali patching, re-signing APKs, hooking Java | 6.x |
+| Python | .pyc to source, unpacking PyInstaller | 7.x |
+| Go | Recovering symbols from pclntab | 8.x |
+| Rust | Demangling, recognizing Result/Option patterns | 9.x |
+| JS/Electron/WASM | Deobfuscating, unpacking asar, wasm2wat | 11.x |
+| Apple | ObjC runtime, Swift demangling | 12.x |
+| Games | IL2CPP dump, Cheat Engine, Lua decompiling | 13.x |
 
 ## D. Unpacking & deobfuscation
-| Kỹ thuật | Mô tả | Bài |
+| Technique | Description | Lesson |
 |---|---|---|
-| Nhận diện packer & entropy | Phân biệt packed/không | 14.1 |
-| Unpack tự động (UPX -d, unipacker) | Nhanh khi packer chuẩn | 14.2 |
-| Unpack thủ công (tìm OEP) | Khi packer tuỳ biến; theo tail jump/ESP trick | 14.2 |
-| Dump + rebuild IAT (Scylla) | Tái tạo file chạy được sau unpack | 14.3 |
-| Gỡ string encryption | Giải chuỗi bị mã hoá tĩnh | 14.4, 18.2 |
-| Gỡ control-flow flattening | Phục hồi luồng gốc | 14.4, 14.6 |
-| Gỡ opaque predicate / MBA | Đơn giản hoá biểu thức rác | 14.4, 18.3 |
-| Đối phó virtualization (VMProtect/Themida) | Hiểu bytecode handler | 14.5 |
-| Deobfuscate bằng emulation/symbolic | Tự động hoá | 14.6, 18.2, 18.3 |
+| Identifying packers & entropy | Tell packed from unpacked | 14.1 |
+| Automatic unpacking (UPX -d, unipacker) | Fast when the packer is standard | 14.2 |
+| Manual unpacking (finding the OEP) | For custom packers; follow the tail jump/ESP trick | 14.2 |
+| Dump + rebuild IAT (Scylla) | Recreate a runnable file after unpacking | 14.3 |
+| Removing string encryption | Decrypt statically encrypted strings | 14.4, 18.2 |
+| Removing control-flow flattening | Recover the original flow | 14.4, 14.6 |
+| Removing opaque predicates / MBA | Simplify junk expressions | 14.4, 18.3 |
+| Dealing with virtualization (VMProtect/Themida) | Understand the bytecode handlers | 14.5 |
+| Deobfuscating with emulation/symbolic execution | Automation | 14.6, 18.2, 18.3 |
 
-## E. Anti-reverse (nhận diện & vượt qua)
-Trình bày theo hướng **hiểu cơ chế để phân tích và phòng thủ**.
+## E. Anti-reverse (recognizing & getting past)
+Presented from the angle of **understanding the mechanism to analyze and defend**.
 
-| Kỹ thuật phía phần mềm | Cách reverser xử lý | Bài |
+| Software-side technique | How the reverser handles it | Lesson |
 |---|---|---|
-| Anti-debug qua API (IsDebuggerPresent…) | Hook/patch trả về giả, ScyllaHide | 15.1, 15.9 |
-| Anti-debug qua PEB/NtGlobalFlag | Sửa cờ trong bộ nhớ | 15.2 |
-| Anti-debug timing (RDTSC) | Bỏ qua/điều chỉnh delta, patch | 15.3 |
-| Trap (INT3/INT2D/ICEBP), hardware BP detect | Nhận ra & tránh | 15.3 |
+| Anti-debug via APIs (IsDebuggerPresent...) | Hook/patch to return fake values, ScyllaHide | 15.1, 15.9 |
+| Anti-debug via PEB/NtGlobalFlag | Edit the flags in memory | 15.2 |
+| Timing anti-debug (RDTSC) | Skip/adjust the delta, patch | 15.3 |
+| Traps (INT3/INT2D/ICEBP), hardware BP detection | Recognize and avoid | 15.3 |
 | Self-debug, debug object, thread hiding | HyperHide/TitanHide | 15.4, 15.9 |
-| TLS callback chạy trước main | Đặt BP ở TLS callback | 15.4 |
-| Anti-VM/sandbox | Làm VM giống thật, patch check | 15.5 |
-| Anti-disassembly (junk/overlap/SMC) | Sửa định dạng, chạy động, force code | 15.6 |
-| Anti-attach / anti-dump / anti-hook | Attach sớm, dựng lại header, so prologue | 15.7 |
-| Integrity check (CRC/checksum) | Vô hiệu hoá check thay vì sửa code bị kiểm | 15.8 |
+| TLS callbacks running before main | Set a BP at the TLS callback | 15.4 |
+| Anti-VM/sandbox | Make the VM look real, patch the checks | 15.5 |
+| Anti-disassembly (junk/overlap/SMC) | Fix the format, run dynamically, force code | 15.6 |
+| Anti-attach / anti-dump / anti-hook | Attach early, rebuild headers, compare prologues | 15.7 |
+| Integrity check (CRC/checksum) | Disable the check instead of editing the checked code | 15.8 |
 
-## F. Crypto & thuật toán
-| Kỹ thuật | Mô tả | Bài |
+## F. Crypto & algorithms
+| Technique | Description | Lesson |
 |---|---|---|
-| Nhận diện hằng số crypto | findcrypt/capa/signsrch | 16.1 |
-| Nhận diện XOR/RC4/Base64 custom | Pattern phổ biến nhất trong malware/crackme | 16.2 |
-| Nhận diện AES/DES/TEA/ChaCha/hash | Qua S-box, hằng số, cấu trúc vòng | 16.3 |
-| Viết lại thuật toán bằng Python | Để tự giải/keygen | 16.4 |
-| Giải điều kiện bằng Z3/angr | Khi logic check phức tạp | 16.4, 18.3 |
+| Identifying crypto constants | findcrypt/capa/signsrch | 16.1 |
+| Identifying XOR/RC4/custom Base64 | The most common patterns in malware/crackmes | 16.2 |
+| Identifying AES/DES/TEA/ChaCha/hashes | Through S-boxes, constants, round structure | 16.3 |
+| Rewriting the algorithm in Python | To solve it yourself/write a keygen | 16.4 |
+| Solving conditions with Z3/angr | When the check logic is complex | 16.4, 18.3 |
 
-## G. Patch, hook, injection, instrumentation
-| Kỹ thuật | Mô tả | Bài |
+## G. Patching, hooking, injection, instrumentation
+| Technique | Description | Lesson |
 |---|---|---|
-| Patch tĩnh (đổi jump, NOP, code cave) | Sửa hành vi vĩnh viễn trên file | 17.1 |
-| Patch runtime | Sửa trong bộ nhớ lúc chạy | 17.1 |
-| IAT hook | Thay con trỏ trong bảng import | 17.3 |
-| Inline/trampoline hook (Detours/MinHook) | Chèn jump đầu hàm | 17.3 |
-| Frida Interceptor/Stalker | Hook & trace linh hoạt mọi nền tảng | 17.2 |
-| DLL injection (LoadLibrary+CreateRemoteThread, SetWindowsHookEx, AppInit) | Nạp code vào tiến trình khác | 17.4 |
-| Manual mapping / reflective DLL | Nạp không qua loader chuẩn | 17.4 |
-| Shellcode injection, APC, thread hijacking, process hollowing | Cơ chế & dấu hiệu phát hiện (PE-sieve, EDR) | 17.5 |
-| LD_PRELOAD / ptrace / DYLD_INSERT_LIBRARIES | Tương đương trên Linux/macOS | 17.6 |
-| DBI (Pin/DynamoRIO/QBDI/TinyInst) | Taint, coverage, tracing quy mô lớn | 17.7 |
+| Static patching (change jumps, NOP, code cave) | Permanently change behavior in the file | 17.1 |
+| Runtime patching | Edit in memory while running | 17.1 |
+| IAT hook | Replace a pointer in the import table | 17.3 |
+| Inline/trampoline hook (Detours/MinHook) | Insert a jump at the function start | 17.3 |
+| Frida Interceptor/Stalker | Flexible hooking & tracing on any platform | 17.2 |
+| DLL injection (LoadLibrary+CreateRemoteThread, SetWindowsHookEx, AppInit) | Load code into another process | 17.4 |
+| Manual mapping / reflective DLL | Load without going through the standard loader | 17.4 |
+| Shellcode injection, APC, thread hijacking, process hollowing | Mechanisms & detection signs (PE-sieve, EDR) | 17.5 |
+| LD_PRELOAD / ptrace / DYLD_INSERT_LIBRARIES | Equivalents on Linux/macOS | 17.6 |
+| DBI (Pin/DynamoRIO/QBDI/TinyInst) | Taint, coverage, large-scale tracing | 17.7 |
 
-## H. Nâng cao & tự động hoá
-| Kỹ thuật | Mô tả | Bài |
+## H. Advanced & automation
+| Technique | Description | Lesson |
 |---|---|---|
-| Scripting decompiler (IDAPython/Ghidra/BN API) | Tự động hoá phân tích lặp lại | 18.1 |
-| Emulation (Unicorn/Qiling/Speakeasy) | Chạy đoạn code tách biệt | 18.2 |
-| Symbolic execution (angr/Triton) | Tự tìm input thoả điều kiện | 18.3 |
-| Binary/patch diffing | Tìm lỗ hổng từ bản vá, so sánh biến thể | 18.4 |
-| Firmware/IoT (binwalk/QEMU) | Reverse thiết bị nhúng | 18.5 |
-| Kernel driver / LKM | Reverse code ring-0 | 18.6 |
-| Reverse giao thức/định dạng file | Dựng lại spec từ mẫu | 18.7 |
-| AI hỗ trợ (LLM plugin/MCP) | Tăng tốc đặt tên, giải thích | 18.8 |
+| Decompiler scripting (IDAPython/Ghidra/BN API) | Automate repetitive analysis | 18.1 |
+| Emulation (Unicorn/Qiling/Speakeasy) | Run an isolated piece of code | 18.2 |
+| Symbolic execution (angr/Triton) | Automatically find inputs satisfying conditions | 18.3 |
+| Binary/patch diffing | Find vulnerabilities from patches, compare variants | 18.4 |
+| Firmware/IoT (binwalk/QEMU) | Reverse embedded devices | 18.5 |
+| Kernel driver / LKM | Reverse ring-0 code | 18.6 |
+| Reversing protocols/file formats | Rebuild the spec from samples | 18.7 |
+| AI assistance (LLM plugin/MCP) | Speed up naming and explanation | 18.8 |
 
-## I. Malware analysis (phòng thủ)
-| Kỹ thuật | Mô tả | Bài |
+## I. Malware analysis (defensive)
+| Technique | Description | Lesson |
 |---|---|---|
-| Quy trình an toàn + sandbox | Chạy mẫu không lây lan | 19.1 |
-| Viết IOC/YARA/capa/sigma | Phát hiện & săn mối đe doạ | 19.2 |
-| Maldoc analysis (macro/PDF/LNK) | Khâu lây nhiễm ban đầu | 19.3 |
-| Trích config & C2 | Hiểu hạ tầng kẻ tấn công | 19.4 |
+| Safe workflow + sandbox | Run samples without spreading infection | 19.1 |
+| Writing IOC/YARA/capa/sigma | Detection & threat hunting | 19.2 |
+| Maldoc analysis (macro/PDF/LNK) | The initial infection stage | 19.3 |
+| Extracting config & C2 | Understand the attacker's infrastructure | 19.4 |
 
 ---
 
-### Lộ trình kỹ năng gợi ý
-1. **Static cơ bản** (A) -> đọc được disassembly/pseudocode.
-2. **Dynamic cơ bản** (B) -> debug thành thạo x64dbg/GDB.
-3. **Một ngôn ngữ managed** (.NET hoặc Java) để thấy "thành quả" nhanh.
-4. **C/C++ native**, xương sống.
-5. **Unpacking + anti-reverse** (D, E), nơi tách người mới và người giỏi.
-6. **Tự động hoá** (H), scripting, emulation, symbolic.
-7. Chuyên sâu theo hướng: malware, exploit/vuln research, hoặc game/mobile.
+### Suggested skill path
+1. **Basic static** (A) -> be able to read disassembly/pseudocode.
+2. **Basic dynamic** (B) -> debug fluently with x64dbg/GDB.
+3. **One managed language** (.NET or Java) to see "results" quickly.
+4. **C/C++ native**, the backbone.
+5. **Unpacking + anti-reverse** (D, E), where newcomers and good people split apart.
+6. **Automation** (H), scripting, emulation, symbolic.
+7. Specialize by direction: malware, exploit/vuln research, or games/mobile.

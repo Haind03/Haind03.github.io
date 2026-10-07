@@ -1,31 +1,31 @@
 ---
-title: "Bài 16.4: Viết lại thuật toán bằng Python, và để Z3 giải hộ"
+title: "Lesson 16.4: Rewriting the algorithm in Python, and letting Z3 solve it"
 date: 2026-10-06 09:39:00 +0700
-categories: ["Technique Reverse", "Phần 16 · Crypto & thuật toán"]
+categories: ["Technique Reverse", "Part 16 · Crypto and Algorithms"]
 tags: [reverse-engineering, crypto]
 render_with_liquid: false
 ---
-Tới đây bạn đã đọc được thuật toán kiểm tra trong binary. Câu hỏi tiếp theo: làm sao tìm ra input hợp lệ? Có hai cấp độ. Cấp một, thuật toán đơn giản thì viết lại bằng Python rồi đảo ngược hoặc brute-force. Cấp hai, logic là một mớ ràng buộc chằng chịt giữa các byte, giải tay thì phát điên, lúc đó ta giao cho Z3, một SMT solver, nó tự tìm input thoả mọi điều kiện. Bài này đi qua cả hai, và lab cuối là một crackme giải trọn bằng Z3 đã chạy thật.
+By now you can read the check algorithm in a binary. The next question: how do you find a valid input? There are two levels. Level one, if the algorithm is simple, rewrite it in Python and then invert it or brute-force it. Level two, the logic is a tangle of constraints between bytes that would drive you mad to solve by hand, so we hand it to Z3, an SMT solver, which finds an input satisfying every condition on its own. This lesson covers both, and the final lab is a crackme solved entirely with Z3 that actually ran.
 
-## Cấp một: viết lại bằng Python
+## Level one: rewrite it in Python
 
-Phần lớn crackme sau khi đọc xong hàm check là bạn thấy ngay một phép biến đổi có thể đảo. Ví dụ hay gặp: chương trình lấy từng ký tự input, biến đổi, rồi so với một mảng hằng.
+For most crackmes, once you've read the check function you immediately see a transform that can be inverted. A common example: the program takes each input character, transforms it, then compares to a constant array.
 
 ```c
-// đọc được trong binary
+// read from the binary
 for (int i = 0; i < 10; i++)
     if (((input[i] ^ 0x5A) + i) != target[i]) return 0;
 ```
 
-Viết lại và đảo ngược bằng Python trong ba dòng:
+Rewrite and invert it in Python in three lines:
 
 ```python
-target = [0x12, 0x34, ...]   # lấy từ binary
+target = [0x12, 0x34, ...]   # taken from the binary
 flag = bytes((target[i] - i) ^ 0x5A for i in range(len(target)))
 print(flag)
 ```
 
-Phép biến đổi khả nghịch (xor, cộng, trừ, hoán vị) thì luôn đảo được kiểu này. Khi nó một chiều một phần nhưng không gian nhỏ (ví dụ 4 ký tự, mỗi ký tự in được) thì brute-force:
+A reversible transform (xor, add, subtract, permutation) can always be inverted this way. When it's partly one-way but the space is small (say 4 characters, each printable), brute-force it:
 
 ```python
 import itertools, string
@@ -33,77 +33,68 @@ for cand in itertools.product(string.printable, repeat=4):
     if check(''.join(cand)): print(cand)
 ```
 
-Viết lại bằng Python là kỹ năng nền. Nhưng có loại check mà viết lại thôi chưa đủ.
+Rewriting in Python is a foundation skill. But some checks need more than a rewrite.
 
-## Khi nào Python tay bó tay
+## When hand-written Python gives up
 
-Xét một hàm check không biến đổi từng ký tự độc lập, mà ràng buộc chúng với nhau:
+Consider a check function that doesn't transform each character independently but ties them to each other:
 
 ```c
 if (f[0] ^ f[1] != 0x41) return 0;
 if ((3*f[2] + f[3]) & 0xff != 0x5E) return 0;
 if (f[0] + f[1] + ... + f[11] != 988) return 0;
-// ... thêm chục ràng buộc đan nhau
+// ... a dozen more interleaved constraints
 ```
 
-Mỗi điều kiện liên quan nhiều byte, các byte lại xuất hiện trong nhiều điều kiện. Đảo ngược tay thành giải hệ phương trình, brute-force thì không gian 95^12 là quá lớn. Đây đúng là bài toán cho SMT solver.
+Each condition involves several bytes, and the bytes appear in several conditions. Inverting by hand turns into solving a system of equations, and brute-forcing a 95^12 space is far too large. This is exactly a problem for an SMT solver.
 
-## Z3 là gì và vì sao nó hợp
+## What Z3 is and why it fits
 
-Z3 (Microsoft Research) là một SMT solver: bạn mô tả bài toán bằng các biến và ràng buộc, nó tự tìm một gán giá trị thoả tất cả, hoặc báo vô nghiệm. Với RE, ta mô hình mỗi byte input thành một biến, dịch mỗi phép cmp/xor/add/so sánh trong binary thành một constraint, rồi gọi solver. Nó trả về flag.
+Z3 (Microsoft Research) is an SMT solver: you describe the problem with variables and constraints, and it finds an assignment of values satisfying all of them, or reports there's no solution. For RE, we model each input byte as a variable, translate each cmp/xor/add/comparison in the binary into a constraint, then call the solver. It returns the flag.
 
-Điểm hợp với RE: Z3 có kiểu `BitVec` mô phỏng đúng số nguyên n-bit với tràn số (wrap-around) và toán bit, y hệt CPU. `xor`, `+`, `&`, `*` trên BitVec hành xử đúng như trong binary, kể cả khi tràn 8-bit.
+What fits RE is that Z3 has the `BitVec` type that models n-bit integers exactly, with overflow (wrap-around) and bit operations, just like the CPU. `xor`, `+`, `&`, `*` on a BitVec behave exactly as in the binary, even when 8-bit overflow happens.
 
-Khung một lời giải Z3 luôn gồm bốn phần:
+The skeleton of a Z3 solution always has four parts:
 
 ```python
 from z3 import *
-f = [BitVec(f'f{i}', 8) for i in range(12)]   # 1. biến: 12 byte
+f = [BitVec(f'f{i}', 8) for i in range(12)]   # 1. variables: 12 bytes
 s = Solver()
-s.add([And(c >= 0x20, c <= 0x7e) for c in f]) # 2. ràng buộc miền (printable)
-s.add(f[0] ^ f[1] == 0x41)                    # 3. ràng buộc từ binary
-# ... thêm các constraint khác
-print(s.check())                              # 4. giải: sat / unsat
+s.add([And(c >= 0x20, c <= 0x7e) for c in f]) # 2. domain constraint (printable)
+s.add(f[0] ^ f[1] == 0x41)                    # 3. constraints from the binary
+# ... add the other constraints
+print(s.check())                              # 4. solve: sat / unsat
 m = s.model()
 print(bytes(m[c].as_long() for c in f))
 ```
 
-Vài mẹo quan trọng:
-- Dùng đúng độ rộng: byte là `BitVec(name, 8)`. Khi cộng dồn thành tổng lớn, mở rộng bằng `ZeroExt(24, c)` để lên 32-bit, tránh tràn ngoài ý muốn.
-- Khớp wrap-around: nếu binary tính `(unsigned char)(3*f[i] + f[i+1])` thì trong Z3 là `(3*f[i] + f[i+1]) & 0xff` trên BitVec 8-bit (vốn đã tự wrap).
-- Kiểm tra nghiệm duy nhất: sau khi có `m`, thêm `s.add(Or([c != m[c] for c in f]))` rồi `check()` lại. Nếu `unsat` thì nghiệm là duy nhất, yên tâm đó là flag thật.
+A few tips matter here. Use the right width: a byte is `BitVec(name, 8)`, and when accumulating into a large sum, widen with `ZeroExt(24, c)` up to 32-bit to avoid unintended overflow. Match wrap-around too: if the binary computes `(unsigned char)(3*f[i] + f[i+1])`, then in Z3 it's `(3*f[i] + f[i+1]) & 0xff` on an 8-bit BitVec (which already wraps by itself). Finally, check for a unique solution. After you have `m`, add `s.add(Or([c != m[c] for c in f]))` and `check()` again, and if it's `unsat` the solution is unique, so you can be confident it's the real flag.
 
-## Lab: crackme giải trọn bằng Z3
+## Lab: a crackme solved entirely with Z3
 
-Lab ở [labs/16.4/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/16.4) là một crackme cố ý ràng buộc 12 byte input với nhau: một chuỗi phương trình `A[i]*f[i] + f[i+1] == C[i]`, hai ràng buộc xor chéo, và một ràng buộc tổng. Không có phép nào so input với flag trực tiếp, nên không moi flag từ bộ nhớ hay từ strings được. Bạn đọc hệ ràng buộc trong binary, chép sang Z3, bấm giải.
+The lab at [labs/16.4/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/16.4) is a crackme that deliberately ties 12 input bytes together: a chain of equations `A[i]*f[i] + f[i+1] == C[i]`, two cross xor constraints, and a sum constraint. No operation compares the input to the flag directly, so you can't pull the flag out of memory or strings. You read the constraint system in the binary, copy it into Z3, and hit solve.
 
-Lời giải tham chiếu `solve_z3.py` dựng đúng hệ đó và chạy ra flag trong chớp mắt. Kết quả kiểm thật trong môi trường này (gcc 11.4, Python 3.11, z3 5.1.0):
+The reference solution `solve_z3.py` builds exactly that system and spits out the flag in a blink. Results actually checked in this environment (gcc 11.4, Python 3.11, z3 5.1.0):
 
 ```text
 $ python3 solve_z3.py
 FLAG: Z3_Rul3s_RE!
 
 $ python3 solve_z3.py | sed -n 's/FLAG: //p' | ./crackme
-Nhap flag: Correct! Flag hop le.
+Enter flag: Correct! Valid flag.
 ```
 
-Z3 vừa tìm ra `Z3_Rul3s_RE!` chỉ từ các hằng số ràng buộc, và chính crackme xác nhận nó hợp lệ. Mình cũng đã kiểm nghiệm là nghiệm duy nhất, nên không có flag thứ hai.
+Z3 found `Z3_Rul3s_RE!` purely from the constraint constants, and the crackme itself confirms it's valid. I also checked that it's the unique solution, so there's no second flag.
 
-Chi tiết từng bước nằm trong [labs/16.4/solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/16.4/solution.md), gồm cả cách đối chiếu mỗi dòng C với một constraint Z3.
+Step-by-step details are in [labs/16.4/solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/16.4/solution.md), including how to match each C line to a Z3 constraint.
 
-## Khi nào Z3 không phải câu trả lời
+## When Z3 is not the answer
 
-Z3 mạnh nhưng không phải phép màu. Nó đuối khi:
-- Ràng buộc đi qua hàm một chiều thật sự (hash như SHA-256): không có cấu trúc đại số để solver khai thác, nó sẽ chạy mãi.
-- Không gian trạng thái quá lớn với loop phụ thuộc dữ liệu dài: cân nhắc kết hợp với symbolic execution (angr, Bài 18.3) để tự sinh constraint từ việc chạy.
-- Ràng buộc dạng float phức tạp: được hỗ trợ nhưng chậm.
+Z3 is powerful but not magic. It struggles when the constraints pass through a truly one-way function (a hash like SHA-256), because there's no algebraic structure for the solver to exploit and it will run forever. It also struggles when the state space is too big, with long data-dependent loops, where you should consider combining with symbolic execution (angr, Lesson 18.3) to generate constraints automatically from running the code. Complex float constraints are supported but slow.
 
-Quy tắc: nếu check là một hệ phương trình/bất phương trình trên các byte (cộng, xor, nhân, so sánh), Z3 ăn đứt. Nếu check là "băm rồi so hash", Z3 vô dụng, phải tấn công cách khác.
+The rule: if the check is a system of equations/inequalities on bytes (add, xor, multiply, compare), Z3 wins hands down. If the check is "hash and compare the hash", Z3 is useless and you have to attack another way.
 
-## Checklist ghi nhớ
-- Biến đổi khả nghịch thì viết lại Python rồi đảo; không gian nhỏ thì brute-force.
-- Hệ ràng buộc đan nhau giữa nhiều byte: giao cho Z3 thay vì giải tay.
-- Khung Z3: biến BitVec, ràng buộc miền, ràng buộc từ binary, check và model.
-- Dùng BitVec đúng độ rộng và ZeroExt khi cộng dồn, để khớp wrap-around của CPU.
-- Kiểm nghiệm duy nhất bằng cách block nghiệm cũ rồi check lại.
-- Z3 bó tay trước hash một chiều; lúc đó đổi hướng tấn công.
+## Key takeaways
+For a reversible transform, rewrite in Python and invert; for a small space, brute-force. For a system of constraints tangled across many bytes, hand it to Z3 instead of solving by hand. The Z3 skeleton is BitVec variables, domain constraints, constraints from the binary, then check and model.
+
+Use BitVec with the right width and ZeroExt when accumulating, to match the CPU's wrap-around, and check uniqueness by blocking the old solution and calling check again. Z3 gives up against one-way hashes, so change the attack direction then.

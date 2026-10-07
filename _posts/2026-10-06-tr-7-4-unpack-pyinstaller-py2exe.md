@@ -1,39 +1,39 @@
 ---
-title: "Bài 7.4: Khi Python biến thành file .exe, cách mở ngược ra"
+title: "Lesson 7.4: When Python turns into an .exe, how to open it back up"
 date: 2026-10-06 08:56:00 +0700
-categories: ["Technique Reverse", "Phần 7 · Python (pycdc)"]
+categories: ["Technique Reverse", "Part 07 · Python"]
 tags: [reverse-engineering, python]
 render_with_liquid: false
 ---
-Bạn tải về một chương trình, DIE báo nó là PE Windows bình thường, nhưng mở trong IDA thì toàn code của bootloader chẳng liên quan gì tới logic. Nhìn kỹ strings thấy `python311.dll`, `_MEIPASS`, `pyi-`. Đây không phải chương trình C, đây là một script Python được đóng gói thành exe. Và tin tốt: logic thật vẫn là bytecode Python nằm bên trong, chỉ cần moi ra rồi decompile như Bài 7.2.
+You download a program, DIE says it's a normal Windows PE, but opening it in IDA shows nothing but bootloader code that has nothing to do with the logic. Looking closer at the strings you see `python311.dll`, `_MEIPASS`, `pyi-`. This isn't a C program, it's a Python script packaged into an exe. And the good news: the real logic is still Python bytecode inside, you just need to dig it out and decompile it like in Lesson 7.2.
 
-Ba công cụ đóng gói hay gặp là PyInstaller (phổ biến nhất), py2exe, và cx_Freeze. Cách xử lý na ná nhau: nhận diện, trích (extract), rồi decompile.
+Three packaging tools you'll commonly meet are PyInstaller (the most common), py2exe, and cx_Freeze. The handling is similar: identify, extract, then decompile.
 
-## PyInstaller: cấu trúc và cách nhận ra
+## PyInstaller: structure and how to recognize it
 
-PyInstaller không biên dịch Python sang machine code. Nó nhét nguyên một bộ runtime vào trong exe: một bootloader viết bằng C (phần bạn thấy trong IDA), interpreter Python (`python3xx.dll` hoặc `libpython`), và một archive chứa toàn bộ `.pyc` của chương trình, nén lại trong khối gọi là PYZ. Lúc chạy, bootloader giải nén vào thư mục tạm (biến môi trường `_MEIPASS`) rồi gọi interpreter chạy script chính.
+PyInstaller doesn't compile Python to machine code. It stuffs a whole runtime into the exe: a bootloader written in C (the part you see in IDA), the Python interpreter (`python3xx.dll` or `libpython`), and an archive containing all the program's `.pyc` files, compressed in a block called PYZ. At runtime, the bootloader unpacks into a temp folder (the `_MEIPASS` environment variable) and then calls the interpreter to run the main script.
 
-Dấu hiệu nhận ra, chỉ cần `strings`:
+Tells, just `strings` is enough:
 
 ```
 _MEIPASS
 pyi-contents-directory
 pyimod01_archive
 PYZ-00.pyz
-python3.11.so.1.0        (hoặc python311.dll trên Windows)
+python3.11.so.1.0        (or python311.dll on Windows)
 ```
 
-Thấy `_MEIPASS` và `pyi` là gần như chắc chắn PyInstaller. DIE cũng nhận ra và báo thẳng.
+Seeing `_MEIPASS` and `pyi` is almost certainly PyInstaller. DIE also recognizes it and says so directly.
 
-## Trích ra bằng pyinstxtractor
+## Extracting with pyinstxtractor
 
-Công cụ kinh điển là `pyinstxtractor` (và bản mới hơn `pyinstxtractor-ng`, xử lý tốt hơn các phiên bản PyInstaller gần đây). Chạy thẳng lên file exe:
+The classic tool is `pyinstxtractor` (and the newer `pyinstxtractor-ng`, which handles recent PyInstaller versions better). Run it straight on the exe:
 
 ```
 python3 pyinstxtractor.py secretapp
 ```
 
-Đây là output thật khi trích một binary dựng bằng PyInstaller 6.20, Python 3.11:
+Here's the real output when extracting a binary built with PyInstaller 6.20, Python 3.11:
 
 ```
 [+] Processing dist/secretapp
@@ -49,67 +49,67 @@ python3 pyinstxtractor.py secretapp
 [+] Successfully extracted pyinstaller archive: dist/secretapp
 ```
 
-Hai thông tin vàng ở đây:
+Two golden pieces of information here:
 
-- **Python version: 3.11.** Đây là phiên bản bạn cần để chọn đúng decompiler. Nhớ Bài 7.2, pycdc không phụ thuộc runtime nhưng vẫn cần biết phiên bản để decompile chuẩn.
-- **Possible entry point: secretapp.pyc.** PyInstaller sinh ra cả rừng `.pyc`, phần lớn là code hỗ trợ của chính nó (`pyiboot`, `pyimod`, `pyi_rth`). Những file `pyi*` đó bỏ qua. File entry point mang tên script gốc (`secretapp.pyc`) mới là thứ bạn muốn đọc.
+- **Python version: 3.11.** This is the version you need to pick the right decompiler. Remember Lesson 7.2, pycdc doesn't depend on the runtime but you still need to know the version to decompile properly.
+- **Possible entry point: secretapp.pyc.** PyInstaller generates a forest of `.pyc` files, most of them its own support code (`pyiboot`, `pyimod`, `pyi_rth`). Skip those `pyi*` files. The entry point file named after the original script (`secretapp.pyc`) is what you want to read.
 
-Sau khi trích, bạn có một thư mục `secretapp_extracted/` với toàn bộ `.pyc` và các thư viện đi kèm.
+After extraction, you have a `secretapp_extracted/` folder with all the `.pyc` files and accompanying libraries.
 
-## Cái bẫy magic header
+## The magic header trap
 
-Đây là chỗ người mới hay vấp. Một file `.pyc` tử tế bắt đầu bằng 16 byte header (magic number + cờ + timestamp/hash + size), như Bài 7.1 đã nói. Vấn đề: nhiều phiên bản PyInstaller **cắt bỏ magic header** của file entry point khi đóng gói, nên file `.pyc` trích ra bị thiếu 8 hoặc 16 byte đầu. Decompiler mở lên sẽ báo lỗi hoặc đọc sai.
+This is where beginners often trip. A proper `.pyc` file starts with a 16-byte header (magic number + flags + timestamp/hash + size), as Lesson 7.1 said. The problem: many PyInstaller versions **strip the magic header** of the entry point file when packaging, so the extracted `.pyc` is missing the first 8 or 16 bytes. A decompiler opening it will report an error or read it wrong.
 
-Cách sửa: chép header từ một `.pyc` lành lặn (ví dụ một module chuẩn như `struct.pyc` trong cùng thư mục trích) dán vào đầu file thiếu. Với binary ở trên, header của `struct.pyc` và `secretapp.pyc` đều bắt đầu bằng cùng magic:
+The fix: copy the header from a healthy `.pyc` (for example a standard module like `struct.pyc` in the same extracted folder) and paste it onto the start of the broken file. For the binary above, the headers of `struct.pyc` and `secretapp.pyc` both start with the same magic:
 
 ```
 secretapp.pyc : a7 0d 0d 0a 00 00 00 00 ...
 struct.pyc    : a7 0d 0d 0a 00 00 00 00 ...
 ```
 
-`a70d0d0a` chính là magic number của Python 3.11. Tin vui là PyInstaller và pyinstxtractor-ng đời mới giữ nguyên header, nên nhiều khi bạn không phải vá gì cả. Nhưng khi gặp binary cũ, nhớ chiêu vá header này, nếu không sẽ tưởng file hỏng.
+`a70d0d0a` is exactly Python 3.11's magic number. The good news is that newer PyInstaller and pyinstxtractor-ng keep the header intact, so a lot of the time you don't have to patch anything. But when you meet an old binary, remember this header patching trick, otherwise you'll think the file is corrupt.
 
-## Decompile: logic lộ ra hết
+## Decompile: the logic is fully exposed
 
-Có `.pyc` với header đầy đủ rồi thì chạy pycdc như Bài 7.2. Để thấy logic thật sự còn nguyên, đây là kết quả đọc `co_consts` của `secretapp.pyc` trích ra ở trên (chưa cần decompiler hoàn chỉnh, chỉ marshal-load rồi duyệt hằng số):
+With a `.pyc` that has a complete header, run pycdc like in Lesson 7.2. To show that the real logic is still intact, here's the result of reading `co_consts` of the `secretapp.pyc` extracted above (no full decompiler needed, just marshal-load and walk through the constants):
 
 ```
- [hàm] check
+ [function] check
   const: 'PyInst@ller_2024'
- [hàm] main
+ [function] main
   const: 'License key: '
   const: 'Licensed!'
   const: 'Wrong key.'
 ```
 
-License key `PyInst@ller_2024` nằm trần trụi trong hằng số của hàm `check`. Không mã hoá, không gì cả. Đây là lý do đóng gói Python thành exe gần như không bảo vệ được secret: nó chỉ giấu, không khoá. Muốn khoá thật phải dùng những thứ như PyArmor hoặc Nuitka (Bài 7.5).
+The license key `PyInst@ller_2024` sits naked in the constants of the `check` function. No encryption, nothing. This is why packaging Python into an exe barely protects secrets: it only hides, it doesn't lock. To really lock it you need things like PyArmor or Nuitka (Lesson 7.5).
 
-## py2exe và cx_Freeze
+## py2exe and cx_Freeze
 
-Hai công cụ cũ hơn, nguyên lý giống nhau.
+Two older tools, same principle.
 
-- **py2exe**: nhét `.pyc` vào resource hoặc một file `library.zip` cạnh exe. Dùng `unpy2exe`, hoặc nhiều khi chỉ cần giải nén `library.zip` bằng tool zip thường rồi decompile.
-- **cx_Freeze**: thường để `.pyc` trong `library.zip` hoặc thư mục `lib/`. Giải nén zip rồi decompile.
+- **py2exe**: stuffs the `.pyc` files into a resource or a `library.zip` file next to the exe. Use `unpy2exe`, or often just unzip `library.zip` with a regular zip tool and then decompile.
+- **cx_Freeze**: usually keeps the `.pyc` files in `library.zip` or the `lib/` folder. Unzip and then decompile.
 
-Cả hai đều không chống reverse: tìm `.pyc`, vá header nếu cần, decompile.
+Neither resists reversing: find the `.pyc`, patch the header if needed, decompile.
 
-## Quy trình gọn
+## The short workflow
 
-1. Triage: `strings`/DIE thấy `_MEIPASS`, `pyi`, `python3xx` là PyInstaller. Thấy `library.zip` cạnh exe là py2exe/cx_Freeze.
-2. Trích: `pyinstxtractor(-ng)` cho PyInstaller, giải nén zip cho hai cái kia. Ghi lại **phiên bản Python** mà tool báo.
-3. Tìm đúng file: bỏ qua `pyi*`, lấy file entry point mang tên script gốc.
-4. Vá magic header nếu `.pyc` thiếu (chép từ một module chuẩn cùng thư mục).
-5. Decompile bằng pycdc (Bài 7.2), hoặc decompiler hợp phiên bản (Bài 7.3).
+1. Triage: `strings`/DIE showing `_MEIPASS`, `pyi`, `python3xx` means PyInstaller. A `library.zip` next to the exe means py2exe/cx_Freeze.
+2. Extract: `pyinstxtractor(-ng)` for PyInstaller, unzip for the other two. Note the **Python version** the tool reports.
+3. Find the right file: skip `pyi*`, take the entry point file named after the original script.
+4. Patch the magic header if the `.pyc` is missing it (copy from a standard module in the same folder).
+5. Decompile with pycdc (Lesson 7.2), or a decompiler matching the version (Lesson 7.3).
 
-## Lab tự làm
+## Lab
 
-Thư mục [labs/7.4/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/7.4) có hướng dẫn dựng một PyInstaller exe từ một script nhỏ rồi tự trích ngược lại, kèm cách xử lý magic header. Toàn bộ quy trình trong bài này đã được chạy thật trên PyInstaller 6.20 / Python 3.11, output trong [solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/7.4/solution.md) là thật.
+The folder [labs/7.4/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/7.4) has instructions for building a PyInstaller exe from a small script and then extracting it back yourself, including how to handle the magic header. The whole workflow in this lesson was actually run on PyInstaller 6.20 / Python 3.11, and the output in [solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/7.4/solution.md) is real.
 
-## Checklist ghi nhớ
-- PyInstaller gói interpreter + `.pyc` nén vào exe, logic vẫn là bytecode Python.
-- Nhận ra bằng `_MEIPASS`, `pyi`, `python3xx` trong strings.
-- `pyinstxtractor(-ng)` trích ra, đọc dòng Python version và Possible entry point.
-- Bỏ qua các `.pyc` tên `pyi*`, lấy file mang tên script gốc.
-- `.pyc` trích ra có thể thiếu magic header, chép từ một `.pyc` lành lặn vào đầu để vá.
-- py2exe/cx_Freeze thường để `.pyc` trong `library.zip`, giải nén rồi decompile.
-- Đóng gói không phải mã hoá: secret trong code lộ ra hết.
+## Key takeaways
+- PyInstaller packs the interpreter + compressed `.pyc` into the exe, the logic is still Python bytecode.
+- Recognize it by `_MEIPASS`, `pyi`, `python3xx` in the strings.
+- `pyinstxtractor(-ng)` extracts it, read the Python version and Possible entry point lines.
+- Skip the `.pyc` files named `pyi*`, take the file named after the original script.
+- The extracted `.pyc` may be missing the magic header, copy one from a healthy `.pyc` onto the start to patch it.
+- py2exe/cx_Freeze usually keep `.pyc` files in `library.zip`, unzip then decompile.
+- Packaging isn't encryption: secrets in the code are fully exposed.

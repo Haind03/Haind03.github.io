@@ -1,142 +1,142 @@
 ---
-title: "Bài 2.6: GDB, pwndbg và WinDbg, debug ở chế độ dòng lệnh"
+title: "Lesson 2.6: GDB, pwndbg and WinDbg, debugging from the command line"
 date: 2026-10-06 08:22:00 +0700
-categories: ["Technique Reverse", "Phần 2 · Làm quen bộ công cụ"]
+categories: ["Technique Reverse", "Part 02 · The Toolkit"]
 tags: [reverse-engineering, tools]
 render_with_liquid: false
 ---
-x64dbg ở bài trước là một GUI đẹp, bấm chuột là xong. Nhưng khi bạn sang Linux, hoặc cần debug nhân Windows, hoặc muốn script hoá cả phiên debug, bạn sẽ quay về dòng lệnh. GDB thống trị thế giới Linux, WinDbg thống trị những góc sâu nhất của Windows. Bài này không biến bạn thành chuyên gia hai công cụ đó, chỉ đưa đủ để bạn ngồi xuống và làm việc được.
+x64dbg in the last lesson is a nice GUI where you just click. But when you move to Linux, or need to debug the Windows kernel, or want to script a whole debugging session, you'll come back to the command line. GDB dominates the Linux world, WinDbg dominates the deepest corners of Windows. This lesson won't turn you into an expert in those two tools, it just gives you enough to sit down and get work done.
 
-## Vì sao vẫn dùng CLI debugger trong thời đại GUI
+## Why still use a CLI debugger in the age of GUIs
 
-Câu hỏi hợp lý. Lý do:
+A fair question. The reasons:
 
-- Trên server Linux hay trong container thường không có màn hình, chỉ có terminal.
-- GDB script hoá được: viết một file lệnh, chạy hàng loạt, tự động trích giá trị. GUI không làm gọn chuyện này.
-- WinDbg là công cụ gần như duy nhất để debug kernel Windows và dùng Time Travel Debugging, thứ x64dbg không có.
+- On a Linux server or inside a container there's usually no display, just a terminal.
+- GDB can be scripted: write a command file, run it in bulk, extract values automatically. A GUI doesn't handle this neatly.
+- WinDbg is nearly the only tool for debugging the Windows kernel and for using Time Travel Debugging, which x64dbg doesn't have.
 
-Đừng xem CLI là bước lùi. Nó là công cụ khác cho bài toán khác.
+Don't see the CLI as a step backward. It's a different tool for a different problem.
 
-## GDB, bộ xương
+## GDB, the skeleton
 
-GDB (GNU Debugger) trần trụi khó ưa, nhưng nhóm lệnh cốt lõi rất ít. Khởi động:
+Bare GDB is unfriendly, but the core set of commands is very small. Starting up:
 
 ```
-gdb ./chuongtrinh        # nạp chương trình
-gdb -p 1234              # attach vào tiến trình đang chạy có PID 1234
+gdb ./program            # load the program
+gdb -p 1234              # attach to the running process with PID 1234
 ```
 
-Việc đầu tiên nên làm, vì GDB mặc định hiện cú pháp AT&T khó đọc:
+The first thing to do, because GDB defaults to hard-to-read AT&T syntax:
 
 ```
 set disassembly-flavor intel
 ```
 
-Giờ disassembly hiện theo Intel, giống IDA và x64dbg, đỡ nhức đầu.
+Now disassembly shows in Intel syntax, like IDA and x64dbg, which saves a headache.
 
-### Chạy và dừng
+### Running and stopping
 
-| Lệnh | Tác dụng |
+| Command | What it does |
 |---|---|
-| `b main` / `b *0x401136` | Đặt breakpoint tại hàm hoặc địa chỉ (có dấu `*` khi là địa chỉ) |
-| `r` | Run, chạy từ đầu |
-| `c` | Continue, chạy tiếp sau khi dừng |
-| `si` / `ni` | Step into / step over một lệnh (s=instruction) |
-| `finish` | Chạy cho tới khi hàm hiện tại return |
-| `info breakpoints` | Liệt kê breakpoint |
-| `d 1` | Xoá breakpoint số 1 |
+| `b main` / `b *0x401136` | Set a breakpoint at a function or address (with `*` when it's an address) |
+| `r` | Run, start from the beginning |
+| `c` | Continue, keep running after a stop |
+| `si` / `ni` | Step into / step over one instruction (s=instruction) |
+| `finish` | Run until the current function returns |
+| `info breakpoints` | List breakpoints |
+| `d 1` | Delete breakpoint number 1 |
 
-Lưu ý `si`/`ni` là bước theo **một lệnh assembly**. Nếu bạn gõ `s`/`n` không có `i`, GDB bước theo **một dòng source** (chỉ có ích khi có debug symbol). Người làm RE thường xài `si`/`ni`.
+Note that `si`/`ni` step by **one assembly instruction**. If you type `s`/`n` without the `i`, GDB steps by **one source line** (only useful when there are debug symbols). People doing RE usually use `si`/`ni`.
 
-### Xem dữ liệu
+### Viewing data
 
-Đây là chỗ GDB mạnh. Lệnh `x` (examine) đọc bộ nhớ theo định dạng bạn muốn:
-
-```
-info registers          # xem toàn bộ thanh ghi
-p $rax                  # in giá trị rax
-p/x $rax                # in dạng hex
-x/20i $pc               # xem 20 lệnh (i) bắt đầu từ con trỏ lệnh
-x/16xg $rsp             # xem 16 giá trị 8 byte (g=giant) dạng hex tại đỉnh stack
-x/s 0x404040            # đọc chuỗi (s) tại địa chỉ
-x/4xb $rdi              # xem 4 byte (b) dạng hex tại địa chỉ rdi trỏ tới
-```
-
-Cú pháp `x/` đọc là: số lượng, rồi định dạng (x hex, d thập phân, i lệnh, s chuỗi), rồi kích thước (b byte, h 2 byte, w 4 byte, g 8 byte). Nhớ công thức này là đọc được mọi thứ trong bộ nhớ.
-
-### Sửa để đổi luồng
+This is where GDB is strong. The `x` (examine) command reads memory in whatever format you want:
 
 ```
-set $rax = 1            # gán thanh ghi
-set {int}0x404040 = 5   # ghi số 5 (kiểu int) vào địa chỉ
+info registers          # view all registers
+p $rax                  # print the value of rax
+p/x $rax                # print in hex
+x/20i $pc               # view 20 instructions (i) starting at the instruction pointer
+x/16xg $rsp             # view 16 8-byte values (g=giant) in hex at the top of the stack
+x/s 0x404040            # read a string (s) at an address
+x/4xb $rdi              # view 4 bytes (b) in hex at the address rdi points to
 ```
 
-Gán thẳng thanh ghi cờ hoặc giá trị trả về là cách nhanh để ép chương trình đi nhánh bạn muốn, ví dụ ép một hàm check trả về 1.
+The `x/` syntax reads as: the count, then the format (x hex, d decimal, i instruction, s string), then the size (b byte, h 2 bytes, w 4 bytes, g 8 bytes). Remember this formula and you can read anything in memory.
 
-### Chế độ TUI
+### Editing to change the flow
 
-Gõ `Ctrl+X` rồi `A`, hoặc chạy `gdb -tui`, bạn có giao diện chia khung hiện source hoặc disassembly cùng lúc với dòng lệnh. Dễ nhìn hơn hẳn GDB trần.
+```
+set $rax = 1            # assign a register
+set {int}0x404040 = 5   # write the number 5 (as an int) to an address
+```
 
-## pwndbg và GEF, biến GDB thành công cụ của người
+Directly assigning a flag register or a return value is a quick way to force the program down the branch you want, for example forcing a check function to return 1.
 
-GDB trần không cho bạn thấy ngay stack, heap, thanh ghi khi dừng. Hai bản mở rộng vá lỗ hổng đó: **pwndbg** và **GEF**. Cài một trong hai (đừng cả hai cùng lúc), từ đó mỗi lần dừng GDB tự in ra bối cảnh đầy đủ: thanh ghi, vài lệnh quanh con trỏ, stack, các cờ.
+### TUI mode
 
-Lệnh thêm hữu ích:
+Type `Ctrl+X` then `A`, or run `gdb -tui`, and you get a split-pane interface showing source or disassembly alongside the command line. Much easier on the eyes than bare GDB.
 
-| Lệnh | Tác dụng |
+## pwndbg and GEF, turning GDB into a tool for humans
+
+Bare GDB doesn't show you the stack, heap, and registers right when it stops. Two extensions patch that hole: **pwndbg** and **GEF**. Install one of them (not both at once), and from then on every time GDB stops it prints the full context: registers, a few instructions around the pointer, the stack, the flags.
+
+More useful commands:
+
+| Command | What it does |
 |---|---|
-| `vmmap` | Bản đồ bộ nhớ: vùng nào địa chỉ nào, quyền RWX |
-| `telescope $rsp` (pwndbg) | Xem stack và tự giải nghĩa con trỏ trỏ đi đâu |
-| `context` (pwndbg) | In lại toàn bộ bối cảnh hiện tại |
-| `heap` / `bins` | Soi cấu trúc heap (đắc dụng khi làm pwn) |
+| `vmmap` | Memory map: which region has which addresses, and RWX permissions |
+| `telescope $rsp` (pwndbg) | View the stack and auto-interpret where pointers point |
+| `context` (pwndbg) | Reprint the whole current context |
+| `heap` / `bins` | Inspect heap structures (handy for pwn) |
 
-Với người học RE trên Linux, cài pwndbg gần như là bắt buộc. Nó biến GDB từ khó dùng thành dễ chịu.
+For people learning RE on Linux, installing pwndbg is nearly mandatory. It turns GDB from hard to use into pleasant.
 
-## WinDbg, khi cần đi sâu vào Windows
+## WinDbg, when you need to go deep into Windows
 
-WinDbg (nên dùng bản WinDbg mới, trước gọi là WinDbg Preview) là debugger chính thức của Microsoft. Nó khó hơn x64dbg nhưng làm được những việc x64dbg không làm:
+WinDbg (you should use the new WinDbg, formerly called WinDbg Preview) is Microsoft's official debugger. It's harder than x64dbg but does things x64dbg can't:
 
-- Debug **kernel-mode**: nhân Windows, driver. x64dbg chỉ chơi được ở user-mode.
-- **Time Travel Debugging (TTD)**: ghi lại toàn bộ phiên chạy thành một file trace, rồi bạn tua tới tua lui thoải mái, kể cả chạy ngược thời gian để tìm xem một giá trị bị thay đổi ở đâu. Đây là tính năng đổi đời khi truy một bug khó hoặc lần ngược nguồn một giá trị.
+- Debug **kernel-mode**: the Windows kernel, drivers. x64dbg can only play in user-mode.
+- **Time Travel Debugging (TTD)**: records a whole run into a trace file, and then you can scrub back and forth freely, even run backwards in time to find where a value got changed. This is a life-changing feature when chasing a hard bug or tracing a value back to its source.
 
-Khái niệm cần nắm: WinDbg phân biệt user-mode (debug một tiến trình) và kernel-mode (debug cả nhân, thường qua hai máy nối với nhau hoặc một máy ảo). Người mới bắt đầu ở user-mode.
+A concept to grasp: WinDbg distinguishes user-mode (debugging one process) from kernel-mode (debugging the whole kernel, usually through two machines connected together or a virtual machine). Beginners start in user-mode.
 
-Nhóm lệnh cơ bản, phong cách gõ lệnh giống GDB nhưng ký hiệu khác:
+The basic command set, with a command-typing style like GDB but different notation:
 
-| Lệnh | Tác dụng |
+| Command | What it does |
 |---|---|
-| `g` | Go, chạy tiếp (như `c` của GDB) |
+| `g` | Go, keep running (like GDB's `c`) |
 | `p` / `t` | Step over / step into (p=step, t=trace) |
-| `bp kernel32!CreateFileW` | Breakpoint theo tên module!hàm |
-| `u rip` | Unassemble, disassemble tại rip |
-| `r` | Xem/sửa thanh ghi (`r rax=1`) |
-| `dd` / `dq` / `da` / `du` | Dump dword / qword / chuỗi ASCII / chuỗi Unicode |
+| `bp kernel32!CreateFileW` | Breakpoint by module!function name |
+| `u rip` | Unassemble, disassemble at rip |
+| `r` | View/edit registers (`r rax=1`) |
+| `dd` / `dq` / `da` / `du` | Dump dword / qword / ASCII string / Unicode string |
 | `k` | Call stack (backtrace) |
-| `!peb` | In cấu trúc PEB, tiện cho anti-debug |
-| `lm` | Liệt kê module đã nạp |
+| `!peb` | Print the PEB structure, handy for anti-debug |
+| `lm` | List loaded modules |
 
-Cú pháp `module!hàm` của WinDbg rất mạnh: đặt breakpoint theo tên hàm API mà không cần biết địa chỉ, WinDbg tự tra qua symbol. Nhớ cấu hình symbol server của Microsoft để có tên hàm đầy đủ.
+WinDbg's `module!function` syntax is very powerful: set a breakpoint by API function name without knowing the address, and WinDbg looks it up through symbols. Remember to configure Microsoft's symbol server to get full function names.
 
-## CLI và GUI, chọn cái nào
+## CLI or GUI, which to choose
 
-Không có câu trả lời chung, chọn theo việc:
+There's no general answer, choose by the job:
 
-- Học RE cơ bản trên Windows, mổ crackme: cứ **x64dbg**, GUI trực quan, nhanh vào việc.
-- Làm trên **Linux**, CTF pwn, binary ELF: **GDB + pwndbg**.
-- Debug **kernel Windows, driver**, hoặc cần **tua ngược thời gian**: **WinDbg + TTD**.
-- Cần **tự động hoá** phiên debug, trích hàng loạt giá trị: GDB script hoặc WinDbg script.
+- Learning basic RE on Windows, taking apart crackmes: just use **x64dbg**, an intuitive GUI that gets you to work fast.
+- Working on **Linux**, CTF pwn, ELF binaries: **GDB + pwndbg**.
+- Debugging the **Windows kernel, drivers**, or needing to **rewind time**: **WinDbg + TTD**.
+- Needing to **automate** a debugging session, extracting lots of values: a GDB script or WinDbg script.
 
-Người làm lâu dùng cả ba, không trung thành với cái nào. Công cụ chỉ là công cụ.
+People who've been at it a long time use all three and aren't loyal to any. Tools are just tools.
 
-## Lab tự làm
+## Lab
 
-Mã nguồn và hướng dẫn ở [labs/2.6/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/2.6). Tóm tắt: biên dịch một chương trình C nhỏ có hàm kiểm tra mật khẩu, nạp vào GDB + pwndbg, đặt breakpoint tại hàm so sánh, đọc tham số qua `info registers` và `x`, rồi sửa giá trị thanh ghi để ép chương trình chấp nhận mật khẩu sai. Làm xong bạn sẽ thấy nhịp static rồi dynamic của [Bài 0.4](/posts/tr-0-4-quy-trinh-reverse/) trên chính dòng lệnh. Writeup đầy đủ trong [solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/2.6/solution.md), tự làm trước khi mở.
+The source and instructions are at [labs/2.6/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/2.6). In short: compile a small C program that has a password check function, load it into GDB + pwndbg, set a breakpoint at the compare function, read the arguments with `info registers` and `x`, then modify a register value to force the program to accept a wrong password. When you finish you'll see the static-then-dynamic rhythm of [Lesson 0.4](/posts/tr-0-4-quy-trinh-reverse/) right in the command line. The full writeup is in [solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/2.6/solution.md), do it yourself before opening it.
 
-## Checklist ghi nhớ
-- GDB: nhớ `set disassembly-flavor intel` ngay đầu cho dễ đọc.
-- Nhóm lệnh GDB cốt lõi: `b`, `r`, `c`, `si`/`ni`, `finish`, `info registers`, `x/`, `set`.
-- Công thức `x/<số><định dạng><kích thước>`: ví dụ `x/16xg $rsp` là 16 giá trị 8 byte hex tại stack.
-- Cài pwndbg (hoặc GEF) để GDB tự hiện bối cảnh, `vmmap` và `telescope` rất đáng dùng.
-- WinDbg cho kernel-mode và Time Travel Debugging, hai thứ x64dbg không có.
-- Breakpoint WinDbg theo `module!hàm`, nhớ bật symbol server của Microsoft.
-- Chọn công cụ theo bài toán: x64dbg cho Windows user-mode, GDB cho Linux, WinDbg cho kernel/TTD.
+## Key takeaways
+- GDB: remember `set disassembly-flavor intel` right at the start for readability.
+- Core GDB command set: `b`, `r`, `c`, `si`/`ni`, `finish`, `info registers`, `x/`, `set`.
+- The formula `x/<count><format><size>`: for example `x/16xg $rsp` is 16 8-byte hex values at the stack.
+- Install pwndbg (or GEF) so GDB shows context automatically, `vmmap` and `telescope` are well worth using.
+- WinDbg for kernel-mode and Time Travel Debugging, two things x64dbg doesn't have.
+- WinDbg breakpoints by `module!function`, remember to turn on Microsoft's symbol server.
+- Choose the tool by the problem: x64dbg for Windows user-mode, GDB for Linux, WinDbg for kernel/TTD.

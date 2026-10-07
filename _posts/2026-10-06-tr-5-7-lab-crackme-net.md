@@ -1,19 +1,19 @@
 ---
-title: "Bài 5.7: Lab tổng hợp, giải crackme .NET từ dễ tới obfuscated"
+title: "Lesson 5.7: Combined lab, solving .NET crackmes from easy to obfuscated"
 date: 2026-10-06 08:43:00 +0700
-categories: ["Technique Reverse", "Phần 5 · C# / .NET (dnSpy, ILSpy)"]
+categories: ["Technique Reverse", "Part 05 · C# and .NET"]
 tags: [reverse-engineering, dotnet]
 render_with_liquid: false
 ---
-Năm bài vừa rồi là lý thuyết và thao tác lẻ. Bài này ghép tất cả lại thành một buổi reverse .NET hoàn chỉnh, qua ba crackme khó dần. Nếu bạn làm được cả ba, mảng .NET coi như xong phần cơ bản.
+The last five lessons were theory and individual operations. This one puts it all together into a complete .NET reversing session, through three crackmes that get harder. If you can do all three, the .NET part counts as done for the basics.
 
-Mã nguồn và nhiệm vụ chi tiết nằm ở [labs/5.7/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/5.7). Ở đây tôi dẫn tư duy, bạn xuống lab tự tay làm trước khi mở solution.
+The source code and detailed tasks are at [labs/5.7/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/5.7). Here I walk through the thinking, and you go down to the lab and do it by hand before opening the solution.
 
-Cả ba đều dùng ILSpy và dnSpy có sẵn trong repo (thư mục cha). Cần cài .NET SDK để build chúng về dạng `.dll`, sau đó mổ chính sản phẩm của mình.
+All three use the ILSpy and dnSpy already in the repo (the parent folder). You need the .NET SDK to build them into `.dll` form, and then you take apart your own product.
 
-## Cấp 1: khi reverse chỉ là đọc
+## Level 1: when reversing is just reading
 
-Crackme đầu tiên so sánh password nhập vào với một chuỗi cố định. Mở `.dll` trong dnSpy, tìm method `Check`, và vì .NET decompile gần như ra source gốc (lý do đã nói ở [Bài 5.1](/posts/tr-5-1-net-ben-trong-clr-il-metadata/)), bạn đọc thẳng:
+The first crackme compares the entered password to a fixed string. Open the `.dll` in dnSpy, find the method `Check`, and since .NET decompiles to nearly the original source (the reason was covered in [Lesson 5.1](/posts/tr-5-1-net-ben-trong-clr-il-metadata/)), you read it directly:
 
 ```csharp
 static bool Check(string input)
@@ -22,13 +22,13 @@ static bool Check(string input)
 }
 ```
 
-Hết. Password lộ nguyên trong lệnh IL `ldstr`. Không debug, không patch, không gì cả. Điểm của cấp này là cho bạn thấy sự thật phũ phàng: rất nhiều phần mềm .NET ngoài kia bảo vệ logic yếu tới mức này, và đó là lý do người ta phải obfuscate.
+That's it. The password is exposed right in the IL `ldstr` instruction. No debugging, no patching, nothing. The point of this level is to show you a harsh truth: a lot of .NET software out there protects its logic this weakly, and that's why people have to obfuscate.
 
-Mẹo nhanh hơn cả mở từng method: trong dnSpy nhấn search, gõ một phần chuỗi thông báo như "Correct", rồi Analyze để nhảy tới nơi dùng nó.
+A tip faster than opening each method: in dnSpy hit search, type part of a message string like "Correct", then Analyze to jump to where it's used.
 
-## Cấp 2: hiểu thuật toán, viết keygen
+## Level 2: understand the algorithm, write a keygen
 
-Crackme thứ hai không so chuỗi thẳng. Nó nhận username và serial, rồi tính một giá trị từ username và so với serial:
+The second crackme doesn't compare strings directly. It takes a username and a serial, then computes a value from the username and compares it to the serial:
 
 ```csharp
 static string Expected(string user)
@@ -40,7 +40,7 @@ static string Expected(string user)
 }
 ```
 
-Đây là hash djb2 quen thuộc, tính trên `uint` (tràn 32-bit là cố ý). Giờ có hai lựa chọn. Patch cho nó luôn chấp nhận thì được, nhưng kém sang. Cách đúng là viết keygen: vì serial chỉ phụ thuộc username và toàn phép tính xuôi, ta chép y nguyên thuật toán sang Python rồi sinh serial cho username bất kỳ.
+This is the familiar djb2 hash, computed on a `uint` (the 32-bit overflow is intentional). Now there are two options. Patching it to always accept works, but it's less elegant. The right way is to write a keygen: since the serial depends only on the username and it's all forward computation, we copy the algorithm exactly into Python and generate a serial for any username.
 
 ```python
 def serial_for(user):
@@ -51,11 +51,11 @@ def serial_for(user):
 # alice -> 0F174DC3
 ```
 
-Chú ý cái bẫy mà người mới hay vướng: hash này một chiều, không đảo được username từ serial. Nhưng bạn **không cần** đảo, vì username do bạn chọn. Chỉ cần tính xuôi đúng như crackme. Đây là tư duy keygen đã gặp ở [Bài 3.6](/posts/tr-3-6-lab-viet-keygen/), lặp lại ở đây để nó thành phản xạ: phân biệt "đảo ngược thuật toán" với "tính lại thuật toán".
+Watch out for a trap newcomers often fall into: this hash is one-way, you can't recover the username from the serial. But you **don't need** to, because you choose the username. You just compute forward exactly like the crackme. This is the keygen mindset from [Lesson 3.6](/posts/tr-3-6-lab-viet-keygen/), repeated here so it becomes reflex: tell "inverting the algorithm" apart from "recomputing the algorithm".
 
-## Cấp 3: string ẩn và obfuscation
+## Level 3: hidden strings and obfuscation
 
-Crackme thứ ba giấu password. Mở ra bạn không thấy chuỗi nào, chỉ thấy một mảng byte và vòng lặp:
+The third crackme hides the password. Open it and you see no strings, just a byte array and a loop:
 
 ```csharp
 static readonly byte[] Enc = { 127,83,82,90,73,79,89,99,113,89,99,8,14 };
@@ -63,18 +63,18 @@ static readonly byte[] Enc = { 127,83,82,90,73,79,89,99,113,89,99,8,14 };
 if ((byte)(input[i] ^ 0x3C) != Enc[i]) return false;
 ```
 
-Logic rõ ràng: nó XOR từng ký tự nhập với 0x3C rồi so với mảng. Vậy password = mảng XOR ngược lại 0x3C. Vài dòng Python ra ngay `Confuse_Me_42`. String encryption kiểu này (XOR hằng số) chỉ làm chậm bạn vài phút, không chặn được.
+The logic is clear: it XORs each entered character with 0x3C and compares against the array. So the password = the array XORed back with 0x3C. A few lines of Python give `Confuse_Me_42` right away. String encryption like this (XOR with a constant) only slows you down a few minutes, it doesn't stop you.
 
-Phần thú vị là khi crackme được chạy qua một obfuscator thật như ConfuserEx. Mở lại trong dnSpy bạn sẽ thấy tên class và method biến thành ký tự Unicode vô nghĩa, chuỗi bị chuyển thành lời gọi hàm giải mã lúc chạy, và control flow bị làm rối. Lúc này:
+The interesting part is when the crackme is run through a real obfuscator like ConfuserEx. Reopen it in dnSpy and you'll see class and method names turn into meaningless Unicode characters, strings turn into runtime decryption function calls, and the control flow is scrambled. At this point:
 
-- Chạy `de4dot -f level3.dll` để nó nhận diện protector, phục hồi tên, giải chuỗi tĩnh, làm phẳng control flow. Phần lớn ConfuserEx bản cũ bị de4dot xử gọn.
-- Nếu string bị mã hoá runtime mà de4dot không giải được, quay lại [Bài 5.3](/posts/tr-5-3-debug-net-khong-source-dnspy/): đặt breakpoint trong dnSpy tại hàm giải mã, chạy tới đó, đọc chuỗi đã giải trong cửa sổ Locals. Vì .NET luôn chạy trên CLR, luôn có đường debug để tóm giá trị thật, bất kể obfuscate thế nào.
+- Run `de4dot -f level3.dll` so it identifies the protector, restores names, decrypts static strings, and flattens control flow. Most older ConfuserEx builds get handled cleanly by de4dot.
+- If strings are encrypted at runtime and de4dot can't decrypt them, go back to [Lesson 5.3](/posts/tr-5-3-debug-net-khong-source-dnspy/): set a breakpoint in dnSpy at the decryption function, run to it, and read the decrypted string in the Locals window. Since .NET always runs on the CLR, there's always a debugging route to grab the real value, however it's obfuscated.
 
-Đó là điểm mạnh lẫn điểm yếu của managed code: khó giấu hơn native nhiều, vì runtime buộc phải hiểu được bytecode thì mới chạy được, mà cái gì runtime hiểu được thì bạn cũng hiểu được.
+That's both the strength and the weakness of managed code: much harder to hide than native, because the runtime has to understand the bytecode to run it, and whatever the runtime can understand, you can understand too.
 
-## Checklist ghi nhớ
-- Crackme .NET cấp dễ chỉ là đọc decompiled C#, password nằm trong `ldstr`.
-- Thuật toán kiểm tra thì viết keygen, chép logic tính xuôi, đừng cố đảo hàm một chiều.
-- String encryption kiểu XOR/Base64 custom giải ngược trong vài phút.
-- Obfuscation thật: thử de4dot trước, không được thì trace runtime trong dnSpy.
-- Managed code khó giấu vì CLR phải hiểu được bytecode, nên bạn luôn có đường vào.
+## Key takeaways
+- An easy-level .NET crackme is just reading the decompiled C#, the password sits in `ldstr`.
+- For a check algorithm, write a keygen, copy the forward-computation logic, don't try to invert a one-way function.
+- String encryption like XOR/custom Base64 gets reversed in a few minutes.
+- Real obfuscation: try de4dot first, and if that fails trace the runtime in dnSpy.
+- Managed code is hard to hide because the CLR has to understand the bytecode, so you always have a way in.

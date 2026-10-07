@@ -1,173 +1,160 @@
 ---
-title: "Bài 1.3: Assembly x86/x64 (1), thanh ghi và những lệnh bạn gặp hàng ngày"
+title: "Lesson 1.3: x86/x64 Assembly (1), registers and the instructions you see every day"
 date: 2026-10-06 08:06:00 +0700
-categories: ["Technique Reverse", "Phần 1 · Nền tảng máy tính cho RE"]
+categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
-Nhiều người sợ assembly vì tưởng phải thuộc hàng trăm lệnh. Sự thật dễ chịu hơn nhiều: trong 95% thời gian reverse, bạn chỉ gặp đi gặp lại chừng hai mươi lệnh. Học chắc nhóm đó là đọc được phần lớn code. Bài này là nhóm đó.
+A lot of people are scared of assembly because they think they have to memorize hundreds of instructions. The truth is much nicer: 95% of the time you're reversing, you only run into about twenty instructions over and over. Learn that group well and you can read most code. This lesson is that group.
 
-## Thanh ghi, chỗ CPU để đồ
+## Registers, where the CPU keeps its stuff
 
-CPU không tính toán trực tiếp trên RAM. Nó chép dữ liệu vào các ô nhớ siêu nhanh bên trong gọi là thanh ghi (register), xử lý ở đó, rồi ghi ngược ra. Hiểu thanh ghi là hiểu nửa assembly.
+The CPU doesn't compute directly on RAM. It copies data into super fast memory cells inside itself called registers, works on it there, then writes it back out. Understanding registers is understanding half of assembly.
 
-Trên x64 có 16 thanh ghi đa dụng (general purpose), mỗi cái 64 bit:
+On x64 there are 16 general purpose registers, each 64 bits:
 
 ```
 rax rbx rcx rdx rsi rdi rbp rsp
 r8  r9  r10 r11 r12 r13 r14 r15
 ```
 
-Điều hay gây rối cho người mới: **cùng một thanh ghi có nhiều tên theo kích thước bạn muốn dùng.** Lấy rax làm ví dụ:
+Something that often confuses beginners is that the same register has several names depending on the size you want to use. Take rax as an example:
 
 ```
-rax  = 64 bit (toàn bộ)
-eax  = 32 bit thấp của rax
-ax   = 16 bit thấp
-al   = 8 bit thấp nhất
+rax  = 64 bit (the whole thing)
+eax  = low 32 bits of rax
+ax   = low 16 bits
+al   = lowest 8 bits
 ```
 
-Nên khi thấy `eax` và `rax` trong cùng một hàm, chúng là một thanh ghi, chỉ khác bạn đang nhìn bao nhiêu bit. Tương tự `rbx/ebx/bx/bl`, `rcx/ecx/cx/cl`, v.v. Với r8 tới r15 thì là `r8/r8d/r8w/r8b`.
+So when you see `eax` and `rax` in the same function, they're one register, you're just looking at a different number of bits. Same for `rbx/ebx/bx/bl`, `rcx/ecx/cx/cl`, and so on. For r8 to r15 it's `r8/r8d/r8w/r8b`.
 
-Vài thanh ghi có vai trò quy ước mà bạn phải nhớ vì nó giúp đọc code rất nhanh:
+A few registers have conventional roles you need to remember because they make reading code much faster:
 
-| Thanh ghi | Vai trò hay thấy |
+| Register | Usual role |
 |---|---|
-| `rax` | Giá trị **trả về** của hàm nằm ở đây. Sau một `call`, nhìn rax là biết hàm trả gì |
-| `rsp` | Con trỏ **đỉnh stack** (stack pointer). Đừng tự ý ghi đè |
-| `rbp` | Con trỏ **base** của stack frame, dùng để tham chiếu biến cục bộ |
-| `rip` | Con trỏ lệnh, trỏ tới lệnh sắp chạy. Không gán trực tiếp được |
-| `rcx rdx r8 r9` | 4 tham số đầu của hàm trên **Windows x64** |
-| `rdi rsi rdx rcx r8 r9` | 6 tham số đầu trên **Linux/macOS x64** |
+| `rax` | A function's return value lives here. After a `call`, look at rax to see what the function returned |
+| `rsp` | The top of the stack pointer (stack pointer). Don't overwrite it carelessly |
+| `rbp` | The base pointer of the stack frame, used to reference local variables |
+| `rip` | The instruction pointer, points to the next instruction to run. Can't be assigned directly |
+| `rcx rdx r8 r9` | First 4 function parameters on Windows x64 |
+| `rdi rsi rdx rcx r8 r9` | First 6 parameters on Linux/macOS x64 |
 
-Chi tiết chuyện truyền tham số để bài [1.4](/posts/tr-1-4-assembly-2-stack-calling-convention/) lo. Ở đây chỉ cần biết: trả về xem rax, tham số xem mấy thanh ghi trên.
+The details of parameter passing are left to lesson [1.4](/posts/tr-1-4-assembly-2-stack-calling-convention/). Here you only need to know: for the return value look at rax, for parameters look at the registers above.
 
-Ngoài ra có **thanh ghi cờ** (RFLAGS). Bạn không đọc nó trực tiếp mà qua các lệnh nhảy. Vài cờ quan trọng: ZF (zero flag, bật khi kết quả bằng 0), SF (sign flag, dấu âm), CF (carry), OF (overflow).
+There's also the flags register (RFLAGS). You don't read it directly but through the jump instructions. A few important flags: ZF (zero flag, set when the result is 0), SF (sign flag, negative), CF (carry), OF (overflow).
 
-## Cú pháp: Intel vs AT&T
+## Syntax: Intel vs AT&T
 
-Có hai cách viết assembly, đọc là biết ngay:
+There are two ways to write assembly, and you can tell them apart at a glance. Intel (IDA, x64dbg, Windows) writes `mov eax, 5` to mean eax = 5, with the destination first. AT&T (GDB default, Linux) writes `mov $5, %eax`, with `%` before registers, `$` before numbers, and the destination last.
 
-- **Intel** (IDA, x64dbg, Windows): `mov eax, 5` nghĩa là eax = 5. Đích đứng **trước**.
-- **AT&T** (GDB mặc định, Linux): `mov $5, %eax`, có `%` trước thanh ghi, `$` trước số, đích đứng **sau**.
+This series uses Intel because it's close to the Windows tools we use a lot. In GDB you type `set disassembly-flavor intel` to switch to Intel and save yourself a headache.
 
-Series này dùng Intel vì nó gần với công cụ Windows ta xài nhiều. Trong GDB bạn gõ `set disassembly-flavor intel` để đổi sang Intel cho đỡ nhức đầu.
+## The instructions you must know
 
-## Nhóm lệnh phải thuộc
-
-### mov, lea: chuyển dữ liệu
+### mov, lea: moving data
 
 ```asm
 mov eax, 5          ; eax = 5
 mov eax, ebx        ; eax = ebx
-mov eax, [rbx]      ; eax = giá trị tại địa chỉ rbx (ngoặc vuông = truy cập bộ nhớ)
-mov [rbx], eax      ; ghi eax vào địa chỉ rbx
+mov eax, [rbx]      ; eax = the value at address rbx (square brackets = memory access)
+mov [rbx], eax      ; write eax to address rbx
 ```
 
-Ngoặc vuông `[...]` là chìa khoá: có ngoặc là **truy cập bộ nhớ tại địa chỉ đó**, không ngoặc là làm việc với chính giá trị. Nhầm hai cái này là hiểu sai cả hàm.
+The square brackets `[...]` are the key: with brackets it's a memory access at that address, without brackets it's working with the value itself. Mixing these two up means misreading the whole function.
 
-`lea` (load effective address) hay làm người mới bối rối:
+`lea` (load effective address) often confuses beginners:
 
 ```asm
-lea rax, [rbx+rcx*4+8]   ; rax = rbx + rcx*4 + 8, KHÔNG truy cập bộ nhớ
+lea rax, [rbx+rcx*4+8]   ; rax = rbx + rcx*4 + 8, does NOT access memory
 ```
 
-`lea` tính ra địa chỉ rồi bỏ vào thanh ghi, nhưng không đọc bộ nhớ tại đó. Compiler còn lạm dụng `lea` để làm toán (nhân, cộng) vì nó gọn. Thấy `lea` đừng vội nghĩ "địa chỉ", nhiều khi chỉ là phép tính.
+`lea` computes an address and puts it in a register, but doesn't read memory there. Compilers also abuse `lea` for math (multiply, add) because it's compact. When you see `lea`, don't rush to think "address", often it's just arithmetic.
 
-### add, sub, inc, dec: số học
+### add, sub, inc, dec: arithmetic
 
 ```asm
 add eax, 10     ; eax += 10
 sub eax, ebx    ; eax -= ebx
 inc eax         ; eax++
 dec eax         ; eax--
-imul eax, 3     ; eax *= 3 (có dấu)
+imul eax, 3     ; eax *= 3 (signed)
 ```
 
-### xor, and, or, shl, shr: bit
+### xor, and, or, shl, shr: bits
 
 ```asm
-xor eax, eax    ; eax = 0  (mẹo kinh điển: xor chính nó = 0, gọn hơn mov eax,0)
-and eax, 0xFF   ; giữ lại byte thấp nhất
-or  eax, 1      ; bật bit 0
-shl eax, 2      ; dịch trái 2 = nhân 4
-shr eax, 1      ; dịch phải 1 = chia 2
+xor eax, eax    ; eax = 0  (classic trick: xor with itself = 0, shorter than mov eax,0)
+and eax, 0xFF   ; keep the lowest byte
+or  eax, 1      ; set bit 0
+shl eax, 2      ; shift left 2 = multiply by 4
+shr eax, 1      ; shift right 1 = divide by 2
 ```
 
-Nhớ mẹo `xor eax, eax` nghĩa là "gán 0", gặp liên tục ở đầu hàm. Không nhận ra nó là tưởng đang mã hoá gì đó.
+Remember that `xor eax, eax` means "set to 0", you'll see it constantly at the start of functions. If you don't recognize it you'll think something is being encrypted.
 
-### cmp, test, và lệnh nhảy: đây là if/else
+### cmp, test, and the jumps: this is if/else
 
-Đây là nhóm quan trọng nhất để đọc logic. CPU không có lệnh "if". Nó làm hai bước:
-
-1. **So sánh**, đặt cờ:
-   - `cmp a, b` thử tính a trừ b, chỉ để đặt cờ (không lưu kết quả). Nếu a == b thì ZF bật.
-   - `test a, b` thử AND a với b, đặt cờ. `test eax, eax` là cách kiểm tra "eax có bằng 0 không".
-2. **Nhảy có điều kiện** dựa trên cờ:
+This is the most important group for reading logic. The CPU has no "if" instruction. It does two steps. First it compares and sets flags. `cmp a, b` tries computing a minus b, only to set the flags (the result is not stored), and if a == b then ZF is set. `test a, b` tries ANDing a with b and sets the flags, and `test eax, eax` is the way to check "is eax equal to 0". Second, it does a conditional jump based on the flags:
 
 ```asm
 cmp eax, 10
-je  somewhere      ; nhảy nếu eax == 10 (jump if equal)
-jne somewhere      ; nhảy nếu eax != 10
-jg  somewhere      ; nhảy nếu eax > 10 (có dấu)
-jl  somewhere      ; nhảy nếu eax < 10 (có dấu)
-ja  / jb           ; trên / dưới (không dấu)
+je  somewhere      ; jump if eax == 10 (jump if equal)
+jne somewhere      ; jump if eax != 10
+jg  somewhere      ; jump if eax > 10 (signed)
+jl  somewhere      ; jump if eax < 10 (signed)
+ja  / jb           ; above / below (unsigned)
 ```
 
-Công thức đọc code nằm lòng: **cặp `cmp`/`test` + `j*` ngay sau nó chính là một câu `if` trong source.** Tìm được cặp này ở đâu là bạn tìm được chỗ rẽ nhánh logic ở đó. Trong một crackme, chỗ `cmp` trước khi in "Sai mật khẩu" thường là chính nơi nó so sánh serial.
+The formula to know by heart is that a `cmp`/`test` pair plus the `j*` right after it is one `if` statement in the source. Wherever you find this pair, you've found a logic branch. In a crackme, the `cmp` before it prints "Wrong password" is usually the very place where it compares the serial.
 
-`jmp` (không điều kiện) thì luôn nhảy, giống `goto`.
+`jmp` (unconditional) always jumps, like `goto`.
 
-### call, ret: gọi hàm
+### call, ret: calling functions
 
 ```asm
-call 0x401500   ; gọi hàm tại 0x401500
-ret             ; trả về nơi gọi
+call 0x401500   ; call the function at 0x401500
+ret             ; return to the caller
 ```
 
-`call` đẩy địa chỉ trở về lên stack rồi nhảy tới hàm. `ret` lấy địa chỉ đó ra và quay lại. Sau `call`, giá trị trả về nằm ở rax.
+`call` pushes the return address onto the stack and then jumps to the function. `ret` pops that address and goes back. After `call`, the return value is in rax.
 
-### nop: không làm gì, nhưng rất hữu ích
+### nop: does nothing, but very useful
 
-`nop` (no operation) chẳng làm gì cả. Nghe vô dụng nhưng đây là công cụ patch số một: muốn "xoá" một lệnh kiểm tra phiền phức mà không làm lệch các địa chỉ khác, bạn ghi đè nó bằng `nop`. Bài [17.1](https://github.com/Haind03/Technique-Reverse/tree/main/phan-17-patch-hook-frida) dùng nhiều.
+`nop` (no operation) does nothing at all. Sounds useless but it's the number one patching tool: when you want to "delete" an annoying check without shifting other addresses, you overwrite it with `nop`. Lesson [17.1](https://github.com/Haind03/Technique-Reverse/tree/main/phan-17-patch-hook-frida) uses it a lot.
 
-## Đọc thử một đoạn thật
+## Reading a real snippet
 
-Đây là một hàm kiểm tra đơn giản, kiểu bạn gặp trong crackme:
+Here's a simple check function, the kind you'd see in a crackme:
 
 ```asm
 check_password:
     push rbp
     mov  rbp, rsp
-    mov  eax, [rbp-4]      ; nạp một biến cục bộ (độ dài chuỗi nhập vào) vào eax
-    cmp  eax, 8            ; so sánh với 8
-    jne  fail             ; nếu khác 8 thì nhảy tới fail
-    mov  eax, 1            ; eax = 1 (đúng)
+    mov  eax, [rbp-4]      ; load a local variable (the length of the input string) into eax
+    cmp  eax, 8            ; compare with 8
+    jne  fail             ; if not 8, jump to fail
+    mov  eax, 1            ; eax = 1 (correct)
     jmp  done
 fail:
-    xor  eax, eax         ; eax = 0 (sai)
+    xor  eax, eax         ; eax = 0 (wrong)
 done:
     pop  rbp
     ret
 ```
 
-Dịch ngược ra C trong đầu:
+Translating it back to C in your head:
 
 ```c
 int check_password() {
-    int len = ...;       // biến cục bộ tại [rbp-4]
+    int len = ...;       // local variable at [rbp-4]
     if (len != 8)        // cmp + jne
-        return 0;        // nhánh fail
+        return 0;        // the fail branch
     return 1;
 }
 ```
 
-Hàm này chỉ kiểm tra chuỗi nhập có đúng 8 ký tự hay không. Bạn vừa đọc assembly và dịch ra logic, đó chính là reverse. Không có phép màu nào cả, chỉ là quen cặp `cmp`/`jne` và biết rax là giá trị trả về.
+This function only checks whether the input string is exactly 8 characters. You just read assembly and translated it to logic, and that is reversing. No magic, just getting used to the `cmp`/`jne` pair and knowing that rax is the return value.
 
-## Checklist ghi nhớ
-- Một thanh ghi nhiều tên theo kích thước: `rax`(64)/`eax`(32)/`ax`(16)/`al`(8), chúng là một.
-- rax = giá trị trả về. rsp = đỉnh stack. Tham số đầu: Windows `rcx rdx r8 r9`, Linux `rdi rsi rdx rcx r8 r9`.
-- `[...]` = truy cập bộ nhớ, không ngoặc = chính giá trị. Đừng nhầm.
-- `lea` tính địa chỉ/toán, không đọc bộ nhớ.
-- `xor eax, eax` nghĩa là gán 0.
-- Cặp `cmp`/`test` + `j*` = một câu `if`. Đây là chìa khoá đọc logic.
+## Key takeaways
+One register has several names by size: `rax`(64)/`eax`(32)/`ax`(16)/`al`(8) are the same thing. rax is the return value and rsp is the top of the stack, with the first parameters in `rcx rdx r8 r9` on Windows and `rdi rsi rdx rcx r8 r9` on Linux. `[...]` means memory access while no brackets means the value itself, so don't mix them up, and `lea` computes an address or does arithmetic without reading memory. `xor eax, eax` means set to 0. A `cmp`/`test` pair plus `j*` is one `if` statement, and that is the key to reading logic.

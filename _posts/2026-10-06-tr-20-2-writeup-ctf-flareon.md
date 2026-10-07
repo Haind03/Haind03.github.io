@@ -1,68 +1,68 @@
 ---
-title: "Bài 20.2: Giải RE challenge trong CTF và viết write-up tử tế"
+title: "Lesson 20.2: Solving RE challenges in CTFs and writing a decent write-up"
 date: 2026-10-06 10:00:00 +0700
-categories: ["Technique Reverse", "Phần 20 · Thực chiến"]
+categories: ["Technique Reverse", "Part 20 · Real-World Practice"]
 tags: [reverse-engineering, ctf]
 render_with_liquid: false
 ---
-Sau mười chín phần, bạn có đủ công cụ và kỹ thuật. Thiếu một thứ: nhịp làm bài thật dưới áp lực, khi không ai nói trước đề dùng ngôn ngữ gì, packer nào, giấu flag ở đâu. CTF là nơi rèn cái đó, và write-up là cách biến một lần giải thành kiến thức giữ được. Bài này nói về cả hai.
+After nineteen parts, you have enough tools and techniques. One thing is missing: the rhythm of solving for real under pressure, when nobody tells you in advance what language the challenge uses, which packer, or where the flag is hidden. CTFs are where you train that, and a write-up is how you turn one solve into knowledge you keep. This lesson covers both.
 
-## Chơi ở đâu
+## Where to play
 
-Không phải sân nào cũng hợp người mới. Xếp theo độ khó và mục đích:
+Not every arena suits beginners. Sorted by difficulty and purpose:
 
-- **picoCTF.** Hướng giáo dục, category Reverse Engineering rất hợp để bắt đầu. Bài có gợi ý, cộng đồng write-up đông. Đây là chỗ đầu tiên nên vào sau khi học xong Phần 2.
-- **crackmes.one.** Không phải CTF theo kiểu giải đấu, nhưng là kho luyện vô tận, lọc theo độ khó 1 tới 6 và theo ngôn ngữ. Mỗi phần ngôn ngữ trong series này nên đi kèm vài bài crackmes.one đúng ngôn ngữ đó.
-- **Flare-On.** Giải RE thường niên của Mandiant, kéo dài vài tuần mỗi năm, khó dần qua từng challenge, trải đủ nền tảng (Windows native, .NET, Go, shellcode, obfuscation, đôi khi cả mobile và hardware). Điểm vàng: sau mỗi mùa Mandiant công bố lời giải chính thức. Làm lại các mùa cũ cùng write-up chính thức là một giáo trình RE hoàn chỉnh và miễn phí.
-- **HackTheBox, Root-Me, các CTF trên CTFtime.** Khó hơn, dành cho khi đã cứng.
+- **picoCTF.** Education-oriented, the Reverse Engineering category is great for starting. Challenges have hints and there's a big write-up community. This is the first place to go after finishing Part 2.
+- **crackmes.one.** Not a tournament-style CTF, but an endless practice pool, filterable by difficulty 1 to 6 and by language. Each language part in this series should come with a few crackmes.one challenges in that same language.
+- **Flare-On.** Mandiant's annual RE contest, running a few weeks each year, getting harder with each challenge, covering all platforms (Windows native, .NET, Go, shellcode, obfuscation, sometimes even mobile and hardware). The golden point: after each season Mandiant publishes the official solutions. Redoing old seasons with the official write-ups is a complete and free RE curriculum.
+- **HackTheBox, Root-Me, the CTFs on CTFtime.** Harder, for when you're solid.
 
-Lời khuyên thật: đừng nhảy vào một CTF đang diễn ra khi chưa quen tay. Làm Flare-On mùa cũ trước, có đáp án để đối chiếu, học nhanh hơn nhiều so với ngồi kẹt một mình vào bài live.
+Honest advice: don't jump into a live CTF before you're used to it. Do old Flare-On seasons first, with answers to compare against, you learn much faster than sitting stuck alone on a live challenge.
 
-## Phương pháp luận khi mở một challenge rev
+## Methodology when opening a rev challenge
 
-Mỗi bài rev về bản chất hỏi một câu: "input nào làm chương trình chấp nhận". Quy trình dưới đây áp cho gần như mọi bài, và nó chính là [quy trình reverse](/posts/tr-0-4-quy-trinh-reverse/) ở Bài 0.4 bóp lại cho hoàn cảnh thi.
+Every rev challenge is, at heart, asking one question: "what input makes the program accept". The workflow below applies to almost every challenge, and it's the [reverse workflow](/posts/tr-0-4-quy-trinh-reverse/) from Lesson 0.4 squeezed down for the contest setting.
 
-**1. Đọc đề và liệt kê file.** Nghe hiển nhiên nhưng nhiều người bỏ qua. Đề nói "nhập đúng flag", "tìm password", hay "giải mã file"? Có file kèm nào ngoài binary không (một file đã mã hoá, một capture mạng)? Format flag thường cho sẵn (`flag{...}`, `CTF{...}`), biết nó để nhận ra khi đã tới gần.
+**1. Read the prompt and list the files.** Sounds obvious but many people skip it. Does the prompt say "enter the correct flag", "find the password", or "decrypt the file"? Is there an attached file other than the binary (an encrypted file, a network capture)? The flag format is usually given (`flag{...}`, `CTF{...}`), know it so you recognize it when you're close.
 
-**2. Triage.** Kéo vào Detect It Easy: loại file, ngôn ngữ, packed hay chưa, 32 hay 64-bit. Chạy `strings`. Bước này quyết định bạn đi hướng nào, và đây là lúc toàn bộ chặng ngôn ngữ của series phát huy. Thấy `.NET` thì mở dnSpy ([Phần 5](https://github.com/Haind03/Technique-Reverse/tree/main/phan-05-csharp-dotnet)), thấy Go thì chuẩn bị GoReSym ([Phần 8](https://github.com/Haind03/Technique-Reverse/tree/main/phan-08-go)), thấy `.pyc` thì pycdc ([Phần 7](https://github.com/Haind03/Technique-Reverse/tree/main/phan-07-python)), thấy entropy cao thì unpack trước ([Phần 14](https://github.com/Haind03/Technique-Reverse/tree/main/phan-14-packer-obfuscation)).
+**2. Triage.** Drag it into Detect It Easy: file type, language, packed or not, 32 or 64-bit. Run `strings`. This step decides which way you go, and it's where the whole language stretch of the series pays off. See `.NET` and open dnSpy ([Part 5](https://github.com/Haind03/Technique-Reverse/tree/main/phan-05-csharp-dotnet)), see Go and get GoReSym ready ([Part 8](https://github.com/Haind03/Technique-Reverse/tree/main/phan-08-go)), see `.pyc` and use pycdc ([Part 7](https://github.com/Haind03/Technique-Reverse/tree/main/phan-07-python)), see high entropy and unpack first ([Part 14](https://github.com/Haind03/Technique-Reverse/tree/main/phan-14-packer-obfuscation)).
 
-**3. Tìm điều kiện thắng.** Đi ngược từ chuỗi "Correct" hay "Wrong" tới hàm so sánh, hoặc từ hàm in flag. Đây là kỹ thuật đi-từ-chuỗi của [Bài 0.4](/posts/tr-0-4-quy-trinh-reverse/), hiệu quả tới mức giải được phần lớn bài mức dễ chỉ bằng nó.
+**3. Find the win condition.** Go backward from the "Correct" or "Wrong" string to the comparison function, or from the function that prints the flag. This is the string-first technique from [Lesson 0.4](/posts/tr-0-4-quy-trinh-reverse/), effective enough that it solves most easy challenges on its own.
 
-**4. Chọn kỹ thuật theo hình dạng bài.**
-- Logic check đọc thẳng ra được: đọc tĩnh rồi đảo ngược bằng tay hoặc Python ([Bài 16.4](/posts/tr-16-4-viet-lai-python-z3/)).
-- Nhiều ràng buộc trên các byte input: ném cho Z3 hoặc angr ([Bài 18.3](/posts/tr-18-3-symbolic-execution-angr-triton/)).
-- Một hàm biến đổi phức tạp nhưng tách rời được: emulate bằng Unicorn ([Bài 18.2](/posts/tr-18-2-emulation-unicorn-qiling/)) thay vì đọc hiểu.
-- Anti-debug chặn đường: chuyển hướng theo [Phần 15](https://github.com/Haind03/Technique-Reverse/tree/main/phan-15-anti-reverse), hoặc emulate để né debugger thật.
-- Bí quá: chạy động, đặt breakpoint ở chỗ so sánh cuối, nhiều khi flag đúng lộ ra trần trụi trên thanh ghi.
+**4. Pick the technique by the shape of the challenge.**
+- A check logic you can read straight out: read statically then invert it by hand or with Python ([Lesson 16.4](/posts/tr-16-4-viet-lai-python-z3/)).
+- Many constraints on the input bytes: throw it at Z3 or angr ([Lesson 18.3](/posts/tr-18-3-symbolic-execution-angr-triton/)).
+- A complicated transform function that can be isolated: emulate it with Unicorn ([Lesson 18.2](/posts/tr-18-2-emulation-unicorn-qiling/)) instead of understanding it.
+- Anti-debug blocking the way: redirect per [Part 15](https://github.com/Haind03/Technique-Reverse/tree/main/phan-15-anti-reverse), or emulate to avoid a real debugger.
+- Totally stuck: run it dynamically, set a breakpoint at the final comparison, and often the correct flag shows up naked in a register.
 
-**5. Biết khi nào dừng một hướng.** Kẹt 30 phút ở một cách thì đổi cách, đừng cố đấm. Người giải nhanh không phải người thông minh hơn mà là người bỏ hướng sai sớm hơn.
+**5. Know when to drop a direction.** Stuck 30 minutes on one approach, switch approaches, don't keep punching. The fast solver isn't the smarter one but the one who abandons the wrong direction sooner.
 
-## Viết write-up, phần biến lần giải thành kiến thức
+## Writing a write-up, the part that turns a solve into knowledge
 
-Giải xong rồi quên là phí. Write-up là cách ghim lại, và viết tốt còn giúp người khác học. Một write-up tử tế có mấy phần:
+Solving and then forgetting is a waste. A write-up is how you pin it down, and a good one also helps others learn. A decent write-up has a few parts:
 
-- **Đề và môi trường.** Tên bài, file, hash, công cụ dùng. Để người đọc tái hiện được.
-- **Triage.** Bạn nhận ra gì ở bước đầu và vì sao chọn hướng đó.
-- **Quá trình, gồm cả chỗ sai.** Đây là phần quý nhất và hay bị bỏ. Đừng chỉ chép đường đi thẳng tới đáp án. Viết cả hướng bạn thử mà hỏng và vì sao hỏng. Người đọc (và chính bạn sau này) học từ ngã rẽ sai nhiều hơn từ lời giải bóng bẩy.
-- **Lời giải và flag.** Code script nếu có, để chạy lại được.
-- **Bài học rút ra.** Một hai câu: lần sau gặp dạng này mình sẽ làm gì khác.
+- **The challenge and environment.** Challenge name, files, hashes, tools used. So the reader can reproduce it.
+- **Triage.** What you recognized at the first step and why you chose that direction.
+- **The process, including the mistakes.** This is the most valuable part and the one most often dropped. Don't just copy the straight path to the answer. Write down the directions you tried that failed and why they failed. Readers (and you, later) learn more from the wrong turns than from the polished solution.
+- **The solution and flag.** The script code if there is one, so it can be rerun.
+- **Lessons learned.** One or two sentences: next time I meet this kind of thing, what will I do differently.
 
-Một write-up chỉ ghi "mở IDA, thấy flag, xong" thì vô dụng. Một write-up ghi "tôi tưởng nó là AES vì thấy một bảng 256 byte, hoá ra là RC4 vì bảng được khởi tạo 0..255 rồi hoán vị, nhận ra nhờ Bài 16.2" thì dạy được người khác.
+A write-up that only says "opened IDA, saw the flag, done" is useless. A write-up that says "I thought it was AES because I saw a 256-byte table, turns out it was RC4 because the table is initialized 0..255 and then permuted, which I recognized thanks to Lesson 16.2" teaches other people.
 
-## Thực tế về đường đi
+## The reality of the road
 
-Bài Flare-On số 1 mỗi mùa thường giải trong mười phút. Bài số 10, 11 có thể ngốn cả tuần của người giỏi. Bình thường. Mục tiêu không phải giải hết ngay mà là mỗi bài học thêm một kỹ thuật. Năm nay kẹt ở bài 7, sang năm bạn qua nó trong một buổi, đó là tiến bộ đo được.
+Flare-On challenge number 1 each season is usually solved in ten minutes. Challenges 10 and 11 can eat a whole week of a strong person. That's normal. The goal isn't to solve everything right away but to learn one more technique from each challenge. This year you're stuck on challenge 7, next year you get through it in one sitting, that's measurable progress.
 
-Và đừng ngại đọc write-up của người khác sau khi đã tự vật lộn đủ. Xem cách một người giỏi tiếp cận cùng bài bạn vừa giải chật vật là một trong những cách học nhanh nhất của nghề này.
+And don't hesitate to read other people's write-ups after you've struggled enough on your own. Seeing how a strong person approached the same challenge you just solved painfully is one of the fastest ways to learn in this trade.
 
-## Lab tự làm
-- Thư mục: `labs/20.2/`.
-- Nhiệm vụ: chọn một challenge Flare-On mùa cũ (hoặc một bài picoCTF category Reverse Engineering), tự giải, rồi viết write-up theo mẫu trong `labs/20.2/solution.md`. So với lời giải chính thức sau khi đã tự làm xong.
+## Lab
+- Folder: `labs/20.2/`.
+- Task: pick an old Flare-On challenge (or a picoCTF challenge in the Reverse Engineering category), solve it yourself, then write a write-up following the template in `labs/20.2/solution.md`. Compare with the official solution after you've finished on your own.
 
-## Checklist ghi nhớ
-- Mọi bài rev hỏi cùng một câu: input nào được chấp nhận.
-- Luôn triage trước để biết dùng hướng ngôn ngữ/kỹ thuật nào, đây là lúc cả series hội tụ.
-- Đi từ chuỗi thắng/thua ngược về hàm kiểm tra là cách vào bài nhanh nhất.
-- Chọn kỹ thuật theo hình dạng bài: đọc tay, Z3/angr, emulation, hay debug.
-- Kẹt một hướng thì đổi, đừng cố đấm.
-- Write-up phải ghi cả chỗ sai, đó là phần dạy được nhiều nhất.
+## Key takeaways
+- Every rev challenge asks the same question: which input gets accepted.
+- Always triage first to know which language/technique direction to use, this is where the whole series converges.
+- Going from the win/lose string back to the check function is the fastest way into a challenge.
+- Pick the technique by the shape of the challenge: reading by hand, Z3/angr, emulation, or debugging.
+- Stuck on one direction, switch, don't keep punching.
+- A write-up must record the mistakes too, that's the part that teaches the most.

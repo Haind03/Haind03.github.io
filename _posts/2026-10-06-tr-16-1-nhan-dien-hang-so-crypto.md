@@ -1,65 +1,65 @@
 ---
-title: "Bài 16.1: Nhận diện thuật toán crypto qua hằng số"
+title: "Lesson 16.1: Identifying crypto algorithms by their constants"
 date: 2026-10-06 09:36:00 +0700
-categories: ["Technique Reverse", "Phần 16 · Crypto & thuật toán"]
+categories: ["Technique Reverse", "Part 16 · Crypto and Algorithms"]
 tags: [reverse-engineering, crypto]
 render_with_liquid: false
 ---
-Có một tin vui cho người reverse: thuật toán mã hoá rất khó giấu. Không phải vì code của nó dễ đọc, mà vì gần như thuật toán tiêu chuẩn nào cũng mang theo một bộ hằng số cố định (magic constant), và những con số đó không bao giờ đổi. Thấy `0x67452301` nằm đầu một hàm là bạn gần như chắc đang nhìn MD5 hoặc SHA-1. Bài này dạy cách dùng đúng dấu vân tay đó để khoanh vùng crypto trong vài giây thay vì đọc cả nghìn dòng vòng lặp bit.
+Here's some good news for reversers: encryption algorithms are very hard to hide. Not because their code is easy to read, but because almost every standard algorithm carries a fixed set of constants (magic constants), and those numbers never change. Seeing `0x67452301` at the top of a function means you're almost certainly looking at MD5 or SHA-1. This lesson teaches how to use exactly these fingerprints to mark out the crypto in a few seconds instead of reading a thousand lines of bit-twiddling loops.
 
-## Vì sao hằng số là chỉ điểm đáng tin
+## Why constants are a reliable giveaway
 
-Một thuật toán như SHA-256 được định nghĩa trong chuẩn với các giá trị khởi tạo và bảng hằng cố định. Bất kỳ ai cài đúng chuẩn, dù bằng C, Rust hay assembly tay, đều phải nhúng đúng những con số đó vào binary. Compiler có thể đổi tên biến, tối ưu vòng lặp, inline hàm, nhưng nó không thể đổi `0x6a09e667` thành số khác mà vẫn ra kết quả đúng.
+An algorithm like SHA-256 is defined in the standard with fixed initial values and constant tables. Anyone who implements the standard correctly, whether in C, Rust or hand-written assembly, has to embed exactly those numbers in the binary. A compiler can rename variables, optimize loops, inline functions, but it can't change `0x6a09e667` into another number and still get the right result.
 
-Nói cách khác: logic có thể bị bóp méo, hằng số thì không. Đó là lý do tìm hằng số là cách nhanh và chắc nhất để nhận ra crypto, chắc hơn nhiều so với cố đọc hiểu vòng lặp xáo bit.
+In other words: the logic can be twisted, the constants can't. That's why searching for constants is the fastest and surest way to recognize crypto, much surer than trying to understand the bit-shuffling loops.
 
-## Bộ dấu vân tay nên thuộc
+## A set of fingerprints worth memorizing
 
-Không cần nhớ hết, nhưng vài con số sau gặp liên tục nên thuộc lòng thì lợi:
+You don't need to remember them all, but a few of these numbers show up constantly so it pays to know them by heart:
 
-| Thuật toán | Hằng số đặc trưng |
+| Algorithm | Characteristic constants |
 |---|---|
 | MD5 | Init: `0x67452301`, `0xEFCDAB89`, `0x98BADCFE`, `0x10325476` |
-| SHA-1 | Init giống MD5 bốn số trên, cộng thêm `0xC3D2E1F0` |
-| SHA-256 | H init bắt đầu `0x6A09E667`; bảng K bắt đầu `0x428A2F98` |
-| TEA / XTEA | Delta `0x9E3779B9` (hằng số vàng, derived từ tỉ lệ vàng) |
-| CRC32 | Polynomial phản chiếu `0xEDB88320`, hoặc bảng 256 entry dựng từ nó |
-| AES | S-box 256 byte (bắt đầu `63 7C 77 7B F2 6B 6F C5...`) và Rcon `01 02 04 08 10 20 40 80 1B 36` |
-| Blowfish | P-array và S-box khởi tạo từ các chữ số của số pi |
-| RC4 | Không có hằng số, nhận ra qua pattern KSA (vòng lặp khởi tạo mảng 256 byte rồi hoán vị) |
+| SHA-1 | Same init as MD5's four numbers above, plus `0xC3D2E1F0` |
+| SHA-256 | H init starts `0x6A09E667`; the K table starts `0x428A2F98` |
+| TEA / XTEA | Delta `0x9E3779B9` (the golden constant, derived from the golden ratio) |
+| CRC32 | Reflected polynomial `0xEDB88320`, or a 256-entry table built from it |
+| AES | 256-byte S-box (starts `63 7C 77 7B F2 6B 6F C5...`) and Rcon `01 02 04 08 10 20 40 80 1B 36` |
+| Blowfish | P-array and S-boxes initialized from the digits of pi |
+| RC4 | No constants, recognized by the KSA pattern (a loop that initializes a 256-byte array and then permutes it) |
 
-Để ý hai nhóm. Nhóm có hằng số rõ (MD5, SHA, AES, TEA, CRC) thì findcrypt bắt được ngay. Nhóm không hằng số (RC4, XOR tuỳ biến, Base64 custom) phải nhận bằng pattern, đó là chuyện của bài 16.2.
+Notice the two groups. The group with clear constants (MD5, SHA, AES, TEA, CRC) gets caught by findcrypt right away. The group without constants (RC4, custom XOR, custom Base64) has to be recognized by pattern, which is for lesson 16.2.
 
-## Để công cụ làm phần nhàm
+## Let the tools do the boring part
 
-Bạn không ngồi dò từng số bằng mắt. Có cả bộ tool quét hằng số tự động:
+You don't sit there probing each number by eye. There's a whole set of tools that scan for constants automatically:
 
-- **FindCrypt / findcrypt2** (plugin IDA): quét toàn binary, đánh dấu mọi vùng khớp chữ ký thuật toán đã biết, in ra danh sách kèm địa chỉ. Chạy một phát là có bản đồ crypto.
-- **FindCrypt-Ghidra**: bản tương đương cho Ghidra.
-- **capa** (Mandiant): không chỉ tìm hằng số mà suy ra capability ở mức cao, ví dụ "hash data via MD5", "encrypt data using AES", rất tiện khi triage nhanh.
-- **signsrch**: quét chữ ký thuật toán và một số pattern cài đặt phổ biến, chạy độc lập ngoài IDA.
-- **yara với rule crypto**: nếu bạn đã có bộ rule, quét hàng loạt mẫu cũng được.
+- **FindCrypt / findcrypt2** (IDA plugin): scans the whole binary, marks every region matching a known algorithm signature, and prints a list with addresses. Run it once and you have a crypto map.
+- **FindCrypt-Ghidra**: the equivalent for Ghidra.
+- **capa** (Mandiant): not only finds constants but infers high-level capabilities, for example "hash data via MD5", "encrypt data using AES", very handy for quick triage.
+- **signsrch**: scans for algorithm signatures and some common implementation patterns, runs standalone outside IDA.
+- **yara with crypto rules**: if you already have a rule set, scanning a batch of samples works too.
 
-Quy trình thực tế rất gọn: mở binary, chạy findcrypt hoặc capa trước tiên, nó chỉ cho bạn vài địa chỉ "ở đây có AES, ở kia có CRC32". Bạn nhảy thẳng tới đó thay vì bơi trong phần còn lại.
+The real workflow is very tidy: open the binary, run findcrypt or capa first, and it shows you a few addresses, "AES here, CRC32 over there". You jump straight there instead of swimming in the rest.
 
-## Xác nhận lại bằng cấu trúc, đừng tin mù
+## Confirm with structure, don't trust blindly
 
-Findcrypt rất tốt nhưng không phải thần thánh. Một bảng hằng số có thể trùng tình cờ, hoặc một thuật toán bị sửa đổi (ví dụ AES với S-box thay thế, hay CRC với polynomial khác) sẽ làm tool báo nhầm hoặc bỏ sót. Sau khi tool khoanh vùng, luôn nhìn qua cấu trúc hàm để xác nhận:
+Findcrypt is very good but not magic. A constant table can match by coincidence, or a modified algorithm (for example AES with a substituted S-box, or CRC with a different polynomial) will make the tool misreport or miss. After the tool marks the region, always glance at the function structure to confirm:
 
-- AES có vòng lặp 10/12/14 round, mỗi round có SubBytes (tra S-box), ShiftRows, MixColumns (nhân trong GF(2^8)), AddRoundKey (xor).
-- Hash (MD5/SHA) xử lý theo block 64 byte, có vòng nén với nhiều phép xoay bit (rotate) và cộng.
-- CRC32 là vòng lặp qua từng byte, xor rồi tra bảng 256 entry, hoặc dịch bit 8 lần.
-- TEA/XTEA có vòng lặp cộng dồn delta `0x9E3779B9` qua 32 round, thao tác trên hai nửa 32-bit.
+- AES has a loop of 10/12/14 rounds, each round with SubBytes (S-box lookup), ShiftRows, MixColumns (multiplication in GF(2^8)), AddRoundKey (xor).
+- Hashes (MD5/SHA) process in 64-byte blocks, with a compression loop containing many bit rotations and additions.
+- CRC32 is a loop over each byte, xor then a 256-entry table lookup, or shifting bits 8 times.
+- TEA/XTEA has a loop that accumulates the delta `0x9E3779B9` over 32 rounds, operating on two 32-bit halves.
 
-Khi hằng số khớp và cấu trúc vòng lặp cũng khớp, bạn mới kết luận chắc chắn. Nếu hằng khớp mà cấu trúc lạ, nhiều khả năng đây là biến thể tuỳ biến, và đó mới là chỗ thú vị cần đào sâu.
+When the constants match and the loop structure matches too, only then do you conclude for sure. If the constants match but the structure is odd, it's likely a custom variant, and that's the interesting place to dig deeper.
 
-## Khi hằng số bị che
+## When constants are hidden
 
-Malware tinh vi đôi khi không để hằng số trần. Chúng có thể dựng bảng hằng lúc chạy (tính S-box trong runtime thay vì nhúng sẵn), hoặc xor hằng số với một khoá rồi giải lúc dùng. Lúc đó findcrypt tĩnh sẽ trượt. Cách vượt: chạy động, đặt breakpoint sau đoạn khởi tạo rồi dump vùng nhớ chứa bảng ra, chạy findcrypt trên bản dump. Hằng số lúc này đã hiện nguyên hình trong bộ nhớ.
+Sophisticated malware sometimes doesn't leave constants bare. It may build the constant table at runtime (computing the S-box at runtime instead of embedding it), or xor the constants with a key and decode them at use. Then static findcrypt will miss. How to get past it: run dynamically, set a breakpoint after the init code and dump the memory region holding the table, then run findcrypt on the dump. At that point the constants show up in their true form in memory.
 
-## Checklist ghi nhớ
-- Thuật toán crypto tiêu chuẩn mang hằng số cố định, compiler không đổi được chúng.
-- Thuộc vài số hay gặp: MD5/SHA `0x67452301`, SHA-256 `0x6A09E667`, TEA delta `0x9E3779B9`, CRC32 `0xEDB88320`.
-- Chạy findcrypt/capa/signsrch trước tiên để khoanh vùng crypto, đừng đọc tay.
-- Luôn xác nhận lại bằng cấu trúc vòng lặp, tránh tin nhầm chữ ký trùng.
-- Hằng số bị dựng/giải lúc chạy thì dump bộ nhớ rồi quét lại.
+## Key takeaways
+- Standard crypto algorithms carry fixed constants, and the compiler can't change them.
+- Know a few common numbers: MD5/SHA `0x67452301`, SHA-256 `0x6A09E667`, TEA delta `0x9E3779B9`, CRC32 `0xEDB88320`.
+- Run findcrypt/capa/signsrch first to mark out the crypto, don't read it by hand.
+- Always confirm with the loop structure, to avoid trusting a coincidental signature.
+- If constants are built/decoded at runtime, dump the memory and scan again.

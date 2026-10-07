@@ -1,43 +1,43 @@
 ---
-title: "Bài 5.1: .NET bên trong, vì sao decompile gần như ra source gốc"
+title: "Lesson 5.1: .NET internals, why decompiling gives back nearly the original source"
 date: 2026-10-06 08:37:00 +0700
-categories: ["Technique Reverse", "Phần 5 · C# / .NET (dnSpy, ILSpy)"]
+categories: ["Technique Reverse", "Part 05 · C# and .NET"]
 tags: [reverse-engineering, dotnet]
 render_with_liquid: false
 ---
-Sau mấy phần vật lộn với assembly native, phần này là một kỳ nghỉ. Mở một file .NET bằng dnSpy hay ILSpy, bạn thường nhận lại code C# đọc được gần y như bản tác giả viết: đúng tên class, đúng tên method, đúng tên biến, cả comment thì không nhưng cấu trúc thì nguyên vẹn. Câu hỏi hay là: vì sao native thì nát bét còn .NET lại ngon đến thế? Trả lời được câu đó là bạn hiểu cả cách tiếp cận cho toàn bộ phần này.
+After several parts of wrestling with native assembly, this part is a vacation. Open a .NET file in dnSpy or ILSpy and you usually get back C# that reads almost exactly like what the author wrote: the right class names, the right method names, the right variable names, not the comments but the structure is intact. The interesting question is: why is native such a mess while .NET is so nice? Answer that and you understand the approach for this whole part.
 
-## Chương trình .NET không chứa machine code
+## A .NET program doesn't contain machine code
 
-Đây là mấu chốt. Khi bạn build một project C#, compiler (Roslyn) không sinh ra lệnh x86. Nó sinh ra **IL** (Common Intermediate Language, còn gọi là MSIL hay CIL), một dạng bytecode trung gian, độc lập CPU. Machine code thật chỉ được tạo ra **lúc chạy**, bởi JIT compiler của CLR, ngay trước khi một method được gọi lần đầu.
+This is the crux. When you build a C# project, the compiler (Roslyn) doesn't produce x86 instructions. It produces **IL** (Common Intermediate Language, also called MSIL or CIL), an intermediate, CPU-independent kind of bytecode. Real machine code is only created **at runtime**, by the CLR's JIT compiler, right before a method is called for the first time.
 
-Luồng đầy đủ:
+The full flow:
 
 ```
-Source C#  --Roslyn-->  IL + metadata  (nằm trong file .exe/.dll)
+C# source  --Roslyn-->  IL + metadata  (sits in the .exe/.dll file)
                               |
-                         CLR nạp, JIT
+                         CLR loads, JIT
                               v
-                        machine code x86/x64  (chỉ tồn tại trong RAM lúc chạy)
+                        x86/x64 machine code  (exists only in RAM at runtime)
 ```
 
-Vì thứ nằm trên đĩa là IL chứ không phải machine code, và IL ở mức cao hơn hẳn assembly, việc dịch ngược IL về C# dễ hơn nhiều so với dịch machine code về C++.
+Because what's on disk is IL and not machine code, and IL is at a much higher level than assembly, translating IL back to C# is much easier than translating machine code back to C++.
 
-## CLR, IL, metadata: ba mảnh ghép
+## CLR, IL, metadata: three pieces
 
-![Kiến trúc .NET: source sang IL cộng metadata, JIT ra native, dnSpy decompile ngược](/assets/img/technique-reverse/assets/phan-05/dotnet-arch.svg)
+![.NET architecture: source to IL plus metadata, JIT to native, dnSpy decompiles back](/assets/img/technique-reverse/assets/phan-05/dotnet-arch.svg)
 
-**CLR** (Common Language Runtime) là máy ảo chạy chương trình .NET, vai trò giống JVM với Java. Nó nạp assembly, JIT, quản lý bộ nhớ (garbage collector), kiểm tra an toàn kiểu. Code chạy trên CLR gọi là **managed code**.
+The **CLR** (Common Language Runtime) is the virtual machine that runs .NET programs, a role like the JVM for Java. It loads assemblies, JITs, manages memory (the garbage collector), and does type safety checks. Code running on the CLR is called **managed code**.
 
-**Assembly** là đơn vị triển khai: file `.exe` hoặc `.dll`. Điều thú vị là nó vẫn là một file PE hợp lệ (xem lại [Bài 1.7](/posts/tr-1-7-dinh-dang-pe/)), nhưng phần code không phải section `.text` chứa x86, mà là một CLI header trỏ tới stream IL và metadata. Đó là lý do DIE mở một file .NET vẫn báo PE, nhưng nói thêm là ".NET".
+An **assembly** is the unit of deployment: an `.exe` or `.dll` file. The interesting part is that it's still a valid PE file (see [Lesson 1.7](/posts/tr-1-7-dinh-dang-pe/) again), but the code isn't in a `.text` section holding x86, it's a CLI header pointing to the IL and metadata streams. That's why DIE opening a .NET file still reports PE, but adds ".NET".
 
-**IL** là bytecode stack-based: thay vì thao tác trên thanh ghi như x86, nó đẩy toán hạng lên một evaluation stack rồi lấy ra. Ví dụ `a + b` thành "đẩy a, đẩy b, cộng". Chính vì dạng trừu tượng và nhiều thông tin này mà decompiler dựng lại được biểu thức gốc.
+**IL** is stack-based bytecode: instead of operating on registers like x86, it pushes operands onto an evaluation stack and pops them off. For example `a + b` becomes "push a, push b, add". It's precisely this abstract, information-rich form that lets the decompiler rebuild the original expressions.
 
-**Metadata** mới là ngôi sao. Đi kèm IL là một bộ bảng mô tả đầy đủ mọi type, method, field, tham số, kèm **tên thật**. CLR cần metadata để làm reflection, binding, kiểm tra kiểu, nên tên không thể bị xoá như symbol trong native. Decompiler đọc thẳng metadata ra là có ngay tên class và method. Đây là khác biệt lớn nhất so với native, nơi tên biến bay sạch sau khi compile.
+**Metadata** is the real star. Alongside the IL is a set of tables fully describing every type, method, field, parameter, with their **real names**. The CLR needs metadata for reflection, binding, and type checking, so the names can't be stripped like symbols in native code. The decompiler reads the metadata directly and immediately has class and method names. This is the biggest difference from native, where variable names are gone after compiling.
 
-## Nhìn IL cho dễ hình dung
+## Looking at IL to picture it
 
-Một method C# nhỏ:
+A small C# method:
 
 ```csharp
 public static int Add(int a, int b)
@@ -46,50 +46,45 @@ public static int Add(int a, int b)
 }
 ```
 
-IL tương ứng (dạng ildasm/ILSpy hiển thị):
+The matching IL (as shown by ildasm/ILSpy):
 
 ```
 .method public hidebysig static int32 Add(int32 a, int32 b) cil managed
 {
-    ldarg.0      // đẩy tham số 0 (a) lên stack
-    ldarg.1      // đẩy tham số 1 (b) lên stack
-    add          // lấy hai cái trên cùng, cộng, đẩy kết quả
-    ret          // trả về giá trị trên cùng stack
+    ldarg.0      // push argument 0 (a) onto the stack
+    ldarg.1      // push argument 1 (b) onto the stack
+    add          // take the top two, add, push the result
+    ret          // return the value on top of the stack
 }
 ```
 
-Để ý: tên method `Add`, kiểu `int32`, tên tham số `a` và `b` đều còn nguyên. So với native, nơi hàm này thành `sub_401000` nhận hai số trong `rcx`/`rdx`, thì đây gần như là source. Decompiler chỉ việc ráp lại thành `return a + b;`.
+Notice: the method name `Add`, the type `int32`, the parameter names `a` and `b` are all intact. Compared to native, where this function becomes `sub_401000` taking two numbers in `rcx`/`rdx`, this is almost source. The decompiler just has to put it back together as `return a + b;`.
 
-## Vì sao managed dễ hơn native
+## Why managed is easier than native
 
-Gom lại thành bảng cho rõ:
+Collected into a table to be clear:
 
 | | Native (C/C++) | Managed (.NET) |
 |---|---|---|
-| Thứ nằm trên đĩa | machine code x86/x64 | IL bytecode |
-| Tên hàm/biến | mất (trừ khi có symbol) | còn nguyên trong metadata |
-| Mức trừu tượng | thấp, sát CPU | cao, gần ngôn ngữ |
-| Kết quả decompile | pseudocode gần đúng | C# gần như bản gốc |
-| Cản trở chính | tối ưu của compiler | obfuscation (xem Bài 5.5) |
+| What's on disk | x86/x64 machine code | IL bytecode |
+| Function/variable names | gone (unless there are symbols) | intact in the metadata |
+| Abstraction level | low, close to the CPU | high, close to the language |
+| Decompile result | approximate pseudocode | C# nearly like the original |
+| Main obstacle | compiler optimization | obfuscation (see Lesson 5.5) |
 
-Điểm cuối rất quan trọng: thứ duy nhất đứng giữa bạn và source .NET thường không phải bản thân format, mà là **obfuscator** cố tình đổi tên và bóp méo. Phần lớn phần này vì thế xoay quanh việc gỡ obfuscation, chứ không phải vật lộn với IL.
+The last point is very important: the only thing standing between you and .NET source usually isn't the format itself, but an **obfuscator** deliberately renaming and distorting things. Most of this part is therefore about removing obfuscation, not wrestling with IL.
 
-## Công cụ
+## Tools
 
-- **ILSpy** và **dnSpy** đều có sẵn trong repo này (thư mục cha `ILSpy_binaries_9.0.0...` và `dnSpy-net-win64`). ILSpy chuyên decompile và xem IL, dnSpy mạnh ở chỗ còn **debug và sửa** được assembly. Bài [5.2](https://github.com/Haind03/Technique-Reverse/blob/main/phan-05-csharp-dotnet/5.2-ilspy-dnspy.md) và [5.3](https://github.com/Haind03/Technique-Reverse/blob/main/phan-05-csharp-dotnet/5.3-debug-net-dnspy.md) đi sâu.
-- **ildasm** (đi kèm Windows SDK) xuất IL dạng text, **ilasm** ráp ngược lại.
-- **ilspycmd** là bản dòng lệnh của ILSpy, tiện tự động hoá.
-- **dotPeek** của JetBrains là một decompiler miễn phí khác.
+ILSpy and dnSpy are both included in this repo (the parent folder `ILSpy_binaries_9.0.0...` and `dnSpy-net-win64`). ILSpy specializes in decompiling and viewing IL, while dnSpy is strong in that it can also debug and edit assemblies. Lessons [5.2](https://github.com/Haind03/Technique-Reverse/blob/main/phan-05-csharp-dotnet/5.2-ilspy-dnspy.md) and [5.3](https://github.com/Haind03/Technique-Reverse/blob/main/phan-05-csharp-dotnet/5.3-debug-net-dnspy.md) go deeper. ildasm (comes with the Windows SDK) outputs IL as text and ilasm assembles it back, ilspycmd is the command-line version of ILSpy and is handy for automation, and JetBrains' dotPeek is another free decompiler.
 
-Tất cả đọc cùng một thứ: IL và metadata trong assembly. Khác nhau ở giao diện và khả năng sửa.
+They all read the same thing: the IL and metadata in the assembly. They differ in interface and in the ability to edit.
 
-## Lab tự làm
+## Lab
 
-Xem [labs/5.1/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/5.1). Bạn sẽ dùng DIE nhận ra một file là .NET, rồi mở bằng ILSpy hoặc dnSpy để thấy tận mắt IL và metadata. Nếu máy không có dotnet SDK, dùng luôn chính `ILSpy.dll` hoặc các DLL .NET trong repo làm mẫu quan sát.
+See [labs/5.1/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/5.1). You'll use DIE to recognize a file as .NET, then open it in ILSpy or dnSpy to see the IL and metadata with your own eyes. If your machine doesn't have the dotnet SDK, just use `ILSpy.dll` itself or the .NET DLLs in the repo as samples to look at.
 
-## Checklist ghi nhớ
-- File .NET trên đĩa chứa IL bytecode cộng metadata, không phải machine code. Machine code chỉ sinh ra lúc chạy bởi JIT.
-- Assembly .NET vẫn là PE, nhưng code nằm sau CLI header chứ không phải section .text thường.
-- Metadata giữ nguyên tên type/method/field, nên decompile ra gần như source gốc.
-- IL là bytecode stack-based, mức cao hơn assembly nhiều, dễ dịch ngược.
-- Cản trở thật khi RE .NET thường là obfuscation, không phải bản thân format.
+## Key takeaways
+A .NET file on disk contains IL bytecode plus metadata, not machine code, and machine code is only produced at runtime by the JIT. A .NET assembly is still a PE, but the code sits behind the CLI header and not in the usual .text section. Metadata keeps type/method/field names intact, so decompiling gives nearly the original source.
+
+IL is stack-based bytecode, at a much higher level than assembly, so it's easy to translate back. The real obstacle when reversing .NET is usually obfuscation, not the format itself.

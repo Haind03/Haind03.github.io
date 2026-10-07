@@ -1,34 +1,34 @@
 ---
-title: "Bài 19.2: IOC, YARA, capa và Sigma, biến một mẫu thành thứ phát hiện được"
+title: "Lesson 19.2: IOC, YARA, capa and Sigma, turning a sample into something detectable"
 date: 2026-10-06 09:56:00 +0700
-categories: ["Technique Reverse", "Phần 19 · Phân tích mã độc cơ bản (phòng thủ)"]
+categories: ["Technique Reverse", "Part 19 · Malware Analysis Basics"]
 tags: [reverse-engineering, malware]
 render_with_liquid: false
 ---
-Phân tích xong một mẫu malware mà để đó thì phí. Giá trị thật của việc reverse một mẫu là rút ra được thứ giúp bạn (và cả cộng đồng) nhận ra nó lần sau, nhận ra biến thể của nó, và nhận ra nó đang chạy trong hệ thống. Bài này nói về bốn thứ đó: IOC để chia sẻ dấu hiệu, YARA để quét file và bộ nhớ, capa để lập hồ sơ khả năng, Sigma để bắt hành vi trong log. Tất cả đều là công cụ phòng thủ.
+Analyzing a malware sample and then leaving it there is a waste. The real value of reversing a sample is pulling out something that helps you (and the community) recognize it next time, recognize its variants, and recognize it running in a system. This lesson covers four things: IOCs for sharing indicators, YARA for scanning files and memory, capa for profiling capabilities, and Sigma for catching behavior in logs. All of them are defensive tools.
 
-## IOC: dấu hiệu để chia sẻ
+## IOC: indicators to share
 
-IOC (Indicator of Compromise) là những mẩu dữ liệu cụ thể chỉ ra một hệ thống có thể đã bị xâm nhập. Khi phân tích một mẫu, bạn nhặt ra:
+An IOC (Indicator of Compromise) is a concrete piece of data pointing to a system that may have been compromised. When analyzing a sample, you pick out:
 
-- **Hash** của file: MD5, SHA-1, SHA-256. Đây là IOC yếu nhất vì chỉ cần đổi một byte là hash khác, nhưng vẫn cần để tra cứu và chia sẻ.
-- **Network**: IP, domain, URL của server điều khiển (C2), đường dẫn tải payload.
-- **Host**: tên mutex (malware hay tạo mutex để không chạy trùng, xem lại Bài 1.11), tên file nó thả ra, khoá registry nó tạo để persistence, tên scheduled task.
-- **Email**: địa chỉ gửi, tiêu đề, tên file đính kèm (với phishing).
+- **Hashes** of the file: MD5, SHA-1, SHA-256. This is the weakest IOC because changing a single byte changes the hash, but you still need it for lookups and sharing.
+- **Network**: IPs, domains, URLs of the command-and-control (C2) server, paths the payload is downloaded from.
+- **Host**: mutex names (malware often creates a mutex so it doesn't run twice, see Lesson 1.11 again), names of files it drops, registry keys it creates for persistence, scheduled task names.
+- **Email**: sender address, subject, attachment file names (for phishing).
 
-IOC được chuẩn hoá để trao đổi tự động, phổ biến nhất là STIX (Structured Threat Information eXpression). Nhưng hãy nhớ: IOC là loại chỉ dấu dễ né nhất. Kẻ tấn công đổi domain, đổi hash trong vài giây. Thứ bền hơn nằm ở dưới.
+IOCs are standardized for automated exchange, most commonly STIX (Structured Threat Information eXpression). But remember: IOCs are the easiest kind of indicator to evade. Attackers change a domain or a hash in seconds. The more durable stuff is below.
 
-## YARA: quét theo pattern
+## YARA: pattern scanning
 
-YARA là ngôn ngữ viết rule nhận diện file (và cả bộ nhớ tiến trình) theo mẫu byte và chuỗi. Nó bền hơn hash vì bắt vào những thứ kẻ tấn công khó đổi: chuỗi đặc trưng, đoạn code, hằng số thuật toán.
+YARA is a rule language for identifying files (and process memory too) by byte patterns and strings. It's more durable than a hash because it latches onto things attackers find hard to change: distinctive strings, code fragments, algorithm constants.
 
-Một rule gồm hai phần chính: `strings` khai báo các mẫu cần tìm, `condition` nói khi nào thì coi là khớp.
+A rule has two main parts: `strings` declares the patterns to look for, and `condition` says when to count it as a match.
 
 ```yara
 rule FakeBot_Demo
 {
     meta:
-        description = "Nhan dien mau FakeBot gia lap"
+        description = "Detects the simulated FakeBot sample"
         author = "blog"
 
     strings:
@@ -37,57 +37,57 @@ rule FakeBot_Demo
         $key   = { 52 43 34 4B 65 79 31 32 33 }   // byte pattern "RC4Key123"
 
     condition:
-        uint16(0) == 0x5A4D and          // 0x5A4D = "MZ", chi quet file PE
-        2 of them                        // khop it nhat 2 trong cac string tren
+        uint16(0) == 0x5A4D and          // 0x5A4D = "MZ", only scan PE files
+        2 of them                        // match at least 2 of the strings above
 }
 ```
 
-Vài điều đáng nhớ khi viết rule:
+A few things worth remembering when writing rules:
 
-- Chuỗi có thể là text (`ascii`, `wide` cho UTF-16, `nocase` không phân biệt hoa thường) hoặc **byte pattern** trong ngoặc nhọn, dùng được cho đoạn code hoặc hằng số. Byte pattern cho phép wildcard `??` (một byte bất kỳ) nên bắt được code dù vài byte thay đổi.
-- `condition` là nơi đặt logic: `uint16(0) == 0x5A4D` lọc trước chỉ file PE, `2 of them` hay `3 of ($a, $b, $c)` cho phép khớp mềm, `$a at 0` buộc chuỗi ở offset cụ thể.
-- Rule tốt là rule **đủ cụ thể để không báo nhầm file lành, đủ rộng để bắt biến thể**. Dựa vào 1 chuỗi dễ false positive hoặc dễ né; dựa vào tổ hợp vài dấu hiệu đặc trưng thì vừa.
+- Strings can be text (`ascii`, `wide` for UTF-16, `nocase` for case-insensitive) or a **byte pattern** in curly braces, usable for code fragments or constants. Byte patterns allow the wildcard `??` (any single byte), so they can catch code even when a few bytes change.
+- `condition` is where the logic goes: `uint16(0) == 0x5A4D` pre-filters to PE files only, `2 of them` or `3 of ($a, $b, $c)` allow soft matching, `$a at 0` pins a string to a specific offset.
+- A good rule is one that's **specific enough not to false-alarm on clean files, and broad enough to catch variants**. Relying on 1 string is prone to false positives or easy to evade; relying on a combination of a few distinctive signs is about right.
 
-YARA quét được cả file tĩnh lẫn bộ nhớ tiến trình đang chạy, nên rất hợp để bắt malware đã unpack trong RAM (nối lại Bài 14 và 17.5). **yarGen** sinh rule tự động từ một tập mẫu (nó loại các chuỗi phổ biến trong file sạch rồi giữ lại chuỗi hiếm), là điểm khởi đầu tốt rồi bạn tinh chỉnh tay.
+YARA can scan both static files and the memory of running processes, so it's great for catching malware that has been unpacked in RAM (tying back to Lessons 14 and 17.5). **yarGen** generates rules automatically from a set of samples (it removes strings common in clean files and keeps the rare ones), which is a good starting point that you then tune by hand.
 
-## capa: hỏi "nó làm được gì"
+## capa: ask "what can it do"
 
-Trong khi YARA hỏi "đây có phải mẫu X không", capa (Mandiant) hỏi một câu khác: "binary này có những **khả năng** gì". Nó chạy một bộ rule mô tả hành vi dựa trên API, chuỗi, hằng số, và trả về những câu như:
+While YARA asks "is this sample X?", capa (Mandiant) asks a different question: "what **capabilities** does this binary have?". It runs a set of rules describing behavior based on APIs, strings, constants, and returns statements like:
 
 - "communicate over HTTP"
 - "encrypt data using RC4"
 - "inject code into another process"
 - "persist via registry run key"
 
-capa cực hữu ích ở bước triage: chưa cần đọc code, bạn đã có bản tóm tắt binary làm gì, biết chỗ nào đáng đọc trước. Nó còn map sang MITRE ATT&CK để bạn nói chuyện cùng ngôn ngữ với đội phòng thủ. Kết hợp đẹp với [capa trong triage ở Bài 2.1](/posts/tr-2-1-triage-die-strings-pebear/).
+capa is extremely useful at the triage step: without reading any code yet, you already have a summary of what the binary does and know which spots are worth reading first. It also maps to MITRE ATT&CK so you speak the same language as the defense team. It pairs nicely with [capa in triage from Lesson 2.1](/posts/tr-2-1-triage-die-strings-pebear/).
 
-## Sigma: bắt hành vi trong log
+## Sigma: catching behavior in logs
 
-YARA và capa nhìn vào file. Sigma nhìn vào **log**. Nó là định dạng rule chung cho SIEM và log hệ thống (Windows Event Log, Sysmon, EDR): mô tả một hành vi đáng ngờ theo cách không phụ thuộc hãng SIEM nào, rồi convert sang truy vấn của Splunk, Elastic, Sentinel...
+YARA and capa look at files. Sigma looks at **logs**. It's a common rule format for SIEMs and system logs (Windows Event Log, Sysmon, EDR): it describes a suspicious behavior in a way that doesn't depend on any SIEM vendor, then converts to queries for Splunk, Elastic, Sentinel...
 
-Ví dụ một ý tưởng Sigma: "process `winword.exe` sinh ra `powershell.exe`" là mẫu macro độc điển hình. Hay "có process ghi vào vùng nhớ của process khác rồi tạo remote thread" (nối lại dấu hiệu injection ở [Bài 17.4/17.5](https://github.com/Haind03/Technique-Reverse/tree/main/phan-17-patch-hook-frida)). Sigma bắt được những thứ YARA không thấy, vì nó theo dõi **hành vi lúc chạy** chứ không phải nội dung file.
+An example Sigma idea: "process `winword.exe` spawns `powershell.exe`" is the typical malicious macro pattern. Or "a process writes into another process's memory and then creates a remote thread" (tying back to the injection signs in [Lesson 17.4/17.5](https://github.com/Haind03/Technique-Reverse/tree/main/phan-17-patch-hook-frida)). Sigma catches things YARA doesn't see, because it tracks **runtime behavior** rather than file contents.
 
-Bốn công cụ, bốn tầng: IOC (dữ liệu cụ thể, dễ né), YARA (nội dung file/bộ nhớ), capa (khả năng), Sigma (hành vi). Càng xuống dưới càng khó né, vì kẻ tấn công đổi domain thì dễ, đổi hẳn cách hành xử thì tốn công.
+Four tools, four layers: IOC (concrete data, easy to evade), YARA (file/memory contents), capa (capabilities), Sigma (behavior). The further down you go, the harder it is to evade, because attackers can change a domain easily, but changing how they behave takes real work.
 
-## Quy trình thực tế
+## A practical workflow
 
-Sau khi reverse một mẫu, bạn thường làm theo mạch này:
+After reversing a sample, you usually go through this sequence:
 
-1. Tính hash, nhặt network/host IOC (domain, mutex, registry, file thả ra).
-2. Chạy capa để có hồ sơ khả năng, biết nó inject/mã hoá/persist ra sao.
-3. Viết YARA rule dựa trên tổ hợp chuỗi và byte pattern đặc trưng (ưu tiên thứ khó đổi), test với cả mẫu và một bộ file sạch để tránh false positive.
-4. Viết Sigma rule cho hành vi quan sát được (process tree, ghi registry, network), để đội SOC phát hiện cả khi hash đã đổi.
-5. Chia sẻ IOC/YARA/Sigma cho cộng đồng hoặc nội bộ.
+1. Compute hashes, pick out network/host IOCs (domains, mutexes, registry, dropped files).
+2. Run capa to get a capability profile, to know how it injects/encrypts/persists.
+3. Write a YARA rule based on a combination of distinctive strings and byte patterns (prefer things that are hard to change), and test it against both the sample and a set of clean files to avoid false positives.
+4. Write a Sigma rule for the observed behavior (process tree, registry writes, network), so the SOC team can detect it even when the hash has changed.
+5. Share the IOCs/YARA/Sigma with the community or internally.
 
-## Lab tự làm
+## Lab
 
-Tới `labs/19.2/`. Bạn sẽ viết một YARA rule, tạo một file mẫu lành tính chứa các chuỗi marker, rồi chạy `yara` (hoặc `yara-python`) để thấy rule khớp đúng chuỗi nào ở offset nào. Rule mẫu và kết quả chạy thật có trong `solution.md`.
+Go to `labs/19.2/`. You'll write a YARA rule, create a harmless sample file containing marker strings, then run `yara` (or `yara-python`) to see exactly which string the rule matches at which offset. The sample rule and the real run output are in `solution.md`.
 
-## Checklist ghi nhớ
+## Key takeaways
 
-- IOC = dấu hiệu cụ thể (hash, domain, mutex, registry), dễ chia sẻ nhưng dễ né nhất.
-- YARA quét file và bộ nhớ theo `strings` + `condition`, dùng byte pattern để bắt cả biến thể.
-- Rule tốt dựa trên tổ hợp dấu hiệu khó đổi, test với file sạch để tránh false positive.
-- capa trả lời "binary làm được gì" và map sang ATT&CK, tuyệt cho triage.
-- Sigma bắt hành vi trong log, khó né hơn vì theo dõi lúc chạy.
-- Thang độ bền: IOC < YARA < capa < Sigma.
+- IOC = concrete indicators (hash, domain, mutex, registry), easy to share but the easiest to evade.
+- YARA scans files and memory with `strings` + `condition`, and uses byte patterns to catch variants too.
+- A good rule is based on a combination of indicators that are hard to change, and gets tested against clean files to avoid false positives.
+- capa answers "what can the binary do" and maps to ATT&CK, great for triage.
+- Sigma catches behavior in logs, harder to evade because it tracks runtime.
+- Durability scale: IOC < YARA < capa < Sigma.

@@ -1,21 +1,21 @@
 ---
-title: "Bài 17.6: LD_PRELOAD, ptrace và DYLD_INSERT_LIBRARIES"
+title: "Lesson 17.6: LD_PRELOAD, ptrace and DYLD_INSERT_LIBRARIES"
 date: 2026-10-06 09:45:00 +0700
-categories: ["Technique Reverse", "Phần 17 · Patch, Hook, Injection & Instrumentation"]
+categories: ["Technique Reverse", "Part 17 · Patching, Hooking, Injection"]
 tags: [reverse-engineering, frida, hooking]
 render_with_liquid: false
 ---
-Trên Windows bạn hook bằng Detours, IAT hay inline hook (bài [17.3](/posts/tr-17-3-hooking-windows-iat-inline-detours/)). Trên Linux và macOS có một cách sạch hơn nhiều, dựng sẵn trong chính loader của hệ điều hành: bạn bảo nó nạp thư viện của bạn trước thư viện chuẩn, thế là hàm của bạn đè lên hàm libc. Không cần ghi đè byte, không cần code cave, chỉ một biến môi trường. Bài này dùng nó để lộ password của một crackme, và nói luôn về ptrace, cơ chế đứng sau mọi debugger Linux.
+On Windows you hook with Detours, IAT or inline hooks (lesson [17.3](/posts/tr-17-3-hooking-windows-iat-inline-detours/)). On Linux and macOS there's a much cleaner way, built into the OS loader itself: you tell it to load your library before the standard library, and your function overrides the libc function. No overwriting bytes, no code cave, just an environment variable. This lesson uses it to expose the password of a crackme, and also covers ptrace, the mechanism behind every Linux debugger.
 
-## LD_PRELOAD: chen thư viện của bạn lên đầu hàng
+## LD_PRELOAD: cutting your library to the front of the line
 
-Khi một chương trình Linux gọi `strcmp`, lời gọi đó được phân giải (resolve) tại thời điểm chạy qua dynamic linker. Linker tìm hàm trong danh sách thư viện theo thứ tự, và hàm đầu tiên khớp tên sẽ thắng. `LD_PRELOAD` chèn một thư viện của bạn lên **đầu** danh sách đó. Nếu thư viện của bạn cũng định nghĩa `strcmp`, phiên bản của bạn được gọi thay vì của libc.
+When a Linux program calls `strcmp`, that call is resolved at runtime through the dynamic linker. The linker looks for the function in the list of libraries in order, and the first function whose name matches wins. `LD_PRELOAD` inserts a library of yours at the **front** of that list. If your library also defines `strcmp`, your version gets called instead of libc's.
 
-Đây là tính năng hợp pháp của glibc, dùng cho debug, profiling, vá nóng, và với dân RE là để hook mà không đụng tới binary. Vì nó hoạt động ở ranh giới lời gọi hàm thư viện, nó chỉ chặn được các hàm gọi qua PLT (hàm từ thư viện động), không chặn được hàm tĩnh hay inline. Nhưng `strcmp`, `malloc`, `fopen`, `getenv` thì bắt được hết.
+This is a legitimate glibc feature, used for debugging, profiling, hot patching, and for RE folks it's for hooking without touching the binary. Because it works at the library call boundary, it can only intercept functions called through the PLT (functions from dynamic libraries), not static or inlined ones. But `strcmp`, `malloc`, `fopen`, `getenv` can all be caught.
 
-### Viết một hook
+### Writing a hook
 
-Mẹo quan trọng: hook của bạn thường vẫn muốn gọi hàm thật (để chương trình chạy bình thường, bạn chỉ chen vào quan sát). Lấy con trỏ hàm thật bằng `dlsym(RTLD_NEXT, "strcmp")`, nghĩa là "tìm `strcmp` tiếp theo trong chuỗi, bỏ qua cái của tôi".
+An important trick: your hook usually still wants to call the real function (so the program runs normally and you just step in to observe). Get the real function pointer with `dlsym(RTLD_NEXT, "strcmp")`, meaning "find the next `strcmp` in the chain, skipping mine".
 
 ```c
 #define _GNU_SOURCE
@@ -28,68 +28,68 @@ int strcmp(const char *a, const char *b) {
     if (!real_strcmp)
         real_strcmp = dlsym(RTLD_NEXT, "strcmp");
     fprintf(stderr, "[hook] strcmp(\"%s\", \"%s\")\n", a, b);
-    return real_strcmp(a, b);   // gọi hàm thật, chương trình chạy như thường
+    return real_strcmp(a, b);   // call the real function, the program runs as usual
 }
 ```
 
-Build thành shared object rồi nạp:
+Build it into a shared object and load it:
 
 ```sh
 gcc -shared -fPIC -o hook.so hook.c -ldl
 LD_PRELOAD=./hook.so ./crackme
 ```
 
-Mỗi lần crackme so chuỗi, hook in ra cả hai toán hạng. Nếu crackme dùng `strcmp(input, secret)` thì password đúng lộ ngay trên màn hình, không cần mở IDA. Phần lab bên dưới làm đúng việc này, chạy thật ra kết qua.
+Every time the crackme compares strings, the hook prints both operands. If the crackme uses `strcmp(input, secret)` then the right password shows up right on screen, no need to open IDA. The lab below does exactly this, with real run results.
 
-Vì sao log ra `stderr` chứ không `stdout`: để output của hook không lẫn vào output của chương trình, tiện lọc.
+Why log to `stderr` and not `stdout`: so the hook's output doesn't mix into the program's output, which makes filtering easier.
 
-## ptrace: nền móng của mọi debugger Linux
+## ptrace: the foundation of every Linux debugger
 
-`gdb`, `strace`, `ltrace` đều đứng trên một syscall duy nhất: `ptrace`. Một tiến trình gọi `ptrace(PTRACE_ATTACH, pid, ...)` để gắn vào tiến trình khác, rồi đọc/ghi thanh ghi và bộ nhớ, đặt breakpoint, step. Hiểu điều này giải thích hai thứ.
+`gdb`, `strace`, `ltrace` all stand on a single syscall: `ptrace`. A process calls `ptrace(PTRACE_ATTACH, pid, ...)` to attach to another process, then reads/writes registers and memory, sets breakpoints, steps. Understanding this explains two things.
 
-Thứ nhất, `strace ./prog` cho bạn thấy mọi syscall chương trình gọi (open, read, write, connect), còn `ltrace ./prog` cho thấy mọi lời gọi thư viện (giống LD_PRELOAD nhưng xem hết). Hai lệnh này là cách triage động nhanh nhất trên Linux, chạy trước khi mở disassembler.
+First, `strace ./prog` shows you every syscall the program makes (open, read, write, connect), and `ltrace ./prog` shows every library call (like LD_PRELOAD but seeing everything). These two commands are the fastest dynamic triage on Linux, run them before opening a disassembler.
 
-Thứ hai, ptrace là chỗ anti-debug Linux hay cài bẫy. Một tiến trình **chỉ có thể bị một tracer gắn vào tại một thời điểm**. Nên thủ thuật anti-debug kinh điển là chương trình tự gọi `ptrace(PTRACE_TRACEME, 0, 0, 0)` với chính nó: nếu thành công, nó biết chưa ai debug nó; nếu đã có gdb gắn vào thì lời gọi này thất bại (trả về -1), và chương trình biết mình đang bị theo dõi rồi thoát hoặc rẽ nhánh giả.
+Second, ptrace is where Linux anti-debug likes to set traps. A process **can only be attached to by one tracer at a time**. So the classic anti-debug trick is the program calling `ptrace(PTRACE_TRACEME, 0, 0, 0)` on itself: if it succeeds, it knows nobody is debugging it; if gdb is already attached, this call fails (returns -1), and the program knows it's being watched, then exits or takes a fake branch.
 
 ```c
 if (ptrace(PTRACE_TRACEME, 0, 0, 0) == -1) {
-    // da co debugger gan vao -> thoat hoac lam sai di
+    // a debugger is already attached -> exit or misbehave
     exit(1);
 }
 ```
 
-Cách nhận ra khi reverse: tìm lời gọi `ptrace` (syscall số 101 trên x86-64) ngay đầu chương trình. Cách vượt: dùng LD_PRELOAD hook luôn `ptrace` trả về 0, hoặc patch nhánh, hoặc chạy dưới công cụ không dùng ptrace. Vòng tròn đẹp: chính LD_PRELOAD của mục trên lại là cách bẻ anti-debug ptrace.
+How to recognize it when reversing: look for the `ptrace` call (syscall number 101 on x86-64) right at the start of the program. How to get past it: use LD_PRELOAD to hook `ptrace` to return 0, or patch the branch, or run under a tool that doesn't use ptrace. A nice full circle: the LD_PRELOAD from the section above is itself the way to break the ptrace anti-debug.
 
 ```c
-// hook vo hieu anti-debug ptrace: luon bao "khong co ai theo doi"
+// hook that disables the ptrace anti-debug: always say "nobody is tracing"
 long ptrace(int request, ...) { return 0; }
 ```
 
-## DYLD_INSERT_LIBRARIES: bản macOS
+## DYLD_INSERT_LIBRARIES: the macOS version
 
-macOS có cơ chế tương đương tên là `DYLD_INSERT_LIBRARIES` (dyld là dynamic linker của macOS). Ý tưởng y hệt: chèn một dylib nạp trước để ghi đè hàm. Hàm ghi đè cần đánh dấu để dyld biết thay thế (interpose), qua một section `__interpose` thay vì chỉ định nghĩa trùng tên.
+macOS has an equivalent mechanism called `DYLD_INSERT_LIBRARIES` (dyld is macOS's dynamic linker). The idea is the same: insert a dylib that loads first to override functions. The overriding function has to be marked so dyld knows to replace it (interpose), through an `__interpose` section instead of just defining the same name.
 
-Khác biệt lớn là **System Integrity Protection (SIP)**: macon hiện đại chặn `DYLD_INSERT_LIBRARIES` với các tiến trình hệ thống và binary có hardened runtime, nên nó chỉ dùng được với binary của bạn hoặc binary không ký cứng. Đó là lý do trên macOS người ta hay chuyển sang Frida (bài [17.2](/posts/tr-17-2-frida-toan-tap/)) cho tiện.
+The big difference is **System Integrity Protection (SIP)**: modern macOS blocks `DYLD_INSERT_LIBRARIES` for system processes and binaries with hardened runtime, so it only works on your own binaries or binaries that aren't hardened. That's why on macOS people often switch to Frida (lesson [17.2](/posts/tr-17-2-frida-toan-tap/)) for convenience.
 
-## Khi nào dùng cái nào
+## When to use which
 
-- Muốn xem nhanh chương trình Linux đụng file/mạng/syscall nào: `strace`, `ltrace`, không cần viết gì.
-- Muốn hook một hàm thư viện cụ thể để đọc hoặc sửa tham số, trên binary của mình hoặc mẫu trong lab: LD_PRELOAD, gọn và sạch.
-- Gặp anti-debug ptrace: LD_PRELOAD hook `ptrace` trả 0.
-- Trên macOS, hoặc cần linh hoạt hơn nhiều, hoặc cần cùng một script chạy khắp nền tảng: Frida.
+- Want a quick look at which files/network/syscalls a Linux program touches: `strace`, `ltrace`, nothing to write.
+- Want to hook a specific library function to read or change parameters, on your own binary or a lab sample: LD_PRELOAD, neat and clean.
+- Hit a ptrace anti-debug: LD_PRELOAD hook `ptrace` to return 0.
+- On macOS, or you need much more flexibility, or you need the same script to run across platforms: Frida.
 
-LD_PRELOAD không phải thần dược. Nó không chạm được hàm tĩnh, hàm inline, hay lời gọi syscall trực tiếp không qua libc. Khi đó quay lại debugger hoặc Frida.
+LD_PRELOAD is not a cure-all. It can't touch static functions, inlined functions, or direct syscalls that don't go through libc. Then go back to the debugger or Frida.
 
-## Lab tự làm
+## Lab
 
-Thư mục [labs/17.6/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/17.6) có một crackme gọi `strcmp` để so password, và một thư viện `hook.c` ghi đè `strcmp` để log. Nhiệm vụ: build cả hai, chạy crackme với `LD_PRELOAD` và đọc password đúng rơi ra từ log, mà không cần disassemble. Sau đó thử tự viết một hook `ptrace` để hiểu cách vô hiệu anti-debug.
+The folder [labs/17.6/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/17.6) has a crackme that calls `strcmp` to compare the password, and a `hook.c` library that overrides `strcmp` to log. The task: build both, run the crackme with `LD_PRELOAD` and read the correct password falling out of the log, without disassembling. Then try writing a `ptrace` hook yourself to understand how to disable the anti-debug.
 
-Kết quả tham chiếu (đã chạy thật bằng gcc trên Linux) nằm trong [labs/17.6/solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/17.6/solution.md).
+The reference result (actually run with gcc on Linux) is in [labs/17.6/solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/17.6/solution.md).
 
-## Checklist ghi nhớ
-- LD_PRELOAD nạp thư viện của bạn trước libc, hàm trùng tên của bạn thắng. Chỉ chặn hàm gọi qua PLT (thư viện động).
-- Trong hook, lấy hàm thật bằng `dlsym(RTLD_NEXT, "ten")` rồi gọi lại để chương trình chạy bình thường.
-- Hook `strcmp` lộ ngay password nếu crackme so chuỗi bằng strcmp.
-- ptrace là nền của gdb/strace/ltrace. Một tiến trình chỉ bị một tracer gắn vào.
-- Anti-debug Linux hay dùng `ptrace(PTRACE_TRACEME)`: thất bại nghĩa là đã bị debug. Vượt bằng LD_PRELOAD hook ptrace trả 0.
-- macOS có `DYLD_INSERT_LIBRARIES` nhưng bị SIP hạn chế, nên thường chuyển sang Frida.
+## Key takeaways
+- LD_PRELOAD loads your library before libc, your same-named function wins. It only intercepts functions called through the PLT (dynamic libraries).
+- In a hook, get the real function with `dlsym(RTLD_NEXT, "name")` and call it back so the program runs normally.
+- Hooking `strcmp` exposes the password right away if the crackme compares strings with strcmp.
+- ptrace is the base of gdb/strace/ltrace. A process can only have one tracer attached.
+- Linux anti-debug often uses `ptrace(PTRACE_TRACEME)`: failure means it's being debugged. Get past it with an LD_PRELOAD hook of ptrace returning 0.
+- macOS has `DYLD_INSERT_LIBRARIES` but SIP restricts it, so people usually switch to Frida.

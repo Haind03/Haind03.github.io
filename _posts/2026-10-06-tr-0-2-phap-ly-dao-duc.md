@@ -1,66 +1,45 @@
 ---
-title: "Bài 0.2: Pháp lý và đạo đức, phần ai cũng muốn bỏ qua"
+title: "Lesson 0.2: Legal and ethics, the part everyone wants to skip"
 date: 2026-10-06 08:01:00 +0700
-categories: ["Technique Reverse", "Phần 0 · Nhập môn"]
-tags: [reverse-engineering, nhap-mon]
+categories: ["Technique Reverse", "Part 00 · Getting Started"]
+tags: [reverse-engineering, basics]
 render_with_liquid: false
 ---
-Tôi biết bạn muốn nhảy thẳng vào IDA. Nhưng bài này quyết định bạn làm nghề này được lâu hay sớm dính rắc rối, nên đọc một lần cho xong.
+I know you want to jump straight into IDA. But this lesson decides whether you last in this field or get into trouble early, so read it once and be done.
 
-Kỹ thuật RE trung lập. Cùng một thao tác unpack, hook, patch, dùng để phân tích malware bảo vệ công ty thì là việc tốt, dùng để bẻ khoá phần mềm bán lại thì phạm luật. Khác nhau nằm ở **mục đích và sự cho phép**, không nằm ở công cụ.
+RE techniques are neutral. The same unpack, hook or patch is a good thing when you use it to analyze malware and protect a company, and breaks the law when you use it to crack software that's sold commercially. The difference is in the purpose and permission, not in the tool.
 
-## Ranh giới nói chung
+## The general boundary
 
-Không có một bộ luật chung cho cả thế giới, mỗi nước mỗi khác, nên đây chỉ là nguyên tắc định hướng chứ không phải tư vấn pháp lý.
+There's no single legal code for the whole world, every country is different, so this is a guiding principle and not legal advice.
 
-**Thường được chấp nhận:**
-- Reverse phần mềm **của chính bạn**, hoặc bạn được chủ sở hữu cho phép bằng văn bản.
-- Phân tích **malware** để phòng thủ, nghiên cứu, ứng cứu sự cố.
-- Chơi **CTF**, giải **crackme**, dùng binary làm ra để học.
-- Nghiên cứu nhằm **tương thích** (interoperability), ở nhiều nơi được luật miễn trừ có điều kiện.
-- Tìm lỗ hổng rồi **báo cáo có trách nhiệm** (coordinated disclosure) qua chương trình bug bounty hoặc liên hệ nhà sản xuất.
+What's usually accepted is reversing your own software, or software where the owner gave you written permission. Analyzing malware for defense, research and incident response is fine too, as is playing CTF, solving crackmes and using binaries made for learning. Research for interoperability is conditionally exempted by law in many places. And if you find vulnerabilities, you can report them responsibly (coordinated disclosure) through a bug bounty program or by contacting the vendor.
 
-**Dễ dính rắc rối:**
-- Bẻ khoá, vá license, chia sẻ bản crack của phần mềm thương mại.
-- Vượt qua DRM rồi phát tán nội dung.
-- Reverse hệ thống của người khác khi chưa được phép, kể cả "chỉ để xem".
-- Phá điều khoản sử dụng (EULA/ToS), nhất là mảng game online và dịch vụ cloud.
-- Công bố 0-day kèm exploit chạy được mà chưa cho nhà sản xuất cơ hội vá.
+What's easy to get into trouble with is cracking, patching licenses or sharing cracks of commercial software, and bypassing DRM and then distributing the content. Reversing someone else's system without permission is risky even "just to look". The same goes for breaking terms of use (EULA/ToS), especially in online games and cloud services, and for publishing a 0-day with a working exploit before the vendor has a chance to patch.
 
-Cụm "chỉ để học thôi mà" không phải lá chắn pháp lý. Phát tán công cụ hoặc bản vá mới là chỗ ranh giới bị vượt, chứ không phải lúc bạn ngồi đọc code một mình.
+"I'm just learning" is not a legal shield. Distributing tools or patches is where the line gets crossed, not when you sit reading code alone.
 
-## Vài khung luật nên biết tên
+## A few legal frameworks worth knowing by name
 
-Không cần thuộc, chỉ cần nghe tên là biết tra ở đâu khi cần:
+You don't need to memorize them, just know the names so you know where to look when needed. DMCA section 1201 in the US prohibits circumventing technical protection measures, but has exceptions for security research, interoperability and education, and those exceptions are reviewed periodically. The CFAA in the US covers unauthorized access to computer systems. The EU Software Directive allows decompilation for interoperability under certain conditions.
 
-- **DMCA (Mỹ), mục 1201** cấm vượt qua biện pháp bảo vệ kỹ thuật, nhưng có các ngoại lệ cho nghiên cứu bảo mật, tương thích, giáo dục. Ngoại lệ được rà soát định kỳ.
-- **CFAA (Mỹ)** về truy cập trái phép vào hệ thống máy tính.
-- **EU Software Directive** cho phép decompile nhằm tương thích trong điều kiện nhất định.
-- Việt Nam và nhiều nước có luật sở hữu trí tuệ và an ninh mạng riêng. Reverse để học thì không ai bắt, nhưng phát tán bản crack thì vi phạm bản quyền rõ ràng.
+Vietnam and many other countries have their own intellectual property and cybersecurity laws. Nobody will arrest you for reversing to learn, but distributing a crack is clearly copyright infringement.
 
-Thông điệp không phải "luật phức tạp nên thôi khỏi học", mà là "biết mình đang đứng ở đâu".
+The message isn't "the law is complicated so don't bother learning", it's "know where you're standing".
 
-## Đạo đức nghề, thứ luật không ghi
+## Professional ethics, what the law doesn't write down
 
-Luật đặt mức sàn. Người làm nghề tử tế tự đặt mức cao hơn:
+The law sets the floor. People who do this job decently set a higher bar. Get permission before touching someone else's system, since a saved permission email is your best friend. Keep the infection chain clean when analyzing malware, with an isolated lab and never letting the sample escape onto the real network. Lesson [0.3](/posts/tr-0-3-dung-lab-an-toan/) covers this in detail.
 
-- **Có phép trước khi đụng vào hệ thống của người khác.** Email xin phép còn lưu lại là bạn bè tốt nhất của bạn.
-- **Giữ sạch chuỗi lây nhiễm khi phân tích malware.** Lab cô lập, không để mẫu thoát ra mạng thật. Bài [0.3](/posts/tr-0-3-dung-lab-an-toan/) nói kỹ.
-- **Tìm được lỗ hổng thì báo, đừng bán cho chợ đen, đừng đăng khoe kèm exploit.** Cho nhà sản xuất thời gian vá (thường 90 ngày) rồi mới công bố chi tiết.
-- **Đừng dạy người khác làm điều bạn sẽ không dám ký tên vào.**
+If you find a vulnerability, report it. Don't sell it on the black market and don't post it to show off with an exploit. Give the vendor time to patch (usually 90 days) and only then publish the details. And don't teach others to do what you wouldn't sign your name to.
 
-## Series này đứng ở đâu
+## Where this series stands
 
-Tất cả bài thực hành trong series dùng một trong các loại sau, không có ngoại lệ:
+All the hands-on lessons in this series use one of three things, with no exceptions: crackmes and CTF binaries made by me or the community for learning, small programs we write ourselves and then reverse ourselves, or public malware samples used in an isolated lab for defensive purposes.
 
-- crackme và binary CTF do chính tôi hoặc cộng đồng tạo ra để học,
-- chương trình nhỏ do chúng ta tự viết rồi tự reverse,
-- mẫu malware công khai dùng trong lab cô lập, cho mục đích phòng thủ.
+No lesson teaches how to crack a specific commercial product. If you plan to use the skills you learn here to crack software that's sold commercially, the rest of the series isn't for you, and I can't help you when something goes wrong.
 
-Không có bài nào hướng dẫn bẻ khoá một sản phẩm thương mại cụ thể. Nếu bạn định dùng kỹ năng học được ở đây để crack phần mềm bán lại, phần còn lại của series không dành cho bạn, và tôi cũng không giúp được gì khi có chuyện.
+## Key takeaways
+Techniques are neutral, and purpose and permission decide right from wrong. Reversing your own stuff, CTF and defensive malware work are safe, while distributing cracks or bypassing DRM to distribute are illegal.
 
-## Checklist ghi nhớ
-- Kỹ thuật trung lập, mục đích và sự cho phép quyết định đúng sai.
-- Reverse đồ của mình, CTF, malware phòng thủ: an toàn. Phát tán crack, vượt DRM để phát tán: phạm luật.
-- Tìm lỗ hổng thì báo cáo có trách nhiệm, đừng vội công bố exploit.
-- Khi nghi ngờ, xin phép bằng văn bản trước.
+If you find a vulnerability, report it responsibly and don't rush to publish an exploit. When in doubt, get written permission first.

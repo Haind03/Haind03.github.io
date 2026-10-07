@@ -1,98 +1,77 @@
 ---
-title: "Bài 1.6: Từ source đến binary, và vì sao cùng một đoạn code lại ra hai kiểu khác nhau"
+title: "Lesson 1.6: From source to binary, and why the same code comes out in two different shapes"
 date: 2026-10-06 08:09:00 +0700
-categories: ["Technique Reverse", "Phần 1 · Nền tảng máy tính cho RE"]
+categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
-Có một câu hỏi người mới hay thắc mắc: tôi viết một hàm C rõ ràng mạch lạc, sao khi mở trong IDA nó biến thành một mớ assembly chẳng còn hình dạng gì của bản gốc? Câu trả lời nằm ở chặng đường từ source tới binary, và nhất là ở một anh chàng tên là optimizer. Hiểu chặng đường này, bạn sẽ bớt bực khi decompiler cho ra code kỳ cục, và quan trọng hơn, biết trước mình đang đối mặt với loại binary nào.
+Beginners often ask: I wrote a clean, clear C function, so why does it turn into a pile of assembly in IDA that looks nothing like the original? The answer is in the road from source to binary, and especially in a guy called the optimizer. Once you understand this road, you'll get less annoyed when the decompiler spits out weird code, and more importantly, you'll know ahead of time what kind of binary you're facing.
 
-## Dây chuyền biên dịch
+## The compilation pipeline
 
-Khi bạn gõ `gcc hello.c -o hello`, trông như một bước, nhưng thật ra có bốn công đoạn nối tiếp. Compiler chỉ là tên gọi chung.
+When you type `gcc hello.c -o hello`, it looks like one step, but there are actually four stages in a row. "Compiler" is just the umbrella name.
 
 ```
 hello.c
-   |  1. Preprocessor (tiền xử lý)
+   |  1. Preprocessor
    v
-hello.i   (C đã khai triển macro, #include)
-   |  2. Compiler (trình biên dịch thật sự)
+hello.i   (C with macros and #include expanded)
+   |  2. Compiler (the real compiler)
    v
 hello.s   (assembly)
-   |  3. Assembler (trình hợp dịch)
+   |  3. Assembler
    v
-hello.o   (object file, machine code nhưng chưa hoàn chỉnh)
-   |  4. Linker (trình liên kết)
+hello.o   (object file, machine code but not complete yet)
+   |  4. Linker
    v
-hello     (file thực thi)
+hello     (executable)
 ```
 
-Điểm qua từng khâu, vì mỗi khâu để lại dấu vết bạn gặp khi reverse:
+Each stage leaves traces you'll run into when reversing. The preprocessor handles every line starting with `#`: it pastes in the `#include` content, replaces `#define` macros, and strips comments. After this step all macros are gone. That's why a constant `#define MAX 100` in the source is just a bare `100` in the binary, with no trace of the name MAX.
 
-1. **Preprocessor** xử lý mọi dòng bắt đầu bằng `#`: dán nội dung `#include` vào, thay macro `#define`, bỏ comment. Sau bước này, mọi macro đã biến mất. Đó là lý do một hằng số `#define MAX 100` trong code gốc chỉ còn là số `100` trần trụi trong binary, không còn cái tên MAX nào cả.
+The compiler then translates the expanded C into assembly. This is the smartest stage, and where optimization happens, so your code gets transformed the most here. The assembler translates assembly (text) into machine code (binary) in an object file. The translation is almost one to one, nothing creative. Finally the linker puts the object files together, connects function calls between files, and attaches library code. This stage decides the static versus dynamic linking question right below.
 
-2. **Compiler** dịch C đã khai triển thành assembly. Đây là khâu thông minh nhất, và là nơi tối ưu hóa xảy ra. Code của bạn bị biến đổi nhiều nhất ở đây.
+## Static vs dynamic linking, what you see as soon as you open the file
 
-3. **Assembler** dịch assembly (văn bản) thành machine code (nhị phân) trong một object file. Dịch gần như một đổi một, không sáng tạo gì.
+Your program calls `printf`. But you didn't write `printf`, it lives in the C library. There are two ways to attach it.
 
-4. **Linker** ráp các object file lại, nối lời gọi hàm giữa các file, và gắn code thư viện. Khâu này quyết định chuyện static hay dynamic linking ngay dưới đây.
+With dynamic linking (the common default), the executable only contains a note saying it needs `printf` from an external library (libc.so on Linux, DLLs on Windows). At runtime the loader finds and loads that library. The file is small, and what matters to you is that looking at the import table shows right away which functions it uses. `CreateFileW`, `socket`, `RegOpenKey` are all exposed. This is the number one source of clues during triage.
 
-## Static vs dynamic linking, thứ bạn thấy ngay khi mở file
+With static linking, all the library code is stuffed straight into the executable at link time. The file bloats, and `printf` now sits mixed in with your code, with no import to look at. Reversing is harder because you have to tell apart the code you need to read from thousands of library functions. This is where FLIRT signatures (Lesson 3.4) save you, since they recognize and label known library functions so you can skip them.
 
-Chương trình của bạn gọi `printf`. Nhưng `printf` không do bạn viết, nó nằm trong thư viện C. Có hai cách gắn nó vào:
+Go and Rust lean toward static linking by default, so their binaries are big and full of runtime code, which is part of why they have a reputation for being hard to reverse.
 
-- **Dynamic linking** (mặc định phổ biến): file thực thi chỉ chứa một lời "nhắc nợ" rằng nó cần `printf` từ thư viện ngoài (libc.so trên Linux, các DLL trên Windows). Lúc chạy, loader mới tìm và nạp thư viện đó. File nhỏ, và quan trọng với bạn: nhìn vào bảng import là thấy ngay nó dùng những hàm nào. `CreateFileW`, `socket`, `RegOpenKey` lộ hết. Đây là nguồn manh mối số một khi triage.
+## Loader, the last stage at runtime
 
-- **Static linking**: toàn bộ code thư viện được nhét thẳng vào file thực thi lúc link. File phình to, và `printf` giờ nằm lẫn trong code của bạn, không còn import nào để nhìn. Reverse khó hơn vì bạn phải tự phân biệt đâu là code mình cần đọc, đâu là hàng nghìn hàm thư viện. Đây là lúc FLIRT signature (Bài 3.4) cứu bạn, nó nhận diện và dán nhãn các hàm thư viện đã biết để bạn bỏ qua.
+When you run the file, the OS calls the loader. It reads the header (PE or ELF, Lessons 1.7 and 1.8), maps the sections into memory with the right permissions (code is R-X, data is RW-), loads the needed dynamic libraries, fills in the import address table (IAT), handles relocations if ASLR changed the base, and only then jumps to the entry point. This whole process is why "what's on disk" and "what's in memory at runtime" aren't exactly the same, a point we touched on in Lesson 1.2.
 
-Go và Rust mặc định thiên về static linking, nên binary của chúng to và đầy code runtime, một phần lý do chúng mang tiếng khó reverse.
+## The optimizer, the main culprit that makes code hard to read
 
-## Loader, khâu cuối cùng lúc chạy
+Now the most important part of this lesson. The same C source built with different optimization levels gives assembly that's worlds apart.
 
-Khi bạn chạy file, hệ điều hành gọi loader: nó đọc header (PE hoặc ELF, Bài 1.7 và 1.8), ánh xạ các section vào bộ nhớ đúng quyền (code thì R-X, data thì RW-), nạp các thư viện dynamic cần thiết, điền bảng địa chỉ import (IAT), xử lý relocation nếu ASLR đổi base, rồi mới nhảy vào entry point. Toàn bộ quy trình này là lý do "thứ trên đĩa" và "thứ trong bộ nhớ lúc chạy" không hoàn toàn giống nhau, một điểm ta đã chạm ở Bài 1.2.
+The optimization level is set with the `-O` flag. With `-O0` there's no optimization: the compiler translates almost every C line faithfully, so the code is verbose with a lot of redundant instructions, but it sticks close to the source. This is a gift for reversers. `-O1` and `-O2` are moderate and heavy optimization, and `-O2` is the default for most release software. `-O3` is aggressive and sometimes even changes the loop structure, and `-Os` optimizes for size.
 
-## Optimizer, thủ phạm chính làm code khó đọc
+Here is what the optimizer does, and why it gives you a headache. Inlining stuffs a small function straight into where it's called, instead of a `call`. That's good for speed and bad for you: the tidy `is_valid()` in the source disappears and its logic is spread into the middle of the parent function. You search forever and never find `call is_valid` because it no longer exists as its own function.
 
-Giờ tới phần quan trọng nhất của bài. Cùng một source C, build với mức tối ưu khác nhau cho ra assembly khác nhau một trời một vực.
+Loop unrolling flattens a loop that runs 4 times into 4 blocks of instructions in a row and drops the counter variable too, so you no longer see a "loop". Strength reduction replaces an expensive operation with a cheap one: `x * 8` becomes `shl x, 3`, and `x / 2` becomes a shift. Division by a constant even gets turned into a strange multiplication by a reciprocal plus a shift, and doesn't look like a division at all. When you see an `imul` with a weirdly big constant followed by `shr`, it's likely just a harmless division.
 
-Mức tối ưu đặt bằng cờ `-O`:
-- `-O0`: không tối ưu. Compiler dịch gần như từng dòng C một cách thật thà. Code dài dòng, nhiều lệnh thừa, nhưng bám sát source. **Đây là món quà của reverser.**
-- `-O1`, `-O2`: tối ưu vừa và mạnh. `-O2` là mặc định của hầu hết phần mềm release.
-- `-O3`: tối ưu tích cực, đôi khi đổi cả cấu trúc vòng lặp.
-- `-Os`: tối ưu theo kích thước.
+Temp variables in the source are kept entirely in registers and never touch memory, so the decompiler has nothing to name and makes up `v1`, `v2`, `v3`. The instruction order can also differ from the source, if branches are merged, and code that never runs is simply deleted.
 
-Những gì optimizer làm, và vì sao chúng làm bạn đau đầu:
+The takeaway: when the decompiler gives you odd-looking code full of `v1 = v2 >> 3`, don't assume the author wrote it that way. The original source is very likely clean, and `-O2` just reshaped it. Conversely, if you build a binary yourself to learn (like in the lab), build with `-O0` to make it easier first, then try `-O2` to see the difference.
 
-- **Inlining**: một hàm nhỏ bị nhét thẳng vào nơi gọi nó, thay vì `call`. Lợi cho tốc độ, hại cho bạn: hàm `is_valid()` gọn gàng trong source biến mất, logic của nó rải vào giữa hàm cha. Bạn tìm mãi không thấy `call is_valid` đâu vì nó không còn tồn tại như một hàm riêng.
+## Symbols, stripped, and debug info
 
-- **Loop unrolling**: một vòng lặp chạy 4 lần bị trải phẳng thành 4 khối lệnh nối nhau, bỏ luôn biến đếm. Nhìn vào không còn thấy "vòng lặp" nữa.
+Object files and executables can contain **symbols**: function names and global variable names, tied to addresses. When symbols are there, opening in IDA shows `check_password` instead of `sub_401500`, which is great.
 
-- **Strength reduction**: thay phép đắt bằng phép rẻ. `x * 8` thành `shl x, 3`. `x / 2` thành shift. Phép chia cho hằng số còn bị biến thành một màn nhân với số nghịch đảo kỳ dị kèm shift, nhìn hoàn toàn không ra là phép chia. Gặp một đoạn `imul` với hằng số to lạ rồi `shr`, nhiều khả năng đó chỉ là một phép chia vô hại.
+A non-stripped file keeps the symbol table. A lot of debug builds, and quite a few Linux binaries, fall into this category. A stripped file has had its symbol table removed (with the `strip` command), leaving only the minimal symbols needed for dynamic linking, so every internal function name becomes `sub_xxx`. Release software is usually stripped. Debug info (DWARF on Linux/ELF, PDB on Windows) is a layer thicker than symbols, with data types, source line numbers, and local variable names. It's usually kept separate (a `.pdb`, `.dSYM` file). Getting hold of a matching PDB is like hitting the jackpot, the decompiled output nearly has the variable names too.
 
-- **Mất biến trung gian**: biến tạm trong source bị giữ hẳn trong thanh ghi, không bao giờ chạm bộ nhớ, nên decompiler không có gì để đặt tên và bịa ra `v1`, `v2`, `v3`.
+During triage, knowing whether the file is stripped sets the right expectation for difficulty. Detect It Easy and the tools in Lesson 2.1 tell you this right away.
 
-- **Sắp xếp lại lệnh, gộp nhánh, loại code chết**: thứ tự lệnh có thể khác source, các nhánh if bị trộn, code không bao giờ chạy bị xóa thẳng.
+## Lab
 
-Thông điệp rút ra: khi decompiler cho ra code trông kỳ quặc với đống `v1 = v2 >> 3`, đừng vội nghĩ tác giả viết thế. Rất có thể source gốc sạch sẽ, chỉ là `-O2` đã nhào nặn nó. Ngược lại, nếu bạn tự tạo binary để học (như trong lab), hãy build với `-O0` cho dễ thở, rồi mới thử `-O2` để thấy sự khác biệt.
+The lab is at [labs/1.6/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/1.6). You build the same C file four ways (-O0 and -O2, with and without strip), then open them in Ghidra to see inlining, strength reduction, and the difference between stripped and non-stripped with your own eyes. The solution with comparisons is at [labs/1.6/solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/1.6/solution.md), but try it before opening.
 
-## Symbol, stripped, và debug info
+## Key takeaways
+Compilation has four stages: preprocessor, compiler, assembler, linker, and macros disappear right at stage one. Dynamic linking exposes imports, which are golden clues during triage, while static linking stuffs library code inside and makes things harder. At runtime the loader maps sections, loads DLLs, fills the IAT and handles relocations, so "on disk" differs from "in memory".
 
-Trong object file và file thực thi có thể có **symbol**: tên hàm, tên biến toàn cục, gắn với địa chỉ. Khi symbol còn đó, mở trong IDA bạn thấy luôn `check_password` thay vì `sub_401500`, sướng vô cùng.
-
-- File **không stripped** còn giữ bảng symbol. Nhiều phần mềm build debug, và khá nhiều binary Linux, rơi vào loại này.
-- File **stripped** đã bị gỡ bảng symbol (bằng lệnh `strip`), chỉ còn những symbol tối thiểu cần cho dynamic linking. Mọi tên hàm nội bộ biến thành `sub_xxx`. Phần mềm release thường stripped.
-- **Debug info** (DWARF trên Linux/ELF, PDB trên Windows) là tầng thông tin dày hơn cả symbol: kiểu dữ liệu, số dòng source, tên biến cục bộ. Thường tách riêng (file `.pdb`, `.dSYM`). Vớ được file PDB đi kèm là coi như trúng số, decompile ra gần như có cả tên biến.
-
-Khi triage, biết file stripped hay không cho bạn kỳ vọng đúng về độ khó. Detect It Easy và các công cụ ở Bài 2.1 nói ngay điều này.
-
-## Lab tự làm
-
-Lab ở [labs/1.6/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/1.6). Bạn sẽ build cùng một file C bốn kiểu (-O0 và -O2, có strip và không), rồi mở trong Ghidra để tự mắt thấy inlining, strength reduction, và sự khác biệt giữa stripped với không stripped. Lời giải kèm đối chiếu ở [labs/1.6/solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/1.6/solution.md), nhưng thử trước khi mở.
-
-## Checklist ghi nhớ
-- Biên dịch có bốn khâu: preprocessor, compiler, assembler, linker. Macro biến mất ngay ở khâu một.
-- Dynamic linking để lộ import (manh mối vàng khi triage), static linking nhét code thư viện vào trong, khó hơn.
-- Loader lúc chạy ánh xạ section, nạp DLL, điền IAT, xử lý relocation. "Trên đĩa" khác "trong bộ nhớ".
-- Optimizer là thủ phạm chính làm code khó đọc: inlining, loop unrolling, strength reduction, mất biến trung gian.
-- Code decompile kỳ cục thường do `-O2`, không phải do tác giả. Tự build để học thì dùng `-O0`.
-- Stripped là mất hết tên hàm nội bộ. Có PDB/DWARF đi kèm là như trúng số.
+The optimizer is the main culprit behind hard-to-read code through inlining, loop unrolling, strength reduction, and lost intermediate variables. Weird decompiled code is usually from `-O2`, not the author, and when building your own binaries to learn you should use `-O0`. A stripped file has lost all internal function names, and a PDB/DWARF alongside is like hitting the jackpot.

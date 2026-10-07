@@ -1,100 +1,100 @@
 ---
-title: "Bài 20.3: Đồ án cuối, reverse trọn một chương trình và viết báo cáo"
+title: "Lesson 20.3: Final project, fully reverse a program and write the report"
 date: 2026-10-06 10:01:00 +0700
-categories: ["Technique Reverse", "Phần 20 · Thực chiến"]
+categories: ["Technique Reverse", "Part 20 · Real-World Practice"]
 tags: [reverse-engineering, ctf]
 render_with_liquid: false
 ---
-Đây là bài cuối của cả series. Mọi thứ bạn học từ Phần 0 tới giờ, đọc assembly, dựng lại struct, unpack, vượt anti-debug, viết keygen, trích config, bây giờ gom lại thành một việc duy nhất: cầm một chương trình bạn chưa từng thấy bên trong, và nói cho người khác biết nó hoạt động thế nào. Không phải một crackme mười phút, mà một mục tiêu đủ lớn để bạn phải lên kế hoạch, ghi chép nhiều ngày, rồi viết lại thành một báo cáo mà người khác đọc là hiểu.
+This is the last lesson of the whole series. Everything you learned from Part 0 until now, reading assembly, rebuilding structs, unpacking, getting past anti-debug, writing keygens, extracting configs, now comes together into one single job: take a program you've never seen the inside of, and tell other people how it works. Not a ten-minute crackme, but a target big enough that you have to plan, keep notes over several days, and then write it up as a report that others can read and understand.
 
-Giải crackme là chạy nước rút. Đồ án này là chạy đường dài. Kỹ năng khác nhau, và nghề RE thật sự sống ở đường dài.
+Solving crackmes is a sprint. This project is a long run. They're different skills, and the real RE job lives in the long run.
 
-## Chọn mục tiêu cho đúng
+## Pick the right target
 
-Chọn sai mục tiêu là hỏng cả đồ án, hoặc quá dễ nên không học được gì, hoặc quá khó nên bỏ cuộc giữa chừng. Vài lựa chọn hợp lý và hợp pháp:
+Pick the wrong target and the whole project falls apart, either too easy so you learn nothing, or too hard so you give up halfway. A few reasonable and legal choices:
 
-- **Một chương trình của chính bạn**, build rồi vứt source đi, tự reverse lại. Nghe hơi giả, nhưng bạn có đáp án để tự chấm, rất tốt cho lần đầu.
-- **Một crackme nhiều tầng** từ crackmes.one cấp 4 trở lên, loại có cả thuật toán serial lẫn một lớp bảo vệ.
-- **Một challenge CTF rev cỡ lớn**, ví dụ một bài Flare-On cuối mùa (bài 7 tới 10 thường là cả một chương trình thật).
-- **Một phần mềm mã nguồn mở**, reverse rồi so với source để kiểm chứng mình đọc đúng không.
+- **A program of your own**, build it, throw away the source, and reverse it yourself. Sounds a bit fake, but you have the answer key to grade yourself, which is great for a first time.
+- **A multi-layer crackme** from crackmes.one at level 4 or above, the kind that has both a serial algorithm and a layer of protection.
+- **A large CTF rev challenge**, for example a late-season Flare-On challenge (challenges 7 to 10 are often a whole real program).
+- **An open-source program**, reverse it and then compare with the source to check whether you read it correctly.
 
-Nhắc lại ranh giới ở [Bài 0.2](/posts/tr-0-2-phap-ly-dao-duc/): đừng chọn một sản phẩm thương mại rồi crack, đừng đụng hệ thống của người khác khi chưa được phép. Đồ án này để chứng minh kỹ năng, không phải để gây rắc rối.
+A reminder of the boundary in [Lesson 0.2](/posts/tr-0-2-phap-ly-dao-duc/): don't pick a commercial product and crack it, don't touch someone else's system without permission. This project is to prove your skills, not to cause trouble.
 
-Một dấu hiệu mục tiêu vừa tầm: bạn triage xong trong một buổi tối và vẫn còn tò mò, chứ không phải nản.
+One sign of a right-sized target: you finish triage in one evening and you're still curious, not discouraged.
 
-## Quy trình đồ án
+## The project workflow
 
-Đây là [quy trình bốn bước](/posts/tr-0-4-quy-trinh-reverse/) ở Phần 0, nhưng kéo giãn ra cho một mục tiêu lớn.
+This is the [four-step process](/posts/tr-0-4-quy-trinh-reverse/) from Part 0, but stretched out for a large target.
 
-### 1. Xác định phạm vi và câu hỏi
+### 1. Define the scope and questions
 
-Đừng nói "tôi sẽ reverse hết chương trình này". Chương trình thật có hàng nghìn hàm, phần lớn là thư viện và boilerplate, bạn không cần đọc hết. Thay vào đó viết ra vài câu hỏi cụ thể, ví dụ:
+Don't say "I'll reverse this whole program". A real program has thousands of functions, most of them libraries and boilerplate, and you don't need to read them all. Instead write down a few concrete questions, for example:
 
-- Chương trình kiểm tra license bằng thuật toán gì?
-- Nó lưu dữ liệu ở đâu, định dạng ra sao?
-- Nó nói chuyện với server nào, giao thức gì?
-- Có cơ chế chống phân tích nào không?
+- What algorithm does the program use to check the license?
+- Where does it store data, and in what format?
+- Which server does it talk to, and with what protocol?
+- Are there any anti-analysis mechanisms?
 
-Câu hỏi rõ thì bạn biết khi nào xong. Không có câu hỏi, bạn sẽ đọc assembly tới sáng mà chẳng để làm gì.
+With clear questions you know when you're done. Without questions, you'll read assembly until morning for nothing.
 
 ### 2. Triage
 
-Áp [Bài 2.1](/posts/tr-2-1-triage-die-strings-pebear/): loại file, ngôn ngữ, compiler, packed hay không, 32 hay 64 bit, chuỗi đáng chú ý, import. Kết quả triage quyết định bạn dùng bộ công cụ nào (dnSpy cho .NET, JADX cho Android, IDA/Ghidra cho native, GoReSym cho Go...). Ghi lại ngay hash của file để sau này đối chiếu.
+Apply [Lesson 2.1](/posts/tr-2-1-triage-die-strings-pebear/): file type, language, compiler, packed or not, 32 or 64 bit, notable strings, imports. The triage result decides which toolset you use (dnSpy for .NET, JADX for Android, IDA/Ghidra for native, GoReSym for Go...). Record the file hash right away for later cross-checking.
 
-### 3. Lập bản đồ chức năng
+### 3. Map the functionality
 
-Trước khi đào sâu, vẽ bản đồ tổng thể. Tìm `main` thật ([Bài 3.1](/posts/tr-3-1-hello-world-tim-main-that/)), đi từ các chuỗi và import quan trọng để khoanh vùng những khối chức năng lớn (khởi tạo, giao diện, xử lý dữ liệu, mạng, bảo vệ). Đổi tên và ghi chú ngay trong IDA/Ghidra khi hiểu tới đâu. Mục tiêu bước này không phải hiểu từng dòng, mà biết "chỗ thú vị ở đâu" để bước sau đào đúng chỗ.
+Before digging deep, draw the overall map. Find the real `main` ([Lesson 3.1](/posts/tr-3-1-hello-world-tim-main-that/)), and work from important strings and imports to carve out the big functional blocks (initialization, UI, data handling, network, protection). Rename and annotate right in IDA/Ghidra as you understand things. The goal of this step isn't to understand every line, but to know "where the interesting part is" so the next step digs in the right place.
 
-Mẹo: một sơ đồ khối đơn giản vẽ tay hoặc trong file ghi chú, mỗi khối một dòng, kéo bạn ra khỏi cảm giác lạc trong biển hàm.
+Tip: a simple block diagram drawn by hand or in a notes file, one line per block, pulls you out of the feeling of being lost in a sea of functions.
 
-### 4. Phân tích sâu các thành phần chính
+### 4. Deep analysis of the main components
 
-Giờ mới đào. Với mỗi câu hỏi ở bước 1, đi vào đúng khối đã khoanh vùng và áp kỹ thuật phù hợp:
+Only now do you dig. For each question from step 1, go into the block you carved out and apply the right technique:
 
-- Thuật toán kiểm tra hoặc crypto: nhận diện hằng số ([Bài 16.1](/posts/tr-16-1-nhan-dien-hang-so-crypto/)), viết lại bằng Python hoặc giải bằng Z3 ([Bài 16.4](/posts/tr-16-4-viet-lai-python-z3/)).
-- Lớp bảo vệ: unpack ([Phần 14](https://github.com/Haind03/Technique-Reverse/tree/main/phan-14-packer-obfuscation)), vượt anti-debug ([Phần 15](https://github.com/Haind03/Technique-Reverse/tree/main/phan-15-anti-reverse)).
-- Định dạng dữ liệu hoặc giao thức: dựng lại spec ([Bài 18.7](/posts/tr-18-7-reverse-giao-thuc-dinh-dang-file/)).
-- Xác nhận giả thuyết bằng dynamic: đặt breakpoint, xem giá trị thật, hoặc hook bằng Frida ([Bài 17.2](/posts/tr-17-2-frida-toan-tap/)).
+- Check algorithm or crypto: identify constants ([Lesson 16.1](/posts/tr-16-1-nhan-dien-hang-so-crypto/)), rewrite in Python or solve with Z3 ([Lesson 16.4](/posts/tr-16-4-viet-lai-python-z3/)).
+- Protection layer: unpack ([Part 14](https://github.com/Haind03/Technique-Reverse/tree/main/phan-14-packer-obfuscation)), get past anti-debug ([Part 15](https://github.com/Haind03/Technique-Reverse/tree/main/phan-15-anti-reverse)).
+- Data format or protocol: rebuild the spec ([Lesson 18.7](/posts/tr-18-7-reverse-giao-thuc-dinh-dang-file/)).
+- Confirm hypotheses dynamically: set breakpoints, look at real values, or hook with Frida ([Lesson 17.2](/posts/tr-17-2-frida-toan-tap/)).
 
-Cứ lặp static rồi dynamic rồi ghi chép cho tới khi trả lời xong các câu hỏi.
+Keep repeating static then dynamic then notes until you've answered all the questions.
 
-### 5. Tổng hợp phát hiện
+### 5. Consolidate the findings
 
-Khi đã trả lời đủ, dừng đào và bắt đầu viết. Gom các ghi chú rời rạc thành một câu chuyện mạch lạc: chương trình này là gì, hoạt động ra sao, điểm đáng chú ý nằm đâu.
+Once you've answered everything, stop digging and start writing. Gather the scattered notes into one coherent story: what this program is, how it works, where the notable points are.
 
-## Cấu trúc một báo cáo RE tốt
+## The structure of a good RE report
 
-Báo cáo là phần nhiều người bỏ qua và cũng là phần phân biệt người làm nghề với người chỉ nghịch tool. Một hàm bạn hiểu mà không viết lại được thì ba tháng sau coi như chưa từng hiểu. Dàn ý chuẩn:
+The report is the part many people skip and also the part that separates people who do this as a job from people who just play with tools. A function you understand but can't write up, three months later you may as well never have understood it. The standard outline:
 
-1. **Tóm tắt điều hành (executive summary).** Vài đoạn ngắn cho người không đọc kỹ thuật: đây là cái gì, kết luận chính, mức độ quan trọng. Viết phần này sau cùng nhưng đặt lên đầu.
-2. **Phương pháp và công cụ.** Bạn dùng gì, chạy trong môi trường nào (nhắc lab cô lập nếu là malware), để người khác tái hiện được.
-3. **Thông tin mẫu.** Tên file, kích thước, hash (MD5/SHA-256), loại file, compiler, phiên bản. Đây là danh tính của mục tiêu.
-4. **Kiến trúc chương trình.** Bản đồ tổng thể các thành phần và cách chúng liên kết. Một sơ đồ ở đây đáng giá nghìn dòng chữ.
-5. **Phát hiện chi tiết.** Phần ruột. Mỗi phát hiện kèm bằng chứng cụ thể: địa chỉ hàm, ảnh chụp pseudocode, đoạn assembly then chốt, giá trị quan sát được lúc chạy. Người đọc phải lần theo được.
-6. **IOC (nếu là malware).** Hash, domain, IP, mutex, khoá registry, đường dẫn file, kèm YARA/Sigma nếu có ([Bài 19.2](/posts/tr-19-2-ioc-yara-capa-sigma/)).
-7. **Kết luận và khuyến nghị.** Trả lời lại các câu hỏi ban đầu, nêu điểm còn bỏ ngỏ, và khuyến nghị (vá lỗi, chặn IOC, hoặc hướng phân tích tiếp).
+1. **Executive summary.** A few short paragraphs for people who won't read the technical parts: what this is, the main conclusion, how much it matters. Write this part last but put it first.
+2. **Methodology and tools.** What you used, what environment you ran in (mention the isolated lab if it's malware), so others can reproduce it.
+3. **Sample information.** File name, size, hashes (MD5/SHA-256), file type, compiler, version. This is the target's identity.
+4. **Program architecture.** The overall map of the components and how they connect. A diagram here is worth a thousand words.
+5. **Detailed findings.** The meat. Every finding comes with concrete evidence: function address, pseudocode screenshot, the key assembly snippet, values observed at runtime. The reader has to be able to follow along.
+6. **IOCs (if it's malware).** Hashes, domains, IPs, mutexes, registry keys, file paths, with YARA/Sigma if you have it ([Lesson 19.2](/posts/tr-19-2-ioc-yara-capa-sigma/)).
+7. **Conclusions and recommendations.** Answer the original questions again, note what's still open, and give recommendations (patch the bug, block the IOCs, or directions for further analysis).
 
-Nguyên tắc vàng: **mọi khẳng định phải có bằng chứng.** "Chương trình mã hoá bằng RC4" là một câu nói suông cho tới khi bạn chỉ ra hàm KSA tại địa chỉ nào. Đừng đoán rồi viết như đã chứng minh.
+Golden rule: **every claim needs evidence.** "The program encrypts with RC4" is just an empty sentence until you point out which address the KSA function is at. Don't guess and then write it as if proven.
 
-Template đầy đủ để điền nằm ở [labs/20.3/bao-cao-mau.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/20.3/bao-cao-mau.md).
+The full template to fill in is at [labs/20.3/bao-cao-mau.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/20.3/bao-cao-mau.md).
 
-## Checklist ghi nhớ
-- Chọn mục tiêu vừa tầm và hợp pháp, không quá dễ cũng không quá khó.
-- Bắt đầu bằng câu hỏi cụ thể, không ôm đồm "reverse hết".
-- Triage, lập bản đồ, rồi mới đào sâu đúng chỗ, lặp static và dynamic.
-- Viết báo cáo có cấu trúc, mọi khẳng định kèm bằng chứng (địa chỉ, pseudocode, giá trị runtime).
-- Báo cáo viết được thì mới thật sự là đã hiểu.
+## Key takeaways
+- Pick a right-sized and legal target, not too easy and not too hard.
+- Start with concrete questions, don't take on "reverse everything".
+- Triage, map, and only then dig deep in the right place, repeating static and dynamic.
+- Write a structured report, every claim with evidence (address, pseudocode, runtime value).
+- If you can write it up, only then have you really understood it.
 
-## Lời kết
+## Closing words
 
-Bạn đã đi từ chỗ mở IDA lên và hoảng vì biển assembly, tới chỗ tự tay unpack, vượt anti-debug, viết keygen, trích config C2 và viết được một báo cáo hoàn chỉnh. Đó là một chặng đường dài và bạn nên tự hào.
+You've gone from opening IDA and panicking at a sea of assembly, to unpacking, getting past anti-debug, writing keygens, extracting C2 configs and writing a complete report yourself. That's a long road and you should be proud.
 
-RE không có đích cuối. Luôn có một packer mới, một kiến trúc mới, một protector tinh vi hơn. Từ đây bạn chọn hướng đào sâu: phân tích malware và threat intel, nghiên cứu lỗ hổng và exploit, hay mảng mobile và game. Mỗi hướng là một series riêng đáng cả năm trời. Cứ giữ thói quen luyện đều ở [crackmes.one và Flare-On](/posts/tr-tai-nguyen-tai-lieu-hoc/), và quan trọng nhất là giữ cái tò mò đã kéo bạn tới tận đây.
+RE has no finish line. There's always a new packer, a new architecture, a more sophisticated protector. From here you choose a direction to go deeper: malware analysis and threat intel, vulnerability research and exploits, or mobile and games. Each direction is its own series worth a whole year. Just keep the habit of practicing steadily on [crackmes.one and Flare-On](/posts/tr-tai-nguyen-tai-lieu-hoc/), and most important, keep the curiosity that brought you all the way here.
 
-Và nhớ lại [Bài 0.2](/posts/tr-0-2-phap-ly-dao-duc/): kỹ năng này mạnh, dùng nó cho việc tử tế. Chúc bạn reverse vui.
+And remember [Lesson 0.2](/posts/tr-0-2-phap-ly-dao-duc/): this skill is powerful, use it for good things. Happy reversing.
 
-## Cạm bẫy thường gặp
-- Đào quá sâu vào code thư viện không liên quan tới câu hỏi, tốn hàng giờ vô ích.
-- Không ghi chép, tới lúc viết báo cáo phải làm lại từ đầu.
-- Kết luận không có bằng chứng, báo cáo mất giá trị.
-- Chọn mục tiêu quá tham vọng rồi bỏ cuộc.
+## Common pitfalls
+- Digging too deep into library code unrelated to your questions, wasting hours for nothing.
+- Not taking notes, so when it's time to write the report you have to start over.
+- Conclusions without evidence, the report loses its value.
+- Picking a target that's too ambitious and then giving up.

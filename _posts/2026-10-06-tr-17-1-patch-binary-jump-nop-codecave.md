@@ -1,109 +1,95 @@
 ---
-title: "Bài 17.1: Patch binary, đổi một byte để đổi số phận chương trình"
+title: "Lesson 17.1: Patching binaries, changing one byte to change the program's fate"
 date: 2026-10-06 09:40:00 +0700
-categories: ["Technique Reverse", "Phần 17 · Patch, Hook, Injection & Instrumentation"]
+categories: ["Technique Reverse", "Part 17 · Patching, Hooking, Injection"]
 tags: [reverse-engineering, frida, hooking]
 render_with_liquid: false
 ---
-Reverse để hiểu là một chuyện, nhưng nhiều lúc bạn muốn chương trình **cư xử khác đi**: bỏ qua một check phiền phức, tắt một thông báo, cho một nhánh luôn chạy. Patch là việc sửa trực tiếp vài byte của binary để làm điều đó. Nghe to tát nhưng bản chất thường chỉ là đổi một byte `74` thành `90`. Bài này cho bạn thấy đúng điều đó, trên một binary thật.
+Reversing to understand is one thing, but a lot of the time you want the program to behave differently: skip an annoying check, turn off a message, make a branch always run. Patching means directly editing a few bytes of the binary to do that. It sounds grand but it's usually just changing a `74` byte to `90`. This lesson shows you exactly that, on a real binary.
 
-Nhắc lại ranh giới ở [Bài 0.2](/posts/tr-0-2-phap-ly-dao-duc/): patch crackme của mình, binary CTF, hay phần mềm bạn có quyền thì thoải mái. Patch rồi phát tán bản crack của phần mềm thương mại thì phạm luật.
+A reminder of the boundary from [Lesson 0.2](/posts/tr-0-2-phap-ly-dao-duc/): patching your own crackmes, CTF binaries, or software you have the right to is fine. Patching and then distributing a crack of commercial software is illegal.
 
-## Hai cặp kỹ thuật nền tảng
+## Two foundational pairs of techniques
 
-Gần như mọi patch bạn làm trong đời rơi vào một trong hai nhóm.
+Almost every patch you'll ever make falls into one of two groups.
 
-**Đổi lệnh nhảy có điều kiện.** Nhớ từ [Bài 1.3](/posts/tr-1-3-assembly-1-thanh-ghi-lenh-co-ban/): cặp `cmp`/`test` rồi `j*` chính là một câu `if`. Muốn đổi kết quả câu `if` đó, bạn sửa chính lệnh nhảy. Vài opcode nhảy ngắn (short jump, 1 byte toán hạng) hay gặp:
+The first is changing a conditional jump. Remember from [Lesson 1.3](/posts/tr-1-3-assembly-1-thanh-ghi-lenh-co-ban/) that a `cmp`/`test` pair followed by `j*` is just an `if` statement. To change the outcome of that `if`, you edit the jump instruction itself. A few short-jump opcodes (1 byte operand) you see often:
 
-| Lệnh | Opcode | Ý nghĩa |
+| Instruction | Opcode | Meaning |
 |---|---|---|
-| `je` / `jz` | `74` | nhảy nếu bằng / ZF=1 |
-| `jne` / `jnz` | `75` | nhảy nếu khác / ZF=0 |
-| `jmp` short | `EB` | nhảy vô điều kiện |
+| `je` / `jz` | `74` | jump if equal / ZF=1 |
+| `jne` / `jnz` | `75` | jump if not equal / ZF=0 |
+| `jmp` short | `EB` | unconditional jump |
 
-Ba cách sửa một lệnh nhảy:
-- Đổi `74` thành `75` (hoặc ngược lại): **đảo** điều kiện, nhánh nào đang chạy thì đổi sang nhánh kia.
-- Đổi `74` thành `EB`: biến nhảy có điều kiện thành **luôn nhảy**.
-- Ghi đè `74 xx` bằng `90 90`: **NOP**, xoá luôn lệnh nhảy, chương trình luôn rơi xuống nhánh ngay sau.
+There are three ways to edit a jump. You can change `74` to `75` (or the reverse), which inverts the condition so whichever branch was running swaps to the other. You can change `74` to `EB`, which turns the conditional jump into an always-jump. Or you can overwrite `74 xx` with `90 90`, a NOP that deletes the jump entirely so the program always falls through to the branch right after.
 
-**NOP một lệnh.** `90` là opcode của `nop` (no operation), chẳng làm gì. Muốn vô hiệu một lệnh (một `call` kiểm tra license, một lệnh gán giá trị phiền phức) mà không làm lệch địa chỉ các lệnh khác, bạn ghi đè nó bằng đúng số byte `90`. Một `call` dài 5 byte thì thay bằng năm con `90`.
+The second is NOPing an instruction. `90` is the opcode of `nop` (no operation), which does nothing. To disable an instruction (a `call` that checks the license, an annoying assignment) without shifting the addresses of other instructions, you overwrite it with exactly that many `90` bytes. A 5-byte `call` gets replaced by five `90`s.
 
-Quy tắc vàng khi NOP: **đếm cho đúng số byte**. Lệnh cũ dài bao nhiêu byte thì phải phủ bấy nhiêu con `90`, không thừa không thiếu. Thiếu một byte là phần đuôi lệnh cũ trở thành một lệnh rác, lệch toàn bộ phần sau, chương trình crash ngay.
+The golden rule of NOPing is to count the bytes correctly. However many bytes the old instruction was, you cover it with that many `90`s, no more and no less. Miss one byte and the tail of the old instruction turns into a junk instruction, everything after it is misaligned, and the program crashes right away.
 
-## Làm thật: patch một crackme
+## For real: patching a crackme
 
-Lấy crackme `patchme` trong [labs/17.1](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/17.1). Nó so mật khẩu với `s3cr3t`. Đây là `main` sau khi `objdump -d -M intel` (số liệu thật từ build gcc trên Linux):
+Take the crackme `patchme` in [labs/17.1](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/17.1). It compares the password to `s3cr3t`. Here's `main` after `objdump -d -M intel` (real output from a gcc build on Linux):
 
 ```asm
-4011f2:  e8 7f ff ff ff   call  401176 <check>   ; gọi hàm check, kết quả ở eax
-4011f7:  85 c0            test  eax, eax         ; eax == 0 (sai) ?
-4011f9:  74 16            je    401211           ; nếu sai, nhảy tới nhánh "Wrong"
-4011fb:  48 8d 05 ...     lea   rax, [rip+0xe1e] ; nhánh "Correct! Access granted."
+4011f2:  e8 7f ff ff ff   call  401176 <check>   ; call the check function, result in eax
+4011f7:  85 c0            test  eax, eax         ; eax == 0 (wrong)?
+4011f9:  74 16            je    401211           ; if wrong, jump to the "Wrong" branch
+4011fb:  48 8d 05 ...     lea   rax, [rip+0xe1e] ; the "Correct! Access granted." branch
 401205:  e8 56 fe ff ff   call  401060 <puts>
 ...
-401211:  48 8d 05 ...     lea   rax, [rip+0xe21] ; nhánh "Wrong password."
+401211:  48 8d 05 ...     lea   rax, [rip+0xe21] ; the "Wrong password." branch
 ```
 
-Logic rõ ràng: `check` trả 0 khi sai, `test eax,eax` rồi `je` nhảy tới `401211` in "Wrong". Mật khẩu đúng thì eax khác 0, `je` không nhảy, rơi xuống `4011fb` in "Correct".
+The logic is clear: `check` returns 0 when wrong, `test eax,eax` then `je` jumps to `401211` and prints "Wrong". With the right password eax is non-zero, `je` doesn't jump, and it falls through to `4011fb` and prints "Correct".
 
-Muốn chương trình **luôn** báo Correct, ta cần `je` tại `4011f9` không bao giờ nhảy. Cách sạch nhất: NOP nó. Hai byte `74 16` thành `90 90`.
+To make the program always say Correct, we need the `je` at `4011f9` to never jump. The cleanest way is to NOP it. The two bytes `74 16` become `90 90`.
 
-Tìm vị trí trên đĩa. Chuỗi byte đứng ngay trước nó là `85 c0` (test eax,eax), nên pattern cần tìm là `85 c0 74 16`. Trong file này nó nằm ở **file offset 0x11f7**, nghĩa là byte `74` ở **0x11f9**. Sửa hai byte đó thành `90 90`:
+Find the location on disk. The bytes right before it are `85 c0` (test eax,eax), so the pattern to search for is `85 c0 74 16`. In this file it's at file offset 0x11f7, meaning the `74` byte is at 0x11f9. Change those two bytes to `90 90`:
 
 ```
-trước:  85 c0 74 16 ...
-sau:    85 c0 90 90 ...
+before:  85 c0 74 16 ...
+after:   85 c0 90 90 ...
 ```
 
-Kết quả chạy thật trên bản đã patch, nhập một mật khẩu **sai**:
+Result of a real run on the patched build, entering a wrong password:
 
 ```
 $ ./patchme_patched baisai
 Correct! Access granted.
 ```
 
-Một chương trình từng từ chối mọi mật khẩu sai giờ chấp nhận tất. Toàn bộ thay đổi: hai byte.
+A program that used to reject every wrong password now accepts them all. The entire change was two bytes.
 
-## Patch trên đĩa vs patch runtime
+## Patching on disk vs patching at runtime
 
-Vừa rồi là **patch trên đĩa**: sửa file, thay đổi vĩnh viễn, lần sau chạy vẫn còn. Công cụ: hex editor (HxD, ImHex) nếu bạn biết offset, hoặc x64dbg (sửa trong cửa sổ CPU bằng phím Space rồi menu Patches > Patch file để ghi ra file mới).
+What we just did was patching on disk: edit the file, the change is permanent and still there the next run. The tools are a hex editor (HxD, ImHex) if you know the offset, or x64dbg (edit in the CPU window with the Space key, then menu Patches > Patch file to write out a new file).
 
-**Patch runtime** là sửa byte trong bộ nhớ lúc đang debug, chỉ sống trong phiên đó. Dùng khi bạn muốn thử nhanh một thay đổi mà chưa muốn đụng file, hoặc khi code được giải mã/unpack lúc chạy nên trên đĩa không có để sửa. Trong x64dbg, chọn lệnh rồi Space để assemble lại tại chỗ.
+Runtime patching is editing bytes in memory while debugging, and it only lives for that session. Use it when you want to quickly try a change without touching the file, or when the code is decrypted/unpacked at runtime so it isn't on disk to edit. In x64dbg, select the instruction and press Space to reassemble in place.
 
-Mối quan hệ offset: địa chỉ bạn thấy trong debugger là địa chỉ ảo (ví dụ `0x4011f9`), còn trên đĩa là file offset (`0x11f9` ở ví dụ trên). Với một PE/ELF nạp ở base mặc định không ASLR, chênh lệch là một hằng số theo section; x64dbg và IDA tự quy đổi giúp bạn, nhưng khi tự sửa bằng hex editor thì phải tính đúng file offset (nhắc lại cách quy đổi RVA sang file offset ở [Bài 1.7](/posts/tr-1-7-dinh-dang-pe/)).
+The offset relationship matters here. The address you see in the debugger is a virtual address (for example `0x4011f9`), while on disk it's a file offset (`0x11f9` in the example above). For a PE/ELF loaded at the default base without ASLR, the difference is a per-section constant. x64dbg and IDA convert it for you, but when editing by hand in a hex editor you have to compute the file offset correctly (a reminder of how to convert RVA to file offset is in [Lesson 1.7](/posts/tr-1-7-dinh-dang-pe/)).
 
-## Code cave: khi không đủ chỗ tại chỗ
+## Code cave: when there isn't enough room in place
 
-Patch kiểu trên chỉ đổi được vài byte sẵn có. Nếu bạn cần **chèn thêm code** (ví dụ một đoạn tính toán mới) mà chỗ đó không đủ không gian, dùng code cave: một vùng byte `00` trống có sẵn trong binary (hay nằm cuối một section do căn lề). Quy trình:
+Patches like the above can only change a few existing bytes. If you need to insert extra code (say a new calculation) and there isn't enough space there, use a code cave: a region of empty `00` bytes already in the binary (often at the end of a section due to alignment).
 
-1. Tìm một cave đủ lớn (x64dbg có plugin tìm cave, hoặc tự dò vùng `00` dài trong section thực thi).
-2. Viết đoạn code mới của bạn vào cave.
-3. Tại chỗ cần can thiệp, đặt một `jmp` tới cave (thay cho lệnh gốc, nhớ chép lại lệnh gốc bị đè vào cave để chạy xong còn chạy nó).
-4. Cuối cave, `jmp` quay về ngay sau chỗ đã chèn.
+The process goes like this. Find a cave big enough (x64dbg has a plugin for finding caves, or scan for a long run of `00` in an executable section yourself), then write your new code into it. At the spot you want to intervene, put a `jmp` to the cave in place of the original instruction, and remember to copy the overwritten original instruction into the cave so it still runs. At the end of the cave, `jmp` back to right after the inserted spot.
 
-Cave biến giới hạn "chỉ sửa được tại chỗ" thành "chèn code tuỳ ý", đổi lại phải cẩn thận với địa chỉ nhảy.
+A cave turns the limit of "can only edit in place" into "insert arbitrary code", at the price of having to be careful with jump addresses.
 
-## Những cú vấp kinh điển
+## Classic stumbles
 
-- **Lệch kích thước lệnh.** Như đã nói, NOP thiếu/thừa byte là hỏng. Luôn xem lệnh cũ dài mấy byte trước khi ghi đè.
-- **Integrity check.** Nhiều chương trình tự tính checksum code của mình (xem [Bài 15.8](/posts/tr-15-8-integrity-check-anti-tamper/)). Patch code xong chạy lại thì nó phát hiện và thoát. Cách xử lý: đừng sửa code bị kiểm, mà vô hiệu hoá chính hàm check.
-- **Relocation và ASLR.** Nếu bạn chèn địa chỉ tuyệt đối trong code cave, hãy để ý binary có relocation không, nếu không địa chỉ sẽ sai khi base đổi.
-- **Patch nhầm chỗ.** Cùng một byte `74` xuất hiện hàng nghìn lần trong file. Luôn định vị bằng ngữ cảnh (cặp byte đứng trước, ví dụ `85 c0 74`) chứ đừng sửa đại.
+Instruction size mismatch is the first. As said, NOPing too few or too many bytes breaks it, so always check how many bytes the old instruction is before overwriting. Integrity checks are the second: many programs checksum their own code (see [Lesson 15.8](/posts/tr-15-8-integrity-check-anti-tamper/)), so if you patch the code and run again it detects it and exits. The way to handle it is to not edit the checked code and disable the check function itself instead.
 
-## Patch hay keygen?
+Relocation and ASLR come next. If you insert an absolute address in a code cave, pay attention to whether the binary has relocations, otherwise the address will be wrong when the base changes. And then there's patching the wrong place. The same `74` byte shows up thousands of times in a file, so always locate by context (the preceding bytes, e.g. `85 c0 74`) and don't just edit blindly.
 
-Hai con đường để "qua" một check serial, chọn theo bản chất bài:
+## Patch or keygen?
 
-- **Patch** khi chương trình chỉ hỏi đúng/sai một lần: NOP cái check, hoặc đảo cái nhảy. Nhanh, không cần hiểu thuật toán. Nhược: phải phát tán bản đã sửa, và dễ vỡ nếu có integrity check.
-- **Keygen** khi serial được sinh theo thuật toán từ username (xem [Bài 3.6](/posts/tr-3-6-lab-viet-keygen/)): bạn hiểu thuật toán rồi tự sinh serial hợp lệ, không đụng tới binary. Sạch hơn, nhưng đòi hiểu sâu logic.
+There are two roads to get past a serial check, and you pick by the nature of the challenge. A patch fits when the program only asks right/wrong once: NOP the check, or invert the jump. It's fast and needs no understanding of the algorithm, but you have to distribute the modified build, and it's fragile if there's an integrity check. A keygen fits when the serial is generated by an algorithm from the username (see [Lesson 3.6](/posts/tr-3-6-lab-viet-keygen/)): you understand the algorithm and generate valid serials yourself, without touching the binary. That's cleaner, but needs a deep understanding of the logic.
 
-Người mới hay patch, người giỏi chọn công cụ theo bài.
+Beginners patch, good people pick the tool to fit the challenge.
 
-## Checklist ghi nhớ
-- `74`=je, `75`=jne, `EB`=jmp, `90`=nop. Nhớ bốn con này là patch được phần lớn check đơn giản.
-- Ba cách sửa nhảy: đảo (74<->75), luôn nhảy (->EB), xoá nhảy (->90 90).
-- NOP phải phủ đúng số byte của lệnh cũ, không thừa không thiếu.
-- Định vị chỗ patch bằng ngữ cảnh byte, đừng sửa theo giá trị đơn lẻ.
-- Patch trên đĩa là vĩnh viễn, patch runtime chỉ sống trong phiên debug.
-- Code cave để chèn thêm code khi không đủ chỗ tại chỗ.
-- Gặp integrity check thì vô hiệu hàm check, đừng sửa code bị nó kiểm.
+## Key takeaways
+`74`=je, `75`=jne, `EB`=jmp, `90`=nop. Remember these four and you can patch most simple checks. There are three ways to edit a jump: invert it (74<->75), always jump (->EB), or delete it (->90 90). A NOP must cover exactly the number of bytes of the old instruction, no more and no less.
+
+Locate the patch spot by byte context and don't edit by a single value. Disk patches are permanent while runtime patches only live in the debug session, and a code cave lets you insert extra code when there isn't enough room in place. On meeting an integrity check, disable the check function and don't edit the code it checks.

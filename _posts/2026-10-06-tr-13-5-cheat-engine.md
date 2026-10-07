@@ -1,62 +1,60 @@
 ---
-title: "Bài 13.5: Cheat Engine, học bộ nhớ runtime qua trò chơi"
+title: "Lesson 13.5: Cheat Engine, learning runtime memory through games"
 date: 2026-10-06 09:19:00 +0700
-categories: ["Technique Reverse", "Phần 13 · Game: Unity, Unreal, Lua"]
+categories: ["Technique Reverse", "Part 13 · Games: Unity, Unreal, Lua"]
 tags: [reverse-engineering, game-hacking]
 render_with_liquid: false
 ---
-Trước khi đi tiếp, một câu dứt khoát: mọi thứ trong bài này chỉ dành cho game **offline, single-player của chính bạn**, hoặc cho Cheat Engine Tutorial đi kèm. Đụng vào game online là gian lận, vi phạm ToS, và ở nhiều nơi là phạm pháp. Ngoài ra anti-cheat sẽ ban bạn. Lý do ta học Cheat Engine không phải để ăn gian, mà vì nó là cách thực hành memory analysis trực quan nhất: bạn thấy giá trị trong RAM đổi theo thời gian thực, lần ra địa chỉ, rồi lần ra code đụng vào địa chỉ đó. Kỹ năng này dùng lại y nguyên khi phân tích malware hay bất kỳ tiến trình nào.
+Before going further, one firm sentence: everything in this lesson is only for offline, single-player games of your own, or for the bundled Cheat Engine Tutorial. Touching online games is cheating, violates the ToS, and in many places is illegal. On top of that, anti-cheat will ban you. We learn Cheat Engine not to cheat, but because it's the most visual way to practice memory analysis: you see values in RAM change in real time, trace the address, then trace the code that touches that address. The skill carries over unchanged when analyzing malware or any other process.
 
-Cheat Engine (CE) là một memory scanner cộng debugger cho Windows. Nó gắn vào một tiến trình đang chạy rồi cho bạn tìm kiếm, theo dõi, và sửa bộ nhớ của tiến trình đó.
+Cheat Engine (CE) is a memory scanner plus debugger for Windows. It attaches to a running process and lets you search, watch and modify that process's memory.
 
-## Scan: tìm địa chỉ của một giá trị
+## Scan: finding the address of a value
 
-Vấn đề cốt lõi: bạn thấy "máu = 100" trên màn hình, nhưng con số đó nằm ở địa chỉ nào trong hàng trăm MB bộ nhớ của game? CE giải bằng cách quét nhiều lần và lọc dần.
+The core problem: you see "health = 100" on screen, but where is that number among the hundreds of MB of the game's memory? CE solves it by scanning several times and filtering down.
 
-Hai kiểu quét hay dùng nhất:
+The two most used scan types are exact value and unknown initial value. With exact value you know the number. Health is 100, you type 100 and hit First Scan. CE may return thousands of addresses holding 100 (random coincidences). You go into the game and let health drop to 90, come back, type 90 and hit Next Scan. CE keeps only the addresses that just changed from 100 to 90. Repeat a few times and one or two addresses remain, that's the real health.
 
-**Exact value (biết giá trị).** Máu đang là 100, bạn gõ 100 rồi First Scan. CE trả về có khi hàng nghìn địa chỉ đang chứa 100 (trùng ngẫu nhiên). Bạn vào game cho máu tụt xuống 90, quay ra gõ 90 rồi Next Scan. CE chỉ giữ lại các địa chỉ vừa đổi từ 100 thành 90. Lặp vài lần là còn một hai địa chỉ, đó chính là máu thật.
+Unknown initial value is for when you don't know the number, because it's encrypted or not shown clearly (for example the health bar is just an image). For First Scan you pick "Unknown initial value". Then each time the value goes up you choose Increased value, when it goes down you choose Decreased value, and when it stays the same you choose Unchanged. This filters by the trend of change instead of by the number, which is extremely powerful for hidden values.
 
-**Unknown initial value (không biết giá trị).** Dùng khi con số bị mã hoá hoặc không hiện rõ (ví dụ thanh máu chỉ là hình). First Scan chọn "Unknown initial value". Rồi mỗi khi giá trị tăng bạn chọn **Increased value**, khi giảm chọn **Decreased value**, khi không đổi chọn **Unchanged**. Đây là lọc theo xu hướng thay đổi thay vì theo con số, cực mạnh cho giá trị ẩn.
+Picking the right data type matters too: 4 Bytes (int) is the default for most game values, but sometimes it's Float (fractional health), Double, or 2 Bytes. Wrong type and it will never show up.
 
-Chọn đúng kiểu dữ liệu cũng quan trọng: 4 Bytes (int) là mặc định cho phần lớn giá trị game, nhưng có khi là Float (máu lẻ), Double, hoặc 2 Bytes. Sai kiểu thì không bao giờ ra.
+Once found, double-click the address to move it to the lower table, then tick Active to freeze the value so the game can't subtract health anymore.
 
-Tìm xong, double-click địa chỉ để đưa xuống bảng dưới, rồi tick **Active** để freeze (đóng băng) giá trị, game không trừ máu được nữa.
+## The problem: the address changes every run
 
-## Vấn đề: địa chỉ đổi mỗi lần chạy
+You freeze health successfully, close the game, reopen it, and the old address points at garbage. Because the health object lives on the heap, it gets allocated somewhere different each run (plus ASLR, see Lesson 1.2 again). An absolute address is useless across sessions.
 
-Bạn freeze máu thành công, tắt game, mở lại, và địa chỉ cũ trỏ vào rác. Vì object máu nằm trên heap, mỗi lần chạy nó được cấp ở chỗ khác (cộng thêm ASLR, xem lại Bài 1.2). Địa chỉ tuyệt đối vô dụng qua các phiên.
+The fix is a pointer path: instead of remembering the final address, you find a chain of pointers starting from a fixed address (the game module's base, which doesn't change relatively) going through a few offsets to reach the value. Something like `[[base + 0x10] + 0x8] + 0x4C`. This chain is stable across runs because it hangs off the program's structure and not off the random heap location.
 
-Lời giải là **pointer path**: thay vì nhớ địa chỉ cuối, bạn tìm một chuỗi con trỏ xuất phát từ một địa chỉ cố định (base của module game, không đổi tương đối) đi qua vài offset tới được giá trị. Dạng `[[base + 0x10] + 0x8] + 0x4C`. Chuỗi này ổn định giữa các lần chạy vì nó bám vào cấu trúc chương trình chứ không bám vào chỗ heap ngẫu nhiên.
-
-CE có **Pointer Scan** để tự tìm: chuột phải địa chỉ máu, Pointer scan for this address, CE dò ngược xem con trỏ nào dẫn tới đó. Bạn chạy pointer scan, khởi động lại game, rồi rescan với địa chỉ mới để loại bớt path sai. Vài vòng là ra một pointer path dùng lại được.
+CE has Pointer Scan to find it automatically: right-click the health address, Pointer scan for this address, and CE works backwards to see which pointers lead there. You run the pointer scan, restart the game, then rescan with the new address to throw out the wrong paths. A few rounds and you get a reusable pointer path.
 
 ## Find out what accesses this address
 
-Đây là tính năng biến CE từ đồ chơi thành công cụ reverse thật sự. Chuột phải địa chỉ máu, chọn **Find out what accesses this address**. CE đặt một hardware breakpoint và liệt kê mọi lệnh đụng vào địa chỉ đó. Bạn sẽ thấy dòng kiểu:
+This is the feature that turns CE from a toy into a real reversing tool. Right-click the health address and choose Find out what accesses this address. CE sets a hardware breakpoint and lists every instruction that touches that address. You'll see lines like:
 
 ```
-mov [rax+4C], ecx      ; lệnh ghi máu mới
-sub [rbx+4C], edx      ; lệnh trừ máu khi trúng đòn
+mov [rax+4C], ecx      ; instruction that writes the new health
+sub [rbx+4C], edx      ; instruction that subtracts health on a hit
 ```
 
-Lệnh `sub [rbx+4C], edx` chính là nơi game trừ máu. Giờ bạn biết chính xác code nào xử lý máu, và có thể xem thanh ghi rbx để biết địa chỉ base của object nhân vật, từ đó suy ra cả struct. Đây đúng là tư duy "đi từ dữ liệu tới code" của Bài 0.4, chỉ khác là làm trên bộ nhớ sống.
+The instruction `sub [rbx+4C], edx` is where the game subtracts health. Now you know exactly which code handles health, and you can look at the rbx register to get the base address of the character object, and from there work out the whole struct. This is exactly the "go from data to code" mindset of Lesson 0.4, except done on live memory.
 
-## Auto Assembler và code injection
+## Auto Assembler and code injection
 
-Khi đã tìm thấy lệnh trừ máu, bạn có thể vô hiệu hoá nó. Đơn giản nhất là NOP (xem Bài 17.1): chuột phải lệnh, Replace with code that does nothing, CE ghi đè bằng nop, máu không trừ nữa. Nhưng NOP thô có thể hỏng logic khác dùng chung lệnh đó.
+Once you've found the instruction that subtracts health, you can disable it. The simplest way is a NOP (see Lesson 17.1): right-click the instruction, Replace with code that does nothing, CE overwrites it with nops, and health stops dropping. But a blunt NOP can break other logic that shares the same instruction.
 
-Cách sạch hơn là **code injection** qua **Auto Assembler (AA) script**. Ý tưởng giống code cave: bạn chèn một jump từ lệnh gốc tới một vùng trống, làm thêm việc của mình ở đó (ví dụ chỉ bỏ qua trừ máu khi là nhân vật của người chơi chứ không phải địa chỉ khác), rồi nhảy về. CE sinh sẵn khung script qua menu Auto Assemble, template "Code injection". Một AA script điển hình:
+The cleaner way is code injection through an Auto Assembler (AA) script. The idea is like a code cave: you insert a jump from the original instruction to an empty region, do your extra work there (for example skip the health subtraction only when it's the player's character and not some other address), then jump back. CE generates the script skeleton from the Auto Assemble menu, the "Code injection" template. A typical AA script:
 
 ```
 [ENABLE]
-aobscanmodule(hpInj, game.exe, 29 50 4C)   // tìm chuỗi byte của lệnh sub [rax+4C],edx
+aobscanmodule(hpInj, game.exe, 29 50 4C)   // find the byte pattern of the instruction sub [rax+4C],edx
 alloc(newmem, 256, hpInj)
 
 newmem:
-  cmp rax, [playerBase]     // chỉ chặn nếu là object người chơi
+  cmp rax, [playerBase]     // only block it if it's the player's object
   jne originalcode
-  jmp return                // bỏ qua lệnh trừ máu
+  jmp return                // skip the health subtraction
 originalcode:
   sub [rax+4C], edx
 return:
@@ -66,27 +64,23 @@ hpInj:
 
 [DISABLE]
 hpInj:
-  db 29 50 4C               // trả lại lệnh gốc
+  db 29 50 4C               // restore the original instruction
 ```
 
-`aobscanmodule` (array-of-bytes scan) tìm lệnh theo chuỗi byte thay vì địa chỉ cứng, nên script sống sót qua các lần chạy và cả vài bản cập nhật nhỏ. Đây là pattern bạn gặp lại khi viết hook (Bài 17.3).
+`aobscanmodule` (array-of-bytes scan) finds the instruction by byte pattern instead of a hard-coded address, so the script survives across runs and even some minor updates. This is a pattern you'll see again when writing hooks (Lesson 17.3).
 
-## ReClass.NET: dựng lại struct trong bộ nhớ
+## ReClass.NET: rebuilding structs in memory
 
-Khi `find out what accesses` cho bạn địa chỉ base của object nhân vật, bạn sẽ muốn biết cả struct: máu ở offset 0x4C, mana ở đâu, toạ độ ở đâu. **ReClass.NET** làm đúng việc đó: bạn trỏ nó vào địa chỉ base, nó hiển thị vùng nhớ dạng bảng và cho bạn gán kiểu cho từng offset (int, float, con trỏ, chuỗi, struct lồng nhau). Dần dần bạn dựng lại được định nghĩa struct của object giống hệt việc khôi phục struct trong IDA ở Bài 3.3, chỉ là làm trên bộ nhớ sống thay vì trên binary tĩnh. Struct dựng xong export ra C++ header, dùng lại khi viết tool.
+When `find out what accesses` gives you the base address of the character object, you'll want to know the whole struct: health at offset 0x4C, where's mana, where are the coordinates. ReClass.NET does exactly that: you point it at the base address, it shows the memory region as a table and lets you assign a type to each offset (int, float, pointer, string, nested struct). Bit by bit you rebuild the object's struct definition, just like recovering structs in IDA in Lesson 3.3, only on live memory instead of a static binary. Once the struct is built you export it to a C++ header and reuse it when writing tools.
 
-## Vì sao bài này quan trọng ngoài game
+## Why this lesson matters beyond games
 
-Gỡ bỏ lớp áo game đi, bạn vừa học: quét bộ nhớ để định vị dữ liệu, lần pointer path để có địa chỉ ổn định qua ASLR, hardware breakpoint để tìm code đụng vào dữ liệu, code injection qua AOB scan, và dựng lại struct runtime. Cả năm kỹ năng đó là bánh mì bơ của phân tích malware và của mọi dynamic analysis. Cheat Engine chỉ tình cờ là cách vui nhất để luyện chúng.
+Strip off the game costume and here's what you just learned: scanning memory to locate data, tracing pointer paths to get stable addresses through ASLR, hardware breakpoints to find code that touches data, code injection via AOB scan, and rebuilding structs at runtime. All five skills are the bread and butter of malware analysis and of any dynamic analysis. Cheat Engine just happens to be the most fun way to practice them.
 
-## Lab tự làm
-Xem [labs/13.5/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/13.5). Dùng Cheat Engine Tutorial đi kèm (hợp pháp, làm ra để học) hoặc một game offline của bạn: tìm giá trị bằng exact và unknown scan, dựng pointer path qua một lần khởi động lại, dùng find out what accesses để tìm lệnh xử lý, và thử một AA script đơn giản.
+## Lab
+See [labs/13.5/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/13.5). Use the bundled Cheat Engine Tutorial (legal, made for learning) or an offline game of your own: find values with exact and unknown scans, build a pointer path that survives a restart, use find out what accesses to find the handling instruction, and try a simple AA script.
 
-## Checklist ghi nhớ
-- Chỉ dùng cho game offline/single-player của mình. Online là gian lận và phạm pháp.
-- Exact value scan khi biết số, unknown + increased/decreased khi giá trị ẩn. Chọn đúng kiểu (4 Bytes, Float...).
-- Địa chỉ heap đổi mỗi lần chạy, phải tìm pointer path bám vào base module mới ổn định.
-- Find out what accesses this address đặt hardware breakpoint để tìm code đụng vào dữ liệu, đây là đi từ data tới code.
-- Code injection qua AA script + aobscanmodule sạch và bền hơn NOP thô.
-- ReClass.NET dựng lại struct runtime, giống khôi phục struct trong IDA nhưng trên bộ nhớ sống.
-- Các kỹ năng này dùng lại nguyên vẹn cho malware analysis và mọi dynamic analysis.
+## Key takeaways
+Only use it on your own offline/single-player games, since online is cheating and illegal. Use an exact value scan when you know the number, and unknown with increased/decreased when the value is hidden, picking the right type (4 Bytes, Float...). Heap addresses change every run, so you need a pointer path hanging off the module base to be stable.
+
+Find out what accesses this address sets a hardware breakpoint to find code that touches the data, which is going from data to code. Code injection via an AA script and aobscanmodule is cleaner and more durable than a blunt NOP. ReClass.NET rebuilds runtime structs, like recovering structs in IDA but on live memory, and all of these skills carry over fully to malware analysis and any dynamic analysis.

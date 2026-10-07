@@ -1,78 +1,78 @@
 ---
-title: "Bài 14.6: Deobfuscation tự động, để máy gỡ hộ thay vì cày tay"
+title: "Lesson 14.6: Automatic deobfuscation, let the machine unpick it instead of grinding by hand"
 date: 2026-10-06 09:25:00 +0700
-categories: ["Technique Reverse", "Phần 14 · Packer & Obfuscation"]
+categories: ["Technique Reverse", "Part 14 · Packers and Obfuscation"]
 tags: [reverse-engineering, packer, obfuscation]
 render_with_liquid: false
 ---
-Bài [14.4](/posts/tr-14-4-obfuscation-ky-thuat/) cho bạn thấy obfuscation trông như thế nào: control flow flattening biến một hàm gọn thành cái dispatcher khổng lồ, MBA biến `x + y` thành một biểu thức bit dài ngoằng, opaque predicate rải nhánh chết khắp nơi. Gỡ từng cái bằng tay thì làm được, nhưng với một binary vài nghìn hàm obfuscated thì bạn sẽ bỏ cuộc trước khi xong hàm thứ ba. Bài này nói về cách để công cụ làm phần nặng nhọc.
+Lesson [14.4](/posts/tr-14-4-obfuscation-ky-thuat/) showed you what obfuscation looks like: control flow flattening turns a tidy function into a giant dispatcher, MBA turns `x + y` into a long bit expression, opaque predicates scatter dead branches everywhere. Undoing each one by hand is doable, but with a binary of a few thousand obfuscated functions you'll give up before finishing the third. This lesson is about getting tools to do the heavy lifting.
 
-Ý tưởng chung của mọi công cụ deobfuscation tự động chỉ gói trong một câu: **nâng code lên một dạng trung gian (IR) sạch hơn, rút gọn trên đó bằng các quy tắc đại số hoặc bằng solver, rồi hạ xuống lại.** Khác nhau chỉ là chúng làm ở tầng nào và mạnh tới đâu.
+The common idea behind every automatic deobfuscation tool fits in one sentence: **lift the code to a cleaner intermediate form (IR), simplify on it with algebraic rules or a solver, then lower it back down.** They only differ in which layer they work at and how powerful they are.
 
-## Vì sao làm trên IR chứ không trên assembly
+## Why work on IR and not on assembly
 
-Assembly x86 rất rối để biến đổi tự động: cùng một phép toán có chục cách viết, cờ trạng thái (flags) thay đổi ngầm, lệnh dài ngắn khác nhau. Nếu cố viết quy tắc rút gọn thẳng trên assembly, bạn chết chìm trong trường hợp đặc biệt.
+x86 assembly is very messy to transform automatically: the same operation has a dozen ways of being written, status flags change implicitly, instruction lengths vary. If you try to write simplification rules directly on assembly, you drown in special cases.
 
-Nên công cụ nâng (lift) assembly lên một Intermediate Representation: một ngôn ngữ nhỏ, đều đặn, mỗi lệnh làm đúng một việc, không có tác dụng phụ ẩn. Trên IR, `x + y` luôn là `x + y`, và một biểu thức MBA tương đương `x + y` có thể rút gọn về đúng `x + y` bằng các luật đại số. Xong thì hạ (lower) ngược về dạng đọc được, hoặc đưa thẳng vào decompiler.
+So tools lift the assembly to an Intermediate Representation: a small, regular language where each instruction does exactly one thing, with no hidden side effects. On IR, `x + y` is always `x + y`, and an MBA expression equivalent to `x + y` can be simplified back to exactly `x + y` with algebraic laws. When done, lower it back to a readable form, or feed it straight into the decompiler.
 
-Hex-Rays gọi IR của nó là microcode. Ghidra gọi là P-Code. Binary Ninja có BNIL nhiều tầng. Mỗi tool deobfuscation bám vào một trong các IR đó.
+Hex-Rays calls its IR microcode. Ghidra calls it P-Code. Binary Ninja has the multi-level BNIL. Each deobfuscation tool hooks into one of those IRs.
 
-## D-810, gỡ ngay trong Hex-Rays
+## D-810, unpicking right inside Hex-Rays
 
-Nếu bạn dùng IDA Pro với Hex-Rays, D-810 là thứ nên biết đầu tiên. Nó là plugin cắm vào tầng microcode: trong lúc decompiler dựng pseudocode, D-810 chen vào, nhận ra các mẫu obfuscation quen và viết lại microcode trước khi bạn nhìn thấy kết quả.
+If you use IDA Pro with Hex-Rays, D-810 is the first thing to know. It's a plugin that hooks into the microcode layer: while the decompiler is building pseudocode, D-810 steps in, recognizes familiar obfuscation patterns and rewrites the microcode before you see the result.
 
-Nó mạnh nhất với ba thứ:
-- **MBA**: nhận diện và rút các biểu thức Mixed Boolean-Arithmetic về phép toán gốc.
-- **Opaque predicate**: phát hiện điều kiện luôn đúng hoặc luôn sai rồi cắt nhánh chết.
-- **Control flow flattening**: dựng lại luồng gốc từ dispatcher, trả về if/else/loop bình thường.
+It's strongest at three things:
+- **MBA**: recognizes and reduces Mixed Boolean-Arithmetic expressions back to the original operation.
+- **Opaque predicates**: detects conditions that are always true or always false and cuts the dead branch.
+- **Control flow flattening**: rebuilds the original flow from the dispatcher, returning normal if/else/loops.
 
-Cái hay là bạn không phải chạy một bước riêng rồi import kết quả. Cài rule phù hợp, nhấn F5, pseudocode hiện ra đã sạch. Điểm yếu: nó theo rule, nên gặp một biến thể obfuscation mà rule chưa biết thì bó tay, bạn phải tự viết thêm rule (D-810 cho phép) hoặc đổi cách.
+The nice part is you don't have to run a separate step and import the result. Install the right rules, press F5, and the pseudocode shows up already clean. The weakness: it follows rules, so when it meets an obfuscation variant the rules don't know, it's stuck, and you have to write more rules yourself (D-810 allows that) or change approach.
 
-## HexRaysDeob và dòng plugin microcode
+## HexRaysDeob and the microcode plugin line
 
-Trước D-810 có HexRaysDeob của Rolf Rolles, cũng làm ở tầng microcode và là một trong những minh chứng đầu tiên rằng microcode của Hex-Rays đủ mở để tự động gỡ obfuscation. Nó nhắm vào một số protector cụ thể (nổi tiếng với các mẫu của một họ malware thời đó). Giờ D-810 phổ biến hơn, nhưng đọc lại loạt bài của Rolles về microcode vẫn là cách tốt nhất để hiểu cơ chế bên dưới, chứ không chỉ bấm nút.
+Before D-810 there was Rolf Rolles' HexRaysDeob, also working at the microcode layer and one of the first demonstrations that Hex-Rays microcode is open enough to automatically undo obfuscation. It targeted some specific protectors (famous for samples from a malware family of that time). D-810 is more popular now, but rereading Rolles' microcode series is still the best way to understand the mechanism underneath, instead of just pressing buttons.
 
-Điểm chung của cả hai: chúng chữa triệu chứng ở đúng nơi triệu chứng sinh ra, tức là trong lúc decompile, nên kết quả ăn thẳng vào pseudocode.
+What they have in common: they treat the symptom right where it's produced, during decompilation, so the result goes straight into the pseudocode.
 
-## Miasm, khi bạn cần một bộ đồ nghề đầy đủ
+## Miasm, when you need a full toolkit
 
-Miasm không phải plugin cho một decompiler, mà là cả một framework Python: nó lift nhiều kiến trúc lên IR riêng, emulate được, có engine symbolic execution, và có expression simplifier. Vì nó là thư viện, bạn tự lập trình quy trình gỡ.
+Miasm isn't a plugin for a decompiler, it's a whole Python framework: it lifts many architectures to its own IR, can emulate, has a symbolic execution engine, and an expression simplifier. Since it's a library, you program the unpicking workflow yourself.
 
-Mẫu dùng điển hình: lift một hàm obfuscated lên IR của Miasm, cho symbolic execution chạy qua, thu được biểu thức tượng trưng của output theo input, rồi để simplifier rút gọn. Flattening tan ra vì symbolic execution đi theo luồng thật bất kể dispatcher; MBA tan ra vì simplifier biết các luật. Bạn trả giá bằng việc phải viết code, nhưng đổi lại kiểm soát hoàn toàn và không phụ thuộc rule có sẵn.
+A typical usage: lift an obfuscated function to Miasm's IR, run symbolic execution over it, get the symbolic expression of the output in terms of the input, then let the simplifier reduce it. Flattening melts away because symbolic execution follows the real flow regardless of the dispatcher; MBA melts away because the simplifier knows the laws. The price is that you have to write code, but in return you get full control and don't depend on ready-made rules.
 
-Cùng nhóm tư duy này còn có vài hướng khác đáng biết tên: **gtirb** (IR dạng rewriting của GrammaTech) cho việc viết lại binary, và **Souper** (superoptimizer dùng solver) cho việc tìm biểu thức tương đương ngắn hơn. Bạn ít khi cần tới chúng lúc mới học, nhưng biết chúng tồn tại giúp bạn không nghĩ D-810 là lựa chọn duy nhất.
+Of the same family of thinking there are a few other directions worth knowing by name: **gtirb** (GrammaTech's rewriting-style IR) for rewriting binaries, and **Souper** (a solver-based superoptimizer) for finding shorter equivalent expressions. You rarely need them when you're starting out, but knowing they exist keeps you from thinking D-810 is the only option.
 
-## Symbolic execution, vũ khí chung cho MBA và flattening
+## Symbolic execution, the common weapon for MBA and flattening
 
-Đây là tiếp cận tổng quát nhất, và cũng là cầu nối sang [Phần 18](https://github.com/Haind03/Technique-Reverse/tree/main/phan-18-nang-cao). Công cụ như Triton hay angr coi input là biến tượng trưng (symbolic), chạy qua code, và thay vì tính ra một con số thì tính ra một công thức. Hai ứng dụng trực tiếp cho deobfuscation:
+This is the most general approach, and also the bridge to [Part 18](https://github.com/Haind03/Technique-Reverse/tree/main/phan-18-nang-cao). Tools like Triton or angr treat the input as symbolic variables, run through the code, and instead of computing a number they compute a formula. Two direct uses for deobfuscation:
 
-- **Rút gọn MBA**: cho Triton build biểu thức tượng trưng của một đoạn MBA, rồi dùng simplifier hoặc Z3 chứng minh nó tương đương với biểu thức ngắn. Thực tế một biểu thức MBA ba chục phép bit thường rút về `a ^ b` hoặc `a + b`.
-- **Gỡ flattening**: symbolic/concolic execution đi theo luồng thực thi thật, nối các block gốc theo đúng thứ tự chạy, bỏ qua dispatcher. Từ trace đó dựng lại CFG sạch.
+- **Simplifying MBA**: have Triton build the symbolic expression of an MBA chunk, then use the simplifier or Z3 to prove it's equivalent to a short expression. In practice an MBA expression of thirty bit operations often reduces to `a ^ b` or `a + b`.
+- **Undoing flattening**: symbolic/concolic execution follows the real execution flow, joining the original blocks in the order they actually run, skipping the dispatcher. From that trace you rebuild a clean CFG.
 
-Triton gọn và nhúng được vào tool khác; angr nặng hơn nhưng có sẵn CFG recovery và nhiều tiện ích. Chi tiết về symbolic execution để dành [Bài 18.3](https://github.com/Haind03/Technique-Reverse/tree/main/phan-18-nang-cao).
+Triton is compact and can be embedded in other tools; angr is heavier but comes with CFG recovery and lots of utilities. The details of symbolic execution are saved for [Lesson 18.3](https://github.com/Haind03/Technique-Reverse/tree/main/phan-18-nang-cao).
 
-## Tự động hay làm tay: chọn theo quy mô
+## Automatic or by hand: choose by scale
 
-Đừng mặc định cứ obfuscation là phải dựng cả pipeline symbolic. Cân theo công sức bỏ ra so với thu lại:
+Don't assume obfuscation means building a whole symbolic pipeline. Weigh the effort you put in against what you get back:
 
-| Tình huống | Nên làm |
+| Situation | What to do |
 |---|---|
-| Một hàm, một chỗ MBA nhỏ | Rút tay, nhanh hơn dựng tool |
-| Nhiều hàm cùng một kiểu obfuscation | D-810 với rule phù hợp, hoặc viết một rule rồi áp hàng loạt |
-| Flattening nặng, nhiều hàm | D-810 hoặc script Miasm/symbolic |
-| Obfuscation lạ, chưa có rule | Miasm hoặc Triton, tự viết logic gỡ |
-| Chỉ cần biết một hàm trả ra gì với input cho trước | Emulate (Unicorn/Qiling), khỏi gỡ |
+| One function, one small MBA spot | Reduce it by hand, faster than building a tool |
+| Many functions with the same kind of obfuscation | D-810 with the right rules, or write one rule and apply it in bulk |
+| Heavy flattening, many functions | D-810 or a Miasm/symbolic script |
+| Unfamiliar obfuscation, no rules yet | Miasm or Triton, write your own unpicking logic |
+| You only need to know what a function returns for a given input | Emulate (Unicorn/Qiling), no need to unpick |
 
-Một mẹo hay bị quên: nhiều khi bạn không cần gỡ obfuscation gì cả. Nếu câu hỏi chỉ là "hàm check này trả true với serial nào", cứ emulate hoặc để symbolic execution giải ngược, mặc kệ luồng bên trong rối thế nào. Gỡ obfuscation để đọc là một mục tiêu; tìm đáp án là mục tiêu khác, và mục tiêu thứ hai thường rẻ hơn nhiều.
+A tip that's often forgotten: a lot of the time you don't need to undo any obfuscation at all. If the question is just "for which serial does this check function return true", simply emulate or let symbolic execution solve it backwards, never mind how tangled the inside flow is. Deobfuscating to read is one goal; finding the answer is another, and the second is often much cheaper.
 
-## Lab tự làm
+## Lab
 
-Xem [labs/14.6/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/14.6). Bạn sẽ lấy một hàm có MBA hoặc opaque predicate, dùng D-810 hoặc Miasm để rút gọn và so sánh pseudocode trước với sau. Nếu chưa cài được tool, phần lab có một biểu thức MBA mẫu để bạn rút gọn bằng tay, đủ để thấy tận mắt một biểu thức khủng bố quy về một phép XOR.
+See [labs/14.6/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/14.6). You'll take a function with MBA or opaque predicates, use D-810 or Miasm to simplify it, and compare the pseudocode before and after. If you can't install the tools yet, the lab has a sample MBA expression for you to reduce by hand, enough to see with your own eyes a monstrous expression collapse into a single XOR.
 
-## Checklist ghi nhớ
-- Mọi deobfuscation tự động đều theo một công thức: lift lên IR, simplify, lower xuống.
-- D-810 gỡ ngay trong Hex-Rays microcode, mạnh với MBA, opaque predicate, flattening; theo rule.
-- HexRaysDeob là tiền bối, đọc loạt bài của Rolf Rolles để hiểu microcode.
-- Miasm là framework Python đầy đủ (IR, emulate, symbolic, simplify), bạn tự lập trình quy trình.
-- Symbolic execution (Triton, angr) là vũ khí tổng quát cho cả MBA lẫn flattening, chi tiết ở Phần 18.
-- Cân nhắc quy mô: một chỗ nhỏ thì làm tay, hàng loạt mới dựng tool. Và đôi khi chỉ cần emulate để lấy đáp án, không cần gỡ gì.
+## Key takeaways
+- All automatic deobfuscation follows one formula: lift to IR, simplify, lower back down.
+- D-810 unpicks right inside Hex-Rays microcode, strong on MBA, opaque predicates, flattening; rule-based.
+- HexRaysDeob is the predecessor, read Rolf Rolles' series to understand microcode.
+- Miasm is a full Python framework (IR, emulation, symbolic, simplify), you program the workflow yourself.
+- Symbolic execution (Triton, angr) is the general weapon for both MBA and flattening, details in Part 18.
+- Weigh the scale: a small spot by hand, only build a tool for bulk work. And sometimes you just emulate to get the answer, with no unpicking needed.

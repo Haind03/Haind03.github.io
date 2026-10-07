@@ -1,55 +1,56 @@
 ---
-title: "Bài 14.1: Packer hoạt động thế nào, và làm sao nhận ra nó"
+title: "Lesson 14.1: How packers work, and how to spot one"
 date: 2026-10-06 09:20:00 +0700
-categories: ["Technique Reverse", "Phần 14 · Packer & Obfuscation"]
+categories: ["Technique Reverse", "Part 14 · Packers and Obfuscation"]
 tags: [reverse-engineering, packer, obfuscation]
 render_with_liquid: false
 ---
-Có một khoảnh khắc ai làm RE cũng gặp: mở một file trong IDA, háo hức tìm logic, thì thấy đúng vài chục lệnh rồi một cú nhảy vào vùng toàn byte rác. Không strings có nghĩa, bảng import rỗng tuếch, đọc mãi không ra gì. Đó không phải bạn dốt. Đó là file đã bị pack, và thứ bạn đang nhìn chỉ là lớp vỏ.
+There's a moment everyone doing RE runs into: you open a file in IDA, eager to find the logic, and you see just a few dozen instructions and then a jump into a region of pure junk bytes. No meaningful strings, an empty import table, nothing makes sense no matter how long you read. It's not that you're bad at this. The file is packed, and what you're looking at is only the shell.
 
-Bài này giúp bạn nhận ra chuyện đó trong một phút, thay vì phí cả buổi tối đọc code không bao giờ chạy.
+This lesson helps you recognize that in a minute, instead of wasting a whole evening reading code that never runs.
 
-## Packer làm gì với chương trình
+## What a packer does to a program
 
-Ý tưởng của packer rất đơn giản. Lấy code gốc của chương trình, nén hoặc mã hoá nó thành một khối dữ liệu, rồi gắn thêm một đoạn code nhỏ gọi là stub (hay unpacking stub). Khi chạy, stub làm việc trước: nó giải nén/giải mã khối dữ liệu kia ra lại thành code gốc trong bộ nhớ, rồi nhảy tới đó để chương trình chạy bình thường.
+The idea of a packer is very simple. Take the program's original code, compress or encrypt it into a block of data, then attach a small piece of code called the stub (or unpacking stub). At runtime the stub works first: it decompresses/decrypts that data block back into the original code in memory, then jumps there so the program runs normally.
 
 ```
-File trên đĩa:               Khi chạy (trong bộ nhớ):
+File on disk:                 At runtime (in memory):
 +------------------+          +------------------+
-| unpacking stub   |  --->    | stub (đã chạy)   |
+| unpacking stub   |  --->    | stub (already ran)|
 +------------------+          +------------------+
-| code gốc đã nén/ |  giải    | code gốc ĐÃ HIỆN |  <- giờ mới đọc được
-| mã hoá (rác)     |  nén ra  | rõ ở đây         |
+| original code,   | unpack   | original code IS |  <- only now readable
+| compressed/      |  ---->   | in the clear here|
+| encrypted (junk) |          |                  |
 +------------------+          +------------------+
 ```
 
-Hệ quả quan trọng nhất cho người làm RE: **code thật chỉ tồn tại ở dạng đọc được trong bộ nhớ lúc chạy, không có trên đĩa.** Nên phân tích tĩnh (mở bằng IDA/Ghidra đọc file) sẽ chỉ thấy stub và một đống rác. Muốn thấy code thật, bạn phải để nó tự giải nén rồi chộp lấy, đó là chuyện của bài [14.2](https://github.com/Haind03/Technique-Reverse/blob/main/phan-14-packer-obfuscation/14.2-unpack-upx.md) và [14.3](https://github.com/Haind03/Technique-Reverse/blob/main/phan-14-packer-obfuscation/14.3-dump-rebuild-iat.md).
+The most important consequence for RE: **the real code only exists in readable form in memory at runtime, not on disk.** So static analysis (opening the file in IDA/Ghidra) only sees the stub and a pile of junk. To see the real code, you have to let it unpack itself and then grab it, which is what lessons [14.2](https://github.com/Haind03/Technique-Reverse/blob/main/phan-14-packer-obfuscation/14.2-unpack-upx.md) and [14.3](https://github.com/Haind03/Technique-Reverse/blob/main/phan-14-packer-obfuscation/14.3-dump-rebuild-iat.md) are about.
 
-## OEP: đích đến của mọi cuộc unpack
+## OEP: the destination of every unpack
 
-Stub chạy xong phần giải nén thì nó phải nhảy về điểm bắt đầu thật của chương trình. Điểm đó gọi là OEP (Original Entry Point), chính là entry point mà chương trình sẽ có nếu không bị pack.
+When the stub finishes the decompression part, it has to jump back to the program's real starting point. That point is called the OEP (Original Entry Point), which is the entry point the program would have if it weren't packed.
 
-Cả nghề unpack thủ công quy về một câu: tìm cho ra OEP. Tới được OEP nghĩa là stub đã giải nén xong, code gốc đã nằm đầy đủ trong bộ nhớ, và đây là thời điểm vàng để dump ra. Nhớ từ OEP này, nó quay lại liên tục trong cả Phần 14.
+The whole craft of manual unpacking boils down to one sentence: find the OEP. Reaching the OEP means the stub has finished unpacking, the original code is fully in memory, and this is the golden moment to dump. Remember this OEP, it keeps coming back throughout Part 14.
 
-## Nhận ra file bị pack trong một phút
+## Spotting a packed file in a minute
 
-Không cần unpack mới biết file có bị pack hay không. Vài dấu hiệu lộ liễu:
+You don't need to unpack to know whether a file is packed. A few obvious signs:
 
-### 1. Entropy cao
+### 1. High entropy
 
-Entropy là thước đo độ "ngẫu nhiên" của dữ liệu, thang từ 0 tới 8. Code và text bình thường có entropy tầm 5 tới 6.5. Dữ liệu đã nén hoặc mã hoá trông gần như ngẫu nhiên, nên entropy vọt lên sát 8.0. Thấy một section có entropy 7.8 trở lên là gần như chắc nó bị nén hoặc mã hoá.
+Entropy measures how "random" data is, on a scale from 0 to 8. Normal code and text have entropy around 5 to 6.5. Compressed or encrypted data looks almost random, so entropy shoots up close to 8.0. If you see a section with entropy 7.8 or higher, it's almost certainly compressed or encrypted.
 
-Detect It Easy (DIE, có sẵn trong repo này tại thư mục cha `die_win64_portable_3.08_x64`) có nút Entropy vẽ biểu đồ entropy theo từng vùng file. Một file sạch có đường entropy gập ghềnh vừa phải. Một file packed có một khối phẳng lì ở sát mức 8.
+Detect It Easy (DIE, included in this repo in the parent folder `die_win64_portable_3.08_x64`) has an Entropy button that plots entropy per region of the file. A clean file has a moderately bumpy entropy line. A packed file has a flat block right up near 8.
 
-### 2. Bảng import nghèo nàn một cách đáng ngờ
+### 2. A suspiciously poor import table
 
-Một chương trình Windows bình thường gọi hàng chục tới hàng trăm hàm API, nên bảng import (IAT) dài. File bị pack thì khác: stub chưa cần API gì nhiều, nó chỉ cần vài hàm để tự dựng lại import sau khi giải nén, điển hình là `LoadLibraryA` và `GetProcAddress`. Nên khi bạn thấy một file exe đầy đủ chức năng mà bảng import chỉ có dăm ba hàm, trong đó có `LoadLibrary` và `GetProcAddress`, đó là dấu hiệu rất mạnh của packer.
+A normal Windows program calls dozens to hundreds of API functions, so its import table (IAT) is long. A packed file is different: the stub doesn't need many APIs yet, it just needs a few functions to rebuild the imports itself after unpacking, typically `LoadLibraryA` and `GetProcAddress`. So when you see a fully featured exe whose import table has only a handful of functions, including `LoadLibrary` and `GetProcAddress`, that's a very strong sign of a packer.
 
-### 3. Tên section lạ
+### 3. Strange section names
 
-Packer hay đặt tên section theo thương hiệu của nó. Vài cái quen mặt:
+Packers often name sections after their own brand. A few familiar ones:
 
-| Tên section | Packer/protector |
+| Section name | Packer/protector |
 |---|---|
 | `UPX0`, `UPX1` | UPX |
 | `.vmp0`, `.vmp1` | VMProtect |
@@ -58,40 +59,29 @@ Packer hay đặt tên section theo thương hiệu của nó. Vài cái quen m�
 | `.petite` | Petite |
 | `.enigma1` | Enigma Protector |
 
-Section chuẩn của compiler là `.text`, `.data`, `.rdata`, `.rsrc`. Thấy tên lạ là nghi ngay.
+The standard compiler sections are `.text`, `.data`, `.rdata`, `.rsrc`. A strange name should make you suspicious right away.
 
-### 4. Section vừa ghi vừa thực thi
+### 4. A section that's both writable and executable
 
-Code bình thường nằm trong section chỉ-đọc-và-thực-thi (R-X). Nhưng stub phải ghi code đã giải nén vào một vùng rồi chạy nó, nên vùng đó cần cả quyền ghi lẫn thực thi (RWX hoặc một section có cả WRITE và EXECUTE). Một section vừa ghi được vừa chạy được là cờ đỏ, hiếm thấy trong phần mềm sạch (xem lại [Bài 1.2](/posts/tr-1-2-bo-nho-tien-trinh/)).
+Normal code lives in a read-and-execute only section (R-X). But the stub has to write the unpacked code into a region and then run it, so that region needs both write and execute permission (RWX, or a section with both WRITE and EXECUTE). A section that's both writable and executable is a red flag, rarely seen in clean software (see [Lesson 1.2](/posts/tr-1-2-bo-nho-tien-trinh/) again).
 
-### 5. Rất ít strings có nghĩa
+### 5. Very few meaningful strings
 
-Chuỗi trong code gốc (thông báo, URL, path) bị nén/mã hoá nên biến mất khỏi output `strings`. Cái còn lại thường chỉ là chuỗi của stub. Một exe to mà `strings` ra gần như trống là đáng ngờ.
+The strings in the original code (messages, URLs, paths) are compressed/encrypted and so vanish from the `strings` output. What remains is usually just the stub's strings. A big exe where `strings` comes out nearly empty is suspicious.
 
-## Packer với protector: cùng họ, khác mục đích
+## Packer vs protector: same family, different purpose
 
-Hai từ này hay bị dùng lẫn, nên phân biệt cho rõ:
+These two words get mixed up a lot, so let's separate them clearly. A packer is mainly for compression (reducing size) or hiding code at a basic level. UPX is the classic example, originally made to compress exes, and a plain packer is relatively easy to remove. A protector aims at anti-analysis. Besides compressing/encrypting, it adds anti-debug, anti-VM, anti-dump, integrity checks, and the heaviest of all, virtualization (turning code into the bytecode of a private VM). Themida, VMProtect and Enigma belong to this group, and removing a protector is many levels harder.
 
-- **Packer** chủ yếu để **nén** (giảm kích thước) hoặc che code ở mức cơ bản. UPX là ví dụ kinh điển, vốn sinh ra để nén exe. Packer đơn thuần tương đối dễ gỡ.
-- **Protector** nhắm tới **chống phân tích**. Ngoài việc nén/mã hoá, nó thêm anti-debug, anti-VM, anti-dump, kiểm tra toàn vẹn, và nặng nhất là virtualization (biến code thành bytecode của một VM riêng). Themida, VMProtect, Enigma thuộc nhóm này. Gỡ protector khó hơn nhiều bậc.
+The line isn't absolute (many modern packers come with some protection), but knowing which kind you're up against decides whether you spend an hour or a week. Anti-debug and anti-VM are the content of Part 15, virtualization is [Lesson 14.5](https://github.com/Haind03/Technique-Reverse/blob/main/phan-14-packer-obfuscation/14.5-virtualization.md).
 
-Ranh giới không tuyệt đối (nhiều packer hiện đại kèm chút bảo vệ), nhưng biết mình đang đối đầu loại nào quyết định bạn bỏ ra một giờ hay một tuần. Anti-debug và anti-VM là nội dung Phần 15, virtualization là [Bài 14.5](https://github.com/Haind03/Technique-Reverse/blob/main/phan-14-packer-obfuscation/14.5-virtualization.md).
+## Packer triage workflow
 
-## Quy trình triage packer
+Turn this into a habit, whenever you suspect a file is packed. Drag the file into DIE and see whether it recognizes a packer (DIE has signatures for most common packers). Click the Entropy button and look for a flat block near 8.0. Check the import table, whether it's abnormally poor with only `LoadLibrary`/`GetProcAddress`, and check the section names for strange ones. Then conclude: packed or not, and if so what kind, packer or protector.
 
-Gói lại thành thói quen, mỗi khi nghi một file bị pack:
+After this step you know what you're holding and can choose a tactic: for UPX, a single `upx -d` (lesson 14.2), for a custom packer, unpack manually to find the OEP, for a strong protector, weigh whether it's worth it.
 
-1. Kéo file vào DIE, xem nó nhận ra packer gì không (DIE có signature cho hầu hết packer phổ biến).
-2. Bấm nút Entropy, nhìn có khối nào phẳng sát 8.0 không.
-3. Xem bảng import, có nghèo nàn bất thường và chỉ có `LoadLibrary`/`GetProcAddress` không.
-4. Xem tên section, có tên lạ không.
-5. Kết luận: packed hay không, nếu có thì loại gì, packer hay protector.
+## Key takeaways
+A packer compresses/encrypts the original code and adds a stub that unpacks it at runtime, so the real code only appears in memory at runtime, not on disk. The OEP (Original Entry Point) is the destination of every unpack: once you're there, the original code is ready in memory.
 
-Xong bước này bạn biết mình đang cầm cái gì và chọn chiến thuật: UPX thì `upx -d` một phát (bài 14.2), packer tuỳ biến thì unpack thủ công tìm OEP, protector mạnh thì cân nhắc có đáng không.
-
-## Checklist ghi nhớ
-- Packer nén/mã hoá code gốc, kèm stub giải nén lúc chạy. Code thật chỉ hiện trong bộ nhớ runtime, không có trên đĩa.
-- OEP (Original Entry Point) là đích của mọi cuộc unpack: tới đó là code gốc đã sẵn sàng trong bộ nhớ.
-- Năm dấu hiệu packed: entropy sát 8.0, import nghèo (LoadLibrary/GetProcAddress), tên section lạ, section vừa ghi vừa chạy, ít strings.
-- Dùng Detect It Easy để nhận diện nhanh (signature + entropy).
-- Packer để nén, protector để chống phân tích (thêm anti-debug/anti-VM/virtualization). Biết loại nào để chọn công sức.
+There are five signs of packing: entropy near 8.0, poor imports (LoadLibrary/GetProcAddress), strange section names, a section that's both writable and executable, and few strings. Use Detect It Easy for quick identification (signatures + entropy). Packers compress while protectors resist analysis (adding anti-debug/anti-VM/virtualization), so know which one you have to pick your effort.

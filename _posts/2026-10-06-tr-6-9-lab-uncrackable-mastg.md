@@ -1,96 +1,96 @@
 ---
-title: "Bài 6.9: Lab lớn, giải OWASP UnCrackable Level 1 tới 3"
+title: "Lesson 6.9: Big lab, solving OWASP UnCrackable Level 1 to 3"
 date: 2026-10-06 08:52:00 +0700
-categories: ["Technique Reverse", "Phần 6 · Java / Kotlin / Android (JADX)"]
+categories: ["Technique Reverse", "Part 06 · Java, Kotlin and Android"]
 tags: [reverse-engineering, android, java]
 render_with_liquid: false
 ---
-Đây là bài gom lại mọi thứ của Phần 6. Thay vì một crackme tôi tự nặn ra, lần này ta chơi với bộ bài chuẩn mà cả ngành dùng để luyện: OWASP UnCrackable App for Android, nằm trong MASTG (Mobile Application Security Testing Guide). Ba level, khó dần, mỗi level dạy đúng một nhóm kỹ thuật bạn vừa học.
+This lesson pulls together everything in Part 6. Instead of a crackme I cooked up myself, this time we play with the standard deck the whole industry uses for practice: the OWASP UnCrackable App for Android, part of the MASTG (Mobile Application Security Testing Guide). Three levels, getting harder, and each level teaches exactly one group of techniques you just learned.
 
-Vì sao dùng bộ này mà không phải app ngoài kia: nó hợp pháp tuyệt đối. Mã nguồn mở, làm ra để học, OWASP khuyến khích bạn bẻ. Không có chuyện vi phạm bản quyền hay điều khoản dịch vụ như khi đụng vào app thương mại. Đây là sân tập đúng nghĩa.
+Why use this set and not some app out there: it's completely legal. Open source, made for learning, and OWASP encourages you to break it. There's no copyright or terms-of-service violation like when you touch a commercial app. This is a proper practice ground.
 
-Tải chính thức từ kho MASTG (link trong [labs/6.9/README.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/6.9/README.md)). Đừng tải APK trôi nổi ở nơi khác, bản chính thức mới sạch và đúng đề.
+Download it officially from the MASTG repo (link in [labs/6.9/README.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/6.9/README.md)). Don't download random APKs from elsewhere, only the official build is clean and matches the challenge.
 
-## Luật chơi chung
+## General rules
 
-Cả ba app đều hiện một ô nhập, bạn gõ đúng secret thì nó báo thành công. Nhiệm vụ: tìm ra secret, hoặc làm cho app tin là bạn đã nhập đúng. Có hai trường phái, và một reverser giỏi biết cả hai:
+All three apps show an input box, and if you type the right secret it reports success. The task: find the secret, or make the app believe you entered it correctly. There are two schools, and a good reverser knows both:
 
-- **Tĩnh (static):** mở app trong JADX, đọc code, moi thẳng secret hoặc hiểu thuật toán kiểm tra rồi tính ngược. Không cần chạy app.
-- **Động (dynamic):** chạy app trên máy/emulator, dùng Frida hook vào đúng hàm kiểm tra để đọc giá trị thật hoặc ép nó trả về đúng.
+- **Static:** open the app in JADX, read the code, pull the secret out directly or understand the checking algorithm and compute backwards. No need to run the app.
+- **Dynamic:** run the app on a device/emulator, use Frida to hook the exact checking function to read the real value or force it to return the right result.
 
-Level càng cao, hướng tĩnh càng đuối và bạn càng phải dựa vào động, đặc biệt khi secret bị đẩy xuống native hoặc app chủ động chống lại bạn.
+The higher the level, the more the static route runs out of steam and the more you have to rely on dynamic, especially when the secret gets pushed down into native or the app actively fights you.
 
-## Level 1: root detection và secret trong Java
+## Level 1: root detection and a secret in Java
 
-Mở `UnCrackable-Level1.apk` bằng JADX-GUI. Đọc `AndroidManifest.xml` tìm launcher activity (nhớ lại [Bài 6.2](/posts/tr-6-2-cau-truc-apk/)), từ đó lần vào `MainActivity`.
+Open `UnCrackable-Level1.apk` in JADX-GUI. Read `AndroidManifest.xml` to find the launcher activity (recall [Lesson 6.2](/posts/tr-6-2-cau-truc-apk/)), and from there trace into `MainActivity`.
 
-Hai thứ đập vào mắt ngay:
+Two things jump out right away:
 
-1. **Root detection.** Trong `onCreate`, app gọi vài hàm kiểu `c.a()`, `c.b()`, `c.c()` kiểm tra thiết bị có root không (tìm file `su`, kiểm `test-keys`, thư mục Superuser). Nếu phát hiện, nó bật một dialog rồi thoát. Đây là lớp phòng thủ đầu tiên, và nó yếu.
+1. **Root detection.** In `onCreate`, the app calls a few functions like `c.a()`, `c.b()`, `c.c()` that check whether the device is rooted (looking for the `su` file, checking `test-keys`, the Superuser folder). If it detects it, it shows a dialog and exits. This is the first line of defense, and it's weak.
 
-2. **Hàm verify.** Khi bạn bấm nút, app gọi một hàm (thường là `a.a(input)`) so chuỗi bạn nhập với một secret. Theo đúng nếp đi-từ-chuỗi và find usage (`x`) trong JADX (nhắc lại [Bài 6.3](/posts/tr-6-3-jadx-gui-chuyen-sau/)), bạn lần tới hàm so sánh.
+2. **The verify function.** When you press the button, the app calls a function (usually `a.a(input)`) that compares the string you typed with a secret. Following the usual start-from-strings and find usage (`x`) routine in JADX (recall [Lesson 6.3](/posts/tr-6-3-jadx-gui-chuyen-sau/)), you trace to the comparison function.
 
-### Hướng tĩnh
-Hàm kiểm tra giải mã secret bằng AES với key cứng nhúng trong code, rồi so với input. Vì key và ciphertext đều nằm trong app, bạn chép thuật toán ra, chạy lại bằng Python hoặc một đoạn Java nhỏ, in ra secret. Đọc xong là có đáp án, không cần cài app.
+### The static route
+The check function decrypts the secret with AES using a hardcoded key embedded in the code, then compares against the input. Since both the key and the ciphertext are in the app, you copy the algorithm out, rerun it with Python or a small piece of Java, and print the secret. Once you've read it you have the answer, no need to install the app.
 
-### Hướng động
-Nếu lười giải AES, cho app chạy rồi hook. Nhưng app thoát ngay vì root detection, nên trước hết phải vô hiệu hóa nó. Dùng Frida hook các hàm detection trả về false, và hook luôn `System.exit` cho chắc. Sau đó hook hàm verify để in ra chuỗi mà nó đem so, chính là secret. Script mẫu nằm trong [labs/6.9/solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/6.9/solution.md).
+### The dynamic route
+If you're too lazy to solve the AES, let the app run and hook it. But the app exits right away because of root detection, so first you have to neutralize that. Use Frida to hook the detection functions to return false, and hook `System.exit` too to be safe. Then hook the verify function to print the string it compares against, which is the secret. A sample script is in [labs/6.9/solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/6.9/solution.md).
 
-Điểm rút ra của Level 1: root detection chỉ là cái khóa cửa giấy. Nó chặn người dùng thường, không chặn được người cầm Frida.
+Takeaway from Level 1: root detection is just a paper lock on the door. It stops ordinary users, but it can't stop someone holding Frida.
 
-## Level 2: secret chui xuống native .so
+## Level 2: the secret goes down into a native .so
 
-Level 2 nhìn giống Level 1, nhưng khi bạn tìm hàm verify trong JADX, nó khai báo `native`:
+Level 2 looks like Level 1, but when you look for the verify function in JADX, it's declared `native`:
 
 ```java
 public native boolean bar(byte[] bar);
 ```
 
-Nghĩa là logic kiểm tra không còn trong Java nữa, nó nằm trong `lib/arm64-v8a/libfoo.so`. Đây đúng tình huống của [Bài 6.7](/posts/tr-6-7-native-so-jni/).
+That means the check logic is no longer in Java, it's in `lib/arm64-v8a/libfoo.so`. This is exactly the situation of [Lesson 6.7](/posts/tr-6-7-native-so-jni/).
 
-### Hướng tĩnh
-Trích `libfoo.so` ra (giải nén APK), mở trong Ghidra ở chế độ AArch64 (ôn lại [Bài 1.9](/posts/tr-1-9-arm-arm64-co-ban/)). Tìm hàm JNI theo tên `Java_sg_vantagepoint_uncrackable2_..._bar` hoặc, nếu nó đăng ký động, đi qua `JNI_OnLoad` và `RegisterNatives`. Đọc hàm đó, bạn thấy nó so byte input với một chuỗi cứng trong `.so`. Moi chuỗi đó ra là xong.
+### The static route
+Extract `libfoo.so` (unpack the APK), open it in Ghidra in AArch64 mode (review [Lesson 1.9](/posts/tr-1-9-arm-arm64-co-ban/)). Find the JNI function by the name `Java_sg_vantagepoint_uncrackable2_..._bar` or, if it registers dynamically, go through `JNI_OnLoad` and `RegisterNatives`. Read that function and you'll see it compares the input bytes with a hardcoded string in the `.so`. Pull that string out and you're done.
 
-### Hướng động
-Native thì hook khó hơn Java một chút nhưng vẫn làm được. Hai cách:
-- Hook hàm `strcmp`/`memcmp` của libc, in hai toán hạng khi app so sánh. Secret lộ ra trần trụi, giống hệt mẹo đọc hai toán hạng `cmp` trong [Bài 2.5](/posts/tr-2-5-x64dbg/) nhưng ở tầng native.
-- Hook thẳng hàm `bar` native bằng `Interceptor.attach` tại địa chỉ của nó trong module.
+### The dynamic route
+Hooking native is a bit harder than Java but still doable. Two ways:
+- Hook libc's `strcmp`/`memcmp` and print both operands when the app compares. The secret is exposed in the open, exactly like the trick of reading the two `cmp` operands in [Lesson 2.5](/posts/tr-2-5-x64dbg/) but at the native level.
+- Hook the native `bar` function directly with `Interceptor.attach` at its address in the module.
 
-Điểm rút ra của Level 2: đẩy secret xuống native làm chậm người đọc tĩnh, nhưng runtime thì byte vẫn phải đi qua một phép so sánh, và chỗ so sánh luôn là nơi phục kích tốt.
+Takeaway from Level 2: pushing the secret down to native slows down the static reader, but at runtime the bytes still have to pass through a comparison, and the comparison is always a good place for an ambush.
 
-## Level 3: thêm anti-tampering và anti-Frida
+## Level 3: adding anti-tampering and anti-Frida
 
-Level 3 là Level 2 cộng thêm phòng thủ chủ động, đúng tinh thần [Bài 6.8](/posts/tr-6-8-obfuscation-android/) và báo trước cho cả Chặng 3 về anti-reverse:
+Level 3 is Level 2 plus active defenses, in the spirit of [Lesson 6.8](/posts/tr-6-8-obfuscation-android/) and a preview of the whole anti-reverse stage (Stage 3):
 
-- **Anti-tampering:** app kiểm tra chữ ký APK và checksum của chính nó. Nếu bạn repack bằng apktool rồi ký lại (cách của [Bài 6.4](/posts/tr-6-4-smali-apktool-repack/)), chữ ký đổi, app phát hiện và từ chối chạy. Nên hướng repack tĩnh vấp ngay ở đây.
-- **Anti-Frida:** app dò xem có frida-server đang chạy không (quét cổng 27042, tìm chuỗi "frida" trong maps, kiểm tên tiến trình). Nếu thấy, nó thoát.
+- **Anti-tampering:** the app checks its own APK signature and checksum. If you repack with apktool and re-sign (the way of [Lesson 6.4](/posts/tr-6-4-smali-apktool-repack/)), the signature changes, the app detects it and refuses to run. So the static repack route trips right here.
+- **Anti-Frida:** the app probes for a running frida-server (scanning port 27042, looking for the string "frida" in maps, checking process names). If it sees one, it exits.
 
-### Cách tiếp cận
-Đây là lúc bạn phải gỡ từng lớp theo thứ tự:
+### The approach
+This is where you have to remove the layers one at a time, in order:
 
-1. **Qua anti-Frida trước.** Hook sớm (early instrumentation, dùng `frida -f` để spawn chứ không attach muộn) các hàm dò Frida và cho chúng trả về âm tính. Hoặc dùng frida-server đổi tên, đổi cổng để né cách dò ngây thơ.
-2. **Qua anti-tampering.** Hook hàm kiểm chữ ký trả về đúng giá trị của app gốc, hoặc hook hàm so checksum.
-3. **Rồi mới tới verify**, xử lý y như Level 2 (phân tích .so hoặc hook so sánh).
+1. **Get past anti-Frida first.** Hook early (early instrumentation, use `frida -f` to spawn rather than attaching late) the Frida-detection functions and make them return negative. Or use a renamed, different-port frida-server to dodge naive detection.
+2. **Get past anti-tampering.** Hook the signature-check function to return the original app's value, or hook the checksum comparison function.
+3. **Only then verify**, handled just like Level 2 (analyze the .so or hook the comparison).
 
-Thứ tự quan trọng: bạn không hook được verify nếu app đã thoát vì phát hiện Frida. Gỡ phòng thủ ngoài cùng trước, đi dần vào trong. Đây chính là tư duy xử lý nhiều lớp anti kết hợp mà [Bài 15.10](https://github.com/Haind03/Technique-Reverse/tree/main/phan-15-anti-reverse) sẽ nói kỹ.
+The order matters: you can't hook verify if the app has already exited after detecting Frida. Remove the outermost defense first and work your way inward. This is exactly the mindset for handling combined layers of anti that [Lesson 15.10](https://github.com/Haind03/Technique-Reverse/tree/main/phan-15-anti-reverse) will cover in detail.
 
-Điểm rút ra của Level 3: khi app chống lại công cụ của bạn, trận đấu chuyển thành gỡ-lớp. Kiên nhẫn, mỗi lần một lớp, và luôn để dành chỗ so sánh cuối cùng làm điểm phục kích.
+Takeaway from Level 3: when the app fights your tools, the match turns into layer removal. Be patient, one layer at a time, and always save the final comparison as your ambush point.
 
-## Chọn hướng nào
+## Which route to choose
 
-| Tình huống | Nên ưu tiên |
+| Situation | Prefer |
 |---|---|
-| Secret là chuỗi cứng trong Java | Tĩnh, đọc thẳng trong JADX |
-| Có thuật toán kiểm tra rõ ràng | Tĩnh, tính ngược (như keygen Bài 3.6) |
-| Secret trong native .so | Tĩnh đọc .so, hoặc động hook strcmp |
-| App chống lại bạn (anti-*) | Động, gỡ từng lớp bằng Frida |
+| The secret is a hardcoded string in Java | Static, read it directly in JADX |
+| There's a clear checking algorithm | Static, compute backwards (like the Lesson 3.6 keygen) |
+| The secret is in a native .so | Static reading of the .so, or dynamic hooking of strcmp |
+| The app fights you (anti-*) | Dynamic, remove layers one at a time with Frida |
 
-Phần lớn người mới nhảy ngay vào Frida vì thấy ngầu. Lời khuyên thật lòng: thử đọc tĩnh trước. Rất nhiều lần secret nằm ngay đó, năm phút đọc JADX nhanh hơn nửa tiếng vật lộn với frida-server.
+Most beginners jump straight to Frida because it feels cool. My honest advice: try reading statically first. Many times the secret is right there, five minutes in JADX is faster than half an hour wrestling with frida-server.
 
-## Checklist ghi nhớ
-- UnCrackable (MASTG) là bộ luyện Android hợp pháp, tải từ kho chính thức.
-- Level 1: root detection yếu + secret trong Java, đọc tĩnh hoặc hook là xong.
-- Level 2: secret trong native .so, phân tích .so hoặc hook strcmp/memcmp runtime.
-- Level 3: thêm anti-tampering và anti-Frida, phải gỡ từng lớp từ ngoài vào trong.
-- Luôn cân nhắc hướng tĩnh trước, nhiều khi nhanh hơn hẳn động.
-- Chỗ so sánh cuối cùng luôn là điểm phục kích tốt nhất, dù ở tầng Java hay native.
+## Key takeaways
+- UnCrackable (MASTG) is a legal Android practice set, download it from the official repo.
+- Level 1: weak root detection + secret in Java, reading statically or hooking is enough.
+- Level 2: secret in a native .so, analyze the .so or hook strcmp/memcmp at runtime.
+- Level 3: adds anti-tampering and anti-Frida, you have to remove layers from the outside in.
+- Always consider the static route first, it's often much faster than dynamic.
+- The final comparison is always the best ambush point, whether at the Java or native level.

@@ -1,86 +1,86 @@
 ---
-title: "Bài 9.1: Đặc trưng binary Rust, nhận mặt trước khi đọc"
+title: "Lesson 9.1: What Rust binaries look like, recognizing them before reading"
 date: 2026-10-06 09:03:00 +0700
-categories: ["Technique Reverse", "Phần 9 · Rust"]
+categories: ["Technique Reverse", "Part 09 · Rust"]
 tags: [reverse-engineering, rust]
 render_with_liquid: false
 ---
-Rust đang lan nhanh, từ công cụ dòng lệnh tới malware, nên sớm muộn bạn cũng vấp một binary Rust. Tin xấu: Rust là một trong những thứ khó đọc nhất ở tầng native, khó hơn C++ và hơn hẳn Go. Tin tốt: nó để lại vài dấu vết rất đặc trưng, và có một món quà tên là panic string giúp bạn định vị code nhanh. Bài này dạy cách nhận mặt một binary Rust và biết trước mình đang đương đầu với cái gì.
+Rust is spreading fast, from command-line tools to malware, so sooner or later you'll trip over a Rust binary. The bad news: Rust is one of the hardest things to read at the native level, harder than C++ and much harder than Go. The good news: it leaves a few very characteristic traces, and there's a gift called the panic string that helps you locate code quickly. This lesson teaches how to recognize a Rust binary and know in advance what you're up against.
 
-## Vì sao Rust khó đọc
+## Why Rust is hard to read
 
-Ba lý do, hiểu được là bớt sốc khi mở decompiler:
+Three reasons, and understanding them means less shock when you open the decompiler:
 
-1. **Monomorphization.** Generic trong Rust không dùng chung một bản như template bị chia sẻ. Mỗi kiểu cụ thể sinh ra một bản copy riêng của hàm. Một `Vec<T>` dùng với năm kiểu là năm bản hàm gần giống nhau, binary phình và đầy hàm trùng lặp.
-2. **Inline hung hãn.** Trình tối ưu của Rust (qua LLVM) inline rất mạnh. Một iterator chain đẹp đẽ kiểu `.iter().map().filter().collect()` biến thành một vòng lặp phẳng, không còn ranh giới hàm nào để bám.
-3. **Static link mặc định.** Giống Go, binary Rust thường gói cả standard library vào, nên file to và lẫn rất nhiều code thư viện với code của tác giả.
+1. **Monomorphization.** Generics in Rust don't share a single copy like shared templates. Each concrete type generates its own copy of the function. A `Vec<T>` used with five types is five nearly identical copies of the functions, so the binary bloats and fills with duplicate functions.
+2. **Aggressive inlining.** Rust's optimizer (through LLVM) inlines very heavily. A nice iterator chain like `.iter().map().filter().collect()` turns into a flat loop, with no function boundaries left to hold on to.
+3. **Static linking by default.** Like Go, Rust binaries usually bundle the whole standard library, so the file is big and the author's code is mixed with a lot of library code.
 
-Khác Go một điểm quan trọng: Rust **không có runtime GC**, không có scheduler goroutine. Về cấu trúc, nó gần C++ hơn, nên kinh nghiệm đọc C++ ở Phần 4 (nhất là vtable, struct, STL) áp dụng được nhiều.
+One important difference from Go: Rust **has no GC runtime**, no goroutine scheduler. Structurally it's closer to C++, so the C++ reading experience from Part 4 (especially vtables, structs, STL) carries over a lot.
 
-## Nhận ra một binary Rust
+## Recognizing a Rust binary
 
-![Binary Rust: panic string, mangling v0, iterator inline](/assets/img/technique-reverse/assets/phan-09/rust-binary.svg)
+![Rust binary: panic strings, v0 mangling, inlined iterators](/assets/img/technique-reverse/assets/phan-09/rust-binary.svg)
 
-Vài dấu hiệu, dùng DIE hoặc `strings`:
+A few signs, using DIE or `strings`:
 
-- **Chuỗi đường dẫn source** kiểu `src/main.rs`, `library/std/src/...`, `/rustc/<hash>/...`. Rust nhúng đường dẫn file vào thông tin panic, lộ ra ngay.
-- **Chuỗi phiên bản** `rustc 1.xx.x`.
-- **Tên crate** trong symbol: `core::`, `alloc::`, `std::`, và tên crate bên thứ ba.
-- **Symbol bị mangle** bắt đầu bằng `_ZN` (legacy) hoặc `_R` (v0), xem phần dưới.
-- **Chuỗi panic** kiểu `called \`Option::unwrap()\` on a \`None\` value`, `index out of bounds`, `attempt to add with overflow`.
+- **Source path strings** like `src/main.rs`, `library/std/src/...`, `/rustc/<hash>/...`. Rust embeds file paths in the panic info, which shows right away.
+- **Version string** `rustc 1.xx.x`.
+- **Crate names** in symbols: `core::`, `alloc::`, `std::`, and third-party crate names.
+- **Mangled symbols** starting with `_ZN` (legacy) or `_R` (v0), see the section below.
+- **Panic strings** like `called \`Option::unwrap()\` on a \`None\` value`, `index out of bounds`, `attempt to add with overflow`.
 
-## Name mangling: hai kiểu
+## Name mangling: two kinds
 
-Rust có hai kiểu mangling, bạn sẽ gặp cả hai tuỳ phiên bản và cờ build:
+Rust has two kinds of mangling, and you'll meet both depending on the version and build flags:
 
-- **Legacy** (mặc định cũ): trông như C++ Itanium, bắt đầu `_ZN`, ví dụ `_ZN4core3fmt9Formatter3pad17h...E`. Có một hash ở cuối (`17h...`) để phân biệt các bản monomorphized.
-- **v0** (mới, bật bằng `-C symbol-mangling-version=v0`): bắt đầu `_R`, mã hoá được cả generic, ví dụ `_RNvNtCs...`. Đọc thô thì rối hơn nhưng chứa nhiều thông tin hơn.
+- **Legacy** (the old default): looks like C++ Itanium, starts with `_ZN`, for example `_ZN4core3fmt9Formatter3pad17h...E`. There's a hash at the end (`17h...`) to distinguish the monomorphized copies.
+- **v0** (new, enabled with `-C symbol-mangling-version=v0`): starts with `_R`, and can encode generics too, for example `_RNvNtCs...`. Raw it's messier to read but carries more information.
 
-Để đọc lại tên, demangle:
-- **rustfilt**: `cat symbols.txt | rustfilt`, hoặc `nm binary | rustfilt`.
-- **IDA/Ghidra** đời mới tự demangle được cả hai kiểu, bật trong cấu hình demangler.
-- `c++filt` xử lý được phần legacy `_ZN` ở mức cơ bản vì nó giống Itanium.
+To read the names back, demangle:
+- **rustfilt**: `cat symbols.txt | rustfilt`, or `nm binary | rustfilt`.
+- Recent **IDA/Ghidra** can demangle both kinds on their own, turn it on in the demangler config.
+- `c++filt` handles the legacy `_ZN` part at a basic level since it resembles Itanium.
 
-Cái hash `h...` ở cuối tên legacy là thứ hay làm người mới bối rối. Nó chỉ là định danh để tránh trùng tên giữa các bản monomorphized, bỏ qua được khi đọc.
+The `h...` hash at the end of a legacy name often confuses beginners. It's only an identifier to avoid name collisions between monomorphized copies, and you can ignore it when reading.
 
-## Panic string: người bạn tốt nhất của bạn
+## Panic strings: your best friend
 
-Đây là mẹo giá trị nhất của cả bài. Khi code Rust có thể panic (unwrap một None, truy cập mảng ngoài biên, chia cho 0, tràn số trong debug build), compiler chèn một lời gọi tới machinery panic kèm theo **một chuỗi chứa tên file và số dòng source gốc**.
+This is the most valuable tip of the whole lesson. When Rust code can panic (unwrapping a None, out-of-bounds array access, division by zero, overflow in a debug build), the compiler inserts a call into the panic machinery together with **a string holding the file name and line number of the original source**.
 
-Nghĩa là trong binary Rust, bạn thường thấy những chuỗi như:
+That means in a Rust binary you'll often see strings like:
 
 ```
 src/validator.rs
 called `Result::unwrap()` on an `Err` value
 ```
 
-Đi ngược từ chuỗi đó (xref, giống kỹ thuật ở [Bài 0.4](/posts/tr-0-4-quy-trinh-reverse/)) là bạn nhảy thẳng tới đúng hàm trong code của tác giả, bỏ qua biển code thư viện. Với binary Rust bị tối ưu nặng, panic string nhiều khi là mỏ neo duy nhất đáng tin để định hướng.
+Going backwards from that string (xref, like the technique in [Lesson 0.4](/posts/tr-0-4-quy-trinh-reverse/)) takes you straight to the right function in the author's code, skipping the sea of library code. With a heavily optimized Rust binary, the panic string is sometimes the only trustworthy anchor to orient yourself.
 
-## Option, Result, enum biểu diễn thế nào
+## How Option, Result, and enums are represented
 
-Rust dùng `Option<T>` và `Result<T, E>` khắp nơi, nên nhận ra chúng giúp đọc logic:
+Rust uses `Option<T>` and `Result<T, E>` everywhere, so recognizing them helps you read the logic:
 
-- `Option<T>` và `Result<T, E>` là enum có tag (discriminant) cho biết đang là biến thể nào (Some/None, Ok/Err), kèm payload. Trong assembly, bạn thấy code đọc một tag rồi rẽ nhánh, giống union có nhãn.
-- **Niche optimization**: với một số kiểu, Rust không cần tag riêng. Ví dụ `Option<&T>` dùng chính giá trị 0 (null) để biểu diễn `None`, nên nó gọn như một con trỏ. Thấy một con trỏ được kiểm `== 0` rồi rẽ nhánh, nhiều khi đó là `Option` đang được match.
-- `match` trên enum biến thành so sánh tag rồi jump table hoặc chuỗi `cmp`/`je`, giống switch-case ở [Bài 1.5](/posts/tr-1-5-assembly-3-cau-truc-dieu-khien/).
+- `Option<T>` and `Result<T, E>` are enums with a tag (discriminant) that says which variant it is (Some/None, Ok/Err), plus a payload. In assembly you see code reading a tag and then branching, like a tagged union.
+- **Niche optimization**: for some types, Rust doesn't need a separate tag. For example `Option<&T>` uses the value 0 (null) itself to represent `None`, so it's as compact as a pointer. Seeing a pointer checked `== 0` and then a branch is often an `Option` being matched.
+- A `match` on an enum becomes a tag comparison followed by a jump table or a chain of `cmp`/`je`, like the switch-case in [Lesson 1.5](/posts/tr-1-5-assembly-3-cau-truc-dieu-khien/).
 
-## Chiến lược tiếp cận
+## Approach strategy
 
-Gộp lại thành một nhịp làm việc:
+Put together as a working rhythm:
 
-1. Triage bằng DIE, xác nhận là Rust, ghi lại phiên bản rustc nếu thấy.
-2. Bật demangler trong IDA/Ghidra, hoặc chạy rustfilt lên bảng symbol.
-3. Dùng panic string đi ngược về hàm của tác giả, bỏ qua `core`/`alloc`/`std`.
-4. Chấp nhận iterator chain đã phẳng, đọc theo logic chứ đừng cố tìm lại ranh giới hàm gốc.
-5. Dùng kinh nghiệm C++ (Phần 4) cho struct và cách truyền tham số.
+1. Triage with DIE, confirm it's Rust, note the rustc version if you see it.
+2. Turn on the demangler in IDA/Ghidra, or run rustfilt on the symbol table.
+3. Use panic strings to go backwards to the author's functions, ignoring `core`/`alloc`/`std`.
+4. Accept that iterator chains are flattened, read by logic and don't try to find the original function boundaries again.
+5. Use your C++ experience (Part 4) for structs and parameter passing.
 
-## Lab tự làm
+## Lab
 
-Xem [labs/9.1/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/9.1). Nếu máy bạn có `rustc`, build một chương trình nhỏ ở cả hai chế độ debug và release, quan sát mangling và panic string, rồi demangle bằng rustfilt.
+See [labs/9.1/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/9.1). If your machine has `rustc`, build a small program in both debug and release modes, observe the mangling and panic strings, then demangle with rustfilt.
 
-## Checklist ghi nhớ
-- Rust khó đọc vì monomorphization, inline mạnh, static link. Về cấu trúc gần C++ hơn Go (không có GC runtime).
-- Nhận ra Rust qua đường dẫn `src/*.rs`, chuỗi `rustc`, symbol `core::`/`alloc::`/`std::`, panic string.
-- Mangling hai kiểu: legacy `_ZN...` (có hash `h...`) và v0 `_R...`. Demangle bằng rustfilt hoặc IDA/Ghidra.
-- Panic string chứa tên file và dòng source, dùng nó đi ngược về code của tác giả. Đây là mỏ neo quý nhất.
-- Option/Result là enum có tag, để ý niche optimization (None thành null).
+## Key takeaways
+- Rust is hard to read because of monomorphization, heavy inlining, static linking. Structurally it's closer to C++ than Go (no GC runtime).
+- Recognize Rust by `src/*.rs` paths, `rustc` strings, `core::`/`alloc::`/`std::` symbols, panic strings.
+- Two mangling kinds: legacy `_ZN...` (with an `h...` hash) and v0 `_R...`. Demangle with rustfilt or IDA/Ghidra.
+- Panic strings hold the file name and source line, use them to go backwards to the author's code. This is the most valuable anchor.
+- Option/Result are tagged enums, watch for niche optimization (None becomes null).

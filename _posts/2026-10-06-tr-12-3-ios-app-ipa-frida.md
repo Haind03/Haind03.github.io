@@ -1,109 +1,96 @@
 ---
-title: "Bài 12.3: Reverse app iOS, từ file IPA tới hook runtime"
+title: "Lesson 12.3: Reversing an iOS app, from the IPA file to runtime hooks"
 date: 2026-10-06 09:14:00 +0700
-categories: ["Technique Reverse", "Phần 12 · Swift / Objective-C (macOS, iOS)"]
+categories: ["Technique Reverse", "Part 12 · Swift and Objective-C"]
 tags: [reverse-engineering, ios, swift]
 render_with_liquid: false
 ---
-Reverse iOS khác Android ở một điểm làm nản lòng người mới: bạn không chỉ cần hiểu Mach-O và Objective-C/Swift, mà trước đó phải vượt qua một lớp mã hoá của Apple và gần như luôn cần một thiết bị đã jailbreak. Bài này đi từ file IPA tới lúc bạn hook được method đang chạy, và nói thẳng chỗ nào cần thiết bị thật.
+Reversing iOS differs from Android in one way that discourages beginners: you don't only need to understand Mach-O and Objective-C/Swift, you first have to get past Apple's encryption layer and almost always need a jailbroken device. This lesson goes from the IPA file to the point where you can hook a running method, and says plainly where you need a real device.
 
-Nhắc lại ranh giới ở [Bài 0.2](/posts/tr-0-2-phap-ly-dao-duc/): mọi thứ dưới đây là để kiểm thử bảo mật trên app của chính bạn hoặc app bạn được phép, không phải để bẻ khoá app của người khác.
+A reminder of the boundary from [Lesson 0.2](/posts/tr-0-2-phap-ly-dao-duc/): everything below is for security testing on your own app or an app you have permission for, not for cracking other people's apps.
 
-## IPA chỉ là một file ZIP
+## An IPA is just a ZIP file
 
-Giống APK bên Android, file `.ipa` thực ra là ZIP. Đổi đuôi thành `.zip` rồi giải nén là thấy cấu trúc:
+Like an APK on Android, an `.ipa` file is really a ZIP. Rename the extension to `.zip` and extract it and you see the structure:
 
 ```
 Payload/
-  TenApp.app/
-    TenApp            <- Mach-O binary, phần quan trọng nhất
-    Info.plist        <- metadata: bundle id, phiên bản, quyền, URL scheme
-    embedded.mobileprovision  <- profile ký
-    Assets.car        <- asset đã biên dịch
+  AppName.app/
+    AppName           <- Mach-O binary, the most important part
+    Info.plist        <- metadata: bundle id, version, permissions, URL schemes
+    embedded.mobileprovision  <- signing profile
+    Assets.car        <- compiled assets
     *.nib, *.storyboardc, *.lproj ...
 ```
 
-File đáng quan tâm là Mach-O binary cùng tên với app (không có đuôi). `Info.plist` đọc trước để biết bundle identifier, minimum iOS version, các permission (NSCameraUsageDescription...) và URL scheme. Nó giống vai trò của AndroidManifest.
+The file that matters is the Mach-O binary with the same name as the app (no extension). Read `Info.plist` first to get the bundle identifier, minimum iOS version, permissions (NSCameraUsageDescription...) and URL schemes. It plays a role similar to AndroidManifest.
 
-## Rào cản: mã hoá FairPlay
+## The barrier: FairPlay encryption
 
-Đây là chỗ iOS khác hẳn. Binary tải từ App Store bị Apple mã hoá bằng FairPlay DRM: phần `__TEXT` (chứa code) được mã hoá, chỉ giải mã trong bộ nhớ lúc chạy trên thiết bị có đúng license. Cột `cryptid` trong load command `LC_ENCRYPTION_INFO` bằng 1 là dấu hiệu binary còn mã hoá.
+This is where iOS is completely different. Binaries downloaded from the App Store are encrypted by Apple with FairPlay DRM: the `__TEXT` part (which holds the code) is encrypted, and only decrypted in memory at runtime on a device with the right license. A `cryptid` of 1 in the `LC_ENCRYPTION_INFO` load command is the sign that the binary is still encrypted.
 
-Hệ quả thực tế: nếu bạn kéo thẳng binary từ IPA App Store vào IDA/Ghidra, phần code chỉ là rác đã mã hoá. Phải lấy bản đã giải mã trước.
+The practical consequence: if you drag a binary straight from an App Store IPA into IDA/Ghidra, the code is just encrypted garbage. You have to get a decrypted copy first.
 
-Cách lấy bản giải mã là để thiết bị tự giải mã trong RAM (như nó vẫn làm khi chạy app) rồi dump vùng nhớ đó ra:
+The way to get a decrypted copy is to let the device decrypt it itself in RAM (like it does when running the app) and then dump that memory region:
 
-- **frida-ios-dump**: script Python chạy qua Frida, phổ biến nhất hiện nay. Nó chạy app, đọc vùng `__TEXT` đã giải mã trong bộ nhớ, ghi đè vào binary rồi đặt `cryptid` về 0, đóng lại thành IPA giải mã.
-- **bagbak**: tool mới hơn, cùng ý tưởng, dựa Frida.
-- **Clutch**: tool cũ, nhiều khi hỏng trên iOS mới, chỉ nhắc để bạn nhận ra tên.
+The most popular tool right now is frida-ios-dump, a Python script running through Frida. It runs the app, reads the decrypted `__TEXT` region in memory, writes it over the binary, sets `cryptid` back to 0, and repackages it into a decrypted IPA. bagbak is a newer tool with the same idea, also built on Frida. Clutch is an old tool that's often broken on new iOS, and I only mention it so you recognize the name.
 
-Tất cả đều cần thiết bị **đã jailbreak** (hoặc một môi trường tương đương) vì phải đọc bộ nhớ tiến trình của app khác. Đây là điểm chặn lớn nhất với người học iOS: không có thiết bị jailbreak thì gần như không đi tiếp được với app App Store. App do chính bạn build và cài qua Xcode thì không bị FairPlay, dùng để học thì tiện hơn nhiều.
+All of them need a **jailbroken** device (or an equivalent environment) because they have to read the process memory of another app. This is the biggest blocker for people learning iOS: without a jailbroken device you almost can't go further with App Store apps. An app you build yourself and install through Xcode isn't under FairPlay, which is much more convenient for learning.
 
-## Sau khi giải mã: phân tích như Mach-O
+## After decryption: analyze it like a Mach-O
 
-Khi đã có binary giải mã (`cryptid` = 0), phần còn lại chính là những gì đã học:
+Once you have the decrypted binary (`cryptid` = 0), the rest is what you've already learned:
 
-- Đây là Mach-O, nhắc lại [Bài 1.8](/posts/tr-1-8-elf-va-mach-o/). Nhớ kiểm tra fat binary và kiến trúc arm64.
-- Nếu app viết Objective-C: đọc theo `objc_msgSend` và selector như [Bài 12.1](/posts/tr-12-1-objc-runtime-class-dump/), chạy class-dump lấy header.
-- Nếu app viết Swift: demangle và đọc metadata như [Bài 12.2](https://github.com/Haind03/Technique-Reverse/blob/main/phan-12-swift-objc-apple/12.2-swift-metadata-demangle.md).
-- Code là ARM64, xem lại [Bài 1.9](/posts/tr-1-9-arm-arm64-co-ban/).
+It's a Mach-O, so recall [Lesson 1.8](/posts/tr-1-8-elf-va-mach-o/) and remember to check for fat binaries and the arm64 architecture. If the app is written in Objective-C, read it by `objc_msgSend` and selectors like in [Lesson 12.1](/posts/tr-12-1-objc-runtime-class-dump/) and run class-dump to get the headers. If it's written in Swift, demangle and read the metadata like in [Lesson 12.2](https://github.com/Haind03/Technique-Reverse/blob/main/phan-12-swift-objc-apple/12.2-swift-metadata-demangle.md). The code is ARM64, so see [Lesson 1.9](/posts/tr-1-9-arm-arm64-co-ban/) again.
 
-Nói cách khác, FairPlay chỉ là một cánh cửa. Qua được rồi thì công cụ và tư duy y như phân tích một Mach-O bình thường.
+In other words, FairPlay is just one door. Once you're through, the tools and mindset are the same as analyzing a normal Mach-O.
 
-## Hook runtime với Frida và objection
+## Runtime hooking with Frida and objection
 
-Phân tích tĩnh cho bạn bản đồ, nhưng iOS rất hợp với phân tích động vì ObjC runtime cho phép can thiệp sạch sẽ. Cài frida-server trên thiết bị jailbreak, chạy frida/objection trên máy host.
+Static analysis gives you the map, but iOS is a great fit for dynamic analysis because the ObjC runtime allows clean interference. Install frida-server on the jailbroken device, run frida/objection on the host.
 
-**objection** là lớp tự động hoá trên Frida, làm nhanh các việc hay gặp mà không phải viết script:
+**objection** is an automation layer on top of Frida, doing common tasks quickly without writing scripts:
 
 ```
 objection -g com.example.myapp explore
-# trong shell objection:
-ios hooking list classes                 # liệt kê class
-ios hooking watch class LoginViewController   # theo dõi method của class
-ios hooking set return_value "...:isJailbroken" false   # ép trả về
-ios sslpinning disable                    # tắt SSL pinning để xem traffic
+# inside the objection shell:
+ios hooking list classes                 # list classes
+ios hooking watch class LoginViewController   # watch a class's methods
+ios hooking set return_value "...:isJailbroken" false   # force a return value
+ios sslpinning disable                    # disable SSL pinning to see traffic
 ios jailbreak disable                     # bypass jailbreak detection
 ```
 
-Khi cần kiểm soát kỹ hơn thì viết script Frida. ObjC method hook qua `ObjC.classes`:
+When you need finer control, write a Frida script. ObjC methods are hooked through `ObjC.classes`:
 
 ```js
 if (ObjC.available) {
   var LoginVC = ObjC.classes.LoginViewController;
   Interceptor.attach(LoginVC['- checkPassword:'].implementation, {
     onEnter: function (args) {
-      // args[0]=self, args[1]=selector, args[2]=tham số đầu
+      // args[0]=self, args[1]=selector, args[2]=first parameter
       var pw = new ObjC.Object(args[2]);
-      console.log('[+] checkPassword gọi với: ' + pw.toString());
+      console.log('[+] checkPassword called with: ' + pw.toString());
     },
     onLeave: function (retval) {
-      console.log('[+] trả về: ' + retval);
-      retval.replace(ptr(1));   // ép trả về true
+      console.log('[+] returned: ' + retval);
+      retval.replace(ptr(1));   // force return true
     }
   });
 }
 ```
 
-Hai tình huống kinh điển trong kiểm thử bảo mật app của mình:
+Two classic situations come up when security testing your own app. With jailbreak detection, the app refuses to run when it sees a jailbroken device, so you hook the check function (usually returns a BOOL) to return false, or use `ios jailbreak disable`. With SSL pinning, the app only accepts a specific certificate so a proxy like Burp can't read the traffic, and you disable the pinning to analyze your own app's traffic for testing purposes.
 
-- **Jailbreak detection**: app tự từ chối chạy khi thấy thiết bị jailbreak. Hook hàm kiểm tra (thường trả về BOOL) cho trả về false, hoặc dùng `ios jailbreak disable`.
-- **SSL pinning**: app chỉ chấp nhận đúng certificate nên proxy như Burp không đọc được traffic. Tắt pinning để phân tích lưu lượng của chính app mình, phục vụ kiểm thử.
+## Common pitfalls
 
-## Cạm bẫy hay gặp
+A common mistake is forgetting that App Store apps are still FairPlay encrypted, opening IDA anyway and thinking the binary is broken, so always check `cryptid` first. Trying to analyze an App Store app without a jailbroken device is almost a dead end, so start with an app you build yourself. A version mismatch between frida-server on the device and frida on the host makes hooks silently not run. Swift methods also often don't expose nice selectors like ObjC, so you have to demangle and rely on metadata.
 
-- Quên app App Store còn mã hoá FairPlay, cứ thế mở IDA và tưởng binary hỏng. Luôn kiểm `cryptid` trước.
-- Không có thiết bị jailbreak mà cố phân tích app App Store: gần như bế tắc. Hãy bắt đầu bằng app bạn tự build.
-- Lệch phiên bản giữa frida-server trên thiết bị và frida trên host làm hook im lặng không chạy.
-- Swift method nhiều khi không lộ selector đẹp như ObjC, phải demangle và dựa metadata.
+## Lab
 
-## Lab tự làm
+See [labs/12.3/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/12.3). You need a jailbroken iOS device and an app you made yourself (or have permission for). The task: dump the decrypted binary, confirm `cryptid` goes to 0, analyze the Mach-O, then hook a method with objection. The file `src/hook.js` has a sample iOS Frida script.
 
-Xem [labs/12.3/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/12.3). Cần một thiết bị iOS đã jailbreak và một app do chính bạn làm (hoặc được phép). Nhiệm vụ: dump binary giải mã, xác nhận `cryptid` về 0, phân tích Mach-O, rồi hook một method bằng objection. File `src/hook.js` có script Frida iOS mẫu.
+## Key takeaways
+An IPA is a ZIP, and the important binary is the Mach-O with the same name as the app, so read Info.plist first. App Store binaries have `__TEXT` encrypted by FairPlay (check for `cryptid` = 1), so you have to dump the decrypted copy from memory with frida-ios-dump or bagbak, which needs a jailbroken device. Apps you build yourself aren't encrypted.
 
-## Checklist ghi nhớ
-- IPA là ZIP, binary quan trọng là Mach-O cùng tên app, đọc Info.plist trước.
-- App Store binary bị FairPlay mã hoá `__TEXT`, kiểm `cryptid` = 1, phải dump bản giải mã từ bộ nhớ.
-- Dump bằng frida-ios-dump/bagbak, cần thiết bị jailbreak. App tự build không bị mã hoá.
-- Sau giải mã thì phân tích như Mach-O ObjC/Swift (Bài 12.1, 12.2), code ARM64 (Bài 1.9).
-- Frida/objection để hook runtime, bypass jailbreak detection và SSL pinning khi kiểm thử app của mình.
+After decryption, analyze it like an ObjC/Swift Mach-O (Lessons 12.1, 12.2) with ARM64 code (Lesson 1.9). Use Frida/objection to hook at runtime and bypass jailbreak detection and SSL pinning when testing your own app.

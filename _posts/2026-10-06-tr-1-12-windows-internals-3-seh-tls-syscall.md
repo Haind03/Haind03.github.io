@@ -1,98 +1,92 @@
 ---
-title: "Bài 1.12: Windows internals cho RE (3), SEH, TLS callback và tầng syscall"
+title: "Lesson 1.12: Windows internals for RE (3), SEH, TLS callbacks and the syscall layer"
 date: 2026-10-06 08:15:00 +0700
-categories: ["Technique Reverse", "Phần 1 · Nền tảng máy tính cho RE"]
+categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
-Ba thứ trong bài này có một điểm chung khó chịu: chúng cho code chạy ở những chỗ bạn không ngờ tới. Ngoại lệ (exception) nhảy luồng sang một handler bạn chưa đọc. TLS callback chạy trước cả `main`. Và syscall thì tụt thẳng xuống kernel, bỏ qua mọi hàm Win32 bạn đang theo dõi. Malware yêu ba thứ này vì đúng lý do đó. Hiểu chúng là bịt được ba lỗ hổng lớn trong tầm quan sát của bạn.
+The three things in this lesson share an annoying trait: they let code run in places you don't expect. An exception jumps the flow to a handler you haven't read. A TLS callback runs before `main` even starts. And a syscall drops straight into the kernel, skipping every Win32 function you're watching. Malware loves all three for exactly that reason. Understanding them plugs three big holes in what you can observe.
 
-## SEH, khi lỗi không làm chương trình chết
+## SEH, when an error doesn't kill the program
 
-Structured Exception Handling (SEH) là cơ chế của Windows để xử lý ngoại lệ: chia cho 0, truy cập bộ nhớ sai, hay một lỗi do code tự ném ra. Thay vì sập ngay, Windows đi tìm một handler đã đăng ký và chuyển quyền điều khiển cho nó.
+Structured Exception Handling (SEH) is the Windows mechanism for handling exceptions: divide by zero, bad memory access, or an error the code throws itself. Instead of crashing right away, Windows looks for a registered handler and hands control to it.
 
-Trên x86, chuỗi handler SEH là một danh sách liên kết nằm trên stack, mà con trỏ đầu danh sách lại nằm ở `fs:[0]` (chính là trường đầu tiên của TEB, xem [Bài 1.11](/posts/tr-1-11-windows-internals-2-peb-teb-handle-token/)). Mỗi record có hai trường: con trỏ tới record kế tiếp, và con trỏ tới hàm handler.
+On x86, the SEH handler chain is a linked list on the stack, and the head pointer lives at `fs:[0]` (the first field of the TEB, see [Lesson 1.11](/posts/tr-1-11-windows-internals-2-peb-teb-handle-token/)). Each record has two fields: a pointer to the next record, and a pointer to the handler function.
 
 ```asm
-; x86: đăng ký một SEH handler thủ công, pattern kinh điển
-push offset my_handler   ; địa chỉ handler
-push fs:[0]              ; link tới handler cũ
-mov  fs:[0], esp         ; đặt record mới làm đầu chuỗi
+; x86: manually registering an SEH handler, the classic pattern
+push offset my_handler   ; handler address
+push fs:[0]              ; link to the old handler
+mov  fs:[0], esp         ; make the new record the head of the chain
 ```
 
-Trên x64 thì khác hẳn: SEH không còn nằm trên stack mà dựa vào bảng tĩnh trong PE (section `.pdata`, cấu trúc exception directory). An toàn hơn trước kiểu tấn công ghi đè handler, nhưng với bạn nghĩa là phải tra bảng chứ không đọc được chuỗi trên stack.
+On x64 it's completely different: SEH no longer lives on the stack, it relies on a static table in the PE (the `.pdata` section, the exception directory structure). That's safer against handler-overwrite attacks, but for you it means looking up a table instead of reading a chain off the stack.
 
-Còn VEH (Vectored Exception Handling) là bản bổ sung: handler đăng ký qua `AddVectoredExceptionHandler`, chạy **trước** cả SEH, và không gắn với khung hàm nào. Malware thích VEH vì nó bao trùm toàn tiến trình.
+VEH (Vectored Exception Handling) is an add-on: the handler is registered through `AddVectoredExceptionHandler`, runs before SEH, and isn't tied to any function frame. Malware likes VEH because it covers the whole process.
 
-### Vì sao reverser phải quan tâm
+### Why a reverser should care
 
-Malware lạm dụng SEH/VEH làm công cụ che luồng và chống phân tích theo vài kiểu:
+Malware abuses SEH/VEH to hide control flow and to resist analysis in a few ways. One is steering the flow with deliberate faults. The code deliberately triggers an exception (for example writing to a null address, or running `int 3`), and the real logic is in the handler. Someone reading statically and following the straight-line flow will miss the handler, because on the surface it looks like dead code.
 
-- **Điều hướng luồng bằng lỗi cố ý.** Code cố tình gây ra một exception (ví dụ ghi vào địa chỉ null, hoặc chạy `int 3`), rồi logic thật nằm trong handler. Người đọc tĩnh bám theo luồng thẳng sẽ bỏ sót handler, vì nhìn bề ngoài nó chỉ là code chết.
-- **Phát hiện debugger.** Khi có debugger, một số exception (như breakpoint `int 3`) bị debugger nuốt mất, không tới được handler. Chương trình đăng ký handler, tự ném exception, rồi kiểm tra xem handler có chạy không. Không chạy nghĩa là có debugger đang xía vào. Chi tiết chiêu này ở [Bài 15.3](https://github.com/Haind03/Technique-Reverse/tree/main/phan-15-anti-reverse).
+The other is debugger detection. When a debugger is attached, some exceptions (like the `int 3` breakpoint) get swallowed by the debugger and never reach the handler. The program registers a handler, throws an exception itself, then checks whether the handler ran. If it didn't, a debugger is poking around. Details of this trick are in [Lesson 15.3](https://github.com/Haind03/Technique-Reverse/tree/main/phan-15-anti-reverse).
 
-Mẹo khi phân tích: thấy một `AddVectoredExceptionHandler` hoặc một pattern đăng ký SEH thủ công, hãy đặt breakpoint ngay tại hàm handler đó, vì rất có thể logic bạn tìm nằm trong đó chứ không phải ở luồng chính. Trong x64dbg, bật tùy chọn để debugger chuyển exception cho chương trình xử lý (pass exception to application) thay vì tự nuốt, nếu không bạn sẽ không bao giờ thấy handler chạy.
+When analyzing, if you see an `AddVectoredExceptionHandler` or a manual SEH registration pattern, put a breakpoint right at that handler function, because the logic you're after is probably in there and not in the main flow. In x64dbg, turn on the option to pass exceptions to the application instead of swallowing them, otherwise you'll never see the handler run.
 
-## TLS callback, code chạy trước main
+## TLS callbacks, code that runs before main
 
-Thread Local Storage (TLS) sinh ra để mỗi thread có bản sao riêng của một biến. Nhưng kèm theo nó là một tính năng bị lợi dụng nhiều hơn cả mục đích gốc: **TLS callback**, các hàm được gọi tự động mỗi khi tiến trình hoặc thread khởi tạo và kết thúc.
+Thread Local Storage (TLS) exists so each thread gets its own copy of a variable. But it comes with a feature that gets abused more than its original purpose: TLS callbacks, functions called automatically whenever a process or thread starts up and exits.
 
-Điểm mấu chốt: TLS callback chạy **trước** entry point của chương trình (`AddressOfEntryPoint`). Nghĩa là trước cả dòng code đầu tiên mà bạn tưởng là nơi bắt đầu, đã có code khác chạy rồi.
+The key point is that TLS callbacks run before the program's entry point (`AddressOfEntryPoint`). So before the very first line of code you thought was the start, other code has already run.
 
-Với anti-debug, đây là món quà. Chương trình nhét một đoạn kiểm tra debugger vào TLS callback. Người mới đặt breakpoint ở entry point rồi mới chạy, thì lúc breakpoint đó dính, TLS callback đã chạy xong và đã phát hiện ra bạn từ đời nào. Bạn tới bữa tiệc muộn.
+For anti-debug this is a gift. The program stuffs a debugger check into a TLS callback. A beginner sets a breakpoint at the entry point and then runs it, and by the time that breakpoint hits, the TLS callback has long finished and already spotted you. You showed up late to the party.
 
-TLS callback nằm trong PE ở TLS Directory, trỏ tới một mảng con trỏ hàm kết thúc bằng null:
+The TLS callback lives in the PE's TLS Directory, which points to a null-terminated array of function pointers:
 
 ```
 TLS Directory -> AddressOfCallBacks -> [callback1, callback2, ..., NULL]
 ```
 
-Cách xử lý:
-- Trong PE-bear hoặc CFF Explorer, mở TLS Directory để xem có callback nào không và nó trỏ tới đâu.
-- Trong x64dbg, vào Options và bật dừng ở "TLS Callbacks" (và bật luôn "System Breakpoint", "Entry Breakpoint"). Khi đó debugger dừng ngay ở callback đầu tiên, trước entry point, cho bạn đọc nó trước khi nó kịp dò bạn.
+To deal with it, open the TLS Directory in PE-bear or CFF Explorer to see whether there are any callbacks and where they point. In x64dbg, go to Options and enable breaking on "TLS Callbacks" (and also "System Breakpoint" and "Entry Breakpoint"). The debugger then stops right at the first callback, before the entry point, so you can read it before it gets a chance to probe you.
 
-Không phải TLS callback nào cũng độc. Nhiều runtime và thư viện dùng nó hợp lệ. Nhưng thấy TLS callback trong một file đáng ngờ thì luôn đọc nó đầu tiên.
+Not every TLS callback is malicious. Plenty of runtimes and libraries use it legitimately. But if you see a TLS callback in a suspicious file, always read it first.
 
-## Native API và tầng syscall
+## Native API and the syscall layer
 
-Đây là phần làm sáng tỏ cả chuỗi đường đi của một lời gọi hệ thống, và lý giải vì sao đôi khi theo dõi API Win32 vẫn hụt.
+This part clears up the whole path of a system call, and explains why tracing Win32 APIs sometimes still misses things.
 
-Nhớ lại từ [Bài 1.10](/posts/tr-1-10-windows-internals-1-win32-api-dll/): kernel32 không tự làm việc nặng, nó gọi xuống ntdll. Các hàm trong ntdll có tiền tố `Nt` hoặc `Zw` (ví dụ `NtCreateFile`, `NtAllocateVirtualMemory`), và đây mới là tầng Native API sát kernel nhất ở user-mode. Chuỗi đầy đủ:
+Recall from [Lesson 1.10](/posts/tr-1-10-windows-internals-1-win32-api-dll/): kernel32 doesn't do the heavy lifting itself, it calls down into ntdll. The functions in ntdll have an `Nt` or `Zw` prefix (for example `NtCreateFile`, `NtAllocateVirtualMemory`), and this is the Native API layer, the closest to the kernel in user mode. The full chain:
 
 ```
-Chương trình
-   -> CreateFileW        (kernel32.dll, tầng Win32)
+Program
+   -> CreateFileW        (kernel32.dll, Win32 layer)
       -> NtCreateFile    (ntdll.dll, Native API)
-         -> syscall      (chuyển xuống kernel-mode)
-            -> nửa kernel của NtCreateFile
+         -> syscall      (switch down to kernel mode)
+            -> the kernel half of NtCreateFile
 ```
 
-Lệnh `syscall` (x64) hoạt động như sau: đặt một con số định danh (system service number) vào thanh ghi `eax`, rồi thực thi `syscall`, CPU chuyển sang kernel-mode và kernel tra số đó trong bảng dịch vụ (SSDT) để biết gọi hàm nào.
+The `syscall` instruction (x64) works like this: put an identifying number (the system service number) into the `eax` register, then execute `syscall`, the CPU switches to kernel mode, and the kernel looks that number up in the service table (SSDT) to know which function to call.
 
-Một đoạn stub ntdll điển hình nhìn như thế này:
+A typical ntdll stub looks like this:
 
 ```asm
 NtCreateFile:
-    mov  r10, rcx          ; quy ước gọi syscall
-    mov  eax, 0x55         ; số syscall (ví dụ, thay đổi theo bản Windows)
+    mov  r10, rcx          ; syscall calling convention
+    mov  eax, 0x55         ; syscall number (example, varies by Windows version)
     syscall
     ret
 ```
 
-Hai điều quan trọng cho reverser:
+Two things matter here for a reverser. First, syscall numbers are not fixed. The `0x55` above is only right for one specific Windows version. Microsoft changes these numbers between versions, even between updates. So don't memorize numbers, look them up for the Windows build you're analyzing (there are public lookup tables per build).
 
-**Số syscall không cố định.** Con số `0x55` ở trên chỉ đúng cho một bản Windows cụ thể. Microsoft đổi các số này giữa các phiên bản, thậm chí giữa các bản cập nhật. Nên đừng học thuộc số, hãy tra theo bản Windows bạn đang phân tích (có các bảng tra công khai theo build).
+Second, direct syscalls are how malware dodges hooks. Many EDRs and monitoring tools install hooks at the start of the `Nt*` functions in ntdll (inline hooks, [Lesson 17.3](https://github.com/Haind03/Technique-Reverse/tree/main/phan-17-patch-hook-frida)) to catch every call. Malware counters by embedding `mov eax, <number>; syscall` straight into its own code, no longer going through ntdll, so the hook in ntdll never triggers. This is called a direct syscall, and variants like "indirect syscall" jump to the `syscall` instruction that already sits inside ntdll so it looks more natural.
 
-**Direct syscall, cách malware né hook.** Nhiều EDR và tool giám sát cài hook ở đầu các hàm `Nt*` trong ntdll (inline hook, [Bài 17.3](https://github.com/Haind03/Technique-Reverse/tree/main/phan-17-patch-hook-frida)) để bắt mọi lời gọi. Malware đối phó bằng cách tự nhét lệnh `mov eax, <số>; syscall` thẳng vào code của mình, không gọi qua ntdll nữa, nên cái hook ở ntdll chẳng bao giờ dính. Đây gọi là direct syscall, và các biến thể như "indirect syscall" nhảy tới lệnh `syscall` nằm sẵn trong ntdll để trông tự nhiên hơn.
+To be clear, here we learn the mechanism so we can detect and analyze it, not so we can write it. When reversing, the tell is a `syscall` instruction in the code of the module you're analyzing (not in ntdll), or a snippet that loads a number into `eax` and then does `syscall` without going through an import. Then you know the program is trying to avoid the usual monitoring layer, and you have to move to observing at a lower level (kernel callbacks, ETW, or a hardware breakpoint on the syscall instruction itself).
 
-Nói rõ: ở đây ta học cơ chế để **phát hiện và phân tích** nó, không phải để viết. Khi reverse, dấu hiệu nhận ra là: thấy lệnh `syscall` xuất hiện trong code của chính module đang phân tích (chứ không phải trong ntdll), hoặc thấy một đoạn nạp số vào `eax` rồi `syscall` mà không đi qua import. Lúc đó bạn biết chương trình đang cố tránh tầng theo dõi thông thường, và phải chuyển sang quan sát ở mức thấp hơn (kernel callback, ETW, hoặc hardware breakpoint tại chính lệnh syscall).
+Practical consequence: if you only hook or set breakpoints at the kernel32 level, a program that calls ntdll directly slips through. To be safe, set breakpoints at the `Nt*` layer in ntdll. And if even that misses, it's likely using direct syscalls.
 
-Hệ quả thực hành: nếu bạn chỉ hook hoặc đặt breakpoint ở tầng kernel32, một chương trình gọi thẳng ntdll sẽ lọt lưới. Muốn chắc ăn, đặt breakpoint ở tầng `Nt*` trong ntdll. Và nếu ngay cả thế vẫn hụt, khả năng cao nó dùng direct syscall.
+## Key takeaways
+SEH/VEH let code jump to a handler that the straight-line flow doesn't show, and malware throws exceptions on purpose to hide logic or probe for debuggers, so put a breakpoint at the handler and let the debugger pass the exception to the program. x86 keeps the SEH chain on the stack at `fs:[0]`, while x64 uses a static table in `.pdata`.
 
-## Checklist ghi nhớ
-- SEH/VEH cho code nhảy sang handler mà luồng thẳng không thấy. Malware ném exception cố ý để giấu logic hoặc dò debugger. Đặt breakpoint tại handler, và cho debugger pass exception cho chương trình.
-- x86 giữ chuỗi SEH trên stack tại `fs:[0]`, x64 dùng bảng tĩnh trong `.pdata`.
-- TLS callback chạy TRƯỚC entry point. Luôn kiểm tra TLS Directory và bật dừng ở TLS callback trong x64dbg trước khi chạy.
-- Chuỗi gọi: Win32 (kernel32) -> Native API (ntdll, `Nt`/`Zw`) -> `syscall` -> kernel.
-- Số syscall thay đổi theo bản Windows, tra chứ đừng thuộc.
-- Direct syscall là cách né hook ở ntdll. Dấu hiệu: lệnh `syscall` nằm trong code module, không qua import. Gặp nó thì hạ tầng quan sát xuống thấp hơn.
+TLS callbacks run before the entry point, so always check the TLS Directory and enable breaking on TLS callbacks in x64dbg before running.
+
+The call chain is Win32 (kernel32), then Native API (ntdll, `Nt`/`Zw`), then `syscall`, then the kernel. Syscall numbers change by Windows version, so look them up and don't memorize them. Direct syscalls are a way to dodge hooks in ntdll, and the tell is a `syscall` instruction inside the module's code, not via imports. When you hit one, move your observation down a level.

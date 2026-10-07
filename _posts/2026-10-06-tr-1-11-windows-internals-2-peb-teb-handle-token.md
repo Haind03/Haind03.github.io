@@ -1,89 +1,76 @@
 ---
-title: "Bài 1.11: Windows internals (2), PEB, TEB, handle và token"
+title: "Lesson 1.11: Windows internals (2), PEB, TEB, handles and tokens"
 date: 2026-10-06 08:14:00 +0700
-categories: ["Technique Reverse", "Phần 1 · Nền tảng máy tính cho RE"]
+categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
-Có một cấu trúc dữ liệu mà bạn sẽ gặp đi gặp lại trong code Windows, nhất là malware: PEB. Nó nằm ngay trong không gian địa chỉ của tiến trình, không cần gọi API nào để chạm tới, và chính vì thế nó là mỏ vàng cho cả anti-debug lẫn các trò liệt kê module lén lút. Hiểu PEB và vài người anh em của nó (TEB, handle, token) là hiểu được một mảng lớn code mà nếu không biết thì nhìn như ma trận.
+There's one data structure you'll run into again and again in Windows code, especially malware: the PEB. It sits right inside the process's address space, you don't need to call any API to reach it, and that's exactly why it's a gold mine for both anti-debug and sneaky module enumeration. Understanding the PEB and its few siblings (TEB, handles, tokens) means understanding a big chunk of code that looks like the Matrix if you don't know it.
 
-## TEB và PEB, hai cuốn sổ tay của tiến trình
+## TEB and PEB, the process's two notebooks
 
-Mỗi thread có một cuốn sổ riêng tên TEB (Thread Environment Block), và mỗi process có một cuốn chung tên PEB (Process Environment Block). Hệ điều hành dựng sẵn hai cấu trúc này trong bộ nhớ tiến trình để lưu đủ thứ thông tin về bản thân nó: đang chạy ở đâu, đã nạp những DLL nào, có đang bị debug không, biến môi trường là gì.
+Every thread has its own notebook called the TEB (Thread Environment Block), and every process has one shared notebook called the PEB (Process Environment Block). The OS builds these two structures in process memory to store all kinds of information about itself: where it's running, which DLLs it has loaded, whether it's being debugged, what the environment variables are.
 
-Điểm mấu chốt làm reverser phải để ý: **lấy được chúng mà không cần gọi API.** CPU luôn giữ con trỏ tới TEB trong một thanh ghi segment đặc biệt:
+The key point reversers need to notice is that you can get at them without calling any API. The CPU always keeps a pointer to the TEB in a special segment register:
 
 ```asm
-; x64: lấy con trỏ TEB rồi tới PEB
-mov rax, gs:[0x30]      ; rax = địa chỉ TEB
-mov rax, gs:[0x60]      ; rax = địa chỉ PEB (lối tắt phổ biến)
+; x64: get the TEB pointer, then the PEB
+mov rax, gs:[0x30]      ; rax = TEB address
+mov rax, gs:[0x60]      ; rax = PEB address (common shortcut)
 
-; x86: dùng fs thay cho gs
-mov eax, fs:[0x18]      ; eax = địa chỉ TEB
-mov eax, fs:[0x30]      ; eax = địa chỉ PEB
+; x86: use fs instead of gs
+mov eax, fs:[0x18]      ; eax = TEB address
+mov eax, fs:[0x30]      ; eax = PEB address
 ```
 
-Thấy `gs:[0x60]` hay `fs:[0x30]` trong disassembly là bật đèn ngay: code đang với tay vào PEB. Nó không gọi `GetModuleHandle` hay `IsDebuggerPresent`, nó đọc thẳng. Đây là lý do số một khiến người mới bối rối, vì không có tên API nào để tra.
+Seeing `gs:[0x60]` or `fs:[0x30]` in a disassembly should turn a light on right away: the code is reaching into the PEB. It doesn't call `GetModuleHandle` or `IsDebuggerPresent`, it reads directly. This is the number one reason beginners get confused, since there's no API name to look up.
 
-## Những trường trong PEB mà bạn sẽ gặp
+## PEB fields you'll run into
 
-PEB có nhiều trường, nhưng ba cái dưới đây chiếm phần lớn các lần bạn đụng tới nó.
+The PEB has many fields, but the three below make up most of the times you'll touch it.
 
 ### BeingDebugged (offset +0x2)
 
-Một byte, bằng 1 khi tiến trình đang bị debugger gắn vào. Hàm `IsDebuggerPresent` của Windows bên trong chỉ đọc đúng byte này, không hơn. Nên malware thường bỏ qua API luôn mà đọc trực tiếp:
+This is one byte, equal to 1 when a debugger is attached to the process. Windows' `IsDebuggerPresent` internally reads exactly this byte and nothing more. So malware often skips the API and reads it directly:
 
 ```asm
 mov rax, gs:[0x60]        ; PEB
-movzx eax, byte ptr [rax+2]  ; đọc BeingDebugged
+movzx eax, byte ptr [rax+2]  ; read BeingDebugged
 test eax, eax
-jne  found_debugger       ; khác 0: đang bị debug
+jne  found_debugger       ; non-zero: being debugged
 ```
 
-Đọc được đoạn này là bạn nhận ra một chiêu anti-debug kinh điển, chi tiết ở [Bài 15.2](https://github.com/Haind03/Technique-Reverse/tree/main/phan-15-anti-reverse). Cách vượt qua đơn giản nhất lúc debug: sửa byte đó về 0.
+If you can read this snippet, you recognize a classic anti-debug trick, covered in detail in [Lesson 15.2](https://github.com/Haind03/Technique-Reverse/tree/main/phan-15-anti-reverse). The simplest way around it while debugging is to set that byte to 0.
 
-### Ldr, danh sách module đã nạp
+### Ldr, the list of loaded modules
 
-Trường `Ldr` (offset +0x18 trên x64) trỏ tới một cấu trúc chứa ba danh sách liên kết (linked list) liệt kê mọi module (DLL) đã nạp vào tiến trình, kèm base address và tên. Vì sao quan trọng:
+The `Ldr` field (offset +0x18 on x64) points to a structure holding three linked lists of every module (DLL) loaded into the process, with base address and name. This matters because malware walks the list to find the address of kernel32.dll on its own and then locate `GetProcAddress` and `LoadLibrary` without importing them. That way its import table is squeaky clean and looks harmless at a glance, and this is the foundation of shellcode and many loaders. So when you see code walking a linked list that starts from the PEB and compares name strings (usually by hash rather than the real name, to hide it), it's almost certainly resolving APIs by hand.
 
-- Malware duyệt danh sách này để **tự tìm địa chỉ của kernel32.dll** rồi lần ra `GetProcAddress`, `LoadLibrary`, mà không cần import chúng. Nhờ vậy bảng import của nó sạch bong, nhìn qua tưởng vô hại. Đây là nền tảng của shellcode và nhiều loader.
-- Khi bạn thấy code duyệt một linked list bắt đầu từ PEB rồi so sánh tên chuỗi (thường bằng hash chứ không phải tên thật để giấu), gần như chắc nó đang resolve API bằng tay.
+### NtGlobalFlag and heap flags
 
-### NtGlobalFlag và heap flags
+When a process runs under a debugger, Windows sets a few flags differently: `NtGlobalFlag` in the PEB carries bits like `FLG_HEAP_ENABLE_TAIL_CHECK`, and the heap has debug flags. Malware compares these flags against "normal" values to guess whether there's a debugger. Also anti-debug, also read straight from the PEB.
 
-Khi một tiến trình chạy dưới debugger, Windows đặt vài cờ khác đi: `NtGlobalFlag` trong PEB mang các bit như `FLG_HEAP_ENABLE_TAIL_CHECK`, và heap có cờ debug. Malware so các cờ này với giá trị "bình thường" để đoán có debugger. Cũng là anti-debug, cũng đọc thẳng từ PEB.
+## Handles, how a process holds on to resources
 
-## Handle, cách tiến trình nắm giữ tài nguyên
+When code opens a file, creates a thread or a mutex, Windows returns a HANDLE: a small integer that acts as a "ticket" referring to the real object living in the kernel. You never touch the object directly, you hand that ticket to APIs.
 
-Khi code mở một file, tạo một thread, hay một mutex, Windows trả về một HANDLE: một con số nguyên nhỏ đóng vai "vé" tham chiếu tới đối tượng (object) thật nằm trong kernel. Bạn không chạm trực tiếp vào object, bạn đưa cái vé đó cho các API.
+Two things here are useful for RE. Each process has its own handle table, so you can open a process in Process Hacker or System Informer and look at the Handles tab to see which files, registry keys, mutexes and connections it's holding. With malware this is a quick way to see what it touches before reading any code. The object types you see often are process, thread, file, event, mutex (mutant), section (shared memory) and registry key.
 
-Điều hữu ích cho RE:
+## Mutexes, a malware fingerprint
 
-- Mỗi tiến trình có một **bảng handle** riêng. Dùng Process Hacker hoặc System Informer mở một tiến trình rồi xem tab Handles là thấy nó đang giữ file nào, khóa registry nào, mutex nào, kết nối gì. Với malware đây là cách nhanh để biết nó động vào đâu mà chưa cần đọc code.
-- Các loại object hay gặp: process, thread, file, event, mutex (mutant), section (shared memory), registry key.
+A mutex (mutual exclusion) is meant for synchronizing threads, but malware abuses it in a way that's very useful to analysts: it creates a mutex with a fixed name as soon as it runs, and if that mutex already exists it exits. The goal is to avoid infecting the same machine twice.
 
-## Mutex, dấu vết nhận diện malware
+The result is that the mutex name becomes a great IOC (indicator of compromise). When you see `CreateMutexW` with a strange name string, write that string down right away, it can identify a whole malware family. Sometimes you can just create that mutex on the machine ahead of time and the malware thinks it already ran and doesn't run again, a simple "vaccine".
 
-Mutex (mutual exclusion) vốn để đồng bộ hóa giữa các thread, nhưng malware lạm dụng nó theo cách rất có ích cho người phân tích: nó tạo một mutex tên cố định ngay khi chạy, và nếu mutex đó đã tồn tại thì tự thoát. Mục đích là tránh lây nhiễm trùng trên cùng một máy.
+## Access tokens, who's allowed to do what
 
-Hệ quả: cái tên mutex đó trở thành một IOC (indicator of compromise) tuyệt vời. Thấy `CreateMutexW` với một chuỗi tên lạ, ghi ngay chuỗi đó lại, nó nhận diện được cả họ malware. Có khi chỉ cần tạo sẵn mutex đó trên máy là malware tưởng đã chạy rồi và không chạy nữa, một cách "vaccine" đơn giản.
+Every process carries an access token describing identity and rights: which user it runs as, which groups it belongs to, which privileges it has (for example `SeDebugPrivilege`, which lets it open other processes to read/write memory, the basis of injection). When you reverse a sample that tries to escalate privileges, you'll see it call `OpenProcessToken` and `AdjustTokenPrivileges` to enable `SeDebugPrivilege`. Recognizing this combo tells you it's preparing to touch another process.
 
-## Access token, ai được làm gì
+## Lab
 
-Mỗi tiến trình mang một access token mô tả danh tính và quyền: chạy dưới user nào, thuộc nhóm nào, có các privilege gì (ví dụ `SeDebugPrivilege` cho phép mở tiến trình khác để đọc/ghi bộ nhớ, nền tảng của injection). Khi reverse một mẫu cố leo thang đặc quyền, bạn sẽ thấy nó gọi `OpenProcessToken`, `AdjustTokenPrivileges` để bật `SeDebugPrivilege`. Nhận ra cụm này là biết nó đang chuẩn bị đụng vào tiến trình khác.
+Details in [labs/1.11/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/1.11). In short, open any process in x64dbg, use a command to jump to the PEB, find the `BeingDebugged` byte and confirm it equals 1 (because it's being debugged). Then open Process Hacker or System Informer, look at the Handles tab of a process, and find the mutexes and files it's holding. Finally, check the offsets you see against the offset table in [solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/1.11/solution.md).
 
-## Lab tự làm
+## Key takeaways
+The TEB (per thread) and PEB (per process) sit right in process memory, reachable via `gs:[0x60]` (x64) or `fs:[0x30]` (x86) with no API needed. Seeing those in code means it's touching the PEB, usually for anti-debug or sneaky API resolution. BeingDebugged (+2) is the guts of `IsDebuggerPresent`, and Ldr holds the list of loaded modules.
 
-Chi tiết trong [labs/1.11/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/1.11). Tóm tắt:
-
-1. Mở một tiến trình bất kỳ trong x64dbg, dùng lệnh để nhảy tới PEB, tìm byte `BeingDebugged` và xác nhận nó bằng 1 (vì đang bị debug).
-2. Mở Process Hacker hoặc System Informer, xem tab Handles của một tiến trình, tìm các mutex và file nó đang giữ.
-3. Đối chiếu offset bạn thấy với bảng offset trong [solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/1.11/solution.md).
-
-## Checklist ghi nhớ
-- TEB (mỗi thread) và PEB (mỗi process) nằm ngay trong bộ nhớ tiến trình, lấy qua `gs:[0x60]` (x64) hoặc `fs:[0x30]` (x86), không cần API.
-- `gs:[0x60]`/`fs:[0x30]` trong code là dấu hiệu đang chạm vào PEB, thường cho anti-debug hoặc resolve API lén.
-- BeingDebugged (+2) là ruột của `IsDebuggerPresent`. Ldr chứa danh sách module đã nạp.
-- Handle là "vé" tham chiếu object trong kernel. Xem bảng handle bằng Process Hacker để biết tiến trình động vào đâu.
-- Tên mutex cố định là IOC tốt để nhận diện malware.
-- `SeDebugPrivilege` qua `AdjustTokenPrivileges` là dấu hiệu chuẩn bị injection.
+A handle is a "ticket" referring to a kernel object, and the handle table in Process Hacker shows what a process touches. A fixed mutex name is a good IOC for identifying malware, and `SeDebugPrivilege` via `AdjustTokenPrivileges` is a sign of preparing for injection.

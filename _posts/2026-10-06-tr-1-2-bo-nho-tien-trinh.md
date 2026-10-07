@@ -1,97 +1,77 @@
 ---
-title: "Bài 1.2: Bộ nhớ tiến trình, bản đồ nơi mọi thứ diễn ra"
+title: "Lesson 1.2: Process memory, the map of where everything happens"
 date: 2026-10-06 08:05:00 +0700
-categories: ["Technique Reverse", "Phần 1 · Nền tảng máy tính cho RE"]
+categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
-Khi bạn double-click một file `.exe`, hệ điều hành không chạy thẳng từ đĩa. Nó tạo ra một tiến trình (process), cấp cho tiến trình đó một vùng bộ nhớ riêng, nạp code vào, rồi mới cho chạy. Hiểu bố cục vùng bộ nhớ này là hiểu nơi debugger của bạn sẽ đi lại suốt ngày. Thiếu nó, bạn nhìn một địa chỉ mà không biết nó là code, là biến, hay là rác.
+When you double-click an `.exe` file, the OS doesn't run it straight from disk. It creates a process, gives that process its own chunk of memory, loads the code in, and only then lets it run. Understanding the layout of that memory is understanding where your debugger will be walking around all day. Without it, you look at an address and can't tell whether it's code, a variable, or junk.
 
-## Mỗi tiến trình có một thế giới riêng
+## Every process has its own world
 
-Điều đầu tiên gây bất ngờ: hai tiến trình cùng thấy địa chỉ `0x401000`, nhưng đó là hai ô nhớ vật lý hoàn toàn khác nhau. Mỗi tiến trình sống trong một không gian địa chỉ ảo (virtual address space) riêng, được cách ly. Tiến trình A không thể vô tình đọc bộ nhớ của tiến trình B.
+The first thing that surprises people: two processes can both see the address `0x401000`, but they are two completely different physical memory cells. Each process lives in its own isolated virtual address space. Process A can't accidentally read the memory of process B.
 
-Cơ chế này do CPU và hệ điều hành phối hợp: địa chỉ bạn thấy trong IDA hay debugger là **địa chỉ ảo** (virtual address), hệ điều hành dịch ngầm sang địa chỉ vật lý thật trong RAM. Với người làm RE, bạn gần như luôn làm việc ở mức địa chỉ ảo, nên cứ coi tiến trình có nguyên một dải địa chỉ liền mạch cho riêng mình.
+The CPU and the OS work together on this: the addresses you see in IDA or a debugger are virtual addresses, and the OS quietly translates them to real physical addresses in RAM. As a reverse engineer you almost always work at the virtual address level, so just treat the process as if it has one continuous range of addresses all to itself.
 
-Hệ quả thực tế: muốn đọc hay ghi bộ nhớ của tiến trình khác (chính là nền tảng của mọi kỹ thuật injection ở Phần 17), bạn phải nhờ hệ điều hành qua các API đặc biệt như `ReadProcessMemory`, `WriteProcessMemory`. Không có chuyện với tay sang trực tiếp.
+The practical consequence: to read or write another process's memory (the foundation of every injection technique in Part 17), you have to ask the OS through special APIs like `ReadProcessMemory` and `WriteProcessMemory`. You can't just reach over directly.
 
-## Bản đồ bộ nhớ của một tiến trình
+## The memory map of a process
 
-![Bản đồ bộ nhớ tiến trình: code, data, heap mọc lên, stack mọc xuống, thư viện](/assets/img/technique-reverse/assets/phan-01/bo-nho-tien-trinh.svg)
+![Process memory map: code, data, heap growing up, stack growing down, libraries](/assets/img/technique-reverse/assets/phan-01/bo-nho-tien-trinh.svg)
 
-Không gian địa chỉ chia thành nhiều vùng, mỗi vùng một nhiệm vụ. Từ thấp lên cao, đại khái:
+The address space is split into several regions, each with its own job. From low to high, roughly:
 
 ```
-địa chỉ thấp
+low address
   +-------------------------+
-  |  Code (.text)           |  lệnh máy, chỉ đọc + thực thi
+  |  Code (.text)           |  machine instructions, read + execute only
   +-------------------------+
-  |  Dữ liệu đã khởi tạo    |  .data: biến toàn cục có giá trị ban đầu
+  |  Initialized data       |  .data: globals with an initial value
   |  (.data)                |
   +-------------------------+
-  |  Dữ liệu chưa khởi tạo  |  .bss: biến toàn cục = 0
+  |  Uninitialized data     |  .bss: globals = 0
   |  (.bss)                 |
   +-------------------------+
-  |  Heap  --->             |  cấp phát động (malloc/new), lớn dần lên trên
+  |  Heap  --->             |  dynamic allocation (malloc/new), grows upward
   |                         |
   |         ...             |
   |                         |
-  |              <--- Stack |  biến cục bộ, lời gọi hàm, lớn dần xuống dưới
+  |              <--- Stack |  locals, function calls, grows downward
   +-------------------------+
-  |  Thư viện (DLL/.so)     |  kernel32, libc... được nạp vào đây
+  |  Libraries (DLL/.so)    |  kernel32, libc... get loaded here
   +-------------------------+
-địa chỉ cao
+high address
 ```
 
-Trong x64dbg bạn mở tab Memory Map là thấy đúng bản đồ này với địa chỉ thật, quyền truy cập (R/W/X), và module nào chiếm vùng nào. Đây là một trong những cửa sổ bạn mở nhiều nhất.
+In x64dbg, open the Memory Map tab and you see exactly this map with real addresses, access rights (R/W/X), and which module owns which region. It's one of the windows you'll have open the most.
 
-### Các section chính
+### The main sections
 
-Một file PE hay ELF được chia thành section, và khi nạp vào bộ nhớ mỗi section thành một vùng:
+A PE or ELF file is split into sections, and when it's loaded into memory each section becomes a region. The .text section holds the machine instructions. Its permissions are usually read + execute, no write, so when you see an R-X region it's almost certainly code. (Self-modifying code needs write permission, and that's a suspicious sign, covered in Part 15.) The .data section holds globals that have an initial value, read + write. The .bss section holds globals initialized to 0. It takes no space on disk, the loader just allocates an empty region. The .rdata / .rodata sections hold read-only data like constants and strings, and your "Wrong password" string usually lives there.
 
-- **.text** (code): chứa lệnh máy. Quyền thường là đọc + thực thi, không ghi. Khi thấy một vùng R-X, gần như chắc đó là code. (Code tự sửa mình, self-modifying code, sẽ cần quyền ghi, và đó là một dấu hiệu đáng ngờ, nói ở Phần 15.)
-- **.data**: biến toàn cục đã có giá trị khởi tạo. Đọc + ghi.
-- **.bss**: biến toàn cục khởi tạo bằng 0. Không tốn chỗ trên đĩa, chỉ cấp vùng rỗng lúc nạp.
-- **.rdata / .rodata**: dữ liệu chỉ đọc, như hằng số và chuỗi. Chuỗi "Sai mật khẩu" của bạn thường nằm ở đây.
+## Stack, where functions live and die
 
-## Stack, nơi hàm sống và chết
+The stack is the region you need to understand best, because almost every function uses it. It's a real stack: last in, first out (LIFO), where `push` puts things on and `pop` takes them off. On x86/x64 the stack grows down, so a push makes the top pointer (rsp) decrease. That sounds backwards, but just remember it. Every function call builds a block called a stack frame to hold the return address (pushed by `call`), the function's local variables, and sometimes parameters. When the function does `ret`, that frame is dropped and the stack shrinks back to where it was.
 
-Stack là vùng bạn phải hiểu kỹ nhất vì gần như mọi hàm đều dùng nó. Đặc điểm:
+Since local variables sit on the stack, in assembly you see them as `[rbp-4]`, `[rbp-8]` (referenced backwards from the base pointer) or `[rsp+8]` (from the top of the stack). When IDA names things `var_4`, `var_8`, it's naming these locals. Lesson [1.4](/posts/tr-1-4-assembly-2-stack-calling-convention/) goes through the stack frame in detail.
 
-- Nó là một chồng (stack) đúng nghĩa: vào sau ra trước (LIFO). `push` đẩy lên, `pop` lấy ra.
-- Trên x86/x64 stack **mọc xuống**: push làm con trỏ đỉnh (rsp) **giảm** địa chỉ. Nghe ngược nhưng nhớ là được.
-- Mỗi lần gọi hàm, một khối gọi là stack frame được dựng lên để chứa: địa chỉ trở về (do `call` đẩy vào), các biến cục bộ của hàm, và đôi khi tham số.
-- Khi hàm `ret`, frame đó bị bỏ, stack co lại về chỗ cũ.
+The stack is also at the center of a whole class of security bugs (stack buffer overflow): writing past a local variable can overwrite the return address, and controlling the return address means controlling execution flow. That belongs to exploit development, but the root of it is in how the stack works.
 
-Vì biến cục bộ nằm trên stack, trong assembly bạn thấy chúng dưới dạng `[rbp-4]`, `[rbp-8]` (tham chiếu lùi từ base pointer) hoặc `[rsp+8]` (từ đỉnh stack). Khi IDA đặt tên `var_4`, `var_8` chính là nó đang gọi tên các biến cục bộ này. Bài [1.4](/posts/tr-1-4-assembly-2-stack-calling-convention/) mổ xẻ stack frame chi tiết.
+## Heap, memory you ask for at runtime
 
-Stack cũng là trung tâm của cả mảng lỗ hổng bảo mật (stack buffer overflow): ghi quá một biến cục bộ có thể đè lên địa chỉ trở về, và kiểm soát được địa chỉ trở về là kiểm soát được luồng thực thi. Đó là chuyện của mảng exploit, nhưng gốc rễ nằm ở cách stack hoạt động.
+When a program needs memory whose size is only known at runtime (how many bytes a file has, how long a string the user types), it asks the heap through `malloc`, `new`, `HeapAlloc`. It differs from the stack in a few ways. The programmer (or the runtime) manages it, so what you ask for you have to give back (`free`, `delete`), and forgetting to is a memory leak. Heap regions live a long time and aren't cleaned up when the function returns like stack variables. In RE, if you see a pointer pointing into the heap (usually its own address range in the Memory Map), you know it's dynamically allocated data, for example a struct or an array.
 
-## Heap, bộ nhớ xin lúc chạy
+## Addresses aren't fixed: ASLR
 
-Khi chương trình cần vùng nhớ mà kích thước chỉ biết lúc chạy (đọc một file bao nhiêu byte, người dùng nhập chuỗi dài bao nhiêu), nó xin từ heap qua `malloc`, `new`, `HeapAlloc`. Khác stack ở chỗ:
+It used to be that a program always loaded at the same address, for example `0x400000`. Now the OS turns on ASLR (Address Space Layout Randomization): each run, code and libraries are placed at different random addresses, to make things harder to guess for an attacker.
 
-- Lập trình viên (hoặc runtime) tự quản lý: xin thì phải trả (`free`, `delete`), quên trả là memory leak.
-- Vùng heap sống lâu, không tự dọn khi hàm return như biến stack.
-- Trong RE, thấy một con trỏ trỏ vào vùng heap (thường là dải địa chỉ riêng trong Memory Map) là biết đó là dữ liệu cấp phát động, ví dụ một struct hay một mảng.
+For you this means the address you see in IDA (a static address, based on the default base) will be different from the real address in the debugger at runtime. To match the two sides, you use offsets relative to the module base. x64dbg has a "follow in disassembler" button and a rebase feature to help sync them. Don't panic when the address in IDA is `0x401500` and in the debugger it's `0x7FF6xx401500`, the tail `401500` is the part to compare.
 
-## Địa chỉ không cố định: ASLR
+## Access rights, free clues
 
-Ngày xưa một chương trình luôn nạp ở cùng địa chỉ, ví dụ `0x400000`. Giờ hệ điều hành bật ASLR (Address Space Layout Randomization): mỗi lần chạy, code và thư viện được đặt ở địa chỉ ngẫu nhiên khác nhau, để kẻ tấn công khó đoán.
+Each memory region has permissions: R (read), W (write), X (execute). Reading the permissions tells you the intent. R-X is normal code and RW- is normal data. RWX is both writable and executable. It's rare in clean software but very common in malware and packers, because they write decrypted code in there and then jump to run it. Seeing an RWX region in the Memory Map should make your ears prick up.
 
-Với bạn, điều này nghĩa là: địa chỉ bạn thấy trong IDA (địa chỉ tĩnh, dựa trên base mặc định) sẽ **khác** địa chỉ thật trong debugger lúc chạy. Để khớp hai bên, người ta dùng khái niệm offset so với base của module. x64dbg có nút "follow in disassembler" và tính năng rebase giúp đồng bộ. Đừng hoảng khi địa chỉ trong IDA là `0x401500` mà trong debugger lại là `0x7FF6xx401500`, phần đuôi `401500` mới là cái cần so.
+## Key takeaways
+Every process has its own isolated virtual address space, and the addresses you see are virtual addresses. The layout is code (.text), data (.data/.bss/.rdata), heap (grows up), stack (grows down), and libraries. The stack is LIFO, grows down, and holds locals and the return address, with locals showing up as `[rbp-x]`. The heap is allocated dynamically at runtime and you have to free it yourself.
 
-## Quyền truy cập, manh mối miễn phí
-
-Mỗi vùng nhớ có quyền: R (read), W (write), X (execute). Đọc quyền là đọc được ý đồ:
-- R-X: code bình thường.
-- RW-: dữ liệu bình thường.
-- RWX: vừa ghi được vừa chạy được. Hiếm trong phần mềm sạch, rất hay gặp trong malware và packer vì chúng ghi code đã giải mã vào đó rồi nhảy tới chạy. Thấy một vùng RWX trong Memory Map là giỏng tai lên.
-
-## Checklist ghi nhớ
-- Mỗi tiến trình có không gian địa chỉ ảo riêng, cách ly. Địa chỉ bạn thấy là địa chỉ ảo.
-- Bố cục: code (.text), data (.data/.bss/.rdata), heap (mọc lên), stack (mọc xuống), thư viện.
-- Stack: LIFO, mọc xuống, chứa biến cục bộ và địa chỉ trở về. Biến cục bộ hiện dưới dạng `[rbp-x]`.
-- Heap: cấp phát động lúc chạy, phải tự giải phóng.
-- ASLR làm địa chỉ đổi mỗi lần chạy, so phần offset chứ đừng so địa chỉ tuyệt đối.
-- Vùng RWX là cờ đỏ, hay thấy ở packer/malware.
+ASLR changes addresses every run, so compare the offset part and not absolute addresses. An RWX region is a red flag, often seen in packers and malware.

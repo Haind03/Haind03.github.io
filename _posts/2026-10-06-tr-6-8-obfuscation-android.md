@@ -1,81 +1,81 @@
 ---
-title: "Bài 6.8: Obfuscation và packer trên Android"
+title: "Lesson 6.8: Obfuscation and packers on Android"
 date: 2026-10-06 08:51:00 +0700
-categories: ["Technique Reverse", "Phần 6 · Java / Kotlin / Android (JADX)"]
+categories: ["Technique Reverse", "Part 06 · Java, Kotlin and Android"]
 tags: [reverse-engineering, android, java]
 render_with_liquid: false
 ---
-Tới đây bạn mở APK nào cũng thấy code Java sạch sẽ trong JADX. Thực tế sẽ phũ phàng hơn: app thương mại gần như luôn được làm rối. Mở ra toàn `a.a.a`, chuỗi biến thành đống ký tự vô nghĩa, có khi JADX còn chẳng thấy code đâu. Bài này giúp bạn nhận ra mình đang gặp loại bảo vệ nào, và quan trọng hơn, biết đường gỡ.
+So far every APK you open shows clean Java code in JADX. Reality is harsher: commercial apps are almost always obfuscated. You open one and it's all `a.a.a`, strings turn into piles of meaningless characters, and sometimes JADX doesn't even find the code. This lesson helps you recognize which kind of protection you're facing and, more importantly, how to get through it.
 
-Có hai nhóm khác hẳn nhau mà người mới hay gộp làm một: obfuscation (làm code khó đọc nhưng vẫn nằm đó) và packing (giấu luôn code, chỉ bung ra lúc chạy). Cách xử lý mỗi nhóm một khác.
+There are two very different groups that beginners often lump together: obfuscation (making code hard to read but still there) and packing (hiding the code entirely, only expanding it at runtime). Each group is handled differently.
 
-## R8 và ProGuard: rename là chính
+## R8 and ProGuard: mostly renaming
 
-Mọi app Android build ở chế độ release gần như đều đi qua R8 (trước kia là ProGuard, giờ R8 là mặc định của Android Gradle). Việc chính của nó không phải chống reverse mà là thu gọn (minify) và tối ưu: xoá code chết, gộp hàm, và đổi tên class/method/field thành những tên ngắn nhất có thể để giảm kích thước.
+Almost every Android app built in release mode goes through R8 (formerly ProGuard, now R8 is the default of the Android Gradle plugin). Its main job isn't anti-reversing but shrinking (minify) and optimizing: removing dead code, merging functions, and renaming classes/methods/fields to the shortest names possible to reduce size.
 
-Hệ quả cho người reverse: bạn mở JADX ra và thấy la liệt `a`, `b`, `c`, `a.a.b.c`. Logic vẫn còn nguyên và đọc được, chỉ là mất hết tên có nghĩa. Đây là mức nhẹ nhất, hoàn toàn đọc được, chỉ tốn công đặt lại tên khi bạn hiểu từng phần.
+The consequence for a reverser: you open JADX and see `a`, `b`, `c`, `a.a.b.c` everywhere. The logic is still intact and readable, you've just lost all the meaningful names. This is the lightest level, completely readable, it just costs effort to rename things back as you understand each part.
 
-Một chi tiết quan trọng: khi build, R8 sinh ra một `mapping.txt` ánh xạ tên gốc sang tên bị rút gọn. File này dùng để giải mã lại crash report. Bạn gần như không bao giờ có nó khi reverse app của người khác, nhưng nhớ sự tồn tại của nó: nếu đang phân tích chính app của mình, giữ lại `mapping.txt` là đọc được tên gốc ngay.
+One important detail: when building, R8 produces a `mapping.txt` mapping the original names to the shortened ones. This file is used to decode crash reports. You almost never have it when reversing someone else's app, but remember it exists: if you're analyzing your own app, keeping `mapping.txt` gets you the original names right away.
 
-Dấu hiệu nhận ra R8/ProGuard:
-- Tên class/method một hai ký tự, package lồng kiểu `a.a.a`.
-- Vẫn còn tên của thư viện bên thứ ba và các entry point mà framework bắt buộc giữ (Activity trong manifest, method `onCreate`...), vì những cái đó không rename được.
-- Code logic vẫn liền mạch, đọc hiểu được.
+Signs of R8/ProGuard:
+- Class/method names of one or two characters, nested packages like `a.a.a`.
+- Third-party library names and the entry points the framework requires to be kept (Activities in the manifest, `onCreate` methods...) are still there, because those can't be renamed.
+- The logic code is still continuous and readable.
 
-## DexGuard và các obfuscator thương mại: nặng hơn nhiều
+## DexGuard and commercial obfuscators: much heavier
 
-DexGuard (bản thương mại cùng nhà với ProGuard) và vài tool tương tự thêm những lớp mà R8 không làm:
+DexGuard (the commercial version from the same maker as ProGuard) and a few similar tools add layers R8 doesn't:
 
-- **String encryption**: chuỗi literal bị mã hoá, lúc chạy mới giải qua một hàm giải mã. Trong JADX bạn thấy `decrypt("...")` hoặc một mảng byte khó hiểu thay vì chuỗi gốc.
-- **Control flow obfuscation**: chèn nhánh rác, biến vòng lặp và if thành dạng rối để decompiler dựng lại sai hoặc xấu.
-- **Class/API encryption, reflection**: lời gọi method thật bị giấu sau reflection, nên xref tĩnh đứt.
-- **Anti-tamper, anti-debug, anti-Frida**: kiểm tra chữ ký app, phát hiện debugger và Frida.
+- **String encryption**: string literals are encrypted and only decrypted at runtime through a decryption function. In JADX you see `decrypt("...")` or an incomprehensible byte array instead of the original string.
+- **Control flow obfuscation**: inserts junk branches, turns loops and ifs into tangled forms so the decompiler rebuilds them wrong or ugly.
+- **Class/API encryption, reflection**: real method calls are hidden behind reflection, so static xrefs break.
+- **Anti-tamper, anti-debug, anti-Frida**: checks the app signature, detects debuggers and Frida.
 
-Với lớp này, đọc tĩnh thuần tuý thường không đủ. Cách thực tế là phân tích động: để app tự giải mã chuỗi rồi đọc kết quả ở runtime, hoặc hook hàm giải mã bằng Frida (xem [Bài 6.6](/posts/tr-6-6-frida-android-hook/)) để in ra chuỗi đã giải.
+At this level, pure static reading is often not enough. The practical way is dynamic analysis: let the app decrypt the strings itself and read the result at runtime, or hook the decryption function with Frida (see [Lesson 6.6](/posts/tr-6-6-frida-android-hook/)) to print the decrypted strings.
 
-## Packer: khi code không nằm trong DEX
+## Packers: when the code isn't in the DEX
 
-Đây là nhóm làm người mới hoang mang nhất. Packer (hay "app shielding", "DEX protection") không chỉ làm rối mà **giấu hẳn** code thật: `classes.dex` bạn thấy chỉ là một cái vỏ (loader stub). Code thật bị nén hoặc mã hoá, cất trong assets hoặc một section riêng, và chỉ được giải ra rồi nạp vào bộ nhớ lúc chạy.
+This group confuses beginners the most. A packer (or "app shielding", "DEX protection") doesn't just obfuscate but **hides** the real code entirely: the `classes.dex` you see is just a shell (a loader stub). The real code is compressed or encrypted, stored in assets or a separate section, and only decrypted and loaded into memory at runtime.
 
-Các packer hay gặp (phần lớn từ Trung Quốc vì thị trường app ở đó): Bangcle (SecShell), Qihoo Jiagu, Tencent Legu, Ali (Alibaba) protection, Baidu. Nhiều cái miễn phí nên malware cũng dùng.
+Common packers (mostly from China because of the app market there): Bangcle (SecShell), Qihoo Jiagu, Tencent Legu, Ali (Alibaba) protection, Baidu. Many are free so malware uses them too.
 
-Dấu hiệu một app bị pack:
-- Mở JADX ra gần như trống: chỉ có một Application class lạ và vài class loader, không thấy logic nghiệp vụ đâu.
-- Trong `AndroidManifest.xml`, thẻ `application` trỏ tới một class `android:name` lạ của packer (ví dụ `com.secshell.shellwrapper...`, `com.stub.StubApp`, `com.qihoo...`). Đây là loader chạy đầu tiên.
-- Có file `.so` tên lạ trong `lib/`, và file lớn khó hiểu trong `assets/` (chính là DEX đã mã hoá).
-- `classes.dex` nhỏ bất thường so với độ phức tạp của app.
-- Entropy của file trong assets rất cao (dấu hiệu đã nén/mã hoá, giống packer PE ở [Bài 14.1](https://github.com/Haind03/Technique-Reverse/tree/main/phan-14-packer-obfuscation)).
+Signs an app is packed:
+- Opening JADX shows almost nothing: only an odd Application class and a few class loaders, no business logic anywhere.
+- In `AndroidManifest.xml`, the `application` tag points to an odd packer `android:name` class (for example `com.secshell.shellwrapper...`, `com.stub.StubApp`, `com.qihoo...`). This is the loader that runs first.
+- There's an oddly named `.so` file in `lib/`, and a large unexplained file in `assets/` (the encrypted DEX itself).
+- `classes.dex` is abnormally small for the complexity of the app.
+- The entropy of the file in assets is very high (a sign of compression/encryption, like PE packers in [Lesson 14.1](https://github.com/Haind03/Technique-Reverse/tree/main/phan-14-packer-obfuscation)).
 
-## Chiến lược gỡ packer: dump DEX lúc chạy
+## Strategy for removing a packer: dump the DEX at runtime
 
-Chìa khoá: dù giấu kỹ đến đâu, trước khi chạy code thật thì packer **phải** giải mã DEX và nạp nó vào bộ nhớ cho Android runtime (ART) thực thi. Nghĩa là tại một thời điểm, DEX đã giải mã nằm sờ sờ trong bộ nhớ tiến trình. Việc của bạn là chộp nó ở đó.
+The key: however well it's hidden, before running the real code the packer **must** decrypt the DEX and load it into memory for the Android runtime (ART) to execute. Meaning at some moment, the decrypted DEX sits right there in the process memory. Your job is to grab it there.
 
-Công cụ phổ biến nhất là **frida-dexdump**: nó quét vùng nhớ của tiến trình tìm các magic DEX (`dex\n035` và các biến thể), rồi dump từng DEX ra file. Quy trình gọn:
+The most popular tool is **frida-dexdump**: it scans the process memory for DEX magics (`dex\n035` and variants), then dumps each DEX to a file. A tidy workflow:
 
 ```
-# cài frida-server trên thiết bị/emulator đã root, frida-dexdump trên host
-frida-dexdump -U -f com.example.packed.app     # spawn app và dump
-# hoặc attach vào app đang chạy:
-frida-dexdump -U -n ten_app
+# install frida-server on a rooted device/emulator, frida-dexdump on the host
+frida-dexdump -U -f com.example.packed.app     # spawn the app and dump
+# or attach to a running app:
+frida-dexdump -U -n app_name
 ```
 
-Kết quả là một hoặc nhiều file `.dex`. Kéo chúng vào JADX là thấy code thật. Với packer ngoan cố giải mã theo từng phần (lazy), bạn có thể phải dùng app một lúc cho các phần nạp hết rồi mới dump, hoặc dùng các tool chuyên hơn (FRIDA-DEXDump bản nâng, hoặc unpacker riêng cho từng họ packer).
+The result is one or more `.dex` files. Drag them into JADX and you see the real code. For stubborn packers that decrypt piece by piece (lazy), you may need to use the app for a while so the parts all load before dumping, or use more specialized tools (the upgraded FRIDA-DEXDUMP, or dedicated unpackers for each packer family).
 
-Cách tiếp cận này là một ví dụ của nguyên tắc chung trong unpacking: đừng cố giải mã thủ công, hãy để chính chương trình tự giải rồi lấy kết quả. Bạn sẽ gặp lại đúng tư duy này với packer PE ở [Bài 14.2](https://github.com/Haind03/Technique-Reverse/tree/main/phan-14-packer-obfuscation).
+This approach is an example of the general principle in unpacking: don't try to decrypt manually, let the program decrypt itself and take the result. You'll meet this exact mindset again with PE packers in [Lesson 14.2](https://github.com/Haind03/Technique-Reverse/tree/main/phan-14-packer-obfuscation).
 
-## Khi gặp app lạ, hỏi theo thứ tự
+## When you meet an unfamiliar app, ask in order
 
-1. Mở JADX. Thấy logic nghiệp vụ không? Nếu có mà chỉ xấu/đổi tên, đó là obfuscation, cứ đọc và rename dần, hook Frida khi gặp chuỗi mã hoá.
-2. Nếu JADX trống trơn, xem `android:name` của `application` trong manifest và các file trong `assets/lib`. Nhận ra loader của packer là biết mình phải unpack.
-3. Dump DEX runtime bằng frida-dexdump, rồi quay lại bước 1 với DEX đã bung.
+1. Open JADX. Do you see business logic? If yes but it's only ugly/renamed, that's obfuscation, just read and rename gradually, and hook with Frida when you meet encrypted strings.
+2. If JADX is completely empty, look at the `android:name` of `application` in the manifest and the files in `assets/lib`. Recognizing a packer's loader tells you that you have to unpack.
+3. Dump the DEX at runtime with frida-dexdump, then go back to step 1 with the expanded DEX.
 
-## Lab tự làm
+## Lab
 
-Xem [labs/6.8/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/6.8): nhận diện một APK có bị obfuscate hay pack không chỉ qua dấu hiệu, và nếu có packer thì dump DEX ra bằng frida-dexdump rồi mở lại trong JADX. File [solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/6.8/solution.md) có writeup.
+See [labs/6.8/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/6.8): identify whether an APK is obfuscated or packed purely from the signs, and if there's a packer, dump the DEX with frida-dexdump and reopen it in JADX. The file [solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/6.8/solution.md) has the writeup.
 
-## Checklist ghi nhớ
-- Phân biệt obfuscation (code vẫn nằm đó, chỉ khó đọc) với packing (code bị giấu, chỉ bung lúc chạy). Xử lý khác nhau.
-- R8/ProGuard: rename là chính, logic vẫn đọc được, mapping.txt là của người build.
-- DexGuard và obfuscator thương mại: thêm string encryption, control flow, anti-debug. Dùng phân tích động để giải chuỗi.
-- Dấu hiệu packer: JADX trống, application class lạ trong manifest, file lớn entropy cao trong assets, classes.dex nhỏ bất thường.
-- Gỡ packer bằng cách để app tự giải mã rồi dump DEX từ bộ nhớ (frida-dexdump), sau đó mở JADX như thường.
+## Key takeaways
+- Tell obfuscation (code still there, just hard to read) from packing (code hidden, only expanded at runtime). They're handled differently.
+- R8/ProGuard: mostly renaming, the logic is still readable, mapping.txt belongs to whoever built it.
+- DexGuard and commercial obfuscators: add string encryption, control flow, anti-debug. Use dynamic analysis to decrypt strings.
+- Packer signs: empty JADX, an odd application class in the manifest, a large high-entropy file in assets, an abnormally small classes.dex.
+- Remove a packer by letting the app decrypt itself and then dumping the DEX from memory (frida-dexdump), then open JADX as usual.

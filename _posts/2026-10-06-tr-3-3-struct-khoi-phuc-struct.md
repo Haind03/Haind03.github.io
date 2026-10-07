@@ -1,123 +1,123 @@
 ---
-title: "Bài 3.3: Struct trong assembly và nghệ thuật khôi phục nó"
+title: "Lesson 3.3: Structs in assembly and the art of recovering them"
 date: 2026-10-06 08:27:00 +0700
-categories: ["Technique Reverse", "Phần 3 · C: ngôn ngữ gốc của mọi thứ"]
+categories: ["Technique Reverse", "Part 03 · C"]
 tags: [reverse-engineering, c]
 render_with_liquid: false
 ---
-Có một khoảnh khắc trong đời reverser mà bạn sẽ nhớ mãi: lần đầu bạn gán một struct vào con trỏ trong IDA, và cả một hàm pseudocode đang rối như tơ vò bỗng biến thành code đọc được như sách. `*(a1 + 8)` trở thành `player->score`, `*(a1 + 16)` thành `player->name`. Khôi phục struct là một trong những kỹ năng cho lợi tức cao nhất khi reverse code C/C++. Bài này dạy bạn nhận ra struct và dựng lại nó.
+There's a moment in a reverser's life you'll remember forever: the first time you assign a struct to a pointer in IDA, and a whole pseudocode function that was a tangled mess suddenly turns into code that reads like a book. `*(a1 + 8)` becomes `player->score`, `*(a1 + 16)` becomes `player->name`. Recovering structs is one of the highest-return skills when reversing C/C++ code. This lesson teaches you to recognize a struct and rebuild it.
 
-## Struct trông như thế nào trong assembly
+## What a struct looks like in assembly
 
-CPU không biết struct là gì. Với nó, một struct chỉ là một khối byte liền nhau, và truy cập một field là lấy địa chỉ gốc cộng thêm một offset cố định. Đó chính là dấu vân tay bạn cần tìm.
+The CPU doesn't know what a struct is. To it, a struct is just a block of contiguous bytes, and accessing a field is taking the base address and adding a fixed offset. That's exactly the fingerprint you need to look for.
 
-Giả sử có struct C này:
+Say there's this C struct:
 
 ```c
 struct Player {
-    int   id;        // offset 0, 4 byte
-    int   score;     // offset 4, 4 byte
-    char  name[16];  // offset 8, 16 byte
-    int   level;     // offset 24, 4 byte
+    int   id;        // offset 0, 4 bytes
+    int   score;     // offset 4, 4 bytes
+    char  name[16];  // offset 8, 16 bytes
+    int   level;     // offset 24, 4 bytes
 };
 ```
 
-Một hàm nhận con trỏ `Player*` và đọc các field sẽ ra assembly kiểu này:
+A function that takes a `Player*` pointer and reads the fields comes out as assembly like this:
 
 ```asm
-; rcx = con trỏ Player (tham số đầu trên Windows x64)
-mov  eax, [rcx]          ; đọc id      -> offset 0
-mov  edx, [rcx+4]        ; đọc score   -> offset 4
-lea  r8,  [rcx+8]        ; lấy địa chỉ name -> offset 8
-mov  r9d, [rcx+18h]      ; đọc level   -> offset 24 (0x18)
+; rcx = pointer to Player (first parameter on Windows x64)
+mov  eax, [rcx]          ; read id      -> offset 0
+mov  edx, [rcx+4]        ; read score   -> offset 4
+lea  r8,  [rcx+8]        ; get the address of name -> offset 8
+mov  r9d, [rcx+18h]      ; read level   -> offset 24 (0x18)
 ```
 
-Để ý cái pattern: cùng một thanh ghi nền (`rcx`) được cộng với **các hằng số cố định** `+0`, `+4`, `+8`, `+0x18`. Đó là chữ ký của struct. Mỗi offset là một field.
+Notice the pattern: the same base register (`rcx`) is added to **fixed constants** `+0`, `+4`, `+8`, `+0x18`. That's the signature of a struct. Each offset is a field.
 
-## Phân biệt struct với mảng
+## Telling a struct from an array
 
-Người mới hay nhầm hai thứ này, nhưng chúng khác nhau rõ ở cách tính địa chỉ.
+Beginners often mix these two up, but they differ clearly in how the address is computed.
 
-- **Mảng**: index nhân với kích thước phần tử, offset là biến. Bạn thấy `[base + index*scale]`, trong đó `index` là một thanh ghi thay đổi trong vòng lặp, `scale` là 1/2/4/8.
+- **Array**: an index multiplied by the element size, the offset is a variable. You see `[base + index*scale]`, where `index` is a register that changes in a loop, `scale` is 1/2/4/8.
   ```asm
-  mov eax, [rsi+rcx*4]   ; arr[rcx], mảng int
+  mov eax, [rsi+rcx*4]   ; arr[rcx], an int array
   ```
-- **Struct**: offset là hằng số, mỗi field một kiểu có thể khác nhau. Bạn thấy `[base + hằng_số]`.
+- **Struct**: the offset is a constant, and each field can be a different type. You see `[base + constant]`.
   ```asm
   mov eax, [rsi+8]       ; some_struct->field_at_8
   ```
 
-Quy tắc nhanh: **thấy nhân với index (`*4`, `*8`) thì nghĩ mảng; thấy cộng hằng số cố định và các field kiểu khác nhau thì nghĩ struct.** Mảng của struct thì kết hợp cả hai: `[base + index*sizeof_struct + field_offset]`, ví dụ `[rsi + rcx*32 + 4]` là `players[rcx].score` khi struct rộng 32 byte.
+Quick rule: **multiplication by an index (`*4`, `*8`) means think array; adding fixed constants with fields of different types means think struct.** An array of structs combines both: `[base + index*sizeof_struct + field_offset]`, for example `[rsi + rcx*32 + 4]` is `players[rcx].score` when the struct is 32 bytes wide.
 
-## Cái bẫy padding và alignment
+## The padding and alignment trap
 
-![Bố cục struct trong bộ nhớ có padding](/assets/img/technique-reverse/assets/phan-03/struct-layout.svg)
+![Struct layout in memory with padding](/assets/img/technique-reverse/assets/phan-03/struct-layout.svg)
 
-Đừng mong các field nằm sát nhau. Compiler chèn byte đệm (padding) để mỗi field nằm ở địa chỉ chia hết cho kích thước của nó (alignment). Ví dụ:
+Don't expect the fields to sit tightly together. The compiler inserts padding bytes so each field sits at an address divisible by its size (alignment). For example:
 
 ```c
 struct Messy {
     char  a;    // offset 0
-    int   b;    // offset 4  (KHÔNG phải 1, vì int cần căn 4)
+    int   b;    // offset 4  (NOT 1, because int needs 4-byte alignment)
     char  c;    // offset 8
-    // 7 byte padding ở đây
-    double d;   // offset 16 (double cần căn 8)
-};  // sizeof = 24, không phải 14
+    // 7 bytes of padding here
+    double d;   // offset 16 (double needs 8-byte alignment)
+};  // sizeof = 24, not 14
 ```
 
-Nên khi bạn thấy offset nhảy từ `+0` sang `+4` dù field đầu chỉ 1 byte, đừng hoảng: đó là padding. Khi dựng lại struct trong tool, bạn khai báo đúng kiểu từng field thì công cụ tự tính padding giúp. Nếu offset vẫn lệch, thường là bạn đoán sai kiểu của một field phía trước.
+So when you see the offset jump from `+0` to `+4` even though the first field is only 1 byte, don't panic: that's padding. When you rebuild the struct in the tool, declare the right type for each field and the tool computes the padding for you. If the offsets are still off, it's usually because you guessed the type of an earlier field wrong.
 
-## Khôi phục struct trong IDA
+## Recovering a struct in IDA
 
-Đây là quy trình thực tế, lặp đi lặp lại:
+This is the real workflow, repeated over and over:
 
-1. Mở decompiler (F5). Bạn thấy đống `*(a1 + N)` xấu xí.
-2. Mở Local Types (Shift+F1) hoặc Structures (Shift+F9), tạo một struct mới. Có thể gõ thẳng khai báo C:
+1. Open the decompiler (F5). You see the ugly `*(a1 + N)` pile.
+2. Open Local Types (Shift+F1) or Structures (Shift+F9), create a new struct. You can type the C declaration directly:
    ```c
    struct Player { int id; int score; char name[16]; int level; };
    ```
-3. Quay lại pseudocode, click phải vào biến con trỏ (`a1`), chọn "Convert to struct pointer" hoặc đặt kiểu bằng phím `Y` rồi gõ `Player *`.
-4. IDA lập tức đổi mọi `*(a1 + 8)` thành `a1->name`. Đọc lại, sửa tên field cho đúng ngữ nghĩa khi hiểu hơn.
+3. Go back to the pseudocode, right-click the pointer variable (`a1`), choose "Convert to struct pointer" or set the type with the `Y` key and type `Player *`.
+4. IDA instantly changes every `*(a1 + 8)` to `a1->name`. Read it again, and fix the field names to match their meaning as you understand more.
 
-Mẹo: nếu chưa biết struct có gì, dùng tính năng của IDA cho phép bạn vừa đọc vừa thêm field. Mỗi lần thấy một offset mới được truy cập, thêm field tại offset đó. IDA cũng có "Create new struct from this access" trên một số phiên bản để tự gom các offset đã thấy.
+Tip: if you don't know yet what's in the struct, use the IDA feature that lets you read and add fields as you go. Each time you see a new offset being accessed, add a field at that offset. IDA also has "Create new struct from this access" in some versions to gather the offsets you've seen automatically.
 
-## Khôi phục struct trong Ghidra
+## Recovering a struct in Ghidra
 
-Tương tự nhưng khác thao tác:
+Similar but different operations:
 
-1. Mở Data Type Manager (cửa sổ dưới bên phải). Click phải vào archive của chương trình, New > Structure.
-2. Thêm từng field với kiểu và tên, hoặc dùng "Auto Create Structure": trong Decompiler, click phải vào biến con trỏ, chọn Auto Fill in Structure / Auto Create Structure, Ghidra dò các truy cập và dựng struct nháp cho bạn.
-3. Gán kiểu con trỏ cho biến (click phải > Retype Variable, hoặc Ctrl+L), Ghidra cập nhật pseudocode.
-4. Tinh chỉnh tên field trong Data Type Manager, mọi nơi dùng struct cập nhật theo.
+1. Open the Data Type Manager (the window at the bottom right). Right-click the program's archive, New > Structure.
+2. Add each field with a type and name, or use "Auto Create Structure": in the Decompiler, right-click the pointer variable, choose Auto Fill in Structure / Auto Create Structure, and Ghidra probes the accesses and builds a draft struct for you.
+3. Assign the pointer type to the variable (right-click > Retype Variable, or Ctrl+L), and Ghidra updates the pseudocode.
+4. Refine the field names in the Data Type Manager, and every place that uses the struct updates with it.
 
-Ghidra mạnh ở chỗ Auto Create Structure khá thông minh với code tối ưu hóa, còn IDA cho trải nghiệm gõ khai báo C nhanh hơn. Dùng cái nào cũng được, quan trọng là thói quen: thấy con trỏ bị truy cập theo nhiều offset cố định thì dựng struct ngay.
+Ghidra's strength is that Auto Create Structure is fairly smart with optimized code, while IDA gives a faster experience typing C declarations. Either works, what matters is the habit: when you see a pointer being accessed at several fixed offsets, build a struct right away.
 
-## Trước và sau, vì sao đáng công
+## Before and after, why it's worth the effort
 
-Trước khi gán struct, pseudocode:
+Before assigning the struct, the pseudocode:
 
 ```c
 if ( *(a1 + 4) > 100 && *(_BYTE *)(a1 + 8) )
     *(a1 + 24) = *(a1 + 24) + 1;
 ```
 
-Sau khi gán `Player *`:
+After assigning `Player *`:
 
 ```c
 if ( player->score > 100 && player->name[0] )
     player->level++;
 ```
 
-Cùng một code, nhưng cái sau bạn đọc hiểu trong hai giây. Nhân khác biệt đó với hàng trăm hàm trong một chương trình thật, bạn hiểu vì sao dân pro bỏ công dựng struct ngay từ đầu.
+The same code, but the second you can read and understand in two seconds. Multiply that difference by hundreds of functions in a real program and you see why the pros take the trouble to build structs from the start.
 
-## Lab tự làm
+## Lab
 
-Mã nguồn và hướng dẫn ở [labs/3.3/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/3.3). Tóm tắt: build một chương trình C dùng struct nhiều kiểu field, mở trong IDA hoặc Ghidra, đọc pseudocode thô, rồi dựng lại struct và so sánh trước/sau. File [solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/3.3/solution.md) có layout struct và offset từng field để bạn đối chiếu, nhưng hãy tự dựng trước khi mở.
+Source code and instructions are at [labs/3.3/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/3.3). In short: build a C program that uses a struct with several field types, open it in IDA or Ghidra, read the raw pseudocode, then rebuild the struct and compare before/after. The file [solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/3.3/solution.md) has the struct layout and each field's offset for you to check against, but build it yourself before opening it.
 
-## Checklist ghi nhớ
-- Struct trong assembly = địa chỉ gốc + offset hằng số. Mỗi offset là một field.
-- Mảng dùng `[base + index*scale]` (index thay đổi); struct dùng `[base + hằng số]` (các kiểu khác nhau).
-- Padding/alignment làm offset không liên tục, đó là bình thường, không phải lỗi.
-- IDA: Local Types/Structures, gõ khai báo C, gán kiểu bằng `Y`.
-- Ghidra: Data Type Manager, Auto Create Structure, retype bằng Ctrl+L.
-- Dựng struct là một trong những việc cho lợi tức cao nhất khi đọc code C/C++.
+## Key takeaways
+- A struct in assembly = base address + constant offset. Each offset is a field.
+- Arrays use `[base + index*scale]` (a changing index); structs use `[base + constant]` (different types).
+- Padding/alignment makes offsets non-contiguous, that's normal, not an error.
+- IDA: Local Types/Structures, type the C declaration, assign the type with `Y`.
+- Ghidra: Data Type Manager, Auto Create Structure, retype with Ctrl+L.
+- Building structs is one of the highest-return things when reading C/C++ code.

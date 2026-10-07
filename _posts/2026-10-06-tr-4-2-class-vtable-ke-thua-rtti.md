@@ -1,26 +1,26 @@
 ---
-title: "Bài 4.2: Class, vtable, kế thừa và RTTI, dựng lại cây class"
+title: "Lesson 4.2: Classes, vtables, inheritance and RTTI, rebuilding the class tree"
 date: 2026-10-06 08:32:00 +0700
-categories: ["Technique Reverse", "Phần 4 · C++"]
+categories: ["Technique Reverse", "Part 04 · C++"]
 tags: [reverse-engineering, cpp]
 render_with_liquid: false
 ---
-Nếu bài trước nói về `this` pointer và name mangling, thì bài này là trái tim của C++ reverse. Lý do dân mới ghét C++ không phải vì cú pháp, mà vì một lời gọi hàm tưởng đơn giản lại biến thành `call rdx` không rõ gọi đi đâu. Đó là virtual call, và đằng sau nó là vtable. Hiểu vtable là bạn đọc được C++, không hiểu thì mãi mắc kẹt ở đống `call [reg]` bí ẩn.
+If the last lesson was about the `this` pointer and name mangling, this one is the heart of C++ reversing. The reason newcomers hate C++ isn't the syntax, it's that a seemingly simple function call turns into a `call rdx` with no clue where it goes. That's a virtual call, and behind it is the vtable. Understand the vtable and you can read C++, don't and you stay stuck on a pile of mysterious `call [reg]`.
 
-## Vì sao có vtable
+## Why vtables exist
 
-Trong C++, khi một class có virtual function, compiler phải giải quyết một bài toán: lúc biên dịch nó chưa biết `s->area()` sẽ gọi `Circle::area` hay `Rectangle::area`, vì `s` chỉ là con trỏ `Shape*`, kiểu thật chỉ biết lúc chạy. Giải pháp là bảng hàm ảo (virtual function table, gọi tắt vtable).
+In C++, when a class has virtual functions, the compiler has to solve a problem: at compile time it doesn't know whether `s->area()` will call `Circle::area` or `Rectangle::area`, because `s` is only a `Shape*` pointer and the real type is only known at runtime. The solution is the virtual function table (vtable for short).
 
-Cơ chế gồm hai phần:
+The mechanism has two parts:
 
-- Mỗi class có virtual function sẽ có **một vtable riêng**, là một mảng con trỏ hàm nằm trong vùng chỉ đọc (.rdata trên Windows, .rodata trên Linux). Mỗi virtual function chiếm một ô.
-- Mỗi object của class đó, ở **offset 0** (ngay đầu object), chứa một con trỏ trỏ tới vtable của class mình. Con trỏ này gọi là vptr.
+- Every class with virtual functions gets **its own vtable**, an array of function pointers in a read-only region (.rdata on Windows, .rodata on Linux). Each virtual function takes one slot.
+- Every object of that class contains, at **offset 0** (right at the start of the object), a pointer to its class's vtable. This pointer is called the vptr.
 
-Khi gọi `s->area()`, code không nhảy thẳng tới một địa chỉ cố định. Nó làm ba bước: lấy vptr từ đầu object, vào vtable lấy đúng ô của `area`, rồi gọi con trỏ hàm trong ô đó. Vì Circle và Rectangle có vptr trỏ tới hai vtable khác nhau, cùng một dòng code gọi ra hai hàm khác nhau. Đó là polymorphism nhìn từ dưới lên.
+When calling `s->area()`, the code doesn't jump straight to a fixed address. It does three steps: take the vptr from the start of the object, go into the vtable and fetch the slot for `area`, then call the function pointer in that slot. Because Circle and Rectangle have vptrs pointing to two different vtables, the same line of code calls two different functions. That's polymorphism seen from the bottom up.
 
-## Layout của một object
+## The layout of an object
 
-Lấy ví dụ lab trong bài này:
+Take the lab example from this lesson:
 
 ```cpp
 class Shape {
@@ -34,77 +34,77 @@ class Circle : public Shape {
 };
 ```
 
-Trên x86-64, object `Circle` nằm trong bộ nhớ như sau (số liệu lấy từ biên dịch thật bằng g++):
+On x86-64, a `Circle` object sits in memory like this (numbers from a real g++ compile):
 
 ```
-offset 0  : vptr        (8 byte, con trỏ tới vtable của Circle)
-offset 8  : id          (4 byte, kế thừa từ Shape)
-offset 12 : padding     (4 byte, để radius thẳng hàng 8)
-offset 16 : radius      (8 byte, field riêng của Circle)
-tổng sizeof(Circle) = 24
+offset 0  : vptr        (8 bytes, pointer to Circle's vtable)
+offset 8  : id          (4 bytes, inherited from Shape)
+offset 12 : padding     (4 bytes, to align radius to 8)
+offset 16 : radius      (8 bytes, Circle's own field)
+total sizeof(Circle) = 24
 ```
 
-Hai điều cần khắc cốt:
+Two things to burn into memory:
 
-1. **vptr luôn ở offset 0.** Thấy một hàm nạp `[object]` rồi lại nạp `[kết quả đó]` để gọi, đó là đang đi qua vptr vào vtable. Đây là dấu vân tay của C++.
-2. **Field của class cha nằm trước field của class con.** Circle gồm toàn bộ phần Shape (vptr + id) rồi mới tới radius. Kế thừa đơn chính là xếp chồng layout: một `Circle*` ép sang `Shape*` không đổi địa chỉ, vì phần Shape nằm ngay đầu.
+1. **The vptr is always at offset 0.** If you see a function load `[object]` and then load `[that result]` to call, it's going through the vptr into the vtable. This is the fingerprint of C++.
+2. **The base class's fields come before the derived class's fields.** Circle contains all of Shape (vptr + id) and only then radius. Single inheritance is just stacking layouts: a `Circle*` cast to `Shape*` doesn't change the address, because the Shape part is right at the start.
 
-## Nhận ra virtual call trong assembly
+## Recognizing a virtual call in assembly
 
-![Object, vtable và lời gọi virtual qua call reg+offset](/assets/img/technique-reverse/assets/phan-04/vtable.svg)
+![Object, vtable and a virtual call through call reg+offset](/assets/img/technique-reverse/assets/phan-04/vtable.svg)
 
-Đây là đoạn asm thật của hàm `report(Shape* s)` gọi `s->name()` và `s->area()`, biên dịch bằng `g++ -O0`:
+Here's real asm from the function `report(Shape* s)` calling `s->name()` and `s->area()`, compiled with `g++ -O0`:
 
 ```asm
-mov  QWORD PTR [rbp-0x18], rdi   ; lưu tham số s (con trỏ object)
+mov  QWORD PTR [rbp-0x18], rdi   ; save the parameter s (object pointer)
 mov  rax, QWORD PTR [rbp-0x18]   ; rax = s
-mov  rax, QWORD PTR [rax]        ; rax = *s = vptr  (đọc vtable tại offset 0)
-mov  rdx, QWORD PTR [rax]        ; rdx = vtable[0]  (ô đầu tiên của vtable)
-mov  rdi, QWORD PTR [rbp-0x18]   ; rdi = s          (this pointer, tham số ẩn đầu tiên)
-call rdx                         ; gọi virtual function qua con trỏ
+mov  rax, QWORD PTR [rax]        ; rax = *s = vptr  (read the vtable at offset 0)
+mov  rdx, QWORD PTR [rax]        ; rdx = vtable[0]  (the first slot of the vtable)
+mov  rdi, QWORD PTR [rbp-0x18]   ; rdi = s          (the this pointer, the first hidden parameter)
+call rdx                         ; call the virtual function through the pointer
 ...
-mov  rax, QWORD PTR [rax]        ; rax = vptr lần nữa
+mov  rax, QWORD PTR [rax]        ; rax = vptr again
 add  rax, 0x8                    ; rax = vtable + 8
-mov  rdx, QWORD PTR [rax]        ; rdx = vtable[1]  (ô thứ hai)
-call rdx                         ; gọi virtual function thứ hai
+mov  rdx, QWORD PTR [rax]        ; rdx = vtable[1]  (the second slot)
+call rdx                         ; call the second virtual function
 ...
-mov  eax, DWORD PTR [rax+0x8]    ; đọc s->id  (field thường tại offset 8)
+mov  eax, DWORD PTR [rax+0x8]    ; read s->id  (a normal field at offset 8)
 ```
 
-Đọc ra ngay ba đặc trưng:
+Three characteristics jump out right away:
 
-- **Hai lần dereference trước khi call:** `mov rax,[s]` rồi `mov rax,[rax]`. Lần một lấy vptr (vì vptr ở offset 0 nên `[s]` chính là vptr), lần hai lấy con trỏ hàm từ vtable. Đây là mẫu không lẫn đi đâu được.
-- **`call rdx` thay vì `call địa_chỉ`:** gọi gián tiếp qua thanh ghi, vì địa chỉ hàm chỉ biết lúc chạy.
-- **`vtable[0]`, `vtable+8`, `vtable+16`...:** mỗi offset là một virtual function theo thứ tự khai báo. Biết thứ tự này là biết đang gọi hàm nào.
+- **Two dereferences before the call:** `mov rax,[s]` then `mov rax,[rax]`. The first gets the vptr (since the vptr is at offset 0, `[s]` is the vptr itself), the second gets the function pointer from the vtable. This pattern is unmistakable.
+- **`call rdx` instead of `call address`:** an indirect call through a register, because the function address is only known at runtime.
+- **`vtable[0]`, `vtable+8`, `vtable+16`...:** each offset is one virtual function in declaration order. Knowing this order tells you which function is being called.
 
-So với một lời gọi thường (`call sub_401500`, địa chỉ cố định), virtual call luôn có dạng `call [reg]` hoặc `call [reg+offset]`. Thấy nó là biết mình đang ở trong code C++ hướng đối tượng.
+Compared with a normal call (`call sub_401500`, fixed address), a virtual call always looks like `call [reg]` or `call [reg+offset]`. Seeing it means you're inside object-oriented C++ code.
 
-## Dùng vtable để dựng lại cây class
+## Using vtables to rebuild the class tree
 
-Vtable không chỉ gây khó, nó còn là món quà: nó cho bạn danh sách mọi virtual function của một class, gom lại một chỗ.
+The vtable isn't just a hurdle, it's also a gift: it gives you the list of all of a class's virtual functions, gathered in one place.
 
-Quy trình dựng lại hierarchy:
+The process for rebuilding the hierarchy:
 
-1. **Tìm các vtable.** Chúng là những mảng con trỏ hàm trong .rdata/.rodata. IDA và Ghidra thường tự nhận ra và đặt tên kiểu `Circle::vftable` hoặc `vtable for Circle`.
-2. **Đọc các ô trong một vtable** để biết class đó có những virtual function nào. Mỗi ô trỏ tới một hàm, đọc hàm đó là hiểu class làm gì.
-3. **Tìm constructor để biết class nào dùng vtable nào.** Constructor là nơi vptr được ghi vào offset 0 của object (`mov [object], offset vtable`). Thấy một hàm ghi một địa chỉ vtable vào `[rcx]` hoặc `[rdi]` ở đầu, đó gần như chắc là constructor, và nó buộc object với class tương ứng.
-4. **So các vtable để suy kế thừa.** Nếu vtable của Circle và Rectangle chia sẻ vài ô đầu (cùng con trỏ, hoặc cùng chữ ký) rồi khác ở các ô sau, chúng nhiều khả năng có chung class cha.
+1. **Find the vtables.** They're arrays of function pointers in .rdata/.rodata. IDA and Ghidra usually recognize them automatically and name them like `Circle::vftable` or `vtable for Circle`.
+2. **Read the slots in a vtable** to learn which virtual functions that class has. Each slot points to a function, and reading that function tells you what the class does.
+3. **Find the constructor to know which class uses which vtable.** The constructor is where the vptr gets written into offset 0 of the object (`mov [object], offset vtable`). If you see a function that writes a vtable address into `[rcx]` or `[rdi]` at the start, that's almost certainly a constructor, and it ties the object to the corresponding class.
+4. **Compare vtables to infer inheritance.** If the vtables of Circle and Rectangle share the first few slots (same pointers, or same signatures) and then differ in the later slots, they likely share a base class.
 
-## RTTI, con đường tắt khi có
+## RTTI, the shortcut when it's there
 
-RTTI (Run-Time Type Information) là dữ liệu C++ sinh ra để hỗ trợ `dynamic_cast` và `typeid`. Khi binary được biên dịch có RTTI (mặc định với g++ và MSVC, trừ khi tắt bằng `-fno-rtti` hoặc `/GR-`), mỗi class polymorphic có một cấu trúc `type_info` chứa **tên class ở dạng chuỗi**.
+RTTI (Run-Time Type Information) is data C++ generates to support `dynamic_cast` and `typeid`. When the binary is compiled with RTTI (the default for g++ and MSVC, unless turned off with `-fno-rtti` or `/GR-`), every polymorphic class has a `type_info` structure containing **the class name as a string**.
 
-Đây là vàng cho reverser:
+This is gold for a reverser:
 
-- Trong binary có RTTI, bạn sẽ thấy chuỗi kiểu `.?AVCircle@@` (MSVC) hoặc `6Circle` (Itanium ABI của g++) trong strings. Tên class lộ ra trần trụi.
-- IDA (với plugin như Class Informer) và Ghidra tự đọc RTTI để đặt tên vtable và class theo đúng tên gốc. Tự nhiên `sub_xxx::vftable` thành `Circle::vftable`.
-- RTTI còn mô tả quan hệ kế thừa (base class array), nên nhiều khi dựng lại được cả cây mà không cần đoán.
+- In a binary with RTTI, you'll see strings like `.?AVCircle@@` (MSVC) or `6Circle` (g++'s Itanium ABI) in strings. The class name is exposed in the open.
+- IDA (with plugins like Class Informer) and Ghidra read RTTI themselves to name vtables and classes by their original names. `sub_xxx::vftable` suddenly becomes `Circle::vftable`.
+- RTTI also describes inheritance relationships (the base class array), so often you can rebuild the whole tree without guessing.
 
-Ngược lại, binary biên dịch `-fno-rtti` sẽ không có các chuỗi này, vtable vẫn còn nhưng bạn phải tự đặt tên class. Vì vậy một trong những việc đầu tiên khi gặp C++ là kiểm tra có RTTI hay không: có thì nhẹ nhõm, không thì xắn tay dựng tay.
+On the other hand, a binary compiled with `-fno-rtti` won't have these strings. The vtables are still there but you have to name the classes yourself. So one of the first things to do when you meet C++ is check whether RTTI is present: if yes, relief, if not, roll up your sleeves and build it by hand.
 
-## Checklist ghi nhớ
-- Virtual function dẫn tới vtable: mỗi class một vtable (mảng con trỏ hàm trong .rdata/.rodata), mỗi object có vptr ở offset 0 trỏ tới vtable của mình.
-- Virtual call trong asm: hai lần dereference rồi `call [reg]` hoặc `call [reg+offset]`. Offset chọn hàm theo thứ tự khai báo.
-- Kế thừa đơn = xếp chồng layout: phần class cha nằm trước, nên `Derived*` ép sang `Base*` không đổi địa chỉ.
-- Constructor ghi vptr vào offset 0 của object, dùng nó để biết object thuộc class nào.
-- RTTI (nếu có) lộ tên class dưới dạng chuỗi, IDA/Ghidra tự đặt tên theo đó. Kiểm tra RTTI là việc đầu tiên khi gặp C++.
+## Key takeaways
+- Virtual functions lead to vtables: one vtable per class (an array of function pointers in .rdata/.rodata), and every object has a vptr at offset 0 pointing to its own vtable.
+- A virtual call in asm: two dereferences then `call [reg]` or `call [reg+offset]`. The offset picks the function by declaration order.
+- Single inheritance = stacked layouts: the base class part comes first, so a `Derived*` cast to `Base*` doesn't change the address.
+- The constructor writes the vptr into offset 0 of the object, use it to tell which class an object belongs to.
+- RTTI (if present) exposes class names as strings, and IDA/Ghidra name things from it automatically. Checking for RTTI is the first thing to do on C++.

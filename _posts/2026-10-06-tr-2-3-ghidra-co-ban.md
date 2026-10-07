@@ -1,85 +1,85 @@
 ---
-title: "Bài 2.3: Ghidra cơ bản, con dao miễn phí mà đắt tiền"
+title: "Lesson 2.3: Ghidra basics, the free knife that's worth a lot"
 date: 2026-10-06 08:19:00 +0700
-categories: ["Technique Reverse", "Phần 2 · Làm quen bộ công cụ"]
+categories: ["Technique Reverse", "Part 02 · The Toolkit"]
 tags: [reverse-engineering, tools]
 render_with_liquid: false
 ---
-Ghidra là bộ reverse do NSA viết rồi mở mã nguồn năm 2019, và câu hỏi đầu tiên ai cũng hỏi là "đồ miễn phí thì làm được gì". Trả lời ngắn: nó có một decompiler biến assembly thành pseudocode kiểu C, chạy được trên gần như mọi kiến trúc, và bạn không mất một xu. Với người mới, đây là lý do rất chính đáng để bắt đầu bằng Ghidra thay vì chờ tiền mua IDA Pro.
+Ghidra is a reversing suite written by the NSA and open sourced in 2019, and the first question everyone asks is "what can a free tool do". The short answer: it has a decompiler that turns assembly into C-like pseudocode, runs on almost every architecture, and costs you nothing. For a beginner, that's a perfectly good reason to start with Ghidra instead of waiting until you can afford IDA Pro.
 
-Bài này đưa bạn đi hết một vòng từ lúc mở Ghidra tới lúc đọc được pseudocode của một hàm. Phím tắt đầy đủ nằm ở [cheatsheet](/posts/tr-tai-nguyen-cheatsheet/), ở đây tôi chỉ nhắc cái nào dùng tới.
+This lesson takes you through one full loop from opening Ghidra to reading a function's pseudocode. The full shortcut list is in the [cheatsheet](/posts/tr-tai-nguyen-cheatsheet/), here I only mention the ones that get used.
 
-## Project, không phải mở thẳng file
+## A project, not opening the file directly
 
-Khác IDA (kéo file vào là chạy), Ghidra bắt bạn tạo một project trước. Nghe phiền nhưng có lý do: một project gom nhiều file liên quan vào một chỗ, giữ lại toàn bộ ghi chú và phân tích của bạn, và cho phép so sánh nhiều binary với nhau sau này.
+Unlike IDA (drag a file in and it runs), Ghidra makes you create a project first. Sounds annoying but there's a reason: a project gathers several related files in one place, keeps all your notes and analysis, and lets you compare multiple binaries with each other later.
 
-Các bước:
-1. Mở Ghidra, chọn File > New Project, chọn Non-Shared Project (bạn làm một mình), đặt tên và nơi lưu.
-2. Kéo file cần phân tích vào cửa sổ project, hoặc File > Import File. Ghidra tự nhận định dạng (PE, ELF, Mach-O) và kiến trúc. Thường cứ để mặc định rồi OK.
-3. Double-click file vừa import để mở CodeBrowser, cửa sổ làm việc chính.
-4. Ghidra hỏi "Analyze now?", chọn Yes. Bảng analyzer hiện ra, cứ để mặc định rồi Analyze.
+Steps:
+1. Open Ghidra, choose File > New Project, choose Non-Shared Project (you're working alone), set a name and a location.
+2. Drag the file you want to analyze into the project window, or File > Import File. Ghidra recognizes the format (PE, ELF, Mach-O) and the architecture itself. Usually just leave the defaults and OK.
+3. Double-click the file you just imported to open CodeBrowser, the main working window.
+4. Ghidra asks "Analyze now?", choose Yes. The analyzer list shows up, just leave the defaults and Analyze.
 
-Auto-analysis là bước Ghidra quét toàn file: tìm hàm, dựng cross-reference, nhận diện chuỗi, đoán kiểu dữ liệu. File nhỏ xong trong vài giây, file to thì chờ chút. Thanh tiến trình chạy xong là bắt đầu được.
+Auto-analysis is the step where Ghidra scans the whole file: finding functions, building cross-references, recognizing strings, guessing data types. A small file finishes in seconds, a big one takes a bit longer. When the progress bar finishes you can start.
 
-## CodeBrowser, bốn cửa sổ bạn sống trong đó
+## CodeBrowser, the four windows you live in
 
-Giao diện CodeBrowser nhìn rối lúc đầu, nhưng thực ra chỉ có bốn chỗ bạn dùng suốt:
+The CodeBrowser interface looks messy at first, but there are really only four places you use all the time:
 
-- **Listing** (giữa màn hình): disassembly, tức assembly kèm địa chỉ, comment, nhãn. Đây là bản gốc chính xác nhất.
-- **Decompiler** (thường bên phải): pseudocode kiểu C của hàm đang chọn. Mở bằng cách click vào một hàm, hoặc nhấn Ctrl+E. Đây là chỗ người mới đọc nhiều nhất vì dễ nuốt hơn assembly.
-- **Symbol Tree** (bên trái): danh sách hàm (Functions), import, export, nhãn. Chỗ để nhảy nhanh tới một hàm theo tên.
-- **Data Type Manager** (dưới bên trái): kho kiểu dữ liệu. Khi bạn muốn áp một struct hay một kiểu Windows vào biến, bạn lấy từ đây.
+- **Listing** (middle of the screen): the disassembly, meaning assembly with addresses, comments, labels. This is the most accurate original.
+- **Decompiler** (usually on the right): C-like pseudocode of the selected function. Open it by clicking a function, or pressing Ctrl+E. This is where beginners read the most because it goes down easier than assembly.
+- **Symbol Tree** (on the left): the list of functions (Functions), imports, exports, labels. The place to jump quickly to a function by name.
+- **Data Type Manager** (bottom left): the store of data types. When you want to apply a struct or a Windows type to a variable, you get it from here.
 
-Listing và Decompiler luôn đồng bộ: click một dòng bên này, bên kia nhảy theo. Thói quen tốt là đọc Decompiler để nắm ý, rồi liếc Listing khi cần độ chính xác từng lệnh.
+Listing and Decompiler are always in sync: click a line on one side and the other jumps along. A good habit is to read the Decompiler to get the idea, then glance at the Listing when you need instruction-level accuracy.
 
-## Đi từ chuỗi, kỹ thuật vào việc nhanh nhất
+## Start from strings, the fastest way to get to work
 
-Giống mọi công cụ RE, cách nhanh nhất để tìm "chỗ thú vị" trong Ghidra là đi ngược từ một chuỗi. Mở Window > Defined Strings. Một bảng mọi chuỗi trong file hiện ra. Thấy chuỗi đáng ngờ kiểu "Wrong password" hay "Access granted"? Double-click vào nó để nhảy tới nơi nó nằm trong Listing, rồi xem cái gì tham chiếu tới nó.
+Like in any RE tool, the fastest way to find "the interesting spot" in Ghidra is to work backwards from a string. Open Window > Defined Strings. A table of every string in the file appears. See a suspicious string like "Wrong password" or "Access granted"? Double-click it to jump to where it sits in the Listing, then see what references it.
 
-Để xem tham chiếu, đặt con trỏ lên chuỗi (hoặc hàm, biến) rồi nhấn Ctrl+Shift+F (Find References To). Ghidra liệt kê mọi nơi dùng tới nó. Nơi tham chiếu chuỗi "Wrong password" gần như chắc chắn là hàm kiểm tra mật khẩu. Double-click là bạn đã đứng ngay trong hàm cần tìm, bỏ qua được cả nghìn dòng khởi tạo runtime.
+To see references, put the cursor on the string (or function, variable) and press Ctrl+Shift+F (Find References To). Ghidra lists every place that uses it. The place that references the string "Wrong password" is almost certainly the password check function. Double-click and you're standing right in the function you were looking for, skipping thousands of lines of runtime initialization.
 
-## Rename và retype, biến rác thành đọc được
+## Rename and retype, turning junk into something readable
 
-Sau auto-analysis, hàm chưa có tên sẽ tên kiểu `FUN_00401000`, biến là `local_8`, `uVar1`. Khó đọc. Khác biệt giữa người làm chậm mà chắc với người ngập trong `FUN_xxx` nằm ở chỗ: hiểu cái gì thì đặt tên ngay cái đó.
+After auto-analysis, functions without names are called things like `FUN_00401000`, variables are `local_8`, `uVar1`. Hard to read. The difference between someone who works slow but steady and someone drowning in `FUN_xxx` is this: whatever you understand, name it right away.
 
-- **Rename**: đặt con trỏ lên hàm hoặc biến, nhấn **L**, gõ tên mới. Ví dụ `FUN_00401000` hoá ra băm chuỗi thì đổi thành `hash_string`.
-- **Retype**: nhấn **Ctrl+L** để đổi kiểu một biến. Biến Ghidra đoán là `undefined4` mà bạn biết là `int` hay một con trỏ struct thì sửa lại, decompiler sẽ hiển thị đẹp hơn hẳn.
-- **Comment**: nhấn **;** để ghi chú ngay tại dòng.
+- **Rename**: put the cursor on a function or variable, press **L**, type the new name. For example if `FUN_00401000` turns out to hash a string, rename it to `hash_string`.
+- **Retype**: press **Ctrl+L** to change a variable's type. A variable Ghidra guessed as `undefined4` that you know is an `int` or a struct pointer, fix it, and the decompiler displays much more nicely.
+- **Comment**: press **;** to leave a note right at the line.
 
-Mỗi cái tên bạn đặt làm hàm kế tiếp dễ đọc hơn, vì Ghidra lan tên đó ra mọi nơi gọi tới. Đây không phải việc làm cho đẹp, nó là cách bạn giữ đầu óc tỉnh táo khi hàm chồng hàm.
+Every name you set makes the next function easier to read, because Ghidra propagates that name to everywhere that calls it. This isn't busywork to make things pretty, it's how you keep your head clear when functions pile on functions.
 
-## Navigation, đừng lạc đường
+## Navigation, don't get lost
 
-- Double-click một tên hàm hay địa chỉ để nhảy tới nó.
-- Nút mũi tên back/forward trên thanh công cụ (hoặc Alt+Mũi tên trái/phải) để quay lại chỗ vừa rời, y như trình duyệt. Dùng liên tục khi bạn lần theo một chuỗi call.
-- Phím **G** để nhảy thẳng tới một địa chỉ cụ thể.
+- Double-click a function name or address to jump to it.
+- The back/forward arrow buttons on the toolbar (or Alt+Left/Right arrow) to return to where you just left, just like a browser. Use them constantly when following a chain of calls.
+- Press **G** to jump straight to a specific address.
 
-## Ghidra so với IDA, và vài chỗ hay vấp
+## Ghidra vs IDA, and a few places people trip
 
-Nếu bạn đến từ IDA, phần lớn khái niệm giống nhau nhưng tên gọi và phím tắt khác, đây là chỗ làm người ta bực lúc đầu:
+If you come from IDA, most concepts are the same but the names and shortcuts differ, and this is what annoys people at first:
 
-| Việc | IDA | Ghidra |
+| Task | IDA | Ghidra |
 |---|---|---|
 | Rename | N | L |
-| Decompile | F5 | Ctrl+E (hoặc click hàm) |
-| Xref tới | X | Ctrl+Shift+F |
-| Danh sách chuỗi | Shift+F12 | Window > Defined Strings |
-| Nhảy địa chỉ | G | G |
+| Decompile | F5 | Ctrl+E (or click the function) |
+| Xrefs to | X | Ctrl+Shift+F |
+| String list | Shift+F12 | Window > Defined Strings |
+| Jump to address | G | G |
 
-Vài điểm người quen IDA hay vấp:
-- Ghidra **không** tự mở decompiler bằng F5. Decompiler là một panel luôn hiện, bạn chỉ cần click vào hàm.
-- Undo/Redo trong Ghidra là Ctrl+Z/Ctrl+Y và nó nhớ cả thao tác phân tích, mạnh hơn IDA ở điểm này.
-- Ghidra lưu tự động vào project, nhưng nhớ File > Save (Ctrl+S) trước khi đóng cho chắc.
+A few points IDA people often trip on:
+- Ghidra does **not** open the decompiler with F5. The decompiler is a panel that's always showing, you just click the function.
+- Undo/Redo in Ghidra is Ctrl+Z/Ctrl+Y and it remembers analysis operations too, stronger than IDA on this point.
+- Ghidra saves automatically into the project, but remember File > Save (Ctrl+S) before closing to be safe.
 
-Về sức mạnh: decompiler của IDA (Hex-Rays) thường ra code mượt hơn chút, nhất là với code tối ưu nặng, nhưng Ghidra miễn phí mà chất lượng rất gần, và phần scripting (Java hoặc Python) để tự động hoá thì cực mạnh, nói ở [Bài 18.1](https://github.com/Haind03/Technique-Reverse/tree/main/phan-18-nang-cao). Với người học, Ghidra không thua thiệt gì đáng kể.
+On power: IDA's decompiler (Hex-Rays) usually produces slightly smoother code, especially with heavily optimized code, but Ghidra is free and the quality is very close, and the scripting side (Java or Python) for automation is extremely powerful, covered in [Lesson 18.1](https://github.com/Haind03/Technique-Reverse/tree/main/phan-18-nang-cao). For a learner, Ghidra loses nothing significant.
 
-## Lab tự làm
+## Lab
 
-Bài tập thực hành và writeup nằm ở [labs/2.3/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/2.3). Bạn sẽ import cùng một crackme nhỏ vào Ghidra, chạy auto-analysis, đi từ Defined Strings tới hàm kiểm tra, rename và retype để pseudocode đọc được, rồi so sánh cảm giác với IDA ở [Bài 2.2](/posts/tr-2-2-ida-co-ban/). Làm cả hai công cụ trên cùng một binary là cách nhanh nhất để thấy chúng giống và khác chỗ nào.
+The hands-on exercise and writeup are at [labs/2.3/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/2.3). You'll import the same small crackme into Ghidra, run auto-analysis, go from Defined Strings to the check function, rename and retype so the pseudocode is readable, then compare the feel with IDA in [Lesson 2.2](/posts/tr-2-2-ida-co-ban/). Doing both tools on the same binary is the fastest way to see where they're alike and different.
 
-## Checklist ghi nhớ
-- Ghidra bắt tạo project trước, rồi import, rồi Analyze (auto-analysis) mới dùng được.
-- Bốn cửa sổ chính: Listing (asm), Decompiler (pseudocode), Symbol Tree (hàm), Data Type Manager (kiểu).
-- Vào việc nhanh: Window > Defined Strings, double-click chuỗi, Ctrl+Shift+F để xref tới hàm dùng nó.
-- Rename bằng L, retype bằng Ctrl+L, comment bằng dấu chấm phẩy. Hiểu gì đặt tên nấy ngay.
-- So với IDA: khái niệm giống, phím khác. Decompiler luôn hiện, không cần F5.
+## Key takeaways
+- Ghidra makes you create a project first, then import, then Analyze (auto-analysis) before it's usable.
+- Four main windows: Listing (asm), Decompiler (pseudocode), Symbol Tree (functions), Data Type Manager (types).
+- Getting to work fast: Window > Defined Strings, double-click a string, Ctrl+Shift+F to xref to the function that uses it.
+- Rename with L, retype with Ctrl+L, comment with the semicolon. Name things as soon as you understand them.
+- Compared to IDA: same concepts, different keys. The decompiler is always showing, no F5 needed.

@@ -1,32 +1,32 @@
 ---
-title: "Bài 6.1: JVM bytecode và dàn decompiler Java"
+title: "Lesson 6.1: JVM bytecode and the Java decompiler lineup"
 date: 2026-10-06 08:44:00 +0700
-categories: ["Technique Reverse", "Phần 6 · Java / Kotlin / Android (JADX)"]
+categories: ["Technique Reverse", "Part 06 · Java, Kotlin and Android"]
 tags: [reverse-engineering, android, java]
 render_with_liquid: false
 ---
-Nếu bạn vừa đi qua phần C/C++ và thấy nản vì tên biến bay sạch, Java sẽ là một liều thuốc an ủi. File `.class` của Java giữ lại gần như đầy đủ thông tin: tên class, tên method, tên field, kiểu dữ liệu. Thả một file `.jar` vào JADX là bạn có lại code Java đọc được gần như bản gốc. Lý do nằm ở chỗ Java, giống .NET, không biên dịch thẳng ra machine code mà dừng ở một tầng trung gian gọi là bytecode. Bài này giải thích tầng đó và điểm qua dàn công cụ để lật nó về Java.
+If you just came through the C/C++ part and feel discouraged because all the variable names are gone, Java will be a consolation. A Java `.class` file keeps almost all the information: class names, method names, field names, data types. Drop a `.jar` into JADX and you get back Java code that reads almost like the original. The reason is that Java, like .NET, doesn't compile straight to machine code but stops at an intermediate layer called bytecode. This lesson explains that layer and goes over the lineup of tools to flip it back into Java.
 
-## Vì sao .class dễ đọc đến vậy
+## Why .class is so easy to read
 
-Khi bạn `javac Hello.java`, trình biên dịch không tạo ra lệnh cho CPU. Nó tạo ra JVM bytecode, một tập lệnh cho máy ảo Java (Java Virtual Machine). Lúc chạy, JVM mới dịch bytecode đó sang machine code (qua JIT) hoặc thông dịch từng lệnh.
+When you run `javac Hello.java`, the compiler doesn't produce instructions for the CPU. It produces JVM bytecode, an instruction set for the Java Virtual Machine. At runtime, the JVM translates that bytecode into machine code (through the JIT) or interprets it instruction by instruction.
 
-Điểm mấu chốt với người reverse: để JVM chạy được, file `.class` buộc phải mang theo rất nhiều metadata. Tên method phải còn để gọi, kiểu tham số phải còn để kiểm tra, tên field phải còn để truy cập. Những thứ mà compiler C vứt đi thì compiler Java bắt buộc phải giữ. Đó là lý do decompiler Java cho ra kết quả đẹp hơn hẳn decompiler native.
+The key point for a reverser: for the JVM to run it, a `.class` file has to carry a lot of metadata. Method names have to stay so they can be called, parameter types have to stay so they can be checked, field names have to stay so they can be accessed. Things a C compiler throws away, a Java compiler has to keep. That's why Java decompilers give much nicer results than native decompilers.
 
-## Bên trong một file .class
+## Inside a .class file
 
-Một `.class` gồm vài phần, hai phần bạn cần quan tâm nhất:
+A `.class` has several parts, and the two you care about most are:
 
-- **Constant pool**: một bảng tra chứa mọi hằng số, tên, và tham chiếu mà class dùng tới. Chuỗi, tên method, tên class, tất cả gom vào đây rồi bytecode chỉ trỏ tới bằng số thứ tự (`#7`, `#13`...). Đây là mỏ vàng khi reverse: cứ đọc constant pool là thấy hết chuỗi và tên hàm ngoại được gọi.
-- **Các method**, mỗi method có một khối **Code** chứa bytecode.
+- **Constant pool**: a lookup table holding every constant, name, and reference the class uses. Strings, method names, class names, all gathered here and then the bytecode only points to them by index (`#7`, `#13`...). This is a gold mine when reversing: just read the constant pool and you see all the strings and the names of external functions called.
+- **The methods**, each of which has a **Code** block containing the bytecode.
 
-JVM là một máy ảo **stack-based**, khác với x86 là **register-based**. Nghĩa là thay vì đổ dữ liệu vào thanh ghi rồi tính, bytecode đẩy toán hạng lên một stack rồi lệnh lấy từ stack ra xử lý. Ví dụ phép cộng không nói "cộng thanh ghi này với thanh ghi kia", mà là "lấy hai giá trị trên cùng của stack, cộng, đẩy kết quả lại".
+The JVM is a **stack-based** virtual machine, unlike x86 which is **register-based**. That means instead of loading data into registers and computing, bytecode pushes operands onto a stack and then instructions pop from the stack to process them. For example, an addition doesn't say "add this register to that register", it says "take the top two values of the stack, add them, push the result back".
 
-## Đọc thử bytecode thật
+## Reading some real bytecode
 
-![JVM bytecode stack-based so với DEX bytecode register-based](/assets/img/technique-reverse/assets/phan-06/dex-vs-jvm.svg)
+![Stack-based JVM bytecode vs register-based DEX bytecode](/assets/img/technique-reverse/assets/phan-06/dex-vs-jvm.svg)
 
-Lấy một method cộng hai số:
+Take a method that adds two numbers:
 
 ```java
 static int add(int a, int b) {
@@ -34,20 +34,20 @@ static int add(int a, int b) {
 }
 ```
 
-Dùng `javap -c` (công cụ có sẵn trong JDK) để xem bytecode:
+Use `javap -c` (a tool that ships with the JDK) to see the bytecode:
 
 ```
 static int add(int, int);
   Code:
-     0: iload_0      // đẩy tham số 0 (a) lên stack
-     1: iload_1      // đẩy tham số 1 (b) lên stack
-     2: iadd         // lấy hai số trên stack, cộng, đẩy kết quả
-     3: ireturn      // trả về số nguyên trên đỉnh stack
+     0: iload_0      // push parameter 0 (a) onto the stack
+     1: iload_1      // push parameter 1 (b) onto the stack
+     2: iadd         // take the two numbers on the stack, add, push the result
+     3: ireturn      // return the integer on top of the stack
 ```
 
-Bốn lệnh, đọc thẳng được ý. `i` ở đầu là integer, `load` là nạp lên stack, `add` là cộng, `return` là trả về. Không cần thuộc lòng, nhìn tiền tố là đoán ra.
+Four instructions, and you can read the meaning directly. The `i` at the start is integer, `load` is load onto the stack, `add` is add, `return` is return. No need to memorize, you can guess from the prefix.
 
-Giờ một method có nhánh, kiểu bạn gặp trong crackme:
+Now a method with a branch, like what you'd meet in a crackme:
 
 ```java
 static boolean checkPass(String s) {
@@ -55,54 +55,54 @@ static boolean checkPass(String s) {
 }
 ```
 
-Bytecode:
+The bytecode:
 
 ```
-0: aload_0                       // đẩy tham số s (kiểu tham chiếu) lên stack
-1: invokevirtual String.length  // gọi s.length(), kết quả lên stack
-4: bipush 8                      // đẩy hằng 8
-6: if_icmpne 22                  // nếu hai số khác nhau, nhảy tới 22 (trả false)
-9: aload_0                       // đẩy s
-10: ldc "JavaRev!"              // đẩy hằng chuỗi (tra trong constant pool #13)
-12: invokevirtual String.equals // gọi s.equals("JavaRev!")
-15: ifeq 22                      // nếu kết quả là 0 (false), nhảy tới 22
-18: iconst_1                     // đẩy 1 (true)
+0: aload_0                       // push parameter s (a reference type) onto the stack
+1: invokevirtual String.length  // call s.length(), result goes onto the stack
+4: bipush 8                      // push the constant 8
+6: if_icmpne 22                  // if the two numbers differ, jump to 22 (return false)
+9: aload_0                       // push s
+10: ldc "JavaRev!"              // push the string constant (looked up in constant pool #13)
+12: invokevirtual String.equals // call s.equals("JavaRev!")
+15: ifeq 22                      // if the result is 0 (false), jump to 22
+18: iconst_1                     // push 1 (true)
 19: goto 23
-22: iconst_0                     // đẩy 0 (false)
+22: iconst_0                     // push 0 (false)
 23: ireturn
 ```
 
-Để ý `ldc "JavaRev!"`: chuỗi so sánh lộ ra ngay trong bytecode. Một crackme Java ngây thơ dâng password cho bạn thế này. `invokevirtual String.equals` cho biết nó so sánh chuỗi, và cặp `if_icmpne`/`ifeq` chính là hai điều kiện `&&`. Giống hệt việc tìm cặp `cmp`/`jne` trong assembly ở Bài 1.3, chỉ là dễ đọc hơn nhiều.
+Notice `ldc "JavaRev!"`: the comparison string shows up right in the bytecode. A naive Java crackme hands over the password like this. `invokevirtual String.equals` tells you it compares strings, and the `if_icmpne`/`ifeq` pair is the two conditions of the `&&`. It's exactly like looking for the `cmp`/`jne` pair in assembly in Lesson 1.3, just much easier to read.
 
-Những tên như `String.length`, `String.equals`, chuỗi `JavaRev!`, tất cả đến từ constant pool. Bytecode chỉ ghi số `#7`, `#13`, `javap` tra hộ bạn và chú thích bên cạnh.
+Names like `String.length`, `String.equals`, the string `JavaRev!`, all come from the constant pool. The bytecode just writes the numbers `#7`, `#13`, and `javap` looks them up for you and annotates beside them.
 
-## Dàn decompiler Java, chọn cái nào
+## The Java decompiler lineup, which to pick
 
-Đọc bytecode thô chỉ cần khi decompiler dịch sai. Phần lớn thời gian bạn đọc thẳng Java đã dựng lại. Mỗi tool mạnh một kiểu:
+You only need to read raw bytecode when a decompiler translates wrong. Most of the time you read the rebuilt Java directly. Each tool is strong in its own way:
 
-| Tool | Điểm mạnh | Khi nào dùng |
+| Tool | Strengths | When to use |
 |---|---|---|
-| **JADX** | Nuốt luôn cả APK/DEX lẫn JAR, UI gọn, có deobfuscation cơ bản và sinh snippet Frida | Mặc định cho Android, cũng tốt cho JAR. Có sẵn trong repo |
-| **CFR** | Xử lý cú pháp Java mới rất tốt (lambda, switch hiện đại), dòng lệnh | Khi JADX dịch ra khó đọc, đối chiếu |
-| **Procyon** | Ổn định, lâu đời | Phương án đối chiếu thứ ba |
-| **Vineflower** | Kế thừa Fernflower/Quiltflower, chất lượng cao, hay dùng trong modding | Code phức tạp, cần bản dịch sạch |
-| **Recaf** | Không chỉ xem mà còn **sửa** bytecode rồi đóng gói lại | Khi cần patch class/jar |
-| **Bytecode Viewer** | Gộp nhiều decompiler trong một GUI, so sánh cạnh nhau | Khi muốn nhiều góc nhìn cùng lúc |
+| **JADX** | Swallows APK/DEX as well as JAR, clean UI, basic deobfuscation and generates Frida snippets | The default for Android, also good for JAR. Already in the repo |
+| **CFR** | Handles newer Java syntax very well (lambdas, modern switch), command line | When JADX output is hard to read, for cross-checking |
+| **Procyon** | Stable, long-standing | A third option for cross-checking |
+| **Vineflower** | Successor to Fernflower/Quiltflower, high quality, often used in modding | Complex code, when you need a clean translation |
+| **Recaf** | Not just viewing but also **editing** bytecode and repackaging | When you need to patch a class/jar |
+| **Bytecode Viewer** | Combines several decompilers in one GUI, side-by-side comparison | When you want several views at once |
 
-Mẹo thực chiến: không có decompiler nào đúng 100%. Khi một tool cho ra code lạ (biến `var3` vô nghĩa, cấu trúc điều khiển rối), mở cùng file bằng một tool khác. Rất thường một trong số chúng dịch ra sạch. Dân Java RE hay để sẵn hai ba decompiler.
+A practical tip: no decompiler is 100% right. When one tool gives you weird code (a meaningless `var3` variable, tangled control structures), open the same file with another tool. Very often one of them translates it cleanly. Java RE people often keep two or three decompilers ready.
 
-## Android thì khác một chút
+## Android is a bit different
 
-Android không chạy `.class` trực tiếp. Nó biên dịch chúng thành DEX (Dalvik Executable), một định dạng khác, và máy ảo Android (ART/Dalvik) là **register-based** chứ không stack-based như JVM chuẩn. Nhưng tin tốt: bạn gần như không phải đọc Dalvik bytecode bằng tay, vì JADX gộp mọi `.dex` trong APK rồi dựng thẳng về Java. Cấu trúc APK và DEX để dành cho Bài 6.2.
+Android doesn't run `.class` directly. It compiles them into DEX (Dalvik Executable), a different format, and the Android virtual machine (ART/Dalvik) is **register-based** rather than stack-based like the standard JVM. But the good news: you almost never have to read Dalvik bytecode by hand, because JADX merges every `.dex` in the APK and rebuilds Java directly. The APK and DEX structure is saved for Lesson 6.2.
 
-## Lab tự làm
+## Lab
 
-Xem hướng dẫn tại [labs/6.1](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/6.1). Tóm tắt: biên dịch một file Java nhỏ, dùng `javap -c` để xem bytecode, rồi decompile lại bằng JADX hoặc CFR và đối chiếu với source gốc. Cảm nhận xem decompiler khôi phục tốt tới đâu.
+See the instructions at [labs/6.1](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/6.1). In short: compile a small Java file, use `javap -c` to view the bytecode, then decompile it again with JADX or CFR and compare it with the original source. Get a feel for how well the decompiler recovers things.
 
-## Checklist ghi nhớ
-- Java biên dịch ra JVM bytecode (không phải machine code), nên `.class` giữ nguyên tên method/field/kiểu.
-- JVM là máy ảo stack-based: đẩy toán hạng lên stack rồi lệnh lấy ra xử lý.
-- Constant pool chứa mọi chuỗi và tên tham chiếu, đọc nó là thấy hết manh mối.
-- `javap -c` xem bytecode, tiền tố lệnh (`i` cho int, `a` cho tham chiếu) cho biết kiểu.
-- Decompiler chính: JADX (mặc định, có trong repo), CFR, Vineflower, Procyon; Recaf để sửa. Dịch lạ thì đổi tool.
-- Android dùng DEX (register-based), nhưng JADX lo hết, để Bài 6.2.
+## Key takeaways
+- Java compiles to JVM bytecode (not machine code), so `.class` keeps method/field/type names intact.
+- The JVM is a stack-based virtual machine: push operands onto the stack and then instructions pop them to process.
+- The constant pool holds every string and referenced name, and reading it shows you all the clues.
+- `javap -c` shows bytecode, and the instruction prefix (`i` for int, `a` for reference) tells you the type.
+- Main decompilers: JADX (the default, in the repo), CFR, Vineflower, Procyon; Recaf for editing. If the translation looks odd, switch tools.
+- Android uses DEX (register-based), but JADX handles it all, see Lesson 6.2.

@@ -1,110 +1,103 @@
 ---
-title: "Bài 15.4: Anti-debug nâng cao, self-debug và TLS callback"
+title: "Lesson 15.4: Advanced anti-debug, self-debug and TLS callbacks"
 date: 2026-10-06 09:29:00 +0700
-categories: ["Technique Reverse", "Phần 15 · Anti-Reverse chuyên sâu và cách vượt qua"]
+categories: ["Technique Reverse", "Part 15 · Anti-Reversing and Bypasses"]
 tags: [reverse-engineering, anti-debug]
 render_with_liquid: false
 ---
-Ba bài trước nói về những check bạn gặp giữa chừng chương trình: hỏi API, đọc PEB, đo thời gian. Bài này khó chịu hơn ở chỗ khác: nó không để bạn kịp attach, hoặc nó chiếm luôn chỗ của debugger để bạn không vào được. Đây là nhóm anti-debug mà người mới hay bị "chương trình thoát ngay khi chạy mà chẳng hiểu vì sao".
+The previous three lessons covered checks you run into midway through a program: asking an API, reading the PEB, measuring time. This one is nastier in a different way: it doesn't give you time to attach, or it takes the debugger's seat so you can't get in. This is the group of anti-debug where beginners often get "the program exits right as it starts and I have no idea why".
 
-## Self-debugging: chiếm chỗ debugger
+## Self-debugging: taking the debugger's seat
 
-Windows có một luật đơn giản mà cả mảng kỹ thuật này dựa vào: **một tiến trình tại một thời điểm chỉ có thể bị gắn (attach) bởi đúng một debugger.** Nếu chương trình tự dựng sẵn một debugger cho chính nó, thì cái slot đó đã bị chiếm, và x64dbg của bạn attach vào sẽ thất bại.
+Windows has a simple rule that this whole family of techniques relies on: a process can only be attached to by exactly one debugger at a time. If the program sets up a debugger for itself, that slot is already taken, and your x64dbg will fail to attach.
 
-Có hai biến thể hay gặp:
+There are two common variants. In the first, the program creates a child process and lets the child debug the parent: it calls `CreateProcess` on a copy of itself with a flag, and then the child calls `DebugActiveProcess` on the parent. From then on the parent already has a debugger (its own child), and you can't squeeze in. The second variant self-debugs through a separate thread, which is less common but similar in idea.
 
-- **Tạo tiến trình con rồi để con debug lại cha.** Chương trình `CreateProcess` một bản sao của chính nó với cờ, rồi tiến trình con gọi `DebugActiveProcess` lên cha. Từ đó cha đã có debugger (là con nó), bạn không chen vào được nữa.
-- **Tự debug qua một thread riêng.** Ít gặp hơn nhưng ý tưởng tương tự.
+You can recognize it when reading statically: you see `CreateProcess` creating its own path, together with `DebugActiveProcess`, `WaitForDebugEvent`, `ContinueDebugEvent`. When you see a parent-child pair like this, you're looking at a self-debugger.
 
-Dấu hiệu nhận ra khi đọc tĩnh: thấy `CreateProcess` tạo ra chính đường dẫn của mình, kèm `DebugActiveProcess`, `WaitForDebugEvent`, `ContinueDebugEvent`. Khi thấy cặp cha-con kiểu này, bạn đang nhìn một self-debugger.
-
-Cách xử lý: đừng cố attach vào tiến trình đã bị chiếm. Thay vào đó, chặn ngay bước tạo tiến trình con (đặt breakpoint ở `CreateProcessW`, hoặc patch để nó không tạo con), hoặc phân tích logic trong tiến trình con để hiểu nó làm gì rồi vô hiệu hoá cả cơ chế.
+Don't try to attach to a process that's already taken. Instead, block the child-creation step right away (put a breakpoint at `CreateProcessW`, or patch it so it doesn't create the child), or analyze the logic in the child process to understand what it does and then neutralize the whole mechanism.
 
 ## Parent process check
 
-Một kiểu rẻ tiền nhưng hiệu quả: chương trình tự hỏi "ai đẻ ra tôi?". Khi bạn chạy một file bình thường từ Explorer, parent là `explorer.exe`. Khi bạn chạy nó từ trong x64dbg, parent là `x64dbg.exe`. Khi chạy từ cmd thì là `cmd.exe`.
+A cheap but effective kind: the program asks itself "who spawned me?". When you run a file normally from Explorer, the parent is `explorer.exe`. When you run it from inside x64dbg, the parent is `x64dbg.exe`. From cmd it's `cmd.exe`.
 
-Chương trình lấy parent PID (qua `NtQueryInformationProcess` với `ProcessBasicInformation`, rồi tra tên tiến trình parent qua `CreateToolhelp32Snapshot`), so với một danh sách tên debugger quen thuộc. Khớp thì nó biết đang bị soi.
+The program gets the parent PID (through `NtQueryInformationProcess` with `ProcessBasicInformation`, then looks up the parent process name through `CreateToolhelp32Snapshot`) and compares it against a list of well-known debugger names. If it matches, it knows it's being watched.
 
-Nhận ra: thấy chuỗi tên như "x64dbg", "ollydbg", "ida", "windbg" trong binary, kèm code liệt kê tiến trình. Vượt qua: chạy từ một parent "sạch", hoặc patch đoạn so sánh tên, hoặc dùng plugin ẩn tên tiến trình.
+You spot it by seeing name strings like "x64dbg", "ollydbg", "ida", "windbg" in the binary, along with code that enumerates processes. To get past it, run it from a "clean" parent, patch the name comparison, or use a plugin that hides the process name.
 
 ## Debug object
 
-Khi một debugger attach, kernel tạo ra một debug object gắn với tiến trình bị debug. Chương trình có thể hỏi về nó qua `NtQueryInformationProcess` với lớp thông tin `ProcessDebugObjectHandle` (giá trị 0x1E): nếu trả về một handle khác null, nghĩa là có debug object, nghĩa là đang bị debug. Đây là một trong những check khó giả nhất vì nó hỏi thẳng kernel về trạng thái thật.
+When a debugger attaches, the kernel creates a debug object tied to the debugged process. The program can ask about it through `NtQueryInformationProcess` with the information class `ProcessDebugObjectHandle` (value 0x1E): if it returns a non-null handle, a debug object exists, meaning it's being debugged. This is one of the hardest checks to fake because it asks the kernel directly about the real state.
 
-Cách xử lý thực tế là dùng ScyllaHide/TitanHide (bài 15.9), chúng hook đúng chỗ này để trả lời giả. Làm tay thì đặt breakpoint ở `NtQueryInformationProcess`, khi `ProcessInformationClass == 0x1E` thì sửa giá trị trả về thành 0.
+The practical way to handle it is ScyllaHide/TitanHide (lesson 15.9), which hook exactly this spot to give a fake answer. By hand, set a breakpoint at `NtQueryInformationProcess`, and when `ProcessInformationClass == 0x1E` change the return value to 0.
 
-## Thread hiding, nói sâu thêm
+## Thread hiding, in more depth
 
-Bài 15.1 đã nhắc `NtSetInformationThread(ThreadHideFromDebugger)`. Ý nghĩa của nó đáng nói kỹ: khi một thread được đặt cờ `ThreadHideFromDebugger` (giá trị 0x11), kernel sẽ **không gửi sự kiện debug của thread đó cho debugger nữa**. Hệ quả là breakpoint và exception trong thread đó không còn báo về debugger, chương trình chạy "qua mặt" bạn.
+Lesson 15.1 mentioned `NtSetInformationThread(ThreadHideFromDebugger)`. What it means deserves a closer look: when a thread gets the `ThreadHideFromDebugger` flag (value 0x11), the kernel stops sending that thread's debug events to the debugger. As a result, breakpoints and exceptions in that thread are no longer reported to the debugger, and the program runs right past you.
 
-Thường chương trình đặt cờ này cho thread chính rồi mới chạy phần nhạy cảm. Dấu hiệu: lời gọi `NtSetInformationThread` với tham số lớp thông tin là 0x11 và handle thread là `(HANDLE)-2` (pseudo-handle của thread hiện tại). Vượt qua: patch lời gọi đó thành no-op, hoặc ScyllaHide chặn giúp.
+Usually the program sets this flag for the main thread and only then runs the sensitive part. The sign is a call to `NtSetInformationThread` where the information class parameter is 0x11 and the thread handle is `(HANDLE)-2` (the pseudo-handle of the current thread). To get past it, patch that call into a no-op, or let ScyllaHide block it.
 
-## TLS callback: chạy trước cả main
+## TLS callbacks: running before main
 
-Đây là chỗ bẫy người mới nhiều nhất. Như bài 1.12 đã nói, TLS callback là các hàm được PE loader gọi **trước khi entry point chạy**. Trình tự là: loader map image, gọi các TLS callback, rồi mới nhảy vào entry point.
+This is where beginners get trapped the most. As lesson 1.12 said, TLS callbacks are functions the PE loader calls before the entry point runs. The sequence is: the loader maps the image, calls the TLS callbacks, and only then jumps to the entry point.
 
-Kẻ viết anti-debug lợi dụng điều này: đặt check ngay trong TLS callback. Khi bạn mở file trong debugger và nhấn run, debugger thường dừng lần đầu ở entry point (hoặc system breakpoint). Nhưng TLS callback đã chạy xong trước đó rồi. Nghĩa là khi bạn kịp nhìn thấy gì đó, chương trình có khi đã phát hiện debugger và quyết định thoát, hoặc đã âm thầm rẽ sang nhánh khác.
+Whoever writes the anti-debug takes advantage of this by putting the check right in the TLS callback. When you open the file in a debugger and hit run, the debugger usually stops first at the entry point (or the system breakpoint). But the TLS callback has already finished running before that. It means that by the time you get to see anything, the program may already have detected the debugger and decided to exit, or quietly switched to another branch.
 
-Minh hoạ dòng chảy:
+An illustration of the flow:
 
 ```
-PE loader map image vào bộ nhớ
+PE loader maps the image into memory
    |
    v
-gọi TLS callback 1  <-- anti-debug nằm ở đây, chạy TRƯỚC khi bạn kịp nhìn
+calls TLS callback 1  <-- anti-debug lives here, runs BEFORE you can look
    |
    v
-gọi TLS callback 2 (nếu có)
+calls TLS callback 2 (if any)
    |
    v
-nhảy vào entry point  <-- debugger thường mới dừng ở đây, đã muộn
+jumps to the entry point  <-- the debugger usually only stops here, too late
    |
    v
-main() của tác giả
+the author's main()
 ```
 
-Cách xử lý:
-- Trong x64dbg, vào Options > Preferences > Events, bật tùy chọn dừng ở **TLS Callbacks** (và System Breakpoint, Entry Breakpoint). Khi đó debugger sẽ dừng ngay khi TLS callback đầu tiên sắp chạy, bạn kịp đặt breakpoint và soi.
-- Tìm TLS callback tĩnh trước: mở trong PE-bear hoặc CFF Explorer, xem TLS Directory, lấy địa chỉ các callback. Sang IDA/Ghidra đặt breakpoint sẵn ở đó.
-- Nếu callback chỉ làm một việc là kiểm tra rồi thoát, patch nó thành return sớm.
+To handle it, go to Options > Preferences > Events in x64dbg and turn on the option to stop at TLS Callbacks (and System Breakpoint, Entry Breakpoint). Then the debugger stops right when the first TLS callback is about to run, and you have time to set breakpoints and look. You can also find the TLS callbacks statically first: open the file in PE-bear or CFF Explorer, look at the TLS Directory, and get the callback addresses, then set breakpoints there in advance in IDA/Ghidra. If the callback only does one thing, check and exit, patch it to return early.
 
-Quy tắc bỏ túi: nếu một chương trình "vừa chạy đã chết" trong debugger mà entry point còn chưa tới, nghi ngay TLS callback.
+Pocket rule: if a program "dies right after starting" in a debugger before the entry point is even reached, suspect a TLS callback immediately.
 
-## Nhìn một đoạn TLS callback
+## Looking at a TLS callback
 
-Một TLS callback có chữ ký cố định `VOID NTAPI cb(PVOID DllHandle, DWORD Reason, PVOID Reserved)`. Trong binary nó thường trông như một hàm nhỏ, được PE loader gọi với `Reason == DLL_PROCESS_ATTACH` (giá trị 1) lúc khởi động:
+A TLS callback has the fixed signature `VOID NTAPI cb(PVOID DllHandle, DWORD Reason, PVOID Reserved)`. In a binary it usually looks like a small function, called by the PE loader with `Reason == DLL_PROCESS_ATTACH` (value 1) at startup:
 
 ```asm
 tls_callback:
     cmp  edx, 1            ; Reason == DLL_PROCESS_ATTACH ?
-    jne  short done        ; chỉ chạy khi process attach
-    ; đọc PEB.BeingDebugged qua gs:[0x60]
+    jne  short done        ; only runs on process attach
+    ; read PEB.BeingDebugged via gs:[0x60]
     mov  rax, gs:[60h]
     movzx eax, byte ptr [rax+2]
     test eax, eax
-    je   short done        ; không bị debug thì về
-    ; bị debug: thoát hoặc rẽ nhánh giả
+    je   short done        ; not debugged, return
+    ; being debugged: exit or branch to a fake path
     xor  ecx, ecx
     call ExitProcess
 done:
     ret
 ```
 
-Đọc ra ngay: callback này kiểm `BeingDebugged`, thấy có debugger thì `ExitProcess`. Và vì nó chạy trước main, bạn phải bắt nó từ TLS callback breakpoint chứ không thể đợi tới main.
+You can read it right away: this callback checks `BeingDebugged`, and if it sees a debugger it calls `ExitProcess`. And since it runs before main, you have to catch it from the TLS callback breakpoint, you can't wait until main.
 
-## Lab tự làm
+## Lab
 
-Xem `labs/15.4/`. Bạn build một chương trình đặt anti-debug trong TLS callback, chạy nó trong x64dbg lần đầu (không bật TLS breakpoint) để thấy nó thoát bí ẩn, rồi bật tùy chọn dừng ở TLS callback và bắt đúng đoạn check, cuối cùng patch để vượt qua.
+See `labs/15.4/`. You build a program that puts its anti-debug in a TLS callback, run it in x64dbg the first time (without the TLS breakpoint on) to see it exit mysteriously, then turn on the option to stop at TLS callbacks and catch the exact check, and finally patch it to get past.
 
-## Cạm bẫy thường gặp
-- Entry point chưa tới mà chương trình đã thoát: gần như chắc là TLS callback, đừng đổ lỗi cho debugger hỏng.
-- Attach thất bại không phải lúc nào cũng do lỗi: có thể do self-debugging đã chiếm slot.
-- Vô hiệu một check (ví dụ BeingDebugged) mà vẫn chết thì nhớ còn các check khác chạy sớm hơn, nhất là trong TLS.
+## Common pitfalls
 
-## Checklist ghi nhớ
-- Một tiến trình chỉ có một debugger: self-debugging chiếm slot để bạn không attach được. Chặn ở bước tạo tiến trình con.
-- Parent process check so tên parent với danh sách debugger. Patch hoặc chạy từ parent sạch.
-- `ProcessDebugObjectHandle` (0x1E) hỏi kernel về debug object, rất khó giả, dùng ScyllaHide.
-- `ThreadHideFromDebugger` (0x11) làm kernel ngừng gửi sự kiện debug. Patch no-op hoặc ScyllaHide.
-- TLS callback chạy TRƯỚC entry point: bật dừng ở TLS Callbacks trong x64dbg, tìm TLS Directory trong PE-bear. Chương trình chết trước main thì nghi ngay TLS.
+If the entry point hasn't been reached and the program has already exited, it's almost certainly a TLS callback, so don't blame a broken debugger. A failed attach isn't always an error either, since self-debugging may have taken the slot. And if you disable one check (for example BeingDebugged) and it still dies, remember other checks run earlier, especially in TLS.
+
+## Key takeaways
+A process only has one debugger, so self-debugging takes the slot and you can't attach. Block it at the child-creation step. A parent process check compares the parent's name against a list of debuggers, so patch it or run from a clean parent.
+
+`ProcessDebugObjectHandle` (0x1E) asks the kernel about the debug object and is very hard to fake, so use ScyllaHide. `ThreadHideFromDebugger` (0x11) makes the kernel stop sending debug events, so patch it to a no-op or use ScyllaHide.
+
+TLS callbacks run before the entry point. Turn on stopping at TLS Callbacks in x64dbg and find the TLS Directory in PE-bear. If the program dies before main, suspect TLS right away.

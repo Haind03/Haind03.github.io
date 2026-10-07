@@ -1,100 +1,81 @@
 ---
-title: "Bài 15.2: Anti-debug đọc thẳng PEB, khi không có API để hook"
+title: "Lesson 15.2: Anti-debug reading the PEB directly, when there's no API to hook"
 date: 2026-10-06 09:27:00 +0700
-categories: ["Technique Reverse", "Phần 15 · Anti-Reverse chuyên sâu và cách vượt qua"]
+categories: ["Technique Reverse", "Part 15 · Anti-Reversing and Bypasses"]
 tags: [reverse-engineering, anti-debug]
 render_with_liquid: false
 ---
-Bài trước nói về anti-debug gọi API như IsDebuggerPresent. Điểm yếu của cách đó: đã là API thì bạn đặt breakpoint hoặc hook được, trả về giá trị giả là xong. Nên người viết protector khôn hơn sẽ bỏ qua API và đọc thẳng cấu trúc bộ nhớ mà API kia vốn chỉ đọc hộ. Không còn lời gọi nào để bạn chặn, chỉ là vài lệnh `mov` đọc bộ nhớ lẫn giữa code thường. Đây là nhóm anti-debug khó chịu hơn, và cũng là lý do bạn phải hiểu PEB từ [Bài 1.11](/posts/tr-1-11-windows-internals-2-peb-teb-handle-token/).
+The previous lesson was about anti-debug calling APIs like IsDebuggerPresent. The weakness of that approach: if it's an API, you can set a breakpoint or hook on it and return a fake value, done. So smarter protector authors skip the API and read the memory structure directly, the one that API was only reading on your behalf. There's no call left for you to intercept, just a few `mov` instructions reading memory, mixed in with ordinary code. This is the more annoying group of anti-debug, and it's also why you need to understand the PEB from [Lesson 1.11](/posts/tr-1-11-windows-internals-2-peb-teb-handle-token/).
 
-## PEB nằm ở đâu, và vì sao chương trình tự đọc được
+## Where the PEB is, and why a program can read it itself
 
-PEB (Process Environment Block) là một struct Windows tạo cho mỗi tiến trình, chứa thông tin về tiến trình đó. IsDebuggerPresent thực chất chỉ là đọc một byte trong PEB rồi trả về. Nếu chương trình tự tìm tới PEB, nó có đúng thông tin đó mà không cần gọi ai.
+The PEB (Process Environment Block) is a struct Windows creates for each process, holding information about that process. IsDebuggerPresent really just reads one byte in the PEB and returns it. If the program finds the PEB itself, it gets exactly that information without calling anyone.
 
-PEB luôn truy cập được qua thanh ghi segment, không cần API:
-- Trên x64: `gs:[0x60]` trỏ tới PEB.
-- Trên x86: `fs:[0x30]` trỏ tới PEB.
+The PEB is always reachable through a segment register, no API needed. On x64, `gs:[0x60]` points to the PEB, and on x86, `fs:[0x30]` does.
 
-Thấy một đoạn đọc `gs:[0x60]` (hoặc `fs:[0x30]`) là phải cảnh giác ngay: chương trình đang tự lấy PEB, và chín trên mười lần là để kiểm tra một cờ anti-debug.
+Seeing a read of `gs:[0x60]` (or `fs:[0x30]`) should put you on alert right away: the program is fetching the PEB itself, and nine times out of ten it's to check an anti-debug flag.
 
-## BeingDebugged, byte tố cáo
+## BeingDebugged, the byte that gives you away
 
-Trường đơn giản nhất là `PEB.BeingDebugged` ở offset `0x2`. Bằng 1 khi tiến trình đang bị debug, 0 khi không. Đây chính xác là thứ IsDebuggerPresent trả về.
+The simplest field is `PEB.BeingDebugged` at offset `0x2`. It's 1 when the process is being debugged, 0 when not. This is exactly what IsDebuggerPresent returns.
 
-Đoạn asm điển hình trên x64:
+A typical asm snippet on x64:
 
 ```asm
-mov  rax, gs:[0x60]     ; rax = địa chỉ PEB
+mov  rax, gs:[0x60]     ; rax = PEB address
 movzx eax, byte ptr [rax+2]  ; eax = PEB.BeingDebugged
 test eax, eax
-jnz  bi_phat_hien       ; khác 0 nghĩa là đang bị debug
+jnz  detected           ; nonzero means being debugged
 ```
 
-Dịch ra C thì nó tương đương:
+Translated to C it's equivalent to:
 
 ```c
 if (((PEB*)__readgsqword(0x60))->BeingDebugged)
-    thoat_hoac_pha();
+    exit_or_crash();
 ```
 
-Nhận diện: đọc `gs:[0x60]`, rồi đọc byte tại `[rax+2]`, rồi `test` và nhảy. Không có tên API nào xuất hiện, nên tìm theo tên hàm là trượt. Phải tìm theo pattern truy cập segment.
+How to recognize it: read `gs:[0x60]`, then read the byte at `[rax+2]`, then `test` and jump. No API name shows up, so searching by function name misses it. You have to search for the segment access pattern.
 
-## NtGlobalFlag, dấu vết tinh vi hơn
+## NtGlobalFlag, a subtler trace
 
-`PEB.NtGlobalFlag` ở offset `0xBC` (x64) hoặc `0x68` (x86). Khi tiến trình được tạo dưới debugger, loader bật ba cờ trong trường này:
+`PEB.NtGlobalFlag` is at offset `0xBC` (x64) or `0x68` (x86). When a process is created under a debugger, the loader turns on three flags in this field: `FLG_HEAP_ENABLE_TAIL_CHECK` (0x10), `FLG_HEAP_ENABLE_FREE_CHECK` (0x20) and `FLG_HEAP_VALIDATE_PARAMETERS` (0x40).
 
-- `FLG_HEAP_ENABLE_TAIL_CHECK` (0x10)
-- `FLG_HEAP_ENABLE_FREE_CHECK` (0x20)
-- `FLG_HEAP_VALIDATE_PARAMETERS` (0x40)
-
-Cộng lại là `0x70`. Nên kiểm tra thường thấy dạng:
+Added together that's `0x70`. So the usual check looks like:
 
 ```asm
 mov  rax, gs:[0x60]
 mov  eax, [rax+0xBC]    ; eax = NtGlobalFlag
 and  eax, 0x70
 cmp  eax, 0x70
-jz   bi_phat_hien       ; cả ba cờ bật nghĩa là có debugger
+jz   detected           ; all three flags on means a debugger is present
 ```
 
-Trường này tinh vi hơn BeingDebugged vì nhiều người mới không biết nó tồn tại, và nó bị đặt bởi loader chứ không phải code chương trình, nên patch BeingDebugged thôi không đủ.
+This field is subtler than BeingDebugged because many beginners don't know it exists, and it's set by the loader and not by the program's code, so patching BeingDebugged alone isn't enough.
 
-## Heap flags, hệ quả kéo theo
+## Heap flags, a knock-on effect
 
-NtGlobalFlag ở trên làm heap được tạo ở chế độ debug, để lại dấu trong chính heap header. Hai trường `Flags` và `ForceFlags` trong cấu trúc heap (lấy heap qua `PEB.ProcessHeap` ở offset `0x30` trên x64) mang giá trị khác khi có debugger:
+The NtGlobalFlag above makes the heap get created in debug mode, leaving a mark in the heap header itself. Two fields, `Flags` and `ForceFlags` in the heap structure (get the heap through `PEB.ProcessHeap` at offset `0x30` on x64), hold different values when a debugger is present. Normally `Flags` = `HEAP_GROWABLE` (0x2) and `ForceFlags` = 0, but under a debugger `Flags` has extra bits like `HEAP_TAIL_CHECKING_ENABLED` and `ForceFlags` is nonzero.
 
-- Bình thường: `Flags` = `HEAP_GROWABLE` (0x2), `ForceFlags` = 0.
-- Dưới debugger: `Flags` có thêm các bit như `HEAP_TAIL_CHECKING_ENABLED`, `ForceFlags` khác 0.
+The checking code gets ProcessHeap and reads `ForceFlags`, and if it's nonzero it knows. The offsets of Flags/ForceFlags in the heap differ by Windows version, so this is a version-picky check, less common but it still shows up.
 
-Code kiểm tra sẽ lấy ProcessHeap rồi đọc `ForceFlags`, thấy khác 0 là biết. Offset của Flags/ForceFlags trong heap khác nhau theo phiên bản Windows, nên đây là kiểm tra kén phiên bản, ít gặp hơn nhưng vẫn có.
+## Why this group is harder than the API group
 
-## Vì sao nhóm này khó hơn nhóm API
+With the API group (Lesson 15.1), you set a breakpoint at `IsDebuggerPresent` and force it to return 0. This group has no function to put a breakpoint on. The code is just `mov` and `cmp` mixed in with normal logic, looking no different from reading an ordinary variable. You have to read and understand it to realize it's reading a sensitive PEB offset.
 
-Với nhóm API (Bài 15.1), bạn đặt breakpoint tại `IsDebuggerPresent` và ép trả về 0. Nhóm này không có hàm để đặt breakpoint vào. Code chỉ là `mov` và `cmp` trộn giữa logic bình thường, trông chẳng khác gì đọc một biến thường. Bạn phải đọc hiểu mới nhận ra nó đang đọc offset nhạy cảm của PEB.
+A quick tip for recognizing it when reading statically: find every spot that touches `gs:[0x60]` (x64) or `fs:[0x30]` (x86), then see which offset it reads next. A byte at `[...+2]` is BeingDebugged, a dword at `[...+0xBC]` is NtGlobalFlag, and `[...+0x30]` followed by a read into the heap is the ProcessHeap flags.
 
-Mẹo nhận diện nhanh khi đọc tĩnh: tìm mọi chỗ chạm `gs:[0x60]` (x64) hoặc `fs:[0x30]` (x86), rồi xem offset nó đọc tiếp:
-- `[...+2]` byte: BeingDebugged.
-- `[...+0xBC]` dword: NtGlobalFlag.
-- `[...+0x30]` rồi đọc tiếp heap: ProcessHeap flags.
+## How to get past it
 
-## Cách vượt qua
+Since these flags live in the memory of your own process (running in the debugger), you can modify them directly. You can edit by hand in the debugger: before the check code runs, go to the PEB and write `BeingDebugged = 0`, clear the three bits of NtGlobalFlag. In x64dbg, use `dump` on the PEB then edit the byte, or use an expression. You can also use ScyllaHide, which does it automatically and thoroughly: it cleans BeingDebugged, NtGlobalFlag, heap flags, and a whole bunch of other checks as soon as the process starts. For most user-mode anti-debug, turning on ScyllaHide is it, no need to patch each one. See also [Lesson 15.9](/posts/tr-15-9-bypass-scyllahide-titanhide/). The third option is to patch the check code: if there are only a few places, flip the detecting `jnz`/`jz` to jump the opposite way, or NOP out the check. This holds up if you plan to run it many times.
 
-Vì các cờ này nằm trong bộ nhớ tiến trình của chính bạn (chạy trong debugger), bạn sửa được trực tiếp:
+Usually ScyllaHide is the first choice because it covers almost the whole PEB group in one go. Patching by hand is for when you want to understand each check clearly or when the check is well hidden.
 
-- **Sửa bằng tay trong debugger.** Trước khi code check chạy, tới PEB và ghi `BeingDebugged = 0`, xoá ba bit của NtGlobalFlag. Trong x64dbg, lệnh `dump` theo PEB rồi sửa byte, hoặc dùng biểu thức.
-- **ScyllaHide.** Plugin này làm chuyện đó tự động và toàn diện: nó dọn BeingDebugged, NtGlobalFlag, heap flags, và hàng loạt check khác ngay khi tiến trình khởi động. Với phần lớn anti-debug user-mode, bật ScyllaHide là xong, đỡ phải vá từng cái. Xem thêm ở [Bài 15.9](/posts/tr-15-9-bypass-scyllahide-titanhide/).
-- **Patch code check.** Nếu chỉ vài chỗ, đổi lệnh `jnz`/`jz` phát hiện thành nhảy ngược lại, hoặc NOP đoạn kiểm tra. Cách này bền nếu bạn định chạy lại nhiều lần.
+## Lab
 
-Thường ScyllaHide là lựa chọn đầu tiên vì nó phủ gần hết nhóm PEB một lần. Patch tay để dành cho khi bạn muốn hiểu rõ từng check hoặc khi check được giấu kỹ.
+The folder [labs/15.2/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/15.2). It has `peb_check.c`, which reads BeingDebugged and NtGlobalFlag directly through the PEB. The task: build it, run it normally (reports not debugged), run it under x64dbg (reports debugged), then find the `gs:[0x60]` read in the disassembly and get past it by editing the flags or using ScyllaHide. Instructions are in the lab's README.
 
-## Lab tự làm
+## Key takeaways
+The PEB can be accessed without an API: `gs:[0x60]` (x64), `fs:[0x30]` (x86), and when you see it, be alert. BeingDebugged is at offset `0x2` and is 1 when debugged. NtGlobalFlag is at offset `0xBC` (x64), the three heap debug bits add up to `0x70`, and it's set by the loader and not by the code. Heap Flags/ForceFlags are nonzero when a debugger is present, though that check is picky about the Windows version.
 
-Thư mục [labs/15.2/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/15.2). Có `peb_check.c` tự đọc BeingDebugged và NtGlobalFlag trực tiếp qua PEB. Nhiệm vụ: build, chạy thường (báo không bị debug), chạy dưới x64dbg (báo bị debug), rồi tìm trong disassembly đoạn đọc `gs:[0x60]` và vượt qua bằng cách sửa cờ hoặc ScyllaHide. Hướng dẫn trong README của lab.
-
-## Checklist ghi nhớ
-- PEB truy cập không cần API: `gs:[0x60]` (x64), `fs:[0x30]` (x86). Thấy là cảnh giác.
-- BeingDebugged ở offset `0x2`, bằng 1 khi bị debug.
-- NtGlobalFlag ở offset `0xBC` (x64), ba bit heap debug cộng lại `0x70`, loader đặt chứ không phải code.
-- Heap Flags/ForceFlags khác 0 khi có debugger, kén phiên bản Windows.
-- Nhóm này không có API để hook, phải đọc hiểu pattern truy cập segment.
-- Vượt qua: sửa cờ trong bộ nhớ, ScyllaHide (nhanh nhất), hoặc patch nhánh check.
+This group has no API to hook, so you have to read and recognize the segment access pattern. To get past it, edit the flags in memory, use ScyllaHide (fastest), or patch the check branch.

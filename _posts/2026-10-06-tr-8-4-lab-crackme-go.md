@@ -1,17 +1,17 @@
 ---
-title: "Bài 8.4: Lab, giải một crackme Go từ đầu đến cuối"
+title: "Lesson 8.4: Lab, solving a Go crackme from start to finish"
 date: 2026-10-06 09:02:00 +0700
-categories: ["Technique Reverse", "Phần 8 · Go"]
+categories: ["Technique Reverse", "Part 08 · Go"]
 tags: [reverse-engineering, golang]
 render_with_liquid: false
 ---
-Ba bài trước cho bạn lý thuyết: binary Go to vì mang cả runtime, pclntab giữ tên hàm, string Go đi theo độ dài chứ không kết thúc bằng null. Bài này ghép tất cả lại trên một crackme thật mà tôi build bằng Go 1.22 ngay trong lúc viết, rồi dẫn bạn đi tìm password như thể chưa từng thấy source.
+The previous three lessons gave you the theory: Go binaries are big because they carry the whole runtime, pclntab keeps the function names, Go strings go by length and don't end in null. This lesson puts it all together on a real crackme that I built with Go 1.22 while writing, then walks you through finding the password as if you'd never seen the source.
 
-Mọi con số dưới đây là output thật, không phải tôi bịa cho đẹp.
+Every number below is real output, not something I made up to look nice.
 
-## Bước 0: triage, biết mình cầm cái gì
+## Step 0: triage, know what you're holding
 
-Luôn bắt đầu bằng `file` và nhìn kích thước:
+Always start with `file` and look at the size:
 
 ```
 $ file crackme
@@ -21,18 +21,18 @@ $ ls -la crackme
 1895284 bytes
 ```
 
-Hai chi tiết tố cáo ngay đây là Go: **statically linked** (gần 1.9 MB cho một chương trình in ra một dòng) và chuỗi **Go BuildID** trong header. Nếu bạn còn nghi, `go version` đọc được build info nhúng sẵn:
+Two details give away right away that it's Go: **statically linked** (almost 1.9 MB for a program that prints one line) and the **Go BuildID** string in the header. If you're still unsure, `go version` can read the embedded build info:
 
 ```
 $ go version crackme
 crackme: go1.22.0
 ```
 
-Trên Windows thì DIE sẽ báo thẳng "Compiler: Go". Xong triage: đây là binary Go, build bằng Go 1.22, chưa strip.
+On Windows, DIE will say "Compiler: Go" outright. Triage done: this is a Go binary, built with Go 1.22, not stripped.
 
-## Bước 1: lấy lại tên hàm
+## Step 1: get the function names back
 
-Vì chưa strip, pclntab còn nguyên và tên hàm lộ ra ngay cả trong `strings`:
+Since it isn't stripped, pclntab is intact and the function names show up even in `strings`:
 
 ```
 $ strings crackme | grep "main\."
@@ -40,20 +40,20 @@ main.main
 main.checkKey
 ```
 
-`main.main` là điểm vào thật của tác giả (khác với `main` trong C, Go có runtime chạy trước rồi mới gọi `main.main`). `main.checkKey` nghe như hàm kiểm tra. Đã có mục tiêu.
+`main.main` is the author's real entry point (unlike `main` in C, Go has the runtime run first and then call `main.main`). `main.checkKey` sounds like the check function. We have a target.
 
-Trong Ghidra/IDA, nếu tên không tự hiện (hoặc binary bị strip), chạy GoReSym để phục hồi rồi import vào, đúng như Bài 8.2. Ở đây chưa strip nên nhảy thẳng vào `main.checkKey`.
+In Ghidra/IDA, if the names don't show up on their own (or the binary is stripped), run GoReSym to recover them and import them, as in Lesson 8.2. Here it isn't stripped so we jump straight into `main.checkKey`.
 
-Một điểm đáng nhớ: tôi thử strip hẳn bằng `-ldflags "-s -w"`, file tụt từ 1.9 MB xuống 1.23 MB, **nhưng `main.checkKey` vẫn còn trong strings và `go version` vẫn đọc ra go1.22.0.** Đó là vì pclntab không phải symbol table thường, `-s -w` không đụng tới nó. Với reverser, đây là tin vui: binary Go stripped vẫn khai ra tên hàm.
+One thing worth remembering: I tried fully stripping with `-ldflags "-s -w"`, and the file dropped from 1.9 MB to 1.23 MB, **but `main.checkKey` was still in strings and `go version` still read out go1.22.0.** That's because pclntab isn't a normal symbol table, and `-s -w` doesn't touch it. For a reverser, this is good news: a stripped Go binary still gives up its function names.
 
-## Bước 2: đọc logic của checkKey
+## Step 2: read the logic of checkKey
 
-Decompile `main.checkKey` (hoặc đọc pseudocode trong Ghidra sau khi có symbol). Bỏ qua phần boilerplate của Go, phần lõi quy về thế này:
+Decompile `main.checkKey` (or read the pseudocode in Ghidra once you have symbols). Skip the Go boilerplate, and the core boils down to this:
 
 ```go
 func checkKey(input string) bool {
     want := []byte{0x50, 0x79, 0x56, 0x68, 0x7a, 0x79, 0x82, 0x61, 0x7a, 0x2e, 0x2d}
-    if len(input) != len(want) {      // so len trước, len(want) = 11
+    if len(input) != len(want) {      // compare len first, len(want) = 11
         return false
     }
     for i := 0; i < len(input); i++ {
@@ -65,21 +65,21 @@ func checkKey(input string) bool {
 }
 ```
 
-Khi đọc ở mức assembly, có vài dấu hiệu Go bạn sẽ gặp:
+When reading at the assembly level, there are a few Go signs you'll run into:
 
-- **So sánh độ dài trước tiên.** String Go là một struct gồm con trỏ data và length. Hàm lấy length của input so với 11 (hằng số). Thấy một `cmp` với hằng số ngay đầu hàm kiểm tra là nó đang chặn sai độ dài, cho bạn biết password dài đúng 11 ký tự.
-- **Vòng lặp qua từng byte.** Bên trong có `movzx` lấy một byte của input, `xor` với 0x17, `add` chỉ số vòng lặp, rồi `cmp` với một byte trong mảng hằng. Mảng `want` nằm trong `.rodata`.
-- **Không có password dạng plaintext.** Tôi kiểm `strings crackme | grep GoCrackMe24` ra 0 kết quả. Password bị biến đổi nên không lộ, bạn bắt buộc phải đảo thuật toán.
+- **The length comparison comes first.** A Go string is a struct of a data pointer and a length. The function takes the input's length and compares it with 11 (a constant). Seeing a `cmp` with a constant right at the start of a check function means it's blocking wrong lengths, which tells you the password is exactly 11 characters.
+- **A loop over each byte.** Inside there's a `movzx` taking one byte of the input, `xor` with 0x17, `add` the loop index, then `cmp` with a byte in the constant array. The `want` array sits in `.rodata`.
+- **No plaintext password.** I checked `strings crackme | grep GoCrackMe24` and got 0 results. The password is transformed so it doesn't show, and you have to reverse the algorithm.
 
-## Bước 3: đảo ngược để lấy password
+## Step 3: invert it to get the password
 
-Quan hệ là `want[i] = (input[i] XOR 0x17) + i`. Đảo lại:
+The relation is `want[i] = (input[i] XOR 0x17) + i`. Inverted:
 
 ```
 input[i] = (want[i] - i) XOR 0x17
 ```
 
-Viết vài dòng Python cho chắc:
+A few lines of Python to be sure:
 
 ```python
 want = [0x50,0x79,0x56,0x68,0x7a,0x79,0x82,0x61,0x7a,0x2e,0x2d]
@@ -87,7 +87,7 @@ pw = ''.join(chr(((w - i) & 0xff) ^ 0x17) for i, w in enumerate(want))
 print(pw)   # GoCrackMe24
 ```
 
-Ra `GoCrackMe24`. Thử lại trên binary thật:
+Out comes `GoCrackMe24`. Try it on the real binary:
 
 ```
 $ ./crackme GoCrackMe24
@@ -96,20 +96,20 @@ $ ./crackme GoCrackMe25
 Wrong password.
 ```
 
-Đúng. Bạn vừa reverse một crackme Go end to end: triage ra Go, dùng pclntab lấy tên hàm, đọc `checkKey`, đảo thuật toán, lấy password.
+Correct. You just reversed a Go crackme end to end: triaged it as Go, used pclntab to get function names, read `checkKey`, inverted the algorithm, got the password.
 
-## Lab tự làm
+## Lab
 
-File ở `labs/8.4/`:
-- `src/crackme.go` cùng lệnh build (có cả bản thường, bản `-s -w`, và bản Windows).
-- `README.md` giao nhiệm vụ.
-- `solution.md` là writeup đầy đủ, kèm kết quả build và chạy thật.
+The files are in `labs/8.4/`:
+- `src/crackme.go` with the build commands (including the normal build, the `-s -w` build, and the Windows build).
+- `README.md` gives the task.
+- `solution.md` is the full writeup, with real build and run results.
 
-Tự làm trước khi mở solution: build cả hai bản thường và stripped, xác nhận `main.checkKey` vẫn còn ở bản stripped, rồi đảo thuật toán ra password mà không chạy thử.
+Do it yourself before opening the solution: build both the normal and stripped versions, confirm `main.checkKey` is still there in the stripped one, then invert the algorithm to get the password without running it.
 
-## Checklist ghi nhớ
-- Binary Go: static-linked, to bất thường, có Go BuildID. `go version <file>` hoặc DIE xác nhận nhanh.
-- Điểm vào của tác giả là `main.main`, không phải hàm `main` đầu tiên runtime gọi.
-- pclntab giữ tên hàm, sống sót cả khi strip bằng `-s -w`. GoReSym để phục hồi khi IDA/Ghidra không tự nhận.
-- Hàm kiểm tra Go hay so độ dài string trước, rồi lặp từng byte. Mảng hằng so sánh nằm trong .rodata.
-- Password biến đổi thì không có trong strings, phải đọc thuật toán rồi đảo ngược.
+## Key takeaways
+- A Go binary: statically linked, unusually big, has a Go BuildID. `go version <file>` or DIE confirms it quickly.
+- The author's entry point is `main.main`, not the first `main` function the runtime calls.
+- pclntab keeps the function names and survives even `-s -w` stripping. GoReSym recovers them when IDA/Ghidra doesn't recognize them itself.
+- Go check functions often compare the string length first, then loop over each byte. The constant comparison array is in .rodata.
+- A transformed password isn't in strings, you have to read the algorithm and invert it.

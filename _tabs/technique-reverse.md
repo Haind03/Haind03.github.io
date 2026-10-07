@@ -5,21 +5,13 @@ order: 1
 render_with_liquid: false
 ---
 
-Ghi chép reverse của mình, bắt đầu từ mấy note anti-debug hồi 2023 rồi viết lại thành một series đầy đủ: nền tảng, từng ngôn ngữ, packer, anti-reverse, Frida, malware.
+Ghi chép reverse của mình, viết thành một series: nền tảng, từng ngôn ngữ, packer, anti-reverse, Frida, malware.
 
 Code lab và binary mẫu để ở repo [Haind03/Technique-Reverse](https://github.com/Haind03/Technique-Reverse).
 
 Nội dung chỉ để học, chơi CTF, crackme hoặc phân tích phần mềm của chính mình.
 {: .prompt-warning }
 
-## Ghi chép 2023
-
-| Bài |
-|---|
-| [Anti Debug](/posts/re-anti-debug/) |
-| [Anti Disassembly](/posts/re-anti-disassembly/) |
-| [Chall 18 - Sample 1](/posts/re-chall-18-sample-1/) |
-| [Chall 18 - Sample 1 (API)](/posts/re-chall-18-sample-1-api/) |
 
 ## Tài nguyên
 

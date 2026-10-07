@@ -1,114 +1,103 @@
 ---
-title: "Bài 15.3: Anti-debug nhóm 3, timing và trap"
+title: "Lesson 15.3: Anti-debug group 3, timing and traps"
 date: 2026-10-06 09:28:00 +0700
-categories: ["Technique Reverse", "Phần 15 · Anti-Reverse chuyên sâu và cách vượt qua"]
+categories: ["Technique Reverse", "Part 15 · Anti-Reversing and Bypasses"]
 tags: [reverse-engineering, anti-debug]
 render_with_liquid: false
 ---
-Hai nhóm trước (API và PEB) dựa vào việc hỏi hệ điều hành "tôi có đang bị debug không". Nhóm này tinh ranh hơn: nó không hỏi ai cả, mà tự suy ra từ hai thứ debugger không giấu được. Một là thời gian: debugger làm chương trình chạy chậm đi hàng nghìn lần khi bạn step. Hai là exception: debugger phải chen vào giữa chương trình và cơ chế xử lý ngoại lệ, và sự chen đó để lại dấu.
+The previous two groups (API and PEB) rely on asking the operating system "am I being debugged?". This group is sneakier: it doesn't ask anyone, it works it out from two things a debugger can't hide. One is time: a debugger makes the program run thousands of times slower when you step. The other is exceptions: a debugger has to wedge itself between the program and the exception handling mechanism, and that wedging leaves a trace.
 
-Hiểu nhóm này quan trọng vì nó không có một lời gọi API gọn gàng để bạn đặt breakpoint, nên ScyllaHide cũng không phải lúc nào cũng lo hết.
+Understanding this group matters because there's no neat API call for you to put a breakpoint on, so ScyllaHide can't always take care of everything either.
 
-## Timing: debugger làm thời gian giãn ra
+## Timing: a debugger stretches time
 
-Ý tưởng đơn giản đến mức đẹp. Một đoạn code bình thường chạy hết trong vài trăm chu kỳ CPU. Nếu bạn đang single-step qua nó trong debugger, mỗi lệnh tốn hàng triệu chu kỳ (vì debugger dừng lại, cập nhật UI, chờ bạn bấm). Chương trình chỉ cần đo thời gian hai mốc rồi so: chênh lệch mà lớn bất thường thì chắc chắn có người đang theo dõi.
+The idea is so simple it's beautiful. A normal chunk of code finishes in a few hundred CPU cycles. If you're single-stepping through it in a debugger, each instruction costs millions of cycles (because the debugger stops, updates the UI, waits for you to press a key). The program just needs to measure the time at two points and compare: if the difference is abnormally large, someone is definitely watching.
 
-### RDTSC, đồng hồ bấm giây của CPU
+### RDTSC, the CPU's stopwatch
 
-Lệnh `rdtsc` (Read Time-Stamp Counter) trả về số chu kỳ CPU đã trôi qua kể từ khi khởi động, kết quả nằm ở cặp `edx:eax` (edx là 32 bit cao, eax là 32 bit thấp). Pattern kinh điển:
+The `rdtsc` instruction (Read Time-Stamp Counter) returns the number of CPU cycles since boot, with the result in the `edx:eax` pair (edx is the high 32 bits, eax the low 32 bits). The classic pattern:
 
 ```asm
-rdtsc                 ; đọc mốc thời gian 1
-mov   rsi, rax        ; cất lại (eax = phần thấp)
-; ... đoạn code cần đo, thường ngắn ...
-rdtsc                 ; đọc mốc thời gian 2
-sub   rax, rsi        ; rax = chênh lệch chu kỳ
-cmp   rax, 10000h     ; so với một ngưỡng
-ja    debugger_found  ; chênh quá lớn, đang bị step
+rdtsc                 ; read timestamp 1
+mov   rsi, rax        ; save it (eax = low part)
+; ... the code being measured, usually short ...
+rdtsc                 ; read timestamp 2
+sub   rax, rsi        ; rax = cycle difference
+cmp   rax, 10000h     ; compare against a threshold
+ja    debugger_found  ; difference too large, being stepped
 ```
 
-Dịch ra ý: "đo xem đoạn giữa chạy mất bao nhiêu chu kỳ, nếu vượt ngưỡng thì báo động". Thấy hai lệnh `rdtsc` cách nhau một đoạn ngắn rồi `sub` và `cmp` là gần như chắc chắn đây là timing check.
+Translated: "measure how many cycles the middle part took, and raise the alarm if it exceeds the threshold". If you see two `rdtsc` instructions a short distance apart followed by `sub` and `cmp`, it's almost certainly a timing check.
 
-### Các biến thể qua API
+### API variants
 
-Không phải chỗ nào cũng dùng `rdtsc`. Cùng ý tưởng nhưng đo bằng API:
+Not everyone uses `rdtsc`. The same idea can be measured with APIs: `QueryPerformanceCounter` for a high-resolution counter, `GetTickCount` / `GetTickCount64` which count milliseconds since boot, and `timeGetTime` or C's `time()` for a coarser reading.
 
-- `QueryPerformanceCounter` cho bộ đếm độ phân giải cao.
-- `GetTickCount` / `GetTickCount64` đếm mili giây từ lúc boot.
-- `timeGetTime`, hoặc hàm `time()` của C cho mốc thô hơn.
+The pattern is still: call to get a timestamp, run a chunk, call again to get a second timestamp, subtract, compare to a threshold. With these APIs you do have a place to set a breakpoint.
 
-Pattern vẫn là: gọi lấy mốc, chạy một đoạn, gọi lấy mốc lần hai, trừ, so ngưỡng. Với các API này thì bạn lại có chỗ để đặt breakpoint.
+### Getting past timing checks
 
-### Cách vượt timing check
+The weakness of a timing check is that it's just a `cmp` followed by a jump. The cleanest fix is to patch the jump: find `ja debugger_found` (or `jg`, `jb` depending on the build), then invert the condition or nop it out. You don't care about the time value, you just need the flow not to go into the alarm branch.
 
-Điểm yếu của timing check là nó chỉ là một phép `cmp` rồi nhảy. Vài cách xử lý:
+You can also fake the return value by editing `rax` after the second `rdtsc` or `GetTickCount` call so the difference becomes small. ScyllaHide has options that handle some timing checks (for example normalizing `rdtsc`, hooking GetTickCount), but it doesn't cover every homemade variant, so patching by hand is still the reliable weapon.
 
-- **Patch nhánh nhảy.** Tìm `ja debugger_found` (hay `jg`, `jb` tùy cài đặt) rồi đảo điều kiện hoặc nop nó đi. Đây là cách sạch nhất: không cần quan tâm giá trị thời gian, chỉ cần luồng không rẽ vào nhánh báo động.
-- **Làm giả giá trị trả về.** Sau lệnh `rdtsc` hoặc lời gọi `GetTickCount` thứ hai, sửa `rax` cho chênh lệch nhỏ lại.
-- **ScyllaHide** có tùy chọn xử lý một số timing check (ví dụ bình thường hoá `rdtsc`, hook GetTickCount), nhưng không phủ hết mọi biến thể tự chế, nên patch tay vẫn là vũ khí chắc chắn.
+A practical tip: don't step through the part between the two timestamps. Put a breakpoint after the second measurement and let it run straight there (F9), so the middle part runs at real speed and the difference doesn't get inflated.
 
-Một mẹo thực dụng: đừng step qua đoạn giữa hai mốc. Đặt breakpoint sau lần đo thứ hai rồi cho chạy thẳng (F9) tới đó, như vậy đoạn giữa chạy ở tốc độ thật và chênh lệch không bị thổi phồng.
+## Traps: throw an exception and see who catches it
 
-## Trap: ném exception rồi xem ai bắt
+The second group takes advantage of how Windows (and debuggers) handle exceptions. Normally, if a program causes an exception, the operating system hands it to the program's handler (SEH/VEH, see Lesson 1.12). But when a debugger is attached, the debugger gets to look at the exception first. If the debugger "swallows" the exception instead of passing it back to the program, the program knows someone is interfering.
 
-Nhóm thứ hai lợi dụng cách Windows (và debugger) xử lý ngoại lệ. Bình thường, nếu chương trình gây ra một exception, hệ điều hành giao nó cho handler của chương trình (SEH/VEH, xem Bài 1.12). Nhưng khi có debugger, debugger được quyền nhìn exception trước. Nếu debugger "nuốt" mất exception thay vì trả lại cho chương trình, chương trình biết có người can thiệp.
+### INT 3, a double-edged sword
 
-### INT 3, con dao hai lưỡi
-
-Byte `0xCC` là lệnh `int 3`, chính là breakpoint phần mềm mà mọi debugger dùng. Chiêu anti-debug: chương trình **tự** đặt một `int 3` kèm một exception handler riêng.
+The byte `0xCC` is the `int 3` instruction, which is exactly the software breakpoint every debugger uses. The anti-debug trick: the program itself places an `int 3` along with its own exception handler.
 
 ```asm
-    ; cài SEH/VEH trỏ tới handler của mình trước đó
-    int 3                 ; cố tình gây breakpoint
-    ; nếu chạy TỚI đây nghĩa là handler KHÔNG được gọi
-    ; -> debugger đã nuốt mất int 3 -> bị debug
+    ; install a SEH/VEH pointing to our own handler earlier
+    int 3                 ; deliberately trigger a breakpoint
+    ; if execution gets HERE, the handler was NOT called
+    ; -> the debugger swallowed the int 3 -> being debugged
     jmp debugger_found
 handler:
-    ; không có debugger: handler của chính mình bắt được
-    ; -> chạy tiếp bình thường
+    ; no debugger: our own handler caught it
+    ; -> carry on normally
 ```
 
-Logic đảo ngược so với trực giác: nếu **handler của chương trình chạy**, nghĩa là không bị debug (chương trình tự bắt được breakpoint của mình). Nếu luồng chạy **thẳng qua** `int 3` mà handler không được gọi, nghĩa là debugger đã chặn breakpoint lại, tức là đang bị debug.
+The logic is the opposite of what you'd expect: if the program's handler runs, it's not being debugged (the program caught its own breakpoint). If execution runs straight through `int 3` and the handler is never called, the debugger intercepted the breakpoint, which means it's being debugged.
 
-### INT 2D và ICEBP (0xF1)
+### INT 2D and ICEBP (0xF1)
 
-Hai anh em ít người biết nhưng rất hay bị dùng vì gây rối cho debugger:
+Two siblings few people know about but which get used a lot because they mess with debuggers. `int 2d` is a kind of kernel breakpoint. Under a debugger, it shifts the instruction pointer by one byte in an unpredictable way, and the way the debugger handles it differs from running freely. `icebp` (opcode `0xF1`, also called int 1) generates a single-step exception, and many debuggers handle it wrong and give away their presence.
 
-- `int 2d`: một kiểu kernel breakpoint. Khi chạy dưới debugger, nó làm lệch con trỏ lệnh một byte theo cách khó lường, và cách debugger xử lý khác với khi chạy tự do.
-- `icebp` (opcode `0xF1`, còn gọi int 1): sinh single-step exception. Nhiều debugger xử lý sai, lộ sự hiện diện.
+If you see odd opcodes like `0xCD 0x2D` or `0xF1` sitting in the middle of normal-looking code, suspect an anti-debug trap rather than real code.
 
-Thấy các opcode lạ `0xCD 0x2D`, `0xF1` nằm giữa luồng code bình thường là nên nghi ngờ đây là trap anti-debug chứ không phải code thật.
+### Hardware breakpoint detection via DR0-DR7
 
-### Hardware breakpoint detection qua DR0-DR7
-
-Hardware breakpoint của bạn nằm trong các debug register DR0 tới DR3 (địa chỉ) và DR7 (bật/tắt). Chương trình có thể tự đọc chúng để phát hiện: gọi `GetThreadContext` với cờ `CONTEXT_DEBUG_REGISTERS`, rồi kiểm xem DR0-DR3 có khác 0 không hoặc DR7 có bit nào bật không. Nếu có, ai đó đã đặt hardware breakpoint.
+Your hardware breakpoints live in the debug registers DR0 through DR3 (addresses) and DR7 (enable/disable). The program can read them itself to detect this: call `GetThreadContext` with the `CONTEXT_DEBUG_REGISTERS` flag, then check whether DR0-DR3 are nonzero or whether any bit of DR7 is set. If so, someone has set a hardware breakpoint.
 
 ```asm
-    ; CONTEXT.Dr0 .. Dr3 khác 0  hoặc  Dr7 != 0
-    ; -> có hardware breakpoint -> đang bị phân tích
+    ; CONTEXT.Dr0 .. Dr3 nonzero  or  Dr7 != 0
+    ; -> hardware breakpoint present -> being analyzed
 ```
 
-### Single-step detection qua trap flag
+### Single-step detection via the trap flag
 
-Trap flag (TF) trong thanh ghi cờ, khi bật, làm CPU sinh exception sau mỗi lệnh (đây chính là cơ chế single-step). Một số chiêu tự bật TF rồi kiểm xem exception có tới đúng như mong đợi không, hoặc đẩy giá trị flag lên stack (`pushfd`) rồi soi bit TF.
+The trap flag (TF) in the flags register, when set, makes the CPU raise an exception after every instruction (this is the single-step mechanism itself). Some tricks set TF themselves and then check whether the exception arrives as expected, or push the flags onto the stack (`pushfd`) and inspect the TF bit.
 
-### Cách vượt nhóm trap
+### Getting past the trap group
 
-- **Với INT 3 / INT 2D / ICEBP**: trong x64dbg, cấu hình để truyền (pass) exception về cho chương trình thay vì tự nuốt. Vào Options > Exceptions, thêm các mã exception liên quan vào danh sách bỏ qua (ignore), để handler của chương trình nhận được như khi chạy tự do. Hoặc patch thẳng lệnh trap thành `nop`.
-- **Với hardware breakpoint detection**: đừng dùng hardware breakpoint, dùng software breakpoint thay thế. Hoặc ScyllaHide/TitanHide che DR khỏi `GetThreadContext`.
-- **Với trap flag**: thường cũng quy về patch nhánh so sánh kết quả.
+For INT 3 / INT 2D / ICEBP, configure x64dbg to pass the exception back to the program instead of swallowing it. Go to Options > Exceptions and add the relevant exception codes to the ignore list, so the program's handler receives them like it would when running freely. Or just patch the trap instruction to `nop`.
 
-Nguyên tắc chung cho cả nhóm 3: đừng cố chống lại từng phép đo, hãy tìm điểm cuối cùng nơi mọi check quy về một lệnh nhảy quyết định "có bị debug hay không", rồi vô hiệu hoá lệnh nhảy đó. Nhiều lớp đo lường phức tạp thường cùng đổ về một hoặc hai nhánh.
+For hardware breakpoint detection, don't use hardware breakpoints, use software breakpoints instead, or have ScyllaHide/TitanHide hide the DR registers from `GetThreadContext`. The trap flag check usually also comes down to patching the branch that compares the result.
 
-## Lab tự làm
+The general rule for the whole of group 3: don't try to fight each individual measurement. Find the final point where every check funnels into one jump that decides "being debugged or not", then neutralize that jump. A lot of complicated layers of measurement usually pour into one or two branches.
 
-Mã nguồn ở `labs/15.3/`. Nhiệm vụ: build `timing_check.c`, chạy tự do thấy nó báo "no debugger", chạy dưới x64dbg và single-step qua đoạn đo để thấy nó chuyển sang "debugger detected", rồi vượt bằng hai cách (chạy thẳng không step, và patch nhánh nhảy). Hướng dẫn trong `labs/15.3/README.md`, lời giải ở `labs/15.3/solution.md`.
+## Lab
 
-## Checklist ghi nhớ
-- Nhóm 3 không hỏi OS, mà tự suy ra từ thời gian và exception, nên khó hook hơn nhóm API.
-- Hai `rdtsc` cách nhau một đoạn ngắn rồi `sub` + `cmp` + nhảy = timing check. Cách tương đương qua GetTickCount/QueryPerformanceCounter.
-- Vượt timing: đừng step qua đoạn đo (chạy thẳng tới sau mốc 2), hoặc patch nhánh nhảy, hoặc làm giả giá trị.
-- Trap: tự đặt int 3 / int 2d / icebp rồi xem debugger có nuốt exception không. Logic thường đảo ngược: handler chạy nghĩa là không bị debug.
-- Vượt trap: cấu hình debugger pass exception về cho chương trình, hoặc nop lệnh trap.
-- Hardware breakpoint bị dò qua DR0-DR7: chuyển sang software breakpoint, hoặc dùng ScyllaHide/TitanHide che debug register.
-- Mẹo tổng: tìm lệnh nhảy quyết định cuối cùng và vô hiệu hoá nó thay vì đấu với từng phép đo.
+The source is in `labs/15.3/`. Task: build `timing_check.c`, run it freely and see it report "no debugger", run it under x64dbg and single-step through the measured part to see it switch to "debugger detected", then get past it two ways (run straight through without stepping, and patch the jump). Instructions are in `labs/15.3/README.md`, the solution is in `labs/15.3/solution.md`.
+
+## Key takeaways
+Group 3 doesn't ask the OS, it works things out from time and exceptions, so it's harder to hook than the API group. Two `rdtsc` a short distance apart followed by `sub` + `cmp` + jump is a timing check, and GetTickCount/QueryPerformanceCounter give the equivalent. To get past timing, don't step through the measured part (run straight to after timestamp 2), or patch the jump, or fake the value.
+
+Traps work by the program placing its own int 3 / int 2d / icebp and seeing whether the debugger swallows the exception. The logic is usually inverted: the handler running means not being debugged. To get past them, configure the debugger to pass the exception back to the program, or nop the trap instruction.
+
+Hardware breakpoints get detected via DR0-DR7, so switch to software breakpoints or use ScyllaHide/TitanHide to hide the debug registers. In general, find the final deciding jump and neutralize it instead of fighting every single measurement.

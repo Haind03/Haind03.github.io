@@ -1,60 +1,52 @@
 ---
-title: "Bài 3.4: FLIRT và nhận diện hàm thư viện, đừng đọc code không phải của tác giả"
+title: "Lesson 3.4: FLIRT and recognizing library functions, don't read code the author didn't write"
 date: 2026-10-06 08:28:00 +0700
-categories: ["Technique Reverse", "Phần 3 · C: ngôn ngữ gốc của mọi thứ"]
+categories: ["Technique Reverse", "Part 03 · C"]
 tags: [reverse-engineering, c]
 render_with_liquid: false
 ---
-Mở một binary C nhỏ xíu trong IDA mà thấy bảng Functions có hơn 1500 hàm, bạn sẽ hoảng. Nhưng bình tĩnh lại: tác giả chỉ viết dăm hàm, 1490 cái còn lại là `printf`, `malloc`, `strlen` và cả bộ ruột của libc bị nhét thẳng vào file. Nhiệm vụ của bài này là tách nhanh hai nhóm đó, để bạn chỉ đọc phần người ta thật sự viết.
+Open a tiny C binary in IDA and see the Functions table has over 1500 functions, and you'll panic. But calm down: the author only wrote a handful of functions, and the other 1490 are `printf`, `malloc`, `strlen` and the whole guts of libc stuffed straight into the file. The job of this lesson is to quickly separate those two groups, so you only read what someone actually wrote.
 
-## Vì sao binary phình to: static linking
+## Why the binary bloats: static linking
 
-Khi bạn `gcc hello.c -o hello`, trình linker có hai cách ghép code thư viện vào:
+When you `gcc hello.c -o hello`, the linker has two ways to attach library code. With dynamic linking, which is the default, the binary only keeps a list of "I need `printf` from `libc.so`", while the `printf` code lives in the system library and is loaded at runtime. The file is compact and the function table clean. With static linking (`gcc -static`), all the libc code is copied straight into the file. The binary runs on its own without external libraries, but it bloats to hundreds of KB up to a few MB, and the Functions table floods with thousands of library functions.
 
-- **Dynamic linking** (mặc định): binary chỉ giữ một danh sách "tôi cần `printf` từ `libc.so`", còn code `printf` nằm trong thư viện hệ thống, nạp lúc chạy. File gọn, bảng hàm sạch.
-- **Static linking** (`gcc -static`): toàn bộ code libc được copy thẳng vào file. Binary tự chạy không cần thư viện ngoài, nhưng phình lên hàng trăm KB tới vài MB, và bảng Functions ngập hàng nghìn hàm thư viện.
+Malware and CTF binaries very often link statically, partly to run on any machine, partly to make life hard for the analyst by burying the real code in a sea of library code. Telling which code is libc is the biggest time saver at this stage.
 
-Malware và các binary CTF rất hay static link, một phần để chạy ở mọi máy, một phần để làm khó người phân tích bằng cách chôn code thật giữa biển code thư viện. Phân biệt được đâu là code libc là kỹ năng tiết kiệm thời gian nhất ở giai đoạn này.
+## FLIRT, when IDA names the familiar functions itself
 
-## FLIRT, khi IDA tự gọi tên hàm quen
+![FLIRT signature: before and after applying](/assets/img/technique-reverse/assets/phan-03/flirt.svg)
 
-![FLIRT signature: trước và sau khi áp](/assets/img/technique-reverse/assets/phan-03/flirt.svg)
+FLIRT (Fast Library Identification and Recognition Technology) is IDA's mechanism for recognizing a known library function and renaming it automatically. The idea is simple: each compiled libc function has a characteristic byte "fingerprint" (the pattern of the first bytes of the function, ignoring the address parts that change on relocation). IDA keeps a store of signatures for many compiler and libc versions. During analysis, it compares each function against the store, and where one matches it changes `sub_401A20` to `strlen` and colors it differently.
 
-FLIRT (Fast Library Identification and Recognition Technology) là cơ chế của IDA để nhận ra một hàm thư viện đã biết và tự đặt lại tên cho nó. Ý tưởng đơn giản: mỗi hàm libc đã biên dịch có một "vân tay" byte đặc trưng (pattern các byte đầu hàm, bỏ qua phần địa chỉ sẽ thay đổi khi relocate). IDA giữ sẵn một kho signature cho nhiều phiên bản compiler và libc. Khi phân tích, nó so từng hàm với kho, khớp cái nào thì đổi `sub_401A20` thành `strlen` và tô màu khác.
+The result: instead of 1500 anonymous functions, you see most already carry real names, leaving a small handful of `sub_xxxx` that are the author's code. You've narrowed it down in a few seconds.
 
-Kết quả: thay vì 1500 hàm vô danh, bạn thấy đa số đã mang tên thật, còn lại một nhúm nhỏ `sub_xxxx` chính là code tác giả. Bạn khoanh vùng xong trong vài giây.
+### Applying signatures in IDA
 
-### Áp signature trong IDA
+IDA auto-loads some signatures when opening a file, but not always the right set. To apply them manually, open the menu `View > Open subviews > Signatures` (or press `Shift+F5`), then press `Ins` (Insert) to open the list of available signatures. Pick the set matching the file's compiler. For example GCC libc on Linux is usually the sets named `libc_*`, and for MSVC it's `vc32*` / `vc64*` / `vcseh`. IDA then rescans and names the matching functions, and the "Applied" column tells you how many matched.
 
-IDA tự nạp một số signature khi mở file, nhưng không phải lúc nào cũng đúng bộ. Cách áp thủ công:
+A practical tip: if after scanning there are still many `sub_`, try the signature set of a different compiler version. A wrong set matches no function at all, which does no harm, so just try another.
 
-1. Mở menu `View > Open subviews > Signatures` (hoặc `Shift+F5`).
-2. Nhấn `Ins` (Insert) để mở danh sách signature có sẵn.
-3. Chọn bộ khớp với compiler của file. Ví dụ libc GCC trên Linux thường là các bộ tên `libc_*`, còn MSVC là `vc32*` / `vc64*` / `vcseh`.
-4. IDA quét lại và đặt tên các hàm khớp. Cột "Applied" cho biết khớp được bao nhiêu.
+### Making your own signatures with FLAIR
 
-Mẹo thực tế: nếu quét xong mà vẫn nhiều `sub_`, thử bộ signature của phiên bản compiler khác. Khớp sai bộ thì không có hàm nào được đặt tên, không hại gì, cứ thử bộ khác.
-
-### Tự tạo signature với FLAIR
-
-Khi bạn gặp một thư viện tĩnh lạ (ví dụ một SDK game, một thư viện crypto đóng gói `.lib` / `.a`), IDA không có sẵn signature. Bộ công cụ FLAIR của Hex-Rays cho phép tự sinh:
+When you meet an unfamiliar static library (for example a game SDK, a crypto library packaged as `.lib` / `.a`), IDA has no ready signatures. Hex-Rays' FLAIR toolkit lets you generate them yourself:
 
 ```text
-pelf / pcf / plb / pmsvc   -> tạo file pattern (.pat) từ .a / .lib / .obj
-sigmake                    -> biến .pat thành .sig dùng được trong IDA
+pelf / pcf / plb / pmsvc   -> create a pattern file (.pat) from .a / .lib / .obj
+sigmake                    -> turn the .pat into a .sig usable in IDA
 ```
 
-Quy trình gọn: chạy công cụ parser (`plb` cho `.lib`, `pelf` cho `.a`) để xuất `.pat`, rồi `sigmake tên.pat tên.sig`. Nếu có xung đột (hai hàm cùng vân tay), sigmake xuất file `.exc` để bạn quyết định giữ cái nào. Chép `.sig` vào thư mục `sig/` của IDA là áp được. Có signature của chính thư viện mà mục tiêu dùng, bạn tiết kiệm hàng giờ.
+The short workflow is to run the parser tool (`plb` for `.lib`, `pelf` for `.a`) to output a `.pat`, then `sigmake name.pat name.sig`. If there's a collision (two functions with the same fingerprint), sigmake outputs an `.exc` file so you decide which to keep. Copy the `.sig` into IDA's `sig/` folder and it can be applied. With a signature for the very library the target uses, you save hours.
 
-## Bên Ghidra: FunctionID
+## On the Ghidra side: FunctionID
 
-Ghidra có cơ chế tương đương tên là FunctionID. Nó cũng dựa trên hash đặc trưng của hàm để nhận diện thư viện đã biết. Ghidra kèm sẵn vài bộ FID cho các runtime phổ biến (Visual Studio, một số libc). Bạn bật qua `Tools > Function ID`, và có thể tự tạo FID database từ binary thư viện đã biết. Độ phủ của FID mặc định không rộng bằng FLIRT, nên trên Ghidra bạn sẽ dựa vào nhận diện bằng mắt nhiều hơn một chút.
+Ghidra has an equivalent mechanism called FunctionID. It also relies on a characteristic function hash to recognize known libraries. Ghidra ships a few FID sets for common runtimes (Visual Studio, some libc). You turn it on via `Tools > Function ID`, and you can build your own FID database from a known library binary. The coverage of the default FID isn't as wide as FLIRT, so on Ghidra you'll rely a bit more on recognizing by eye.
 
-## Khi không có signature: nhận ra hàm chuẩn bằng mắt
+## When there's no signature: recognizing standard functions by eye
 
-Nhiều khi bạn không có bộ signature khớp. Lúc đó vài hàm libc hay gặp vẫn có hình dáng rất dễ nhận:
+Often you have no matching signature set. Then a few common libc functions still have a very recognizable shape.
 
-`strlen` thủ công là một vòng quét tới byte 0:
+A hand-rolled `strlen` is a scan loop to the 0 byte:
 
 ```asm
     xor  eax, eax           ; i = 0
@@ -64,10 +56,10 @@ loop:
     inc  rax                ; i++
     jmp  loop
 done:
-    ret                     ; trả về độ dài trong rax
+    ret                     ; returns the length in rax
 ```
 
-Dịch ra C:
+Translated to C:
 
 ```c
 size_t strlen(const char *s) {
@@ -77,42 +69,35 @@ size_t strlen(const char *s) {
 }
 ```
 
-Thấy một vòng lặp quét từng byte cho tới khi gặp 0 rồi trả về số đếm, gần như chắc đó là `strlen` hoặc họ hàng của nó.
+See a loop scanning byte by byte until it hits 0 and then returning the count, and it's almost certainly `strlen` or one of its relatives.
 
-`strcmp` là so sánh song song hai con trỏ, dừng khi khác nhau hoặc gặp 0:
+`strcmp` is a parallel comparison of two pointers, stopping when they differ or when it hits 0:
 
 ```asm
 loop:
     mov  al, [rdi]
     cmp  al, [rsi]
     jne  diff
-    test al, al          ; đã tới cuối chuỗi?
+    test al, al          ; reached the end of the string?
     je   equal
     inc  rdi
     inc  rsi
     jmp  loop
 ```
 
-Hai con trỏ chạy song song, so từng byte, có kiểm tra byte 0: đó là chữ ký hình học của `strcmp`/`memcmp`. `memcpy` thì là vòng chép theo khối lớn (thường dùng thanh ghi rộng, movups/rep movsb). Quen mặt vài hàm này là đủ để không lạc.
+Two pointers running in parallel, comparing byte by byte, with a check for the 0 byte: that's the geometric signature of `strcmp`/`memcmp`. `memcpy` is a loop copying in big blocks (often using wide registers, movups/rep movsb). Getting familiar with these few functions is enough to not get lost.
 
-Một manh mối miễn phí khác: nhìn chuỗi định dạng. Một hàm nhận một chuỗi có `%d`, `%s` rồi gọi lòng vòng gần như chắc liên quan tới họ `printf`.
+Another free clue is the format string. A function that takes a string with `%d`, `%s` and then calls around is almost certainly related to the `printf` family.
 
-## Nhịp làm việc rút ra
+## The working rhythm that follows
 
-Mở một binary C, trước khi đọc bất cứ hàm nào:
+Open a C binary, and before reading any function, check whether the file is static or dynamic (DIE, or file size, number of imports). If it's static, brace yourself for many functions. Then apply FLIRT (IDA) or FID (Ghidra) right away and let the tool name the libc part for you. The functions that remain as `sub_` after applying signatures are what's worth reading. Start there, combining going from strings and from main (Lesson 3.1).
 
-1. Xem file static hay dynamic (DIE hoặc kích thước file, số lượng import). Static thì chuẩn bị tinh thần nhiều hàm.
-2. Áp FLIRT (IDA) hoặc FID (Ghidra) ngay. Để tool đặt tên giúp phần libc.
-3. Những hàm còn lại là `sub_` sau khi đã áp signature chính là nơi đáng đọc. Bắt đầu từ đó, kết hợp đi từ chuỗi và từ main (Bài 3.1).
+## Lab
 
-## Lab tự làm
+See [labs/3.4/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/3.4). You'll build the same program in static and dynamic forms, open the static one in IDA to see the forest of functions, then apply the libc FLIRT and count how many functions get named, compared to the tidy dynamic version.
 
-Xem [labs/3.4/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/3.4). Bạn sẽ build cùng một chương trình ở hai dạng static và dynamic, mở bản static trong IDA để thấy rừng hàm, rồi áp FLIRT libc và đếm xem bao nhiêu hàm được đặt tên, so với bản dynamic gọn gàng.
+## Key takeaways
+Static linking stuffs libc code into the file and bloats the function table to thousands, most of which isn't the author's code. FLIRT in IDA recognizes and names library functions by byte fingerprint; apply it via `Shift+F5` and pick the set matching the compiler. A wrong set names nothing, which is harmless, so just try another. For unfamiliar libraries you can make your own signatures with FLAIR (`pelf`/`plb` + `sigmake`), while Ghidra uses FunctionID with narrower coverage, so practice recognizing by eye.
 
-## Checklist ghi nhớ
-- Static linking nhét code libc vào file, làm bảng hàm phình lên hàng nghìn. Đa số không phải code tác giả.
-- FLIRT (IDA) tự nhận diện và đặt tên hàm thư viện theo vân tay byte. Áp qua `Shift+F5`, chọn bộ khớp compiler.
-- Khớp sai bộ thì không đặt được tên nào, vô hại, cứ thử bộ khác.
-- FLAIR (`pelf`/`plb` + `sigmake`) để tự tạo signature cho thư viện lạ.
-- Ghidra dùng FunctionID, độ phủ hẹp hơn, nên luyện nhận dạng bằng mắt.
-- Nhớ hình dáng `strlen` (quét tới byte 0), `strcmp` (hai con trỏ song song), `memcpy` (chép khối), họ `printf` (có chuỗi định dạng).
+Remember the shapes of `strlen` (scan to the 0 byte), `strcmp` (two parallel pointers), `memcpy` (block copy), and the `printf` family (has a format string).

@@ -1,93 +1,93 @@
 ---
-title: "Bài 2.8: Giám sát hệ thống, nhìn hành vi mà không cần mở debugger"
+title: "Lesson 2.8: System monitoring, watching behavior without opening a debugger"
 date: 2026-10-06 08:24:00 +0700
-categories: ["Technique Reverse", "Phần 2 · Làm quen bộ công cụ"]
+categories: ["Technique Reverse", "Part 02 · The Toolkit"]
 tags: [reverse-engineering, tools]
 render_with_liquid: false
 ---
-Có một sự thật dễ chịu cho người mới: rất nhiều khi bạn không cần đọc một dòng assembly nào cũng biết chương trình đang làm gì. Chỉ cần quan sát nó đụng vào đâu trên hệ thống. Nó tạo file ở đâu, ghi khóa registry nào, gọi về server nào, đẻ ra tiến trình con gì. Đây gọi là behavioral analysis, và nó thường là bước dynamic đầu tiên trước khi bạn quyết định có cần ngồi debug chi tiết hay không.
+Here's a comforting truth for beginners: a lot of the time you can tell what a program is doing without reading a single line of assembly. You just have to watch where it touches the system. Where it creates files, which registry keys it writes, which server it calls, what child processes it spawns. This is called behavioral analysis, and it's often the first dynamic step before you decide whether you need to sit down and debug in detail.
 
-Bài này là bộ công cụ quan sát. Không cái nào khó dùng, cái khó là biết đọc đống sự kiện chúng phun ra.
+This lesson is the observation toolkit. None of it is hard to use, the hard part is knowing how to read the pile of events they spit out.
 
-## Procmon, cuốn nhật ký mọi thứ
+## Procmon, a diary of everything
 
-Process Monitor (Procmon, của Sysinternals) ghi lại gần như mọi tương tác giữa tiến trình và hệ điều hành theo thời gian thực: thao tác file, registry, tạo/thoát tiến trình, hoạt động mạng cơ bản, và thread. Chạy nó lên vài giây là có hàng chục nghìn dòng, nên kỹ năng thật sự nằm ở bộ lọc (filter).
+Process Monitor (Procmon, from Sysinternals) records nearly every interaction between processes and the operating system in real time: file operations, registry, process creation/exit, basic network activity, and threads. Run it for a few seconds and you have tens of thousands of lines, so the real skill is in filtering.
 
-Thói quen chuẩn:
+The standard habits:
 
-- Mở Procmon, bật capture, chạy chương trình mục tiêu, rồi tắt capture ngay để khỏi ngập.
-- Lọc trước tiên theo tiến trình: `Process Name is <ten>.exe then Include`. Cả biển sự kiện co lại còn đúng thứ bạn cần.
-- Lọc tiếp theo loại thao tác qua mấy nút trên thanh công cụ: file system, registry, network, process/thread. Muốn xem nó ghi file gì thì chỉ bật file system.
-- Những cột đáng nhìn: Operation (vd `CreateFile`, `RegSetValue`, `WriteFile`), Path (file hay khóa nào), Result (`SUCCESS` hay `NAME NOT FOUND`), và Detail.
+- Open Procmon, turn on capture, run the target program, then turn capture off right away so you don't drown.
+- Filter by process first: `Process Name is <name>.exe then Include`. The whole sea of events shrinks to just what you need.
+- Then filter by operation type with the buttons on the toolbar: file system, registry, network, process/thread. If you want to see what files it writes, only turn on file system.
+- The columns worth looking at: Operation (e.g. `CreateFile`, `RegSetValue`, `WriteFile`), Path (which file or key), Result (`SUCCESS` or `NAME NOT FOUND`), and Detail.
 
-Vài pattern đọc được ngay mà không cần disassemble:
-- Một loạt `RegSetValue` vào `...\CurrentVersion\Run` nghĩa là chương trình đang cài persistence, tức tự chạy lại sau khi khởi động máy.
-- `CreateFile` rồi `WriteFile` vào `%TEMP%` rồi `Process Create` chính file vừa ghi: dấu hiệu kinh điển của dropper, thả payload ra rồi chạy.
-- `RegQueryValue` vào các khóa như `...\VMware` hay `...\VirtualBox` là nó đang dò xem có đang chạy trong máy ảo không (anti-VM, nói ở Phần 15).
+A few patterns you can read right away without disassembling:
+- A series of `RegSetValue` into `...\CurrentVersion\Run` means the program is installing persistence, that is, making itself run again after the machine boots.
+- `CreateFile` then `WriteFile` into `%TEMP%` then `Process Create` of the file it just wrote: the classic sign of a dropper, dropping a payload and then running it.
+- `RegQueryValue` on keys like `...\VMware` or `...\VirtualBox` means it's checking whether it's running in a virtual machine (anti-VM, covered in Part 15).
 
-Procmon không cho bạn biết tại sao, nhưng cho biết cái gì và theo thứ tự nào. Đó đã là nửa câu chuyện.
+Procmon doesn't tell you why, but it tells you what and in which order. That's already half the story.
 
-## Process Hacker / System Informer, kính hiển vi tiến trình
+## Process Hacker / System Informer, a microscope for processes
 
-Process Hacker (bản kế nhiệm tên System Informer) là Task Manager phiên bản dành cho người làm RE. Nó cho bạn nhìn vào ruột một tiến trình đang chạy:
+Process Hacker (the successor goes by the name System Informer) is a Task Manager edition for people doing RE. It lets you look inside a running process:
 
-- Cây tiến trình: ai đẻ ra ai, màu sắc phân loại (dịch vụ, tiến trình .NET, bị pack...).
-- Tab Memory: xem bản đồ bộ nhớ, và quan trọng là nút để quét chuỗi (strings) ngay trong bộ nhớ sống. Nhiều chương trình giấu chuỗi trên đĩa nhưng lúc chạy phải giải mã ra trong RAM, và đây là chỗ bạn tóm được chúng.
-- Tab Handles: file, registry key, mutex, event mà tiến trình đang mở. Mutex đặc biệt hữu ích, nhiều malware tạo một mutex tên cố định để tránh chạy trùng, và tên đó trở thành một IOC để nhận diện.
-- Tab Threads: xem call stack từng thread, tìm điểm bắt đầu.
-- Chuột phải vào vùng nhớ hoặc module là có thể dump ra đĩa để phân tích tĩnh, rất tiện khi code đã được giải nén trong bộ nhớ.
+- The process tree: who spawned whom, with color coding (services, .NET processes, packed...).
+- The Memory tab: view the memory map, and importantly a button to scan strings right in live memory. Many programs hide strings on disk but have to decrypt them into RAM at runtime, and this is where you catch them.
+- The Handles tab: the files, registry keys, mutexes, and events the process has open. Mutexes are especially useful, a lot of malware creates a mutex with a fixed name to avoid running twice, and that name becomes an IOC for identification.
+- The Threads tab: view each thread's call stack, find the start point.
+- Right-click a memory region or module and you can dump it to disk for static analysis, very handy when the code has been unpacked in memory.
 
-Khi bạn nghi một chương trình tự giải mã chuỗi lúc chạy, mở Process Hacker quét strings bộ nhớ nhanh hơn nhiều so với ngồi dò routine giải mã trong disassembler.
+When you suspect a program decrypts strings at runtime, opening Process Hacker and scanning memory strings is much faster than hunting for the decryption routine in a disassembler.
 
-## Process Explorer, phiên bản gọn hơn
+## Process Explorer, the slimmer version
 
-Process Explorer cũng của Sysinternals, nhẹ hơn Process Hacker, mạnh ở cây tiến trình, xem DLL mà một tiến trình nạp, và tra nhanh một handle đang bị giữ bởi ai. Nếu chỉ cần nhìn tổng quan và quan hệ cha con thì nó đủ. Process Hacker hợp hơn khi cần đào sâu bộ nhớ và handle.
+Process Explorer is also from Sysinternals, lighter than Process Hacker, strong at the process tree, viewing the DLLs a process loaded, and quickly looking up who is holding a handle. If you only need an overview and parent-child relationships, it's enough. Process Hacker fits better when you need to dig into memory and handles.
 
-## API Monitor, nghe lén lời gọi API
+## API Monitor, eavesdropping on API calls
 
-Procmon chỉ thấy tương tác ở mức hệ điều hành. API Monitor đi gần code hơn: nó hook và ghi lại các lời gọi Win32 API kèm tham số thật và giá trị trả về. Bạn chọn nhóm API muốn theo dõi (file, registry, memory, crypto, network...), chạy chương trình, rồi đọc được những thứ như:
+Procmon only sees interactions at the operating system level. API Monitor gets closer to the code: it hooks and records Win32 API calls with the real parameters and return values. You pick the API groups you want to follow (file, registry, memory, crypto, network...), run the program, and then read things like:
 
-- `CreateFileW(L"C:\\Users\\...\\secret.dat", GENERIC_READ, ...)`, thấy luôn tên file đầy đủ.
-- `CryptEncrypt(...)` hay `VirtualAlloc(..., PAGE_EXECUTE_READWRITE)`, cấp vùng nhớ vừa ghi vừa chạy, một cờ đỏ hay gặp khi code chuẩn bị chạy payload.
+- `CreateFileW(L"C:\\Users\\...\\secret.dat", GENERIC_READ, ...)`, giving you the full file name right away.
+- `CryptEncrypt(...)` or `VirtualAlloc(..., PAGE_EXECUTE_READWRITE)`, allocating memory that's both writable and executable, a common red flag when code is preparing to run a payload.
 
-Điểm mạnh là thấy tham số ở dạng người đọc được. Điểm yếu là nhiều malware né hook của nó, hoặc gọi thẳng Native API/syscall để đi vòng (nhắc ở bài 1.12). Khi API Monitor im lặng một cách đáng ngờ, bản thân sự im lặng đó cũng là manh mối.
+The strength is seeing parameters in a human-readable form. The weakness is that a lot of malware evades its hooks, or calls the Native API/syscalls directly to go around (mentioned in lesson 1.12). When API Monitor is suspiciously silent, that silence is itself a clue.
 
-## Autoruns, soi persistence
+## Autoruns, inspecting persistence
 
-Autoruns liệt kê gần như mọi điểm mà thứ gì đó có thể tự khởi động trên Windows: khóa Run, scheduled task, service, driver, trình cắm Explorer, và hàng chục chỗ khác bạn không ngờ tới. Sau khi chạy một mẫu, so sánh Autoruns trước và sau là thấy ngay nó đã cắm cái gì để tồn tại qua lần khởi động sau. Có tùy chọn ẩn các mục đã ký bởi Microsoft để lọc bớt nhiễu.
+Autoruns lists nearly every spot where something can auto-start on Windows: Run keys, scheduled tasks, services, drivers, Explorer plugins, and dozens of other places you wouldn't think of. After running a sample, comparing Autoruns before and after shows right away what it planted to survive the next boot. There's an option to hide entries signed by Microsoft to cut down the noise.
 
-## Wireshark, nhìn lưu lượng mạng
+## Wireshark, looking at network traffic
 
-Khi chương trình nói chuyện với bên ngoài, Wireshark bắt từng gói. Bạn thấy nó resolve domain nào (DNS), kết nối IP và cổng nào, và nếu không mã hóa thì cả nội dung. Với malware, đây là cách tìm server điều khiển (C2) và hiểu giao thức liên lạc. Nhớ cấu hình mạng lab cho đúng: thường bạn chạy trong môi trường mạng giả lập (INetSim/FakeNet) để mẫu tưởng mình ra được internet mà gói không đi đâu, xem bài 0.3.
+When a program talks to the outside, Wireshark captures every packet. You see which domain it resolves (DNS), which IP and port it connects to, and if it's not encrypted, even the contents. For malware, this is how you find the command-and-control (C2) server and understand the communication protocol. Remember to set up the lab network correctly: you usually run in a simulated network environment (INetSim/FakeNet) so the sample thinks it reached the internet while the packets go nowhere, see lesson 0.3.
 
-## Trên Linux: strace và ltrace
+## On Linux: strace and ltrace
 
-Thế giới Linux gọn hơn, hai lệnh là đủ cho phần lớn việc:
+The Linux world is tidier, and two commands are enough for most jobs:
 
-- `strace ./chuongtrinh` ghi lại mọi system call: `open`, `read`, `write`, `connect`, `execve`. Tương đương Procmon ở mức syscall.
-- `ltrace ./chuongtrinh` ghi lại lời gọi tới hàm thư viện (libc...), gần với API Monitor. Thấy luôn `strcmp`, `malloc`, `fopen` kèm tham số.
+- `strace ./program` records every system call: `open`, `read`, `write`, `connect`, `execve`. The equivalent of Procmon at the syscall level.
+- `ltrace ./program` records calls to library functions (libc...), close to API Monitor. You see `strcmp`, `malloc`, `fopen` with their parameters right away.
 
-Ví dụ `strace` một chương trình kiểm tra license đôi khi phô ra thẳng nó `open` file `/etc/mylicense` hay `connect` tới một IP, và bạn hiểu cơ chế mà chưa cần mở disassembler.
+For example, running `strace` on a license-checking program sometimes straight out reveals that it `open`s the file `/etc/mylicense` or `connect`s to an IP, and you understand the mechanism without opening a disassembler.
 
-## Ghép lại thành bức tranh
+## Putting it together into a picture
 
-Không công cụ nào cho bạn câu trả lời đầy đủ, nhưng cộng lại thì có:
+No single tool gives you the full answer, but added together they do:
 
-- Procmon trả lời nó đụng vào file và registry nào.
-- Process Hacker trả lời trong bộ nhớ nó đang giấu gì, giữ mutex và handle nào.
-- API Monitor trả lời nó gọi API gì với tham số ra sao.
-- Autoruns trả lời nó cắm vào đâu để sống dai.
-- Wireshark trả lời nó nói chuyện với ai.
+- Procmon answers which files and registry it touches.
+- Process Hacker answers what it's hiding in memory, and which mutexes and handles it holds.
+- API Monitor answers which APIs it calls and with what parameters.
+- Autoruns answers where it plants itself to live long.
+- Wireshark answers who it talks to.
 
-Chạy mẫu một lần với cả bộ này bật sẵn, bạn có một hồ sơ hành vi trước khi động tới một dòng assembly. Từ hồ sơ đó mới quyết định chỗ nào đáng ngồi debug sâu. Đó đúng là tinh thần triage, static, dynamic ở bài 0.4, chỉ khác là dynamic ở đây làm bằng quan sát chứ chưa phải bằng debugger.
+Run the sample once with this whole set turned on, and you have a behavior profile before touching a single line of assembly. From that profile you decide which spots are worth sitting down and debugging deeply. That's exactly the spirit of triage, static, dynamic in lesson 0.4, the only difference being that the dynamic here is done by observation rather than by a debugger.
 
-Và nhắc lại cho chắc: mọi thứ trong bài này, khi mục tiêu là malware thật, phải chạy trong VM cô lập theo [Bài 0.3](/posts/tr-0-3-dung-lab-an-toan/). Bật Procmon lên không làm bạn an toàn hơn, chương trình vẫn chạy thật.
+And a reminder to be sure: everything in this lesson, when the target is real malware, has to run in an isolated VM per [Lesson 0.3](/posts/tr-0-3-dung-lab-an-toan/). Turning on Procmon doesn't make you any safer, the program still really runs.
 
-## Checklist ghi nhớ
-- Behavioral analysis cho bạn biết chương trình làm gì mà nhiều khi không cần đọc assembly.
-- Procmon: lọc theo tên tiến trình trước, rồi theo loại thao tác (file/registry/network).
-- Process Hacker: quét strings trong bộ nhớ sống, xem handle và mutex, dump vùng đã giải nén.
-- API Monitor: thấy lời gọi API kèm tham số dạng người đọc được; im lặng bất thường cũng là manh mối.
-- Autoruns để soi persistence, Wireshark để soi mạng.
-- Linux: strace cho syscall, ltrace cho hàm thư viện.
-- Malware thật: luôn trong VM cô lập.
+## Key takeaways
+- Behavioral analysis tells you what a program does, often without reading assembly.
+- Procmon: filter by process name first, then by operation type (file/registry/network).
+- Process Hacker: scan strings in live memory, view handles and mutexes, dump unpacked regions.
+- API Monitor: shows API calls with human-readable parameters; unusual silence is also a clue.
+- Autoruns to inspect persistence, Wireshark to inspect the network.
+- Linux: strace for syscalls, ltrace for library functions.
+- Real malware: always in an isolated VM.

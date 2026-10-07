@@ -1,54 +1,45 @@
 ---
-title: "Bài 10.2: Visual Basic 6, hai thế giới trong cùng một file exe"
+title: "Lesson 10.2: Visual Basic 6, two worlds inside the same exe"
 date: 2026-10-06 09:07:00 +0700
-categories: ["Technique Reverse", "Phần 10 · Ngôn ngữ legacy: Delphi, VB6, AutoIt, AHK"]
+categories: ["Technique Reverse", "Part 10 · Legacy: Delphi, VB6, AutoIt, AHK"]
 tags: [reverse-engineering, legacy]
 render_with_liquid: false
 ---
-Visual Basic 6 ra đời cuối thập ni 90 nhưng tới giờ vẫn còn vô số phần mềm nội bộ, công cụ nhỏ, và cả malware viết bằng nó. Reverse VB6 có một cái bẫy lớn ngay từ đầu: hai file exe trông giống nhau, cùng là VB6, nhưng cách bạn phân tích chúng khác nhau hoàn toàn. Lý do nằm ở chế độ biên dịch. Hiểu được chỗ này trước là tiết kiệm cả buổi loay hoay.
+Visual Basic 6 came out in the late 90s but there's still a huge amount of internal software, small tools, and even malware written in it. Reversing VB6 has a big trap right from the start: two exe files look the same, both VB6, but the way you analyze them is completely different. The reason is the compile mode. Understanding this first saves you a whole session of fumbling around.
 
-Trước hết, đừng nhầm VB6 với VB.NET. Cái tên giống nhau nhưng là hai công nghệ khác hẳn. VB.NET biên dịch ra IL và chạy trên CLR, bạn mở nó bằng dnSpy/ILSpy như mọi assembly .NET khác (xem lại Phần 5). VB6 thì không liên quan gì tới .NET, nó biên dịch ra một dạng rất riêng mà bài này nói tới. Nhận ra bạn đang cầm cái nào là việc đầu tiên, và Detect It Easy làm việc đó trong một giây.
+First, don't confuse VB6 with VB.NET. The names are similar but they're entirely different technologies. VB.NET compiles to IL and runs on the CLR, and you open it with dnSpy/ILSpy like any other .NET assembly (see Part 5 again). VB6 has nothing to do with .NET, it compiles to a very distinct form that this lesson covers. Recognizing which one you're holding is the first job, and Detect It Easy does it in a second.
 
-## Dấu hiệu nhận ra một file VB6
+## Signs of a VB6 file
 
-Mở file trong DIE hoặc nhìn bảng import, dấu hiệu chắc chắn nhất là nó link tới `msvbvm60.dll` (Microsoft Visual Basic Virtual Machine 6.0). Mọi chương trình VB6, dù biên dịch kiểu gì, đều cần runtime này. Thấy `msvbvm60.dll` trong imports là bạn biết ngay đây là VB6, không phải VB.NET, không phải C++.
+Open the file in DIE or look at the import table, the surest sign is that it links to `msvbvm60.dll` (Microsoft Visual Basic Virtual Machine 6.0). Every VB6 program, however it was compiled, needs this runtime. Seeing `msvbvm60.dll` in the imports tells you right away it's VB6, not VB.NET, not C++.
 
-Một dấu hiệu nữa: entry point của VB6 luôn gọi `ThunRTMain` (hàm khởi động runtime VB). Và trong file có một cấu trúc gọi là VB header (bắt đầu bằng chuỗi "VB5!") mô tả form, object, và project. Cấu trúc này là mỏ vàng, các tool chuyên dụng đọc nó để dựng lại giao diện và danh sách sự kiện.
+Another sign is that the VB6 entry point always calls `ThunRTMain` (the function that starts the VB runtime). And the file contains a structure called the VB header (starting with the string "VB5!") describing forms, objects, and the project. This structure is a gold mine, specialized tools read it to rebuild the UI and the list of events.
 
-## P-Code và Native, chỗ quyết định mọi thứ
+## P-Code and Native, where everything is decided
 
-Khi biên dịch VB6, lập trình viên chọn một trong hai chế độ (trong Project Properties, tab Compile). Đây là cái bẫy chính.
+When compiling VB6, the programmer picks one of two modes (in Project Properties, the Compile tab). This is the main trap.
 
-**P-Code (Pseudo-Code).** Chương trình được biên dịch ra một dạng bytecode riêng của VB, và `msvbvm60.dll` đóng vai một máy ảo thông dịch bytecode đó lúc chạy, khá giống cách CPython chạy .pyc hay JVM chạy .class. Khi bạn mở một exe P-Code trong IDA, bạn sẽ thấy rất ít code x86 thật sự, chủ yếu là lời gọi vào runtime, vì logic thật nằm trong bytecode P-Code. IDA không hiểu P-Code, nên nhìn gần như vô dụng. Nhưng tin tốt: P-Code là bytecode cấp cao, giữ khá nhiều thông tin, nên decompiler chuyên dụng khôi phục lại được tương đối sạch, gần với source gốc.
+In P-Code (Pseudo-Code) mode, the program is compiled to a VB-specific bytecode, and `msvbvm60.dll` acts as a virtual machine interpreting that bytecode at runtime, quite like how CPython runs .pyc or the JVM runs .class. When you open a P-Code exe in IDA, you see very little real x86 code, mostly calls into the runtime, because the real logic is in the P-Code bytecode. IDA doesn't understand P-Code, so it's almost useless to look at. But good news: P-Code is high-level bytecode that keeps quite a lot of information, so a specialized decompiler can recover it fairly cleanly, close to the original source.
 
-**Native code.** Chương trình được biên dịch thẳng ra x86 như C/C++. Bạn mở IDA ra là thấy assembly thật, đọc được bằng kiến thức Phần 1. Nhưng đừng mừng vội: code native của VB6 vẫn gọi runtime liên tục cho mọi thứ (quản lý chuỗi BSTR, biến Variant, thao tác form), nên nó ngập trong lời gọi `__vba*` tới `msvbvm60.dll`. Đọc được nhưng rườm rà, và nghịch lý là native lại khó khôi phục về source gốc hơn P-Code, vì compiler đã xé logic ra thành assembly và vứt mất cấu trúc cấp cao.
+In Native mode, the program is compiled straight to x86 like C/C++. Open IDA and you see real assembly, readable with the knowledge from Part 1. But don't celebrate yet: VB6 native code still calls the runtime constantly for everything (BSTR string management, Variant variables, form operations), so it's flooded with `__vba*` calls into `msvbvm60.dll`. Readable but cluttered, and paradoxically native is harder to restore to the original source than P-Code, because the compiler tore the logic into assembly and threw away the high-level structure.
 
-Nghe ngược đời nhưng đúng: với VB6, **P-Code thường dễ khôi phục về gần source hơn native**, vì bytecode giữ nhiều thông tin hơn mã máy đã tối ưu. Đây là điểm khác biệt quan trọng so với trực giác thông thường (ở các ngôn ngữ khác, native luôn là dạng khó nhất).
+Sounds backwards but it's true: with VB6, P-Code is usually easier to recover to near-source than native, because the bytecode keeps more information than optimized machine code. This is an important difference from the usual intuition (in other languages, native is always the hardest form).
 
-Phân biệt hai chế độ: nhìn trong DIE hoặc tool chuyên dụng. Nếu phần code chủ yếu là call vào msvbvm60 với rất ít logic x86 thật, đó là P-Code. Nếu có nhiều block assembly thật xen lẫn call runtime, đó là native. VB Decompiler cũng tự báo loại ngay khi mở.
+To tell the two modes apart, look in DIE or a specialized tool. If the code is mostly calls into msvbvm60 with very little real x86 logic, it's P-Code. If there are lots of real assembly blocks mixed with runtime calls, it's native. VB Decompiler also reports the type as soon as you open the file.
 
-## VB Decompiler, công cụ gần như bắt buộc
+## VB Decompiler, a nearly mandatory tool
 
-Với VB6, công cụ trung tâm là **VB Decompiler** (có bản free giới hạn và bản pro). Nó làm được những việc mà IDA một mình không làm:
+For VB6, the central tool is VB Decompiler (there's a limited free version and a pro version). It does things IDA alone can't. It reads the VB header to rebuild the list of forms, controls, and event handlers (for example `Command1_Click`, `Form_Load`), which is the fastest way to know "when the OK button is clicked, which function runs". For P-Code, it decompiles the bytecode into something close to VB source, so you can read the logic directly. For native, it disassembles and annotates the runtime calls, which is easier to follow than raw IDA. It also lists strings and their references, helping you go from a message ("Wrong password") back to the check function, the familiar start-from-the-string technique.
 
-- Đọc VB header để **dựng lại danh sách form, control, và event handler** (ví dụ `Command1_Click`, `Form_Load`). Đây là cách nhanh nhất để biết "khi bấm nút OK thì hàm nào chạy".
-- Với **P-Code**, nó decompile bytecode về dạng gần giống source VB, đọc được logic trực tiếp.
-- Với **native**, nó disassemble và chú thích các lời gọi runtime, dễ theo dõi hơn IDA thô.
-- Liệt kê **chuỗi** và tham chiếu, giúp đi từ một thông báo ("Sai mật khẩu") ngược về hàm kiểm tra, đúng kỹ thuật đi-từ-chuỗi quen thuộc.
+A typical workflow is to open the exe in VB Decompiler, see whether it reports P-Code or native, open the form tree, find the event handler for the button or field related to the logic you care about (for example a registration button), and read the decompiled code there. If it's native and you need to go deeper, switch to IDA/x64dbg but bring along the function address info that VB Decompiler pointed out.
 
-Quy trình điển hình: mở exe trong VB Decompiler, xem nó báo P-Code hay native, mở cây form, tìm event handler của nút hoặc ô liên quan tới logic bạn quan tâm (ví dụ nút đăng ký), đọc code decompiled ở đó. Nếu là native và cần đi sâu hơn, chuyển sang IDA/x64dbg nhưng mang theo thông tin địa chỉ hàm mà VB Decompiler đã chỉ ra.
+## Strings in VB6: BSTR, not C strings
 
-## Chuỗi trong VB6: BSTR, không phải chuỗi C
+A detail that often confuses beginners: VB6 uses BSTR for strings, which are Unicode (UTF-16) strings with a dword length right before the data pointer, and still ending in two null bytes. So when you look at strings in a hex editor or IDA, you see them in Unicode form (each ASCII character interleaved with a 00 byte), not plain ASCII strings like in C. String comparison in VB6 usually goes through the runtime function `__vbaStrCmp` rather than `strcmp`, so setting a breakpoint there when debugging native catches exactly the comparison spot.
 
-Một chi tiết hay làm người mới bối rối: VB6 dùng BSTR cho chuỗi, là chuỗi Unicode (UTF-16) có một dword length đứng ngay trước con trỏ dữ liệu, và vẫn kết thúc bằng hai byte null. Nên khi soi chuỗi trong hex editor hoặc IDA, bạn thấy chúng ở dạng Unicode (mỗi ký tự ASCII xen một byte 00), không phải chuỗi ASCII đơn giản như C. So sánh chuỗi trong VB6 thường đi qua hàm runtime `__vbaStrCmp` chứ không phải `strcmp`, nên đặt breakpoint vào đó khi debug native là bắt được đúng chỗ so sánh.
+## Lab
 
-## Lab tự làm
+See [labs/10.2/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/10.2). The task is to identify a VB6 exe through the `msvbvm60.dll` import, work out whether it's P-Code or native, then use VB Decompiler to open the forms and find the event handler holding the check logic.
 
-Xem [labs/10.2/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/10.2). Nhiệm vụ: nhận diện một exe VB6 qua import `msvbvm60.dll`, xác định nó là P-Code hay native, rồi dùng VB Decompiler mở form và tìm event handler chứa logic kiểm tra.
-
-## Checklist ghi nhớ
-- Import `msvbvm60.dll` là dấu hiệu chắc chắn của VB6 (khác hẳn VB.NET chạy trên CLR).
-- VB6 có hai chế độ: P-Code (bytecode chạy trên runtime, ít x86 thật) và Native (x86 thật nhưng ngập lời gọi `__vba*`).
-- Ngược trực giác: P-Code thường dễ khôi phục về gần source hơn native.
-- VB Decompiler là công cụ trung tâm: dựng form, event handler, decompile P-Code, chú thích native.
-- Chuỗi VB6 là BSTR (Unicode có length prefix), so sánh qua `__vbaStrCmp`.
+## Key takeaways
+The `msvbvm60.dll` import is a sure sign of VB6, which is completely different from VB.NET running on the CLR. VB6 has two modes, P-Code (bytecode running on the runtime, little real x86) and Native (real x86 but flooded with `__vba*` calls), and counterintuitively P-Code is usually easier to recover to near-source than native. VB Decompiler is the central tool, since it rebuilds forms and event handlers, decompiles P-Code, and annotates native. VB6 strings are BSTR (Unicode with a length prefix), compared through `__vbaStrCmp`.

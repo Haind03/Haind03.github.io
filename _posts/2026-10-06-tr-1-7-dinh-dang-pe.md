@@ -1,134 +1,114 @@
 ---
-title: "Bài 1.7: Định dạng PE, giải phẫu một file .exe Windows"
+title: "Lesson 1.7: The PE format, anatomy of a Windows .exe"
 date: 2026-10-06 08:10:00 +0700
-categories: ["Technique Reverse", "Phần 1 · Nền tảng máy tính cho RE"]
+categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
-Mỗi file `.exe`, `.dll`, `.sys` trên Windows đều theo cùng một khuôn gọi là PE (Portable Executable). Hiểu khuôn này giải thích rất nhiều thứ: vì sao DIE biết file viết bằng gì, vì sao packer giấu được code, entry point nằm ở đâu để đặt breakpoint đầu tiên, và vì sao một hàm từ `kernel32.dll` lại gọi được từ chương trình của bạn. Bài này mổ PE từ đầu file xuống, vừa đủ để bạn tự tay dò trong PE-bear.
+Every `.exe`, `.dll`, `.sys` on Windows follows the same mold called PE (Portable Executable). Understanding this mold explains a lot: why DIE knows what a file was written in, why packers can hide code, where the entry point is so you can place your first breakpoint, and why a function from `kernel32.dll` can be called from your program. This lesson cuts open a PE from the top of the file down, just enough for you to poke around in PE-bear by hand.
 
-## Nhìn tổng thể trước
+## The big picture first
 
-![Cấu trúc file PE: DOS header, PE signature, File header, Optional header, section table và các section](/assets/img/technique-reverse/assets/phan-01/pe-structure.svg)
+![PE file structure: DOS header, PE signature, File header, Optional header, section table and sections](/assets/img/technique-reverse/assets/phan-01/pe-structure.svg)
 
-Một file PE xếp tuần tự thế này, từ offset 0 đi xuống:
+A PE file is laid out sequentially like this, from offset 0 down:
 
 ```
 +-----------------------------+  offset 0
-|  DOS header  (bắt đầu "MZ")  |
+|  DOS header  (starts "MZ")   |
 |  DOS stub                    |
 +-----------------------------+
 |  PE signature  ("PE\0\0")    |
 |  File header                 |   <- NT headers
 |  Optional header             |
 +-----------------------------+
-|  Section table               |  mô tả từng section
+|  Section table               |  describes each section
 +-----------------------------+
 |  .text   (code)              |
-|  .rdata  (hằng số, chuỗi,IAT)|
-|  .data   (biến toàn cục)     |
-|  .rsrc   (tài nguyên)        |
+|  .rdata  (constants, strings,IAT)|
+|  .data   (globals)           |
+|  .rsrc   (resources)         |
 |  ...                         |
 +-----------------------------+
 ```
 
-Hai phần đầu (header) là "giấy khai sinh" mô tả file. Phần sau là nội dung thật. Loader của Windows đọc header để biết nạp cái gì vào đâu.
+The first parts (the headers) are the "birth certificate" describing the file. The rest is the actual content. The Windows loader reads the headers to know what to load where.
 
-## DOS header và cái "MZ" huyền thoại
+## The DOS header and the legendary "MZ"
 
-Mở bất kỳ exe nào bằng hex editor, hai byte đầu luôn là `4D 5A`, tức ký tự ASCII "MZ". Đây là magic number nhận diện file PE. "MZ" là tên viết tắt của Mark Zbikowski, kỹ sư Microsoft thời DOS. Thấy `4D 5A` ở offset 0 là biết ngay đang cầm một file thực thi Windows.
+Open any exe in a hex editor and the first two bytes are always `4D 5A`, the ASCII characters "MZ". This is the magic number that identifies a PE file. "MZ" stands for Mark Zbikowski, a Microsoft engineer from the DOS days. Seeing `4D 5A` at offset 0 tells you right away you're holding a Windows executable.
 
-DOS header chỉ có một trường thực sự quan trọng với ta: `e_lfanew` ở offset `0x3C`. Nó là một con số chỉ tới chỗ bắt đầu của NT headers. Nói cách khác: đọc 4 byte tại offset `0x3C`, nhảy tới đó, bạn tới phần PE thật.
+The DOS header has only one field that really matters to us: `e_lfanew` at offset `0x3C`. It's a number pointing to where the NT headers start. In other words: read 4 bytes at offset `0x3C`, jump there, and you arrive at the real PE part.
 
-Ngay sau DOS header là DOS stub, một đoạn chương trình DOS tí hon in ra dòng quen thuộc "This program cannot be run in DOS mode." nếu ai đó lỡ chạy file trên DOS. Với RE thì đoạn này vô hại, bỏ qua.
+Right after the DOS header is the DOS stub, a tiny DOS program that prints the familiar "This program cannot be run in DOS mode." if someone runs the file on DOS. For RE it's harmless, skip it.
 
-## NT headers, nơi khai báo thật
+## NT headers, where the real declarations are
 
-Tại vị trí mà `e_lfanew` trỏ tới, bạn gặp:
+At the position `e_lfanew` points to, you find the PE signature first: 4 bytes `50 45 00 00`, i.e. "PE\0\0". This confirms "the PE part starts here".
 
-**PE signature**: 4 byte `50 45 00 00`, tức "PE\0\0". Đây là dấu xác nhận "phần PE bắt đầu từ đây".
+Next is the file header (also called the COFF header), which has a few notable fields. `Machine` is the architecture: `0x14C` is x86 (32-bit) and `0x8664` is x64, which is how you decide between x32dbg and x64dbg. `NumberOfSections` is how many sections the file has, and `Characteristics` holds descriptive flags, for example whether this is an EXE or a DLL.
 
-**File header** (còn gọi COFF header), vài trường đáng chú ý:
-- `Machine`: kiến trúc. `0x14C` là x86 (32-bit), `0x8664` là x64. Đây là cách phân biệt chọn x32dbg hay x64dbg.
-- `NumberOfSections`: file có bao nhiêu section.
-- `Characteristics`: cờ mô tả, ví dụ đây là EXE hay DLL.
+Then comes the optional header (the name "optional" is misleading, it's mandatory for executables). This is the part rich in information. `Magic` is `0x10B` for PE32 (32-bit) and `0x20B` for PE32+ (64-bit). `AddressOfEntryPoint` is the entry point, where code starts running. It's an RVA (explained right below), and your first breakpoint when debugging usually goes here. `ImageBase` is the virtual address the file wants to be loaded at. The classic is `0x400000` for 32-bit exes. With ASLR on, the loader actually puts it somewhere else, but ImageBase is the reference point for calculations. `SectionAlignment` and `FileAlignment` are the alignment of sections in memory and on disk, and these two numbers are why RVAs and file offsets don't line up. Finally `DataDirectory` is an array of pointers to the important tables (Import, Export, Relocation, TLS, Resource...). You'll keep coming back here.
 
-**Optional header** (tên "optional" gây hiểu lầm, nó bắt buộc với file thực thi). Đây mới là phần giàu thông tin:
-- `Magic`: `0x10B` cho PE32 (32-bit), `0x20B` cho PE32+ (64-bit).
-- `AddressOfEntryPoint`: điểm vào, nơi code bắt đầu chạy. Đây là một RVA (giải thích ngay bên dưới). Breakpoint đầu tiên của bạn khi debug thường đặt ở đây.
-- `ImageBase`: địa chỉ ảo mà file muốn được nạp vào. Cổ điển là `0x400000` cho exe 32-bit. Với ASLR bật thì thực tế loader đặt chỗ khác, nhưng ImageBase là mốc để tính toán.
-- `SectionAlignment` và `FileAlignment`: căn lề của section trong bộ nhớ và trên đĩa. Hai con số này là lý do RVA và file offset lệch nhau.
-- `DataDirectory`: một mảng con trỏ tới các bảng quan trọng (Import, Export, Relocation, TLS, Resource...). Bạn sẽ quay lại đây suốt.
+## RVA and file offset, the trap when calculating by hand
 
-## RVA và file offset, cái bẫy khi tự tay tính
+This is the concept that confuses beginners the most, so read slowly.
 
-Đây là khái niệm làm người mới lú nhiều nhất, nên đọc chậm.
+A file offset (also called raw offset) is the position in bytes from the start of the file, while the file is on disk. Hex editors use this. An RVA (Relative Virtual Address) is the position counted from ImageBase, once the file is loaded into memory. IDA, debuggers, and the fields in the PE header use this.
 
-- **File offset** (còn gọi raw offset): vị trí tính bằng byte kể từ đầu file, khi file nằm trên đĩa. Hex editor dùng cái này.
-- **RVA** (Relative Virtual Address): vị trí tính từ ImageBase, khi file đã được nạp vào bộ nhớ. IDA, debugger, và các trường trong PE header dùng cái này.
+The two numbers differ because the alignment on disk (`FileAlignment`, usually 0x200) is different from the alignment in memory (`SectionAlignment`, usually 0x1000). The same code byte has one file offset but a different RVA.
 
-Hai con số này khác nhau vì căn lề trên đĩa (`FileAlignment`, thường 0x200) khác căn lề trong bộ nhớ (`SectionAlignment`, thường 0x1000). Cùng một byte code có file offset này nhưng RVA khác.
+For the conversion, first find the section containing that RVA, meaning which section's `[VirtualAddress, VirtualAddress + VirtualSize)` range the RVA falls in. Then compute the offset within the section: `delta = RVA - VirtualAddress` (of that section). The file offset is then `PointerToRawData` (of that section) `+ delta`.
 
-Công thức quy đổi, làm theo từng bước:
-1. Tìm section chứa RVA đó: RVA nằm trong khoảng `[VirtualAddress, VirtualAddress + VirtualSize)` của section nào.
-2. Tính độ lệch trong section: `delta = RVA - VirtualAddress` (của section đó).
-3. File offset = `PointerToRawData` (của section đó) `+ delta`.
+In short: `file_offset = RVA - section.VirtualAddress + section.PointerToRawData`.
 
-Nói gọn: `file_offset = RVA - section.VirtualAddress + section.PointerToRawData`.
+To get the real virtual address (VA): `VA = ImageBase + RVA`. When IDA gives you a VA like `0x401500` and you want to find that byte on disk, you work backwards: VA minus ImageBase gives the RVA, then apply the formula above to get the file offset.
 
-Để tính địa chỉ ảo thật (VA): `VA = ImageBase + RVA`. Khi IDA cho bạn một VA như `0x401500` mà bạn muốn tìm byte đó trên đĩa, bạn lần ngược: VA trừ ImageBase ra RVA, rồi áp công thức trên ra file offset.
-
-May mắn là PE-bear và CFF Explorer làm hết phép tính này cho bạn, có nút chuyển RVA sang offset. Nhưng hiểu công thức để không hoảng khi hai con số không khớp.
+Luckily PE-bear and CFF Explorer do all of this math for you, with a button to convert RVA to offset. But understand the formula so you don't panic when the two numbers don't match.
 
 ## Section table
 
-Ngay sau NT headers là một mảng, mỗi phần tử mô tả một section. Mỗi entry cho biết: tên (`.text`, `.data`...), `VirtualAddress` (RVA khi nạp), `VirtualSize` (kích thước trong bộ nhớ), `PointerToRawData` (file offset trên đĩa), `SizeOfRawData` (kích thước trên đĩa), và `Characteristics` (quyền R/W/X).
+Right after the NT headers is an array, each element describing one section. Each entry gives the name (`.text`, `.data`...), `VirtualAddress` (RVA when loaded), `VirtualSize` (size in memory), `PointerToRawData` (file offset on disk), `SizeOfRawData` (size on disk), and `Characteristics` (R/W/X permissions).
 
-Các section quen mặt:
-- `.text`: code. Cờ thường là readable + executable.
-- `.rdata`: dữ liệu chỉ đọc, chứa hằng số, chuỗi, và quan trọng là IAT.
-- `.data`: biến toàn cục ghi được.
-- `.rsrc`: tài nguyên (icon, dialog, version info, đôi khi payload giấu trong đây).
-- `.reloc`: thông tin relocation.
+The familiar sections are `.text` for code (flags are usually readable + executable), `.rdata` for read-only data such as constants, strings, and importantly the IAT, `.data` for writable globals, `.rsrc` for resources (icons, dialogs, version info, sometimes a payload hidden in here), and `.reloc` for relocation info.
 
-Mẹo triage: nếu bạn thấy một section lạ tên kiểu `.UPX0`, `.vmp0`, hoặc `.text` có `VirtualSize` khổng lồ nhưng `SizeOfRawData` gần như bằng 0, đó là dấu hiệu file bị packed. Code thật sẽ được giải nén vào vùng ảo lúc chạy.
+Triage tip: if you see an odd section named something like `.UPX0`, `.vmp0`, or a `.text` with a huge `VirtualSize` but `SizeOfRawData` near zero, that's a sign the file is packed. The real code gets unpacked into the virtual region at runtime.
 
-## Import Directory và IAT, cách gọi hàm người khác
+## Import Directory and IAT, how you call other people's functions
 
-Chương trình của bạn gọi `MessageBoxW`, nhưng code của `MessageBoxW` nằm trong `user32.dll`, không nằm trong file bạn. Làm sao nối lại?
+Your program calls `MessageBoxW`, but the code of `MessageBoxW` lives in `user32.dll`, not in your file. How does it get connected?
 
-PE giải quyết bằng Import Directory. Nó liệt kê: với mỗi DLL cần dùng (`kernel32.dll`, `user32.dll`...), những hàm nào được import từ DLL đó. Khi loader nạp chương trình, nó cũng nạp các DLL này, tìm địa chỉ thật của từng hàm (qua Export Directory của DLL đó, xem dưới), rồi ghi các địa chỉ đó vào một bảng gọi là **IAT** (Import Address Table).
+PE solves this with the Import Directory. For each DLL it needs (`kernel32.dll`, `user32.dll`...), it lists which functions are imported from that DLL. When the loader loads the program, it also loads these DLLs, finds the real address of each function (through that DLL's Export Directory, see below), and writes those addresses into a table called the IAT (Import Address Table).
 
-Trong assembly, lời gọi hàm import nhìn như `call [IAT_entry]`, tức gọi gián tiếp qua một ô trong IAT. Khi đọc code, thấy một `call` tới một địa chỉ trong `.rdata` thì gần như chắc đó là gọi API, và PE-bear/IDA sẽ dịch cho bạn tên hàm.
+In assembly, a call to an imported function looks like `call [IAT_entry]`, an indirect call through a slot in the IAT. When reading code, if you see a `call` to an address in `.rdata`, it's almost certainly an API call, and PE-bear/IDA will translate the function name for you.
 
-Vì sao IAT quan trọng với RE: bảng import là một bản tóm tắt chức năng miễn phí. Thấy import `CreateFileW`, `WriteFile` là chương trình đụng tới file. Thấy `socket`, `send`, `WSAStartup` là có mạng. Thấy `VirtualAllocEx`, `WriteProcessMemory`, `CreateRemoteThread` là nghi ngờ injection ngay. Và khi unpack một file, dựng lại IAT là bước cuối cùng (Scylla làm việc này, xem Bài 14.3), vì file dump từ bộ nhớ thường mất IAT đúng.
+Why the IAT matters for RE: the import table is a free summary of functionality. Seeing `CreateFileW`, `WriteFile` imported means the program touches files. Seeing `socket`, `send`, `WSAStartup` means networking. Seeing `VirtualAllocEx`, `WriteProcessMemory`, `CreateRemoteThread` makes you suspect injection right away. And when unpacking a file, rebuilding the IAT is the last step (Scylla does this, see Lesson 14.3), because a file dumped from memory usually has the IAT wrong.
 
 ## Export Directory
 
-Ngược với import. Một DLL "xuất" các hàm cho người khác dùng, và Export Directory liệt kê chúng kèm RVA tới code của từng hàm. Hàm có thể xuất theo tên hoặc chỉ theo ordinal (số thứ tự). Khi reverse một DLL, Export Directory cho bạn danh sách điểm vào công khai, là chỗ tốt để bắt đầu đọc.
+The opposite of import. A DLL "exports" functions for others to use, and the Export Directory lists them along with the RVA to each function's code. A function can be exported by name or only by ordinal (sequence number). When reversing a DLL, the Export Directory gives you the list of public entry points, a good place to start reading.
 
 ## Relocation
 
-ImageBase chỉ là mong muốn. Khi địa chỉ đó đã bị chiếm (hoặc ASLR dời đi), loader phải nạp file ở base khác, và mọi địa chỉ tuyệt đối hard-code trong code phải được sửa lại. Bảng `.reloc` liệt kê những chỗ cần sửa. Bạn hiếm khi đọc tay bảng này, nhưng biết nó tồn tại để hiểu vì sao cùng một file chạy ở địa chỉ khác nhau mỗi lần.
+ImageBase is only a wish. When that address is already taken (or ASLR moves it), the loader has to load the file at a different base, and every absolute address hard-coded in the code has to be fixed up. The `.reloc` table lists the places that need fixing. You rarely read this table by hand, but know it exists so you understand why the same file runs at a different address every time.
 
-## TLS directory và TLS callback, bẫy anti-debug
+## TLS directory and TLS callbacks, an anti-debug trap
 
-TLS (Thread Local Storage) là cơ chế cấp cho mỗi thread một bản dữ liệu riêng. Điều đáng nói với RE nằm ở **TLS callback**: đây là các hàm được đăng ký trong TLS directory, và loader gọi chúng **trước cả khi tới entry point** (trước `main`).
+TLS (Thread Local Storage) is the mechanism that gives each thread its own copy of data. What matters for RE is the TLS callback: these are functions registered in the TLS directory, and the loader calls them even before the entry point (before `main`).
 
-Đây là chỗ malware và protector rất thích lợi dụng: đặt code kiểm tra debugger trong TLS callback, nó chạy trước khi bạn kịp đặt breakpoint ở entry point, và phát hiện bạn trước khi bạn kịp quan sát. Nếu bạn đặt breakpoint ở entry point mà chương trình đã "biết" có debugger và thoát, hãy kiểm tra TLS directory. x64dbg có tùy chọn dừng ở TLS callback, bật nó lên. Chi tiết ở Bài 15.4.
+This is a spot malware and protectors love to abuse: put the debugger check in a TLS callback, and it runs before you get a chance to set a breakpoint at the entry point, detecting you before you could observe anything. If you set a breakpoint at the entry point but the program already "knows" there's a debugger and exits, check the TLS directory. x64dbg has an option to break at TLS callbacks, turn it on. Details in Lesson 15.4.
 
-## Tất cả hiện ra trong PE-bear
+## It all shows up in PE-bear
 
-Lý thuyết tới đây đủ rồi. Mở PE-bear (hoặc CFF Explorer), kéo một file exe vào, bạn sẽ thấy từng phần vừa nói hiện thành cây: DOS header, NT headers với Optional header đầy đủ trường, section table với quyền của từng section, Import table với danh sách DLL và hàm. DIE thì không chi tiết bằng nhưng cho bạn bức tranh nhanh: compiler, entropy, có packed hay không. Quy trình quen tay: DIE để triage nhanh, PE-bear để soi kỹ.
+That's enough theory. Open PE-bear (or CFF Explorer), drag an exe in, and you'll see each part I just described appear as a tree: the DOS header, the NT headers with the Optional header's full fields, the section table with each section's permissions, the Import table with the list of DLLs and functions. DIE is less detailed but gives you a quick picture: compiler, entropy, packed or not. The usual workflow: DIE for quick triage, PE-bear for a close look.
 
-## Lab tự làm
+## Lab
 
-Xem [labs/1.7/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/1.7). Nhiệm vụ gồm tự tay tìm entry point, liệt kê section, đọc IAT của một exe trên máy bạn, và một bài tập quy đổi RVA sang file offset bằng công thức ở trên. Lời giải mẫu trong `solution.md`, nhưng làm trước khi mở.
+See [labs/1.7/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/1.7). The tasks include finding the entry point by hand, listing the sections, reading the IAT of an exe on your machine, and an exercise converting RVA to file offset using the formula above. A sample solution is in `solution.md`, but do it before you open it.
 
-## Checklist ghi nhớ
-- File PE bắt đầu bằng "MZ" (`4D 5A`); `e_lfanew` tại offset 0x3C trỏ tới NT headers, mở đầu bằng "PE\0\0".
-- Machine phân biệt x86 (0x14C) với x64 (0x8664); AddressOfEntryPoint là nơi code bắt đầu; ImageBase là base mong muốn.
-- RVA tính từ ImageBase (dùng trong bộ nhớ/IDA), file offset tính từ đầu file (trên đĩa). Quy đổi: `offset = RVA - VirtualAddress + PointerToRawData` của section chứa nó.
-- IAT là bảng địa chỉ các hàm import, và cũng là bản tóm tắt chức năng của chương trình.
-- Section lạ hoặc VirtualSize lớn mà SizeOfRawData nhỏ là dấu hiệu packed.
-- TLS callback chạy trước entry point, là chỗ hay giấu anti-debug.
+## Key takeaways
+A PE file starts with "MZ" (`4D 5A`), and `e_lfanew` at offset 0x3C points to the NT headers, which start with "PE\0\0". Machine tells x86 (0x14C) from x64 (0x8664), AddressOfEntryPoint is where code starts, and ImageBase is the preferred base.
+
+RVA is counted from ImageBase (used in memory/IDA) while file offset is counted from the start of the file (on disk). The conversion is `offset = RVA - VirtualAddress + PointerToRawData` of the section containing it. The IAT is the table of imported function addresses, and also a summary of what the program does.
+
+An odd section, or a large VirtualSize with a small SizeOfRawData, is a sign of packing. TLS callbacks run before the entry point, a common place to hide anti-debug.

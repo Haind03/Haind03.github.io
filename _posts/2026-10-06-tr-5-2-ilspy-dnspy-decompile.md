@@ -1,87 +1,87 @@
 ---
-title: "Bài 5.2: ILSpy và dnSpy, khi decompile trả lại gần như source gốc"
+title: "Lesson 5.2: ILSpy and dnSpy, when decompiling gives back almost the original source"
 date: 2026-10-06 08:38:00 +0700
-categories: ["Technique Reverse", "Phần 5 · C# / .NET (dnSpy, ILSpy)"]
+categories: ["Technique Reverse", "Part 05 · C# and .NET"]
 tags: [reverse-engineering, dotnet]
 render_with_liquid: false
 ---
-Sau khi khổ sở với assembly native suốt hai phần, mở một file .NET bằng dnSpy là một cú sốc dễ chịu. Bạn bấm vào một method, và thay vì biển `mov`/`call`, cửa sổ hiện ra C# gần y như bản tác giả viết: tên class, tên method, tên biến cục bộ, cả vòng lặp `foreach` còn nguyên. Lý do nằm ở bài [5.1](/posts/tr-5-1-net-ben-trong-clr-il-metadata/): .NET biên dịch ra IL kèm metadata đầy đủ, nên decompiler dựng lại được rất nhiều. Bài này là cách dùng hai công cụ chủ lực để khai thác điều đó.
+After struggling with native assembly for two whole parts, opening a .NET file in dnSpy is a pleasant shock. You click a method, and instead of a sea of `mov`/`call`, the window shows C# almost exactly as the author wrote it: class names, method names, local variable names, even a `foreach` loop intact. The reason is in lesson [5.1](/posts/tr-5-1-net-ben-trong-clr-il-metadata/): .NET compiles to IL with full metadata, so the decompiler can rebuild a lot. This lesson is how to use the two main tools to take advantage of that.
 
-Cả hai đều có sẵn trong repo: `dnSpy-net-win64/dnSpy.exe` và `ILSpy_binaries_9.0.0.7660-preview2-x64/ILSpy.exe`.
+Both are already in the repo: `dnSpy-net-win64/dnSpy.exe` and `ILSpy_binaries_9.0.0.7660-preview2-x64/ILSpy.exe`.
 
-## ILSpy hay dnSpy, chọn cái nào
+## ILSpy or dnSpy, which one
 
-Ngắn gọn: dùng cả hai, mỗi cái một việc.
+Short answer: use both, each for its own job.
 
-- **ILSpy** chuyên để *đọc*. Nhẹ, nhanh, mở đa nền (có bản Avalonia chạy Linux/macOS), và có bản dòng lệnh `ilspycmd` để xuất cả project C# ra đĩa rồi grep thoải mái. Khi chỉ cần hiểu code, ILSpy là đủ.
-- **dnSpy** (bản còn được bảo trì là **dnSpyEx**) làm được nhiều hơn: ngoài đọc, nó *debug* được assembly không có source, và *sửa* rồi lưu lại. Bài [5.3](https://github.com/Haind03/Technique-Reverse/blob/main/phan-05-csharp-dotnet/5.3-debug-net-dnspy.md) và [5.4](https://github.com/Haind03/Technique-Reverse/blob/main/phan-05-csharp-dotnet/5.4-sua-il-csharp-patch.md) sẽ khai thác hai khả năng đó. Ở bài này ta dùng dnSpy chủ yếu để đọc và điều tra.
+- **ILSpy** is for *reading*. Light, fast, cross-platform (there's an Avalonia build running on Linux/macOS), and it has a command-line version `ilspycmd` to export a whole C# project to disk so you can grep to your heart's content. When you just need to understand the code, ILSpy is enough.
+- **dnSpy** (the maintained fork is **dnSpyEx**) does more: besides reading, it can *debug* an assembly with no source, and *edit* and save it back. Lessons [5.3](https://github.com/Haind03/Technique-Reverse/blob/main/phan-05-csharp-dotnet/5.3-debug-net-dnspy.md) and [5.4](https://github.com/Haind03/Technique-Reverse/blob/main/phan-05-csharp-dotnet/5.4-sua-il-csharp-patch.md) will use those two abilities. In this lesson we use dnSpy mainly for reading and investigating.
 
-Giao diện hai công cụ gần giống nhau nên học một cái là dùng được cái kia.
+The two tools' interfaces are nearly the same, so learning one lets you use the other.
 
-## Mở một assembly và nhìn quanh
+## Open an assembly and look around
 
-Kéo thả một file `.exe` hoặc `.dll` .NET vào cửa sổ, hoặc File > Open. Bên trái hiện cây (tree) phân cấp:
+Drag and drop a .NET `.exe` or `.dll` into the window, or File > Open. On the left a hierarchical tree appears:
 
 ```
 MyApp.exe
-  references        (các assembly phụ thuộc)
-  MyApp             (namespace gốc)
+  references        (dependent assemblies)
+  MyApp             (root namespace)
     Program         (class)
       Main(string[]) : void       (method)
       CheckLicense(string) : bool
     Resources
 ```
 
-Cây đi theo đúng cấu trúc .NET: assembly chứa namespace, namespace chứa type (class/struct/enum/interface), type chứa method và field. Bấm vào một method là decompiler dịch nó ra C# ngay ở panel bên phải.
+The tree follows the .NET structure exactly: an assembly contains namespaces, a namespace contains types (class/struct/enum/interface), a type contains methods and fields. Click a method and the decompiler translates it to C# right in the right-hand panel.
 
-Điểm cần biết: file `.exe` apphost của .NET Core (ví dụ `dnSpy.exe`) nhiều khi chỉ là vỏ launcher, còn code thật nằm trong file `.dll` cùng tên. Nếu mở `.exe` mà thấy rỗng, hãy mở file `.dll` tương ứng. Đây là điều DIE cũng chỉ ra ở bài [2.1](/posts/tr-2-1-triage-die-strings-pebear/).
+One thing to know: a .NET Core apphost `.exe` (for example `dnSpy.exe`) is often just a launcher shell, and the real code sits in the `.dll` with the same name. If you open the `.exe` and it looks empty, open the matching `.dll`. DIE also points this out in lesson [2.1](/posts/tr-2-1-triage-die-strings-pebear/).
 
-## Xem C#, rồi lật sang IL
+## View the C#, then flip to IL
 
-Mặc định decompiler hiện C#. Nhưng đôi khi decompiler dịch sai hoặc giấu chi tiết (nhất là với code bị obfuscate), lúc đó bạn cần nhìn IL thô, thứ không nói dối.
+By default the decompiler shows C#. But sometimes the decompiler translates wrong or hides details (especially with obfuscated code), and then you need to look at the raw IL, which doesn't lie.
 
-- Trong **ILSpy**: hộp chọn ngôn ngữ trên thanh công cụ, đổi từ `C#` sang `IL`. Có thể chọn `IL with C#` để xem song song.
-- Trong **dnSpy**: menu ngữ cảnh hoặc nút chọn ngôn ngữ, chuyển giữa `C#` và `IL`.
+- In **ILSpy**: the language dropdown on the toolbar, switch from `C#` to `IL`. You can choose `IL with C#` to see them side by side.
+- In **dnSpy**: the context menu or the language button, switch between `C#` and `IL`.
 
-IL dễ đọc hơn assembly native nhiều: nó là stack machine với opcode có tên rõ (`ldarg`, `call`, `brtrue`, `ldstr`). Khi C# decompile trông kỳ quặc, lật sang IL thường sáng ra ngay.
+IL is much easier to read than native assembly: it's a stack machine with clearly named opcodes (`ldarg`, `call`, `brtrue`, `ldstr`). When the decompiled C# looks weird, flipping to IL usually clears things up right away.
 
-## Search: nhảy thẳng tới chỗ cần
+## Search: jump straight to what you need
 
-Thay vì lần mò cây, dùng search (ILSpy: ô Search hoặc `Ctrl+Shift+K` trong dnSpy). Tìm được theo tên type, method, và quan trọng nhất là theo **chuỗi (string)**. Giống kỹ thuật đi-từ-chuỗi ở bài [0.4](/posts/tr-0-4-quy-trinh-reverse/): thấy thông báo "License invalid" trong chương trình thì search chuỗi đó, nó dẫn thẳng tới method kiểm tra license.
+Instead of fumbling through the tree, use search (ILSpy: the Search box, or `Ctrl+Shift+K` in dnSpy). You can search by type name, method name, and most importantly by **string**. It's like the go-from-strings technique in lesson [0.4](/posts/tr-0-4-quy-trinh-reverse/): if you see the message "License invalid" in the program, search for that string and it leads straight to the license-check method.
 
-## Analyze: vũ khí mạnh nhất, dùng xref cho .NET
+## Analyze: the strongest weapon, xrefs for .NET
 
-Đây là tính năng làm .NET RE nhanh hơn hẳn native. Chuột phải vào một method, field, hay type rồi chọn **Analyze** (trong dnSpy) hoặc mở panel Analyze (ILSpy). Nó cho bạn:
+This is the feature that makes .NET RE much faster than native. Right-click a method, field or type and choose **Analyze** (in dnSpy) or open the Analyze panel (ILSpy). It gives you:
 
-- **Used By**: những method nào gọi method này. Đây chính là cross-reference ngược, tương đương phím `X` trong IDA.
-- **Uses**: method này gọi những gì.
-- **Instantiated By**: nơi nào tạo object của class này.
-- **Assigned By / Read By** cho field.
+- **Used By**: which methods call this method. This is the reverse cross-reference, equivalent to the `X` key in IDA.
+- **Uses**: what this method calls.
+- **Instantiated By**: where objects of this class are created.
+- **Assigned By / Read By** for fields.
 
-Quy trình điển hình: bạn nghi một method `CheckLicense` là trung tâm. Analyze nó, xem Used By để biết nó được gọi từ đâu (thường là từ `Main` hoặc một nút bấm), rồi lần ngược lên để hiểu luồng. Hoặc ngược lại, từ chuỗi thông báo lỗi, Analyze field chứa chuỗi để tìm nơi dùng. Lần theo đồ thị Used By/Uses là cách bạn dựng lại logic chương trình mà không cần đọc hết.
+A typical flow: you suspect a method `CheckLicense` is the center. Analyze it, look at Used By to see where it's called from (usually `Main` or a button click), then trace upward to understand the flow. Or the other way, from the error message string, Analyze the field holding the string to find where it's used. Following the Used By/Uses graph is how you rebuild the program's logic without reading everything.
 
-## Xuất cả project để grep
+## Export the whole project to grep
 
-Khi assembly lớn, mở GUI từng method thì chậm. ILSpy cho xuất nguyên project:
+When the assembly is big, opening each method in the GUI is slow. ILSpy lets you export the whole project:
 
-- GUI: chuột phải assembly > Save Code, nó ghi ra một thư mục `.csproj` với đầy đủ file `.cs`.
-- CLI: `ilspycmd MyApp.dll -p -o outdir` (ilspycmd là dotnet tool cài riêng qua `dotnet tool install -g ilspycmd`).
+- GUI: right-click the assembly > Save Code, and it writes a `.csproj` folder with all the `.cs` files.
+- CLI: `ilspycmd MyApp.dll -p -o outdir` (ilspycmd is a dotnet tool installed separately via `dotnet tool install -g ilspycmd`).
 
-Có source trên đĩa rồi thì bạn dùng grep, ripgrep, hay mở trong editor yêu thích để tìm kiếm toàn văn, nhanh hơn nhiều so với click trong GUI.
+With the source on disk you can use grep, ripgrep, or open it in your favorite editor for full-text search, much faster than clicking around in the GUI.
 
-## Lab tự làm
+## Lab
 
-Trong [labs/5.2/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/5.2) có hướng dẫn mở chính các DLL .NET có sẵn trong repo (ví dụ `ICSharpCode.Decompiler.dll` của ILSpy) bằng cả ILSpy và dnSpy, decompile, dùng Search và Analyze để lần theo một method, và thử xuất project ra C# bằng ilspycmd. Lời giải ở `solution.md`.
+In [labs/5.2/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/5.2) there are instructions to open the .NET DLLs already in the repo (for example ILSpy's `ICSharpCode.Decompiler.dll`) with both ILSpy and dnSpy, decompile, use Search and Analyze to follow a method, and try exporting the project to C# with ilspycmd. The solution is in `solution.md`.
 
-## Cạm bẫy thường gặp
-- Mở nhầm file apphost `.exe` rỗng thay vì `.dll` chứa code. Mở file `.dll` cùng tên.
-- Tin tuyệt đối vào C# decompile. Khi thấy lạ, lật sang IL để kiểm.
-- Bỏ qua Analyze mà cố đọc tuần tự. Used By/Uses tiết kiệm rất nhiều thời gian.
-- Code bị obfuscate (tên kiểu `a.b.c`, chuỗi mã hoá) thì decompile vẫn ra nhưng khó đọc. Đó là chuyện của bài [5.5](https://github.com/Haind03/Technique-Reverse/blob/main/phan-05-csharp-dotnet/5.5-obfuscator-de4dot.md).
+## Common pitfalls
+- Opening the empty apphost `.exe` instead of the `.dll` that holds the code. Open the `.dll` with the same name.
+- Trusting the decompiled C# absolutely. When something looks off, flip to IL to check.
+- Skipping Analyze and trying to read sequentially. Used By/Uses saves a huge amount of time.
+- Obfuscated code (names like `a.b.c`, encrypted strings) still decompiles but is hard to read. That's the topic of lesson [5.5](https://github.com/Haind03/Technique-Reverse/blob/main/phan-05-csharp-dotnet/5.5-obfuscator-de4dot.md).
 
-## Checklist ghi nhớ
-- ILSpy để đọc (nhẹ, đa nền, có ilspycmd xuất project), dnSpy để đọc + debug + sửa.
-- Cây: assembly > namespace > type > method. Bấm method là ra C#.
-- Lật C# sang IL khi decompile trông đáng ngờ.
-- Search theo chuỗi để nhảy thẳng tới logic.
-- Analyze (Used By / Uses) là cross-reference của .NET, dùng nó để dựng lại luồng.
+## Key takeaways
+- ILSpy for reading (light, cross-platform, ilspycmd exports projects), dnSpy for reading + debugging + editing.
+- The tree: assembly > namespace > type > method. Click a method to get C#.
+- Flip C# to IL when the decompile looks suspicious.
+- Search by string to jump straight to the logic.
+- Analyze (Used By / Uses) is .NET's cross-reference, use it to rebuild the flow.

@@ -1,68 +1,68 @@
 ---
-title: "Bài 19.4: Trích config và C2, moi ra bộ não của malware"
+title: "Lesson 19.4: Extracting config and C2, pulling out the brain of the malware"
 date: 2026-10-06 09:58:00 +0700
-categories: ["Technique Reverse", "Phần 19 · Phân tích mã độc cơ bản (phòng thủ)"]
+categories: ["Technique Reverse", "Part 19 · Malware Analysis Basics"]
 tags: [reverse-engineering, malware]
 render_with_liquid: false
 ---
-Gần như mọi malware có khả năng điều khiển từ xa đều mang theo một mẩu config: địa chỉ server điều khiển (C2), port, khoá mã hoá, campaign id, tên mutex, danh sách lệnh. Trích được mẩu config đó là bạn cầm trong tay bản đồ hạ tầng của kẻ tấn công. Đây là một trong những việc có giá trị threat intel cao nhất mà người phân tích làm được, và nó dựa thẳng vào kỹ năng crypto ở Phần 16.
+Almost every piece of malware that can be controlled remotely carries a bit of config: the address of the command-and-control (C2) server, the port, the encryption key, a campaign id, a mutex name, a list of commands. Extract that config and you're holding a map of the attacker's infrastructure. It's one of the highest-value threat intel things an analyst can do, and it relies directly on the crypto skills from Part 16.
 
-## Vì sao đáng công
+## Why it's worth the effort
 
-Một C2 domain rút ra từ một mẫu không chỉ giúp bạn chặn đúng mẫu đó. Nó mở ra:
+A C2 domain pulled from one sample doesn't just help you block that one sample. It opens up:
 
-- **Detection diện rộng.** Viết rule chặn domain/IP đó bảo vệ cả tổ chức, không chỉ một máy.
-- **Pivoting.** Từ một C2 lần ra các mẫu khác cùng hạ tầng, cùng campaign, cùng nhóm.
-- **Takedown.** Báo domain/IP cho registrar hoặc nhà cung cấp để gỡ.
-- **Phân loại họ malware.** Cấu trúc config thường đặc trưng cho từng family (Emotet, AgentTesla, Cobalt Strike...), nhận ra config là nhận ra họ.
+- **Broad detection.** Writing a rule that blocks that domain/IP protects the whole organization, not just one machine.
+- **Pivoting.** From one C2 you can trace other samples on the same infrastructure, the same campaign, the same group.
+- **Takedown.** Report the domain/IP to the registrar or provider to get it removed.
+- **Classifying the malware family.** The config structure is often distinctive for each family (Emotet, AgentTesla, Cobalt Strike...), and recognizing the config means recognizing the family.
 
-Nói ngắn gọn: một hash chỉ nhận diện một file, một C2 nhận diện cả một chiến dịch.
+In short: a hash identifies one file, a C2 identifies a whole campaign.
 
-## Config nằm ở đâu và vì sao không đọc thẳng được
+## Where the config lives and why you can't just read it
 
-Nếu malware để C2 domain dạng chuỗi trần trong binary thì `strings` đã moi ra, và mọi antivirus cũng vậy. Nên tác giả gần như luôn giấu nó. Các kiểu hay gặp:
+If malware left the C2 domain as a plain string in the binary, `strings` would pull it out, and so would every antivirus. So authors almost always hide it. Common kinds:
 
-- **Blob mã hoá** trong một section dữ liệu (thường XOR, RC4, AES, xem Phần 16), giải lúc chạy ngay trước khi dùng.
-- **Nén** (zlib, LZ) rồi mới mã hoá.
-- **Stack string** dựng từng ký tự bằng lệnh `mov` để tránh nằm liền thành chuỗi.
-- **Resolve lúc chạy** từ một thuật toán (DGA, domain generation algorithm) thay vì lưu sẵn.
+- **An encrypted blob** in a data section (usually XOR, RC4, AES, see Part 16), decrypted at runtime right before use.
+- **Compression** (zlib, LZ) before encryption.
+- **Stack strings** built one character at a time with `mov` instructions so they don't sit together as a string.
+- **Resolved at runtime** from an algorithm (DGA, domain generation algorithm) instead of being stored.
 
-Điểm chung: trên đĩa config là một đống byte vô nghĩa, chỉ thành chuỗi đọc được trong bộ nhớ, trong khoảnh khắc ngắn trước khi malware dùng nó. Nhiệm vụ của bạn là lấy nó ra, bằng con đường tĩnh hoặc động.
+What they have in common: on disk the config is a pile of meaningless bytes, and it only becomes a readable string in memory, in the brief moment before the malware uses it. Your job is to get it out, by the static or the dynamic route.
 
-## Ba con đường trích
+## Three ways to extract
 
-### Con đường tĩnh: hiểu thuật toán rồi tự giải
+### The static way: understand the algorithm and solve it yourself
 
-Đây là cách sạch nhất và cho hiểu biết sâu nhất. Các bước:
+This is the cleanest way and gives the deepest understanding. The steps:
 
-1. **Tìm blob config.** Dấu hiệu: một vùng dữ liệu entropy cao hơn xung quanh, hoặc có magic/marker, hoặc được hàm khởi tạo trỏ tới. Nhiều family đặt một marker ngắn trước blob (ví dụ bốn byte nhận dạng).
-2. **Tìm hàm giải mã.** Lần xref tới blob đó. Hàm chạm vào nó đầu tiên thường là decryptor. Đọc để nhận thuật toán: vòng lặp `xor` từng byte là XOR, mảng 256 byte hoán vị là RC4, S-box là AES (nhận diện theo Bài 16.1 tới 16.3).
-3. **Lấy key.** Key có thể là hằng số ngay trong code, hoặc tính từ một chuỗi, hoặc nằm cạnh blob.
-4. **Viết lại bằng Python.** Chép thuật toán và key sang Python rồi giải, đúng tinh thần Bài 16.2 và 16.4. Kết quả là config dạng đọc được.
+1. **Find the config blob.** Signs: a data region with higher entropy than its surroundings, or one with a magic/marker, or one that an init function points to. Many families put a short marker before the blob (for example four identifying bytes).
+2. **Find the decryption function.** Trace the xrefs to that blob. The first function that touches it is usually the decryptor. Read it to identify the algorithm: a loop with a per-byte `xor` is XOR, a 256-byte array being swapped is RC4, an S-box is AES (identified as in Lessons 16.1 to 16.3).
+3. **Get the key.** The key may be a constant right in the code, or computed from a string, or sitting next to the blob.
+4. **Rewrite it in Python.** Copy the algorithm and key into Python and decrypt, in the spirit of Lessons 16.2 and 16.4. The result is a readable config.
 
-Ưu điểm: không cần chạy mẫu, an toàn tuyệt đối, và script tái dùng được cho mọi mẫu cùng family. Một config extractor tốt là tài sản lâu dài.
+Pros: you don't need to run the sample, it's completely safe, and the script is reusable for every sample in the same family. A good config extractor is a long-term asset.
 
-### Con đường động: để malware tự giải rồi chộp
+### The dynamic way: let the malware decrypt it and grab it
 
-Khi thuật toán quá rối để giải tĩnh (nhiều lớp, obfuscated), hãy để chính malware làm việc nặng:
+When the algorithm is too tangled to solve statically (multiple layers, obfuscated), let the malware do the heavy lifting itself:
 
-1. Chạy mẫu trong lab cô lập (Bài 0.3), dưới debugger.
-2. Đặt breakpoint ngay **sau** hàm decrypt, hoặc tại hàm hay nhận config đã giải (ví dụ hàm kết nối mạng nhận domain làm tham số).
-3. Khi dừng, đọc vùng bộ nhớ chứa config đã giải, dump ra.
+1. Run the sample in an isolated lab (Lesson 0.3), under a debugger.
+2. Set a breakpoint right **after** the decrypt function, or at a function that takes the decrypted config (for example a network connect function that takes the domain as a parameter).
+3. When it stops, read the memory region holding the decrypted config and dump it.
 
-Nhanh, không cần hiểu trọn thuật toán. Nhược điểm: phải chạy mẫu thật nên cần lab kín, và anti-debug/anti-VM (Phần 15) có thể cản.
+Fast, and you don't need to fully understand the algorithm. The downside: you have to run the real sample so you need a sealed lab, and anti-debug/anti-VM (Part 15) can get in the way.
 
-### Con đường tự động: sandbox và config extractor
+### The automatic way: sandbox and config extractors
 
-- **CAPE/CAPEv2** có sẵn config extractor cho rất nhiều họ malware phổ biến: nạp mẫu vào, nó tự unpack, tự giải và in config ra. Luôn thử trước khi làm tay.
-- Khi gặp family chưa có extractor, bạn **viết một cái** (thường bằng Python, theo đúng con đường tĩnh ở trên) rồi đóng góp lại. Đây là cách cộng đồng mở rộng CAPE.
+- **CAPE/CAPEv2** has ready-made config extractors for lots of common malware families: feed the sample in, and it unpacks, decrypts, and prints the config itself. Always try it before doing it by hand.
+- When you hit a family with no extractor yet, you **write one** (usually in Python, following the static route above) and contribute it back. This is how the community expands CAPE.
 
-## Ví dụ quy trình trên một blob XOR rồi RC4
+## Example workflow on an XOR then RC4 blob
 
-Giả sử bạn đã reverse và thấy decryptor làm hai tầng: RC4 với một khoá chuỗi, rồi XOR từng byte với một byte. Để giải, bạn làm ngược thứ tự tác giả mã hoá. Trong lab đi kèm, blob 157 byte bắt đầu bằng marker `CFG0` rồi tới độ dài 4 byte little-endian, rồi dữ liệu mã hoá. Extractor Python chạy thật cho ra:
+Suppose you've reversed it and see that the decryptor works in two layers: RC4 with a string key, then a per-byte XOR with one byte. To decrypt, you undo the layers in the reverse of the author's encryption order. In the accompanying lab, the 157-byte blob starts with the marker `CFG0`, then a 4-byte little-endian length, then the encrypted data. The Python extractor, actually run, gives:
 
 ```
-[+] Config C2 trich duoc:
+[+] Extracted C2 config:
 {
   "c2": ["cdn.example-fake.test", "203.0.113.45"],
   "port": 8443,
@@ -72,30 +72,30 @@ Giả sử bạn đã reverse và thấy decryptor làm hai tầng: RC4 với m�
 }
 ```
 
-Từ đống byte `43 46 47 30 95 00 00 00 f3 56 96 16 ...` thành một bộ IOC hoàn chỉnh. Đó là toàn bộ giá trị của bài này. (Config trong lab hoàn toàn bịa ra và vô hại, domain dùng dải TEST-NET không routable.)
+From a pile of bytes `43 46 47 30 95 00 00 00 f3 56 96 16 ...` to a complete set of IOCs. That's the entire value of this lesson. (The config in the lab is completely made up and harmless, with domains from the non-routable TEST-NET range.)
 
-## Hiểu luôn giao thức C2
+## Understand the C2 protocol too
 
-Có config rồi, bước tiếp là hiểu malware **nói chuyện** với C2 ra sao: khung dữ liệu, mã hoá trên đường truyền, lệnh và phản hồi. Đây chính là reverse giao thức ở Bài 18.7, áp lên luồng mạng của malware. Hiểu giao thức cho phép viết detection mạng, thậm chí giả làm C2 để quan sát (sinkhole), hoặc giải mã traffic đã bắt được.
+Once you have the config, the next step is understanding how the malware **talks** to the C2: data framing, encryption on the wire, commands and responses. This is protocol reversing from Lesson 18.7, applied to the malware's network stream. Understanding the protocol lets you write network detections, even impersonate the C2 to observe (sinkhole), or decrypt traffic you've captured.
 
-## Chia sẻ IOC có trách nhiệm
+## Sharing IOCs responsibly
 
-IOC rút ra nên được chia sẻ để cộng đồng cùng phòng thủ, nhưng đúng cách:
+The IOCs you extract should be shared so the community can defend together, but done properly:
 
-- Đăng lên nền tảng threat intel (MISP, VirusTotal, abuse.ch) với ngữ cảnh rõ ràng.
-- Phân biệt C2 thật với domain hợp pháp bị lạm dụng (nhiều malware dùng dịch vụ cloud/CDN thật làm trung gian, chặn bừa là chặn nhầm dịch vụ lành).
-- Không công bố thông tin giúp kẻ tấn công biết mình đã bị lộ quá sớm nếu đang có hoạt động takedown phối hợp.
+- Post them to a threat intel platform (MISP, VirusTotal, abuse.ch) with clear context.
+- Distinguish real C2s from legitimate domains being abused (a lot of malware uses real cloud/CDN services as intermediaries, and blocking blindly means blocking a harmless service by mistake).
+- Don't publish information that tips the attacker off too early if there's a coordinated takedown underway.
 
-Tinh thần giống disclosure có trách nhiệm ở Bài 0.2: chia sẻ để bảo vệ, không để khoe.
+The spirit is the same as responsible disclosure in Lesson 0.2: share to protect, not to show off.
 
-## Lab tự làm
+## Lab
 
-Trong `labs/19.4/` có `build_sample.py` tạo một blob config C2 giả (vô hại) bị XOR rồi RC4, và `extractor.py` giải ngược ra config kèm danh sách IOC. Nhiệm vụ: chạy build rồi tự viết lại extractor từ đầu dựa trên việc đọc thuật toán, không chép sẵn. Chi tiết trong `labs/19.4/README.md`.
+In `labs/19.4/` there's `build_sample.py`, which builds a fake (harmless) C2 config blob that's XORed then RC4'd, and `extractor.py`, which reverses it into the config plus a list of IOCs. Task: run the build, then rewrite the extractor from scratch by reading the algorithm, without copying the existing one. Details in `labs/19.4/README.md`.
 
-## Checklist ghi nhớ
-- Config (C2, key, mutex, campaign) là mục tiêu threat intel giá trị nhất, một C2 nhận diện cả chiến dịch.
-- Config thường bị mã hoá/nén trong binary, chỉ đọc được trong bộ nhớ lúc chạy.
-- Ba con đường: tĩnh (hiểu thuật toán rồi giải bằng Python, sạch và tái dùng), động (dump sau khi malware tự giải), tự động (CAPE hoặc tự viết extractor).
-- Nhận thuật toán giải mã theo Phần 16, lấy key, viết lại Python.
-- Hiểu giao thức C2 theo Bài 18.7 để viết detection mạng.
-- Chia sẻ IOC có trách nhiệm, phân biệt C2 thật với dịch vụ hợp pháp bị lạm dụng.
+## Key takeaways
+- Config (C2, key, mutex, campaign) is the most valuable threat intel target, one C2 identifies a whole campaign.
+- Config is usually encrypted/compressed in the binary and only readable in memory at runtime.
+- Three ways: static (understand the algorithm and solve it in Python, clean and reusable), dynamic (dump after the malware decrypts it itself), automatic (CAPE or write your own extractor).
+- Identify the decryption algorithm following Part 16, get the key, rewrite it in Python.
+- Understand the C2 protocol per Lesson 18.7 to write network detections.
+- Share IOCs responsibly, and distinguish real C2s from legitimate services being abused.

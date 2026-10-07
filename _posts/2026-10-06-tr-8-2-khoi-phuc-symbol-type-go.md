@@ -1,73 +1,57 @@
 ---
-title: "Bài 8.2: Khôi phục tên hàm và kiểu trong binary Go"
+title: "Lesson 8.2: Recovering function names and types in Go binaries"
 date: 2026-10-06 09:00:00 +0700
-categories: ["Technique Reverse", "Phần 8 · Go"]
+categories: ["Technique Reverse", "Part 08 · Go"]
 tags: [reverse-engineering, golang]
 render_with_liquid: false
 ---
-Mở một binary Go trong IDA lần đầu, bạn sẽ thấy một biển hàm `sub_xxxxxx` và cảm giác tuyệt vọng quen thuộc. Nhưng Go có một bí mật dễ chịu: ngay cả khi binary bị strip, phần lớn tên hàm vẫn còn nằm đâu đó bên trong, chỉ là công cụ chưa biết cách đọc. Bài này chỉ cho bạn lấy chúng ra.
+Open a Go binary in IDA for the first time and you'll see a sea of `sub_xxxxxx` functions and that familiar feeling of despair. But Go has a pleasant secret: even when the binary is stripped, most function names are still somewhere inside, the tools just don't know how to read them. This lesson shows you how to pull them out.
 
-## Vì sao Go stripped vẫn khôi phục được
+## Why stripped Go can still be recovered
 
-Go runtime cần tự biết tên hàm lúc chạy, để in stack trace khi panic. Nghĩa là compiler buộc phải nhúng sẵn một bảng ánh xạ từ địa chỉ sang tên hàm ngay trong binary, bất kể bạn có strip hay không. Bảng đó tên là **pclntab** (program counter line table).
+The Go runtime needs to know function names itself at runtime, to print a stack trace on panic. That means the compiler has to embed a mapping table from addresses to function names right in the binary, whether or not you strip it. That table is called the **pclntab** (program counter line table).
 
-Thêm nữa, Go lưu cả thông tin kiểu (type) cho reflection và garbage collector trong một cấu trúc gọi là **moduledata**. Gộp lại, một binary Go mang theo nhiều metadata hơn hẳn một binary C stripped. Strip chỉ bỏ symbol table ELF/PE tiêu chuẩn, chứ không đụng tới pclntab và moduledata. Đó là lý do công cụ chuyên dụng lấy lại được rất nhiều.
+On top of that, Go also stores type information for reflection and the garbage collector in a structure called **moduledata**. Put together, a Go binary carries far more metadata than a stripped C binary. Strip only removes the standard ELF/PE symbol table, and doesn't touch pclntab and moduledata. That's why specialized tools can recover so much.
 
-Điểm mấu chốt cần nhớ: với Go, đừng vội nản khi thấy stripped. Chạy đúng tool trước đã.
+The key point to remember: with Go, don't rush to feel discouraged when you see it's stripped. Run the right tool first.
 
-## GoReSym, con dao chính
+## GoReSym, the main knife
 
-**GoReSym** (của Mandiant) là công cụ đáng chạy đầu tiên. Nó parse pclntab và moduledata để lấy lại:
+GoReSym (from Mandiant) is the tool worth running first. It parses pclntab and moduledata to recover function names (both the author's functions and standard library ones), type information, and build info such as the Go version, the list of modules/packages, and sometimes even source paths.
 
-- tên hàm (cả hàm người viết lẫn hàm thư viện chuẩn),
-- thông tin kiểu (type),
-- build info: phiên bản Go, danh sách module/package, đôi khi cả đường dẫn source.
-
-Chạy cơ bản:
+Basic run:
 
 ```
 GoReSym.exe -t -d -p target_go.exe > symbols.json
 ```
 
-- `-t` trích type, `-d` lấy luôn các package mặc định của Go, `-p` lấy path/build info.
-- Kết quả là JSON chứa tên hàm kèm địa chỉ, rồi bạn nạp ngược vào IDA/Ghidra bằng script để đổi tên hàng loạt.
+The `-t` flag extracts types, `-d` also gets the default Go packages, and `-p` gets path/build info. The result is JSON containing function names with addresses, which you then load back into IDA/Ghidra with a script to rename in bulk.
 
-Riêng việc biết phiên bản Go đã quý: cú pháp calling convention của Go đổi ở Go 1.17 (từ truyền tham số qua stack sang truyền qua register, ABIInternal), nên biết version giúp bạn đọc đúng tham số. Chuyện này đã nói ở bài trước của phần.
+Just knowing the Go version is valuable: Go's calling convention changed at Go 1.17 (from passing parameters on the stack to passing through registers, ABIInternal), so knowing the version helps you read the parameters right. This was covered in an earlier lesson of this part.
 
-## Plugin cho IDA và Ghidra
+## Plugins for IDA and Ghidra
 
-Nếu thích làm gọn trong một công cụ thay vì qua JSON trung gian:
+If you'd rather keep it tidy in one tool instead of going through intermediate JSON, there are a few options. IDAGolangHelper and golang_loader_assist are IDA scripts (IDAPython) that find pclntab right inside IDA and rename functions in place, which is handy when you're already in IDA. GolangAnalyzerExtension (GOA) is an extension for Ghidra: after installing, it recognizes Go binaries on its own, recovers function names, rebuilds types, and recognizes Go strings (which are not null-terminated but a pointer plus a length, so the default tools often read them wrong). redress is a command-line tool for the build info and package structure of a Go binary, useful for quick triage.
 
-- **IDAGolangHelper** và **golang_loader_assist**: script IDA (IDAPython) dò pclntab ngay trong IDA và đổi tên hàm tại chỗ. Tiện khi bạn đã ở sẵn trong IDA.
-- **GolangAnalyzerExtension** (GOA): extension cho Ghidra. Sau khi cài, nó tự nhận binary Go, khôi phục tên hàm, dựng lại type, nhận diện string của Go (vốn không null-terminated mà là con trỏ kèm độ dài, nên tool mặc định hay đọc sai).
-- **redress**: công cụ dòng lệnh cho thông tin build và cấu trúc package của binary Go, hữu ích để triage nhanh.
+In practice many people run GoReSym to get the JSON (stable, doesn't depend on the IDA version), then load it into their favorite tool. Plugins are fast but are sometimes picky about newer Go versions.
 
-Trong thực tế nhiều người chạy GoReSym để lấy JSON (ổn định, không phụ thuộc version IDA), rồi mới nạp vào công cụ yêu thích. Plugin thì nhanh nhưng đôi khi kén phiên bản Go mới.
+## Strings in Go, a trap of their own
 
-## Chuỗi trong Go, một cái bẫy riêng
+Even after you have the function names, strings still trip you up. A Go string doesn't end with a 0 byte like in C. It's a two-field struct: a pointer to the data and a length. Constant strings also get merged into one big contiguous block in `.rodata`, with no separators.
 
-Kể cả sau khi có tên hàm, chuỗi vẫn làm bạn vấp. String trong Go không kết thúc bằng byte 0 như C. Nó là một struct hai trường: con trỏ tới dữ liệu và độ dài. Các chuỗi hằng còn bị gộp chung thành một khối lớn liền nhau trong `.rodata`, không có dấu phân cách.
+The consequence is that the default Strings window of IDA/Ghidra shows the whole stuck-together block as one huge meaningless string. GolangAnalyzerExtension and Go scripts handle this, cutting each string correctly by its length. Without a tool, you have to look at how the code loads the (pointer, length) pair to know the real string boundaries.
 
-Hậu quả: cửa sổ Strings mặc định của IDA/Ghidra sẽ hiển thị cả khối dính liền thành một chuỗi khổng lồ vô nghĩa. GolangAnalyzerExtension và các script Go xử lý được việc này, cắt đúng từng chuỗi theo độ dài. Nếu không có tool, bạn phải nhìn cách code nạp cặp (con trỏ, độ dài) để biết ranh giới chuỗi thật.
+## The short workflow
 
-## Quy trình gọn
+First recognize that it's a Go binary (DIE, or see the `go:buildid` string, the `.gopclntab` section, Go runtime patterns). Run GoReSym to get symbols.json, and read the Go version and package list too. Load the symbols into IDA/Ghidra with a JSON import script, or run the corresponding plugin, and install extra Go string handling (GOA or a script) so strings display properly. Only then start reading code, focusing on the author's package (usually `main.*`) and skipping the runtime and standard library.
 
-1. Nhận diện đây là binary Go (DIE, hoặc thấy chuỗi `go:buildid`, section `.gopclntab`, pattern runtime Go).
-2. Chạy GoReSym lấy symbols.json, đọc luôn phiên bản Go và package list.
-3. Nạp symbol vào IDA/Ghidra (script import JSON) hoặc chạy plugin tương ứng.
-4. Cài thêm xử lý string Go (GOA hoặc script) để chuỗi hiện đúng.
-5. Giờ mới bắt đầu đọc code: tập trung vào package của tác giả (thường là `main.*`), bỏ qua runtime và thư viện chuẩn.
+That last step is where you save the most time: after recovering names, `main.main` and `main.validateLicense` show up clearly among thousands of runtime functions, and you go straight to where you need.
 
-Bước 5 là chỗ tiết kiệm thời gian lớn nhất: sau khi khôi phục tên, hàm `main.main`, `main.validateLicense` hiện ra rõ ràng giữa hàng nghìn hàm runtime, và bạn đi thẳng tới chỗ cần.
+## Lab
 
-## Lab tự làm
+See [labs/8.2/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/8.2). You'll run GoReSym on a Go binary and compare the function window in Ghidra before and after having the symbols, to see with your own eyes the difference pclntab makes.
 
-Xem [labs/8.2/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/8.2). Bạn sẽ chạy GoReSym trên một binary Go, so sánh cửa sổ hàm trong Ghidra trước và sau khi có symbol, để thấy tận mắt khác biệt mà pclntab mang lại.
+## Key takeaways
+A stripped Go binary can still recover many function names thanks to pclntab, since the runtime needs it to print stack traces. GoReSym is the first tool to run, giving function names, types, build info and the Go version. The alternatives are IDAGolangHelper for IDA, GolangAnalyzerExtension for Ghidra, and redress on the command line.
 
-## Checklist ghi nhớ
-- Binary Go stripped vẫn khôi phục được nhiều tên hàm nhờ pclntab (runtime cần nó để in stack trace).
-- GoReSym là tool chạy đầu tiên: lấy tên hàm, type, build info, phiên bản Go.
-- Plugin thay thế: IDAGolangHelper (IDA), GolangAnalyzerExtension (Ghidra), redress (CLI).
-- Biết phiên bản Go để đọc đúng calling convention (đổi ở Go 1.17).
-- String Go là (con trỏ, độ dài), không null-terminated, cần tool cắt đúng kẻo đọc sai.
-- Sau khi khôi phục, tập trung vào package `main.*`, bỏ qua runtime.
+Know the Go version to read the calling convention right, since it changed at Go 1.17. A Go string is (pointer, length) and not null-terminated, so you need a tool to cut them correctly or you'll read them wrong. After recovery, focus on the `main.*` packages and skip the runtime.

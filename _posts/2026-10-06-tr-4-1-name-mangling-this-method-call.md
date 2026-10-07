@@ -1,19 +1,19 @@
 ---
-title: "Bài 4.1: C++ dưới mắt reverser, name mangling và this pointer"
+title: "Lesson 4.1: C++ through a reverser's eyes, name mangling and the this pointer"
 date: 2026-10-06 08:31:00 +0700
-categories: ["Technique Reverse", "Phần 4 · C++"]
+categories: ["Technique Reverse", "Part 04 · C++"]
 tags: [reverse-engineering, cpp]
 render_with_liquid: false
 ---
-Về mặt binary, C++ không phải một ngôn ngữ mới mà là C cộng thêm vài quy ước. Compiler bẻ class, method, template, exception thành đúng những lệnh assembly bạn đã biết. Vấn đề là nó bẻ theo cách khiến tên hàm trông như mèo quào và mỗi lời gọi method lại lén truyền thêm một tham số. Hiểu hai thứ đó, name mangling và this pointer, là qua được 80% nỗi sợ C++.
+At the binary level, C++ isn't a new language but C plus a few conventions. The compiler breaks classes, methods, templates, and exceptions down into the same assembly instructions you already know. The problem is that it does so in a way that makes function names look like cat scratches and every method call quietly passes an extra parameter. Understanding those two things, name mangling and the this pointer, gets you past 80% of the fear of C++.
 
-## Vì sao tên hàm biến thành mèo quào
+## Why function names turn into cat scratches
 
-Trong C, hàm `add` biên dịch ra một symbol tên đúng là `add`. Đơn giản vì C không cho hai hàm trùng tên.
+In C, a function `add` compiles to a symbol named exactly `add`. Simply because C doesn't allow two functions with the same name.
 
-C++ thì cho. Bạn viết được `add(int)` và `add(int, int)` trong cùng một class, đó là overloading. Nhưng linker chỉ làm việc với tên symbol, mà hai hàm cùng tên `add` thì nó biết nối cái nào? Giải pháp của compiler: nhét thông tin class, tên method và kiểu tham số vào tên symbol. Quá trình đó gọi là name mangling (băm tên).
+C++ does. You can write `add(int)` and `add(int, int)` in the same class, that's overloading. But the linker only works with symbol names, and with two functions both named `add`, how does it know which to link? The compiler's solution: stuff the class info, method name, and parameter types into the symbol name. That process is called name mangling.
 
-Lấy một class thật:
+Take a real class:
 
 ```cpp
 class Counter {
@@ -26,7 +26,7 @@ public:
 };
 ```
 
-Biên dịch bằng g++ rồi xem symbol (lệnh `nm`), bạn thấy tên thật trong binary:
+Compile with g++ and look at the symbols (the `nm` command), and you see the real names in the binary:
 
 ```
 _ZN7Counter3addEi      ->  Counter::add(int)
@@ -35,71 +35,57 @@ _ZN7CounterC1Ei        ->  Counter::Counter(int)      (constructor)
 _ZNK7Counter3getEv     ->  Counter::get() const
 ```
 
-Nhìn qua thì rối, nhưng có quy luật: `_ZN` mở đầu, `7Counter` là class dài 7 ký tự, `3add` là method dài 3 ký tự, `E` kết thúc danh sách tên, rồi `i` là int, `ii` là hai int, `v` là void. Chữ `K` trong `_ZNK` nghĩa là method const. Hai hàm `add` giờ có tên khác nhau nhờ phần kiểu tham số, linker phân biệt được.
+It looks messy at a glance, but there are rules: `_ZN` starts it, `7Counter` is a class 7 characters long, `3add` is a method 3 characters long, `E` ends the name list, then `i` is int, `ii` is two ints, `v` is void. The `K` in `_ZNK` means a const method. The two `add` functions now have different names thanks to the parameter type part, and the linker can tell them apart.
 
-Đó là kiểu mangling của GCC/Clang (chuẩn Itanium). MSVC dùng kiểu khác, bắt đầu bằng dấu `?`:
+That's the GCC/Clang mangling style (the Itanium standard). MSVC uses a different style, starting with a `?`:
 
 ```
 ?add@Counter@@QEAAXH@Z      ->  public: void __cdecl Counter::add(int)
 ```
 
-Nhìn lạ hơn nữa, nhưng bạn không cần đọc tay. Việc đó để tool làm.
+Looks even stranger, but you don't need to read it by hand. Leave that to tools.
 
-## Demangle: trả tên về cho người đọc
+## Demangle: giving names back to the reader
 
-![Name mangling: cùng một method thành tên khác nhau trên GCC và MSVC](/assets/img/technique-reverse/assets/phan-04/name-mangling.svg)
+![Name mangling: the same method becomes different names on GCC and MSVC](/assets/img/technique-reverse/assets/phan-04/name-mangling.svg)
 
-Không ai ngồi giải mangling bằng mắt. Dùng công cụ:
+Nobody sits and decodes mangling by eye. With c++filt, which ships with GCC, `echo _ZN7Counter3addEi | c++filt` gives `Counter::add(int)` right away, and you can pipe the whole `nm` output through it to demangle in bulk. MSVC ships undname, which does the same for names of the `?...` kind. IDA and Ghidra demangle automatically, so IDA shows `Counter::add(int)` right in the function list and you barely have to do anything. If you see names still in mangled form, check the demangling config in the options.
 
-- **c++filt** (đi kèm GCC): `echo _ZN7Counter3addEi | c++filt` ra ngay `Counter::add(int)`. Pipe cả output `nm` qua nó là demangle hàng loạt.
-- **undname** (đi kèm MSVC): làm việc tương tự cho tên kiểu `?...`.
-- **IDA và Ghidra tự demangle**. IDA hiển thị luôn `Counter::add(int)` trong danh sách hàm, bạn gần như không phải làm gì. Nếu thấy tên vẫn ở dạng mangled, kiểm tra lại cấu hình demangling trong options.
+The important point for a reverser is that name mangling is a gift, not a barrier. A C++ binary that still has symbols tells you the class names, method names, and parameter types, far more info than C. Only when the binary has its symbols stripped do you lose this gift and have to infer from structure.
 
-Điểm quan trọng với reverser: **name mangling là món quà, không phải rào cản.** Một binary C++ còn symbol cho bạn biết luôn tên class, tên method, kiểu tham số, nhiều thông tin hơn hẳn C. Chỉ khi binary bị strip symbol thì bạn mới mất phần quà này và phải suy từ cấu trúc.
+## this pointer, the hidden parameter of every method
 
-## this pointer, tham số ẩn của mọi method
+This is the second big difference. When you write `c.add(5)`, it looks like just one parameter. But the method needs to know which object it's working on (which `c`), so the compiler quietly passes the object's address as the first parameter. That's the this pointer.
 
-Đây là khác biệt lớn thứ hai. Khi bạn viết `c.add(5)`, có vẻ chỉ một tham số. Nhưng method cần biết nó đang làm việc trên object nào (`c` nào), nên compiler lén truyền thêm địa chỉ của object làm tham số đầu tiên. Đó là this pointer.
+The rule to memorize: on Linux/SysV, this is in rdi (the first parameter) and the real parameters shift down to rsi, rdx..., while on Windows x64, this is in rcx (the first parameter) and the real parameters shift down to rdx, r8...
 
-Quy tắc nằm lòng:
-
-- Trên **Linux/SysV**, this nằm ở **rdi** (tham số đầu), tham số thật dồn xuống rsi, rdx...
-- Trên **Windows x64**, this nằm ở **rcx** (tham số đầu), tham số thật dồn xuống rdx, r8...
-
-Nhìn asm thật của `c.add(5)` trên Linux (g++, -O0), với object `c` là biến cục bộ tại `[rbp-0xc]`:
+Look at the real asm of `c.add(5)` on Linux (g++, -O0), with the object `c` a local variable at `[rbp-0xc]`:
 
 ```asm
-lea    rax, [rbp-0xc]      ; rax = địa chỉ của object c
-mov    esi, 0x5            ; tham số thật n = 5 vào rsi (tham số thứ hai)
-mov    rdi, rax            ; this = &c vào rdi (tham số đầu, ẩn)
-call   _ZN7Counter3addEi   ; gọi Counter::add(int)
+lea    rax, [rbp-0xc]      ; rax = address of object c
+mov    esi, 0x5            ; real parameter n = 5 into rsi (second parameter)
+mov    rdi, rax            ; this = &c into rdi (first parameter, hidden)
+call   _ZN7Counter3addEi   ; call Counter::add(int)
 ```
 
-Dịch ngược ra C++ thì chỉ là `c.add(5)`, nhưng ở mức binary nó là một hàm hai tham số: `add(&c, 5)`. Thấy một lời gọi mà tham số đầu (rdi/rcx) là một con trỏ trỏ tới vùng nhớ chứa dữ liệu object, bạn đang nhìn một method call, không phải hàm thường.
+Translated back to C++ it's just `c.add(5)`, but at the binary level it's a function with two parameters: `add(&c, 5)`. When you see a call whose first parameter (rdi/rcx) is a pointer to memory holding object data, you're looking at a method call, not a plain function.
 
-Mẹo thực chiến: trong pseudocode của IDA/Ghidra, nếu một hàm dùng tham số đầu kiểu `a1->field` liên tục, gần như chắc `a1` chính là this, và bạn nên đổi tên nó thành `this` rồi gán kiểu class. Pseudocode sẽ gọn hẳn.
+A practical tip: in IDA/Ghidra pseudocode, if a function keeps using the first parameter as `a1->field`, it's almost certainly `a1` is this, and you should rename it to `this` and assign the class type. The pseudocode gets much tidier.
 
-## Phân biệt method call với hàm thường
+## Telling a method call from a plain function
 
-Gộp hai thứ trên lại, đây là cách nhận ra bạn đang xem C++ chứ không phải C:
+Combining the two things above gives you a way to recognize you're looking at C++ and not C. The clearest sign is mangled function names (`_ZN...` or `?...@@`) in the function list. Beyond that, the call always loads an object pointer into rdi/rcx before the call, and that pointer is reused to access fields by offset (`[this+0]`, `[this+4]`). A constructor also runs right after memory is allocated for the object (on the stack or after `new`), usually as the first function to touch that memory.
 
-1. **Tên hàm mangled** (`_ZN...` hoặc `?...@@`) trong danh sách hàm. Dấu hiệu rõ ràng nhất.
-2. **Lời gọi luôn nạp một con trỏ object vào rdi/rcx trước call**, và con trỏ đó được tái sử dụng để truy cập field theo offset (`[this+0]`, `[this+4]`).
-3. **Constructor** chạy ngay sau khi cấp vùng nhớ cho object (trên stack hoặc sau `new`), thường là hàm đầu tiên đụng tới vùng nhớ đó.
+When you see all three, drop the "standalone C function" thinking and start thinking in objects: what is this, what fields the class has, which method reads/writes which field. Lesson [4.2](https://github.com/Haind03/Technique-Reverse/blob/main/phan-04-cpp/4.2-class-vtable-ke-thua.md) goes on into vtables and inheritance, where C++ really differs from C.
 
-Khi gặp cả ba, bỏ tư duy "hàm C độc lập" đi và bắt đầu nghĩ theo object: cái gì là this, class có những field gì, method nào đọc/ghi field nào. Bài [4.2](https://github.com/Haind03/Technique-Reverse/blob/main/phan-04-cpp/4.2-class-vtable-ke-thua.md) đi tiếp vào vtable và kế thừa, nơi C++ thật sự khác C.
+## Lab
 
-## Lab tự làm
+The folder [labs/4.1/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/4.1). You'll build a small class, look at the mangled names in the binary, demangle them, and point out the this pointer in rdi/rcx in a method call. When you're done compare with [solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/4.1/solution.md).
 
-Thư mục [labs/4.1/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/4.1). Bạn sẽ build một class nhỏ, xem tên mangled trong binary, demangle, và chỉ ra this pointer ở rdi/rcx trong một lời gọi method. Làm xong đối chiếu [solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/labs/4.1/solution.md).
+## Key takeaways
+C++ at the binary level is C plus a few conventions, not a new world. Name mangling stuffs class, method and parameter types into the symbol name to support overloading, with GCC/Clang using `_ZN...` and MSVC using `?...@@`. Don't decode it by hand: use c++filt, undname, or let IDA/Ghidra demangle automatically. C++ symbols are a gift because they give class, method and parameter names, more than C does.
 
-## Checklist ghi nhớ
-- C++ ở mức binary là C cộng vài quy ước, không phải thế giới mới.
-- Name mangling nhét class + method + kiểu tham số vào tên symbol để hỗ trợ overloading. GCC/Clang dùng `_ZN...`, MSVC dùng `?...@@`.
-- Đừng giải mangling bằng tay: c++filt, undname, hoặc để IDA/Ghidra tự demangle.
-- Symbol C++ là quà: cho biết tên class/method/tham số, nhiều hơn C.
-- Mọi method có tham số ẩn this: rdi trên Linux, rcx trên Windows x64.
-- Lời gọi nạp con trỏ object vào rdi/rcx rồi truy cập field theo offset chính là method call.
+Every method has a hidden parameter this, in rdi on Linux and rcx on Windows x64. A call that loads an object pointer into rdi/rcx and then accesses fields by offset is a method call.
 
 ---
-Phần trước: Phần 3 C · [Về mục lục](/technique-reverse/) · Bài tiếp: 4.2 Class, vtable, kế thừa, RTTI
+Previous: Part 3 C · [Back to index](/technique-reverse/) · Next: 4.2 Classes, vtables, inheritance, RTTI

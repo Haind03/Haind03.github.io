@@ -1,25 +1,25 @@
 ---
-title: "Bài 16.3: Nhận diện AES, DES, TEA, ChaCha và hàm hash qua cấu trúc"
+title: "Lesson 16.3: Recognizing AES, DES, TEA, ChaCha and hash functions by structure"
 date: 2026-10-06 09:38:00 +0700
-categories: ["Technique Reverse", "Phần 16 · Crypto & thuật toán"]
+categories: ["Technique Reverse", "Part 16 · Crypto and Algorithms"]
 tags: [reverse-engineering, crypto]
 render_with_liquid: false
 ---
-Bài trước bạn học tìm hằng số crypto bằng findcrypt. Nhưng công cụ không phải lúc nào cũng chạy, và nhiều khi bạn chỉ có một đoạn pseudocode trước mặt phải tự đoán. Tin tốt: mỗi thuật toán crypto phổ biến có một "dáng đi" riêng, quen vài dáng là nhìn một cái biết ngay đang gặp thằng nào. Mà biết tên rồi thì bạn không cần tự cài lại, cứ gọi thư viện chuẩn mà giải.
+In the last lesson you learned to find crypto constants with findcrypt. But the tool doesn't always work, and a lot of the time you only have a piece of pseudocode in front of you and have to guess. The good news: every common crypto algorithm has its own "gait", and once you know a few of them you can tell at a glance which one you're facing. And once you know the name, you don't need to reimplement it, just call a standard library to decrypt.
 
-Bài này đi qua những thuật toán hay gặp nhất, với dấu hiệu nhận ra nhanh nhất của từng cái.
+This lesson goes through the algorithms you'll see most, with the fastest tell for each one.
 
-## TEA và XTEA: dễ nhận nhất nhờ một con số
+## TEA and XTEA: easiest to spot thanks to one number
 
-Bắt đầu bằng thằng dễ nhất. TEA (Tiny Encryption Algorithm) và biến thể XTEA nhỏ gọn, hay bị nhét vào malware và crackme vì code ngắn, không cần bảng tra. Dấu hiệu nhận ra gần như tức thì: hằng số **delta 0x9E3779B9**.
+Start with the easiest one. TEA (Tiny Encryption Algorithm) and its variant XTEA are compact and often get stuffed into malware and crackmes because the code is short and needs no lookup tables. The sign is almost instant: the **delta constant 0x9E3779B9**.
 
-Con số này là phần phân số của tỉ lệ vàng nhân 2^32, và nó xuất hiện trong mọi vòng của TEA. Thấy `0x9E3779B9` trong code là 90% đang gặp TEA/XTEA. Vòng lặp thường chạy 32 lần, mỗi vòng cộng dồn delta vào một biến sum rồi trộn hai nửa khối bằng shift trái 4, shift phải 5, cộng và XOR.
+This number is the fractional part of the golden ratio times 2^32, and it shows up in every round of TEA. If you see `0x9E3779B9` in code, it's 90% TEA/XTEA. The loop usually runs 32 times, each round adding delta into a sum variable and then mixing the two halves of the block with shift left 4, shift right 5, add, and XOR.
 
-Trong assembly, một vòng TEA nhìn như thế này:
+In assembly, a TEA round looks like this:
 
 ```asm
-; v0, v1 là hai nửa 32-bit của khối; sum trong một thanh ghi
-add  esi, 0x9E3779B9      ; sum += delta   <- CHỈ ĐIỂM
+; v0, v1 are the two 32-bit halves of the block; sum is in a register
+add  esi, 0x9E3779B9      ; sum += delta   <- THE GIVEAWAY
 mov  eax, edx             ; eax = v1
 shl  eax, 4               ; v1 << 4
 add  eax, [key+0]         ; + key[0]
@@ -33,57 +33,47 @@ xor  eax, ecx
 add  ebx, eax             ; v0 += ...
 ```
 
-Cái pattern "shl 4, shr 5, cộng key, XOR, cộng vào nửa kia" lặp đối xứng cho v0 và v1, kèm delta, là chữ ký không lẫn vào đâu được. Giải TEA rất dễ vì nó đối xứng: chạy ngược 32 vòng, trừ delta thay vì cộng.
+The pattern "shl 4, shr 5, add key, XOR, add into the other half" repeating symmetrically for v0 and v1, together with delta, is a signature you can't confuse with anything else. Decrypting TEA is very easy because it's symmetric: run the 32 rounds backwards, subtracting delta instead of adding.
 
-## AES: nhìn S-box
+## AES: look at the S-box
 
-AES (Rijndael) là thuật toán mã hoá đối xứng phổ biến nhất thế giới, nên gặp hoài. Dấu hiệu:
+AES (Rijndael) is the most widely used symmetric encryption algorithm in the world, so you'll meet it constantly. The strongest sign is a 256-byte S-box starting with `63 7C 77 7B F2 6B 6F C5 30 01 67 2B...`. This is the byte substitution table, and seeing exactly this sequence means it's definitely AES. The Rcon (round constant) for the key schedule is another tell: `01 02 04 08 10 20 40 80 1B 36...`.
 
-- **S-box 256 byte** bắt đầu bằng `63 7C 77 7B F2 6B 6F C5 30 01 67 2B...`. Đây là bảng thay thế byte, thấy đúng dãy này là chắc chắn AES.
-- **Rcon** (round constant) cho key schedule: `01 02 04 08 10 20 40 80 1B 36...`.
-- Số vòng 10, 12 hoặc 14 tương ứng key 128, 192, 256 bit.
-- MixColumns dùng nhân trong trường Galois, hay thấy phép nhân với 2 và 3 kèm điều kiện XOR `0x1B`.
+The number of rounds is 10, 12 or 14 for 128, 192, 256-bit keys. MixColumns uses multiplication in a Galois field, so you often see multiplication by 2 and 3 with a conditional XOR of `0x1B`.
 
-Nhiều cài đặt tối ưu gộp SubBytes, ShiftRows, MixColumns thành các **T-table** (4 bảng 1KB), khi đó bạn thấy bốn bảng lớn và nhiều phép tra bảng cộng XOR. Dù là S-box thuần hay T-table, findcrypt đều bắt được, nhưng nhớ dãy `63 7C 77 7B` mở đầu S-box là đủ nhận bằng mắt.
+Many optimized implementations merge SubBytes, ShiftRows, MixColumns into T-tables (4 tables of 1KB), in which case you see four large tables and lots of table lookups plus XOR. Whether it's a plain S-box or T-tables, findcrypt catches both, but remembering the `63 7C 77 7B` start of the S-box is enough to recognize it by eye.
 
-## DES: nhiều hoán vị và 8 S-box
+## DES: lots of permutations and 8 S-boxes
 
-DES cũ nhưng vẫn gặp trong hệ thống legacy. Dấu hiệu: hàng loạt **bảng hoán vị** (initial permutation, final permutation, expansion, P-box) và **8 S-box** riêng biệt mỗi cái biến 6 bit thành 4 bit. Code DES ngập phép dịch bit và tra bảng nhỏ. 16 vòng Feistel. Thấy nhiều bảng hoán vị cố định kèm 8 bảng S nhỏ là nghĩ tới DES/3DES.
+DES is old but still turns up in legacy systems. The signs are lots of permutation tables (initial permutation, final permutation, expansion, P-box) and 8 separate S-boxes, each turning 6 bits into 4 bits. DES code is full of bit shifts and small table lookups, with 16 Feistel rounds. If you see many fixed permutation tables along with 8 small S tables, think DES/3DES.
 
-## ChaCha và Salsa20: nhìn chuỗi hằng
+## ChaCha and Salsa20: look for the constant string
 
-Stream cipher hiện đại, ngày càng phổ biến (TLS, WireGuard, nhiều malware mới). Dấu hiệu đẹp nhất là một chuỗi ASCII nằm thẳng trong binary:
+These are modern stream ciphers, increasingly common (TLS, WireGuard, lots of newer malware). The nicest tell is an ASCII string sitting right in the binary: "expand 32-byte k" (ChaCha20/Salsa20 with a 256-bit key) or "expand 16-byte k".
 
-- **"expand 32-byte k"** (ChaCha20/Salsa20 với key 256-bit) hoặc "expand 16-byte k".
+If you see this string in strings, it's almost certainly ChaCha/Salsa. The internal structure is the quarter-round: four additions, XORs, and bit rotations with characteristic rotation constants (ChaCha uses 16, 12, 8, 7). No S-box, just add-rotate-XOR all the way (called ARX).
 
-Thấy chuỗi này trong strings là gần như chắc ChaCha/Salsa. Cấu trúc bên trong là quarter-round: bốn phép cộng, XOR, và xoay bit (rotate) với các hằng xoay đặc trưng (ChaCha dùng 16, 12, 8, 7). Không có S-box, chỉ toàn add-rotate-XOR (gọi là ARX).
+## Hash functions: MD5, SHA, CRC
 
-## Hàm hash: MD5, SHA, CRC
+Hashes don't encrypt, they hash, but the recognition is similar, through constants. MD5 has four init values `0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476` and a 64-element K table (the sin table), over 64 rounds. SHA-1 has init `0x67452301...0xC3D2E1F0` and four round constants `0x5A827999, 0x6ED9EBA1, 0x8F1BBCDC, 0xCA62C1D6`. SHA-256 has a K table of 64 constants starting `0x428A2F98, 0x71374491...` and an init of eight values from the square roots of primes.
 
-Hash không mã hoá mà băm, nhưng nhận diện tương tự qua hằng số:
+CRC32 uses a 256-entry table generated from the polynomial `0xEDB88320` (reversed form), with an XOR and shift right 8 loop. CRC is often mistaken for crypto but it's just a checksum, not secure. What the real hashes share is padding (append a 1 bit, then 0 bits, then the length at the end) and a compression loop that processes each 64-byte block.
 
-- **MD5**: bốn init value `0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476` và bảng K 64 phần tử (sin table). 64 vòng.
-- **SHA-1**: init `0x67452301...0xC3D2E1F0`, bốn hằng vòng `0x5A827999, 0x6ED9EBA1, 0x8F1BBCDC, 0xCA62C1D6`.
-- **SHA-256**: bảng K 64 hằng số bắt đầu `0x428A2F98, 0x71374491...`, init tám giá trị từ căn bậc hai số nguyên tố.
-- **CRC32**: một **bảng 256 entry** sinh từ polynomial `0xEDB88320` (dạng reversed), vòng lặp XOR và shift phải 8. CRC hay bị nhầm là crypto nhưng nó chỉ là checksum, không bảo mật.
+## Quick lookup table by eye
 
-Điểm chung: hash có padding (thêm bit 1 rồi các bit 0 rồi độ dài ở cuối) và một vòng nén xử lý từng block 64 byte.
-
-## Bảng tra nhanh bằng mắt
-
-| Thấy cái này | Nghĩ tới |
+| If you see this | Think |
 |---|---|
 | `0x9E3779B9` | TEA / XTEA |
-| S-box mở đầu `63 7C 77 7B` | AES |
-| Chuỗi "expand 32-byte k" | ChaCha / Salsa20 |
-| 8 S-box nhỏ + nhiều hoán vị | DES / 3DES |
-| Init `67452301 EFCDAB89` + 64 vòng | MD5 |
-| Bảng K 64 phần tử `428A2F98...` | SHA-256 |
-| Bảng 256 entry, poly `0xEDB88320` | CRC32 (checksum, không phải crypto) |
+| S-box starting `63 7C 77 7B` | AES |
+| String "expand 32-byte k" | ChaCha / Salsa20 |
+| 8 small S-boxes + many permutations | DES / 3DES |
+| Init `67452301 EFCDAB89` + 64 rounds | MD5 |
+| 64-element K table `428A2F98...` | SHA-256 |
+| 256-entry table, poly `0xEDB88320` | CRC32 (checksum, not crypto) |
 
-## Biết tên rồi thì đừng tự cài lại
+## Once you know the name, don't reimplement it
 
-Sai lầm của người mới: nhận ra AES xong ngồi dịch tay từng vòng ra Python. Không cần. Một khi đã biết thuật toán, khoá, và mode (ECB/CBC/CTR), bạn gọi thư viện chuẩn là xong trong vài dòng:
+A beginner mistake: recognize AES and then sit down translating every round by hand into Python. No need. Once you know the algorithm, the key, and the mode (ECB/CBC/CTR), you call a standard library and you're done in a few lines:
 
 ```python
 from Crypto.Cipher import AES
@@ -91,16 +81,13 @@ cipher = AES.new(key, AES.MODE_CBC, iv)
 plaintext = cipher.decrypt(ciphertext)
 ```
 
-Việc của bạn chỉ là reverse để lấy đúng ba thứ: thuật toán nào, khoá ở đâu, mode gì (và IV nếu có). Phần tính toán để thư viện lo. Với TEA thì vì nó quá nhỏ và không có trong thư viện chuẩn, viết lại tay cũng chỉ chục dòng (xem lab).
+Your job is just to reverse to get exactly three things: which algorithm, where the key is, which mode (and the IV if there is one). Let the library handle the computation. For TEA, since it's tiny and not in the standard library, rewriting it by hand is only about ten lines (see the lab).
 
-## Lab tự làm
+## Lab
 
-Thư mục [labs/16.3/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/16.3): một chương trình mã hoá flag bằng TEA. Nhiệm vụ của bạn là nhận ra TEA qua delta trong disassembly, lấy khoá, rồi viết Python giải ngược. Lời giải và script kiểm chứng trong `solution.md`.
+The folder [labs/16.3/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/16.3): a program that encrypts a flag with TEA. Your task is to recognize TEA through the delta in the disassembly, get the key, then write Python to decrypt it. The solution and the verification script are in `solution.md`.
 
-## Checklist ghi nhớ
-- TEA/XTEA: nhận qua delta `0x9E3779B9`, 32 vòng, shl 4 / shr 5. Dễ giải vì đối xứng.
-- AES: S-box mở đầu `63 7C 77 7B`, hoặc 4 T-table; số vòng 10/12/14.
-- ChaCha/Salsa: chuỗi "expand 32-byte k", toàn add-rotate-XOR.
-- DES: 8 S-box nhỏ + nhiều bảng hoán vị, 16 vòng Feistel.
-- Hash nhận qua init value và bảng K; CRC32 là checksum với poly `0xEDB88320`.
-- Nhận ra thuật toán rồi thì dùng thư viện chuẩn để giải, chỉ cần tìm đúng thuật toán, khoá, mode.
+## Key takeaways
+TEA/XTEA is recognized by the delta `0x9E3779B9`, 32 rounds, and shl 4 / shr 5, and it's easy to decrypt because it's symmetric. AES shows an S-box starting `63 7C 77 7B` (or 4 T-tables) and 10/12/14 rounds. ChaCha/Salsa has the string "expand 32-byte k" and is all add-rotate-XOR. DES has 8 small S-boxes, many permutation tables, and 16 Feistel rounds.
+
+Hashes are recognized by init values and K tables, and CRC32 is a checksum with poly `0xEDB88320`. Once you've identified the algorithm, use a standard library to decrypt: you only need to find the right algorithm, key, and mode.

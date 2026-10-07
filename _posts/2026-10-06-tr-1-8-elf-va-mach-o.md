@@ -1,129 +1,104 @@
 ---
-title: "Bài 1.8: ELF và Mach-O, hai định dạng ngoài Windows"
+title: "Lesson 1.8: ELF and Mach-O, the two formats outside Windows"
 date: 2026-10-06 08:11:00 +0700
-categories: ["Technique Reverse", "Phần 1 · Nền tảng máy tính cho RE"]
+categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
-Bài trước mổ xẻ PE của Windows. Nhưng reverse không chỉ sống trên Windows: server chạy Linux, điện thoại Android cũng là Linux ở lõi, máy Mac và iPhone dùng định dạng riêng. Nếu PE là "hộ chiếu" của file Windows thì ELF là của Linux, Mach-O là của Apple. Hiểu ba cái này là bạn đọc được header của gần như mọi binary gặp trong đời.
+Last lesson cut open the Windows PE. But reversing doesn't only live on Windows: servers run Linux, Android phones are Linux at the core, and Macs and iPhones use their own format. If PE is the "passport" of a Windows file, then ELF is Linux's and Mach-O is Apple's. Understand these three and you can read the header of almost every binary you'll meet in your life.
 
-Tin vui: cả ba giải quyết cùng một bài toán (đóng gói code, dữ liệu, thông tin nạp vào bộ nhớ thế nào), nên học một cái là hiểu nhanh hai cái kia. Bài này tập trung ELF vì bạn sẽ gặp nó nhiều nhất, rồi lướt qua Mach-O và so sánh.
+The good news: all three solve the same problem (packaging code, data, and the info on how to load it into memory), so learning one lets you pick up the other two fast. This lesson focuses on ELF because you'll meet it the most, then skims Mach-O and compares.
 
-## ELF: xương sống của Linux
+## ELF: the backbone of Linux
 
-ELF (Executable and Linkable Format) dùng cho mọi thứ chạy được trên Linux: chương trình thực thi, thư viện `.so`, file object `.o`, thậm chí core dump. Nhận ra nó dễ: 4 byte đầu luôn là `7F 45 4C 46`, tức `0x7F` rồi ba ký tự ASCII "ELF". Mở bất cứ file nào trong `/bin` bằng hex editor là thấy ngay.
+ELF (Executable and Linkable Format) is used for everything that runs on Linux: executables, `.so` libraries, `.o` object files, even core dumps. It's easy to recognize: the first 4 bytes are always `7F 45 4C 46`, that is `0x7F` followed by the three ASCII characters "ELF". Open any file in `/bin` with a hex editor and you'll see it right away.
 
-### Header, tấm bản đồ đầu file
+### The header, the map at the top of the file
 
-ELF header nằm ở đầu file, cho biết những thứ cốt lõi:
+The ELF header sits at the start of the file and tells you the core things. The magic (`7F 45 4C 46`) confirms this is ELF. The class says 32-bit (ELFCLASS32) or 64-bit (ELFCLASS64), and the endianness says little or big endian. The type is `ET_EXEC` (fixed-address executable), `ET_DYN` (shared object or PIE, can run at any address), or `ET_REL` (object file). The machine field gives the CPU architecture: x86-64, ARM, MIPS, RISC-V... The entry point (`e_entry`) is the virtual address where code starts running, the same idea as PE's `AddressOfEntryPoint`. The header also records the location of the program header table and the section header table.
 
-- **Magic** (`7F 45 4C 46`): xác nhận đây là ELF.
-- **Class**: 32-bit (ELFCLASS32) hay 64-bit (ELFCLASS64).
-- **Endianness**: little hay big endian.
-- **Type**: `ET_EXEC` (thực thi địa chỉ cố định), `ET_DYN` (shared object hoặc PIE, chạy được ở địa chỉ bất kỳ), `ET_REL` (file object).
-- **Machine**: kiến trúc CPU, x86-64, ARM, MIPS, RISC-V...
-- **Entry point** (`e_entry`): địa chỉ ảo nơi code bắt đầu chạy. Giống `AddressOfEntryPoint` của PE.
-- Vị trí của **program header table** và **section header table**.
-
-Lệnh đọc nhanh:
+Quick commands to read it:
 
 ```
-readelf -h ./a.out      # đọc ELF header
-file ./a.out            # tóm tắt một dòng: loại, bit, động/tĩnh, stripped hay chưa
+readelf -h ./a.out      # read the ELF header
+file ./a.out            # one-line summary: type, bits, dynamic/static, stripped or not
 ```
 
-### Hai bảng header, điểm hay gây lẫn
+### Two header tables, a common source of confusion
 
-Đây là chỗ ELF khác PE và làm nhiều người bối rối: ELF có **hai** bảng mô tả, phục vụ hai mục đích khác nhau.
+This is where ELF differs from PE and trips up a lot of people: ELF has two description tables, serving two different purposes.
 
-- **Program header table** nói cho *loader* (hệ điều hành) biết cách nạp file vào bộ nhớ lúc chạy. Đơn vị của nó là **segment**. Mỗi segment là một khối sẽ được map vào bộ nhớ kèm quyền (R/W/X).
-- **Section header table** nói cho *linker* và công cụ phân tích biết file chia thành những **section** nào (.text, .data...). Khi chạy thì loader không cần bảng này.
+The program header table tells the loader (the OS) how to load the file into memory at runtime. Its unit is the segment, and each segment is a block that gets mapped into memory with permissions (R/W/X). The section header table tells the linker and analysis tools which sections the file is divided into (.text, .data...). At runtime the loader doesn't need this table.
 
-Nói gọn: **segment để chạy, section để phân tích.** Một segment thường gom nhiều section lại. Ví dụ segment code chứa cả `.text` lẫn `.rodata`. Khi file bị strip, section header có thể bị cắt bớt nhưng program header thì không thể thiếu, vì không có nó file không chạy được.
+In short: segments are for running, sections are for analysis. A segment usually bundles several sections. For example the code segment contains both `.text` and `.rodata`. When a file is stripped, the section headers may be trimmed down, but the program headers can't be missing, because without them the file can't run.
 
 ```
-readelf -l ./a.out      # program headers (segment) + section nào thuộc segment nào
+readelf -l ./a.out      # program headers (segments) + which sections belong to which segment
 readelf -S ./a.out      # section headers
 ```
 
-### Các section quen mặt
+### The familiar sections
 
-Nhiều cái giống PE, gọi tên hơi khác:
+Many are like PE, just named a bit differently. `.text` is code with R-X permissions. `.data` holds initialized globals, RW. `.bss` holds globals equal to 0 and takes no space on disk. `.rodata` is read-only data, constants and strings, and your "Access denied" string is here. `.plt` and `.got` are the heart of dynamic linking, covered below. `.symtab` and `.strtab` are the symbol and name tables, which is what gets cut when you strip. `.dynsym` and `.dynstr` hold symbols for dynamic linking, and these don't get stripped because they're needed at runtime.
 
-- **.text**: code, quyền R-X.
-- **.data**: biến toàn cục đã khởi tạo, RW.
-- **.bss**: biến toàn cục bằng 0, không tốn chỗ trên đĩa.
-- **.rodata**: dữ liệu chỉ đọc, hằng số và chuỗi. Chuỗi "Access denied" của bạn nằm đây.
-- **.plt** và **.got**: trái tim của dynamic linking, nói ở phần dưới.
-- **.symtab** và **.strtab**: bảng symbol và tên. Đây là thứ bị cắt khi strip.
-- **.dynsym** và **.dynstr**: symbol cho dynamic linking, cái này không bị strip vì cần lúc chạy.
+### PLT and GOT, how Linux calls library functions
 
-### PLT và GOT, cách Linux gọi hàm thư viện
+When a program calls `printf` from libc, at compile time it doesn't know what address `printf` is at (libc is placed randomly by ASLR on each run). Linux solves this with the PLT/GOT pair, and you'll see these two names for the rest of your Linux reversing life, so get them straight now.
 
-Khi chương trình gọi `printf` từ libc, lúc biên dịch nó chưa biết `printf` nằm ở địa chỉ nào (libc được ASLR đặt ngẫu nhiên mỗi lần chạy). Linux giải quyết bằng cặp PLT/GOT, và bạn sẽ gặp hai cái tên này suốt đời reverse Linux nên hiểu luôn cho chắc.
+The GOT (Global Offset Table) is a table of pointers. Each slot will hold the real address of an external function, filled in at runtime. The PLT (Procedure Linkage Table) is small stubs of code that sit in between. Your code doesn't call `printf` directly but calls `printf@plt`.
 
-- **GOT** (Global Offset Table) là một bảng con trỏ. Mỗi ô sẽ chứa địa chỉ thật của một hàm ngoài, điền vào lúc chạy.
-- **PLT** (Procedure Linkage Table) là các đoạn code nhỏ đứng trung gian. Code của bạn không gọi thẳng `printf` mà gọi `printf@plt`.
+The lazy binding mechanism, resolving the address only when the function is first called, works like this: on the first call to `printf@plt`, it jumps through the GOT to the dynamic linker's resolver, finds the real address of `printf`, writes it into the GOT slot, and then makes the call. From then on, `printf@plt` jumps straight through the GOT to the saved address, with no need to resolve again.
 
-Cơ chế **lazy binding**, giải quyết địa chỉ chỉ khi hàm được gọi lần đầu, diễn ra thế này: lần đầu gọi `printf@plt`, nó nhảy qua GOT tới bộ giải (resolver) của dynamic linker, tìm ra địa chỉ thật của `printf`, ghi vào ô GOT, rồi mới gọi. Từ lần sau, `printf@plt` nhảy thẳng qua GOT tới địa chỉ đã lưu, không phải giải lại.
+For a reverser, what to remember: seeing `call printf@plt` means an external function is being called, and to know its real address at runtime you look at the matching GOT slot in the debugger. The GOT is also a classic attack target (GOT overwrite), but that's the exploit side of things.
 
-Với người reverse, điều cần nhớ: thấy `call printf@plt` nghĩa là đang gọi một hàm ngoài, và muốn biết địa chỉ thật của nó lúc chạy thì nhìn vào ô GOT tương ứng trong debugger. GOT cũng là mục tiêu kinh điển của tấn công (GOT overwrite), nhưng đó là chuyện của mảng exploit.
+### Stripped or not
 
-### Stripped hay không
-
-Giống PE, binary ELF có thể giữ hoặc bỏ thông tin symbol:
-
-- **Không stripped**: còn `.symtab`, tên hàm và biến hiện ra đẹp đẽ trong Ghidra/IDA. Dễ thở.
-- **Stripped**: `.symtab` bị cắt, chỉ còn `.dynsym` (các hàm thư viện import vẫn thấy tên, nhưng hàm nội bộ của tác giả thành `sub_xxxx`). Phần lớn phần mềm thật và malware đều stripped.
+Like PE, an ELF binary can keep or drop symbol info. If it's not stripped, `.symtab` is still there and function and variable names show up nicely in Ghidra/IDA, which is easy going. If it's stripped, `.symtab` is cut and only `.dynsym` remains (imported library functions still show names, but the author's internal functions become `sub_xxxx`). Most real software and malware is stripped.
 
 ```
-nm ./a.out              # liệt kê symbol (báo "no symbols" nếu đã strip)
-strip ./a.out           # tự tay strip để xem khác biệt
+nm ./a.out              # list symbols (says "no symbols" if stripped)
+strip ./a.out           # strip it yourself to see the difference
 ```
 
-## Mach-O: định dạng của Apple
+## Mach-O: Apple's format
 
-macOS và iOS dùng Mach-O. Cấu trúc tư duy giống ELF nhưng tên gọi và vài chỗ khác.
+macOS and iOS use Mach-O. The way of thinking is like ELF but the names and a few details differ.
 
-- **Magic**: `0xFEEDFACE` (32-bit) hoặc `0xFEEDFACF` (64-bit). Vui là người Apple cố tình ghép thành chữ "feed face".
-- **Fat binary (universal binary)**: một file Mach-O có thể gói nhiều kiến trúc cùng lúc, ví dụ x86-64 và ARM64 cho máy Intel lẫn Apple Silicon. Magic của file fat là `0xCAFEBABE`. Khi reverse, bạn thường phải tách lấy đúng kiến trúc mình cần bằng `lipo`.
-- **Load commands**: thay cho program header của ELF. Đây là danh sách chỉ thị cho loader: segment nào map vào đâu, cần thư viện nào, entry point ở đâu, chữ ký code ra sao.
-- **Segment và section**: Mach-O cũng chia segment, tên viết hoa với hai gạch dưới: `__TEXT` (code, chỉ đọc), `__DATA` (dữ liệu ghi được). Trong mỗi segment lại có section như `__text`, `__cstring`.
+The magic is `0xFEEDFACE` (32-bit) or `0xFEEDFACF` (64-bit). Fun fact: the Apple folks deliberately made it spell "feed face". A Mach-O can also be a fat binary (universal binary): one file can bundle several architectures at once, for example x86-64 and ARM64 for both Intel and Apple Silicon machines. The magic of a fat file is `0xCAFEBABE`. When reversing, you usually have to extract the architecture you need with `lipo`.
 
-Công cụ trên Mac:
+Load commands replace ELF's program headers. It's a list of instructions for the loader: which segment maps where, which libraries are needed, where the entry point is, what the code signature looks like. Mach-O also has segments, named in uppercase with two underscores: `__TEXT` (code, read-only) and `__DATA` (writable data). Inside each segment there are sections like `__text`, `__cstring`.
+
+Tools on a Mac:
 
 ```
-otool -hv binary        # header và load commands
-otool -l binary         # liệt kê load commands đầy đủ
-lipo -info binary       # xem file chứa những kiến trúc nào
-lipo binary -thin arm64 -output binary_arm64   # tách lấy một kiến trúc
-nm binary               # symbol
+otool -hv binary        # header and load commands
+otool -l binary         # list all load commands in full
+lipo -info binary       # see which architectures the file contains
+lipo binary -thin arm64 -output binary_arm64   # extract one architecture
+nm binary               # symbols
 ```
 
-Objective-C và Swift còn có những section metadata riêng cho runtime, nhưng đó để Phần 12 lo. Ở đây chỉ cần quen bộ xương Mach-O.
+Objective-C and Swift also have their own metadata sections for the runtime, but that's for Part 12 to handle. Here you only need to get used to the Mach-O skeleton.
 
-## So sánh ba định dạng cho dễ nhớ
+## Comparing the three formats so it sticks
 
-| Khái niệm | PE (Windows) | ELF (Linux) | Mach-O (Apple) |
+| Concept | PE (Windows) | ELF (Linux) | Mach-O (Apple) |
 |---|---|---|---|
-| Magic | `MZ` rồi `PE\0\0` | `7F 45 4C 46` | `FEEDFACE/FACF`, fat `CAFEBABE` |
-| Mô tả nạp bộ nhớ | Section table | Program header (segment) | Load commands (segment) |
+| Magic | `MZ` then `PE\0\0` | `7F 45 4C 46` | `FEEDFACE/FACF`, fat `CAFEBABE` |
+| Memory loading description | Section table | Program header (segment) | Load commands (segment) |
 | Code | .text | .text | `__TEXT`/`__text` |
-| Dữ liệu chỉ đọc | .rdata | .rodata | `__TEXT`/`__cstring` |
-| Import hàm ngoài | IAT | PLT/GOT | stubs / `__la_symbol_ptr` |
+| Read-only data | .rdata | .rodata | `__TEXT`/`__cstring` |
+| Importing external functions | IAT | PLT/GOT | stubs / `__la_symbol_ptr` |
 | Entry point | AddressOfEntryPoint | e_entry | LC_MAIN |
-| Nhiều kiến trúc 1 file | Không | Không | Có (fat binary) |
+| Multiple architectures in one file | No | No | Yes (fat binary) |
 
-Nhìn bảng này là thấy cả ba kể cùng một câu chuyện, chỉ đổi từ vựng. Học kỹ ELF thì đọc PE và Mach-O chỉ là tra lại tên gọi.
+Looking at this table you can see all three tell the same story, just with different vocabulary. Learn ELF well and reading PE and Mach-O is just looking up the names.
 
-## Lab tự làm
+## Lab
 
-Lab ở [labs/1.8/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/1.8). Bạn sẽ tự tay dùng `readelf`, `objdump`, `nm` để mổ một binary ELF, tìm entry point, liệt kê segment, và quan sát PLT/GOT. Có file hello world để build và một writeup mẫu để đối chiếu. Nếu không có máy Linux, chạy trong WSL hoặc một VM nhẹ là đủ.
+The lab is at [labs/1.8/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/1.8). You'll use `readelf`, `objdump`, `nm` yourself to dissect an ELF binary, find the entry point, list the segments, and observe PLT/GOT. There's a hello world file to build and a sample writeup to compare against. If you don't have a Linux machine, running in WSL or a light VM is enough.
 
-## Checklist ghi nhớ
-- ELF magic `7F 'E' 'L' 'F'`, Mach-O `FEEDFACE/FACF`, fat binary `CAFEBABE`.
-- ELF có hai bảng: program header (segment, để loader chạy) và section header (section, để phân tích). Segment để chạy, section để đọc.
-- PLT/GOT là cách Linux gọi hàm thư viện, lazy binding điền địa chỉ thật vào GOT lần gọi đầu.
-- Stripped cắt `.symtab` (hàm nội bộ thành sub_xxx) nhưng `.dynsym` vẫn còn nên tên hàm import vẫn thấy.
-- Mach-O có thể là fat binary chứa nhiều kiến trúc, dùng `lipo` để tách.
-- Ba định dạng PE/ELF/Mach-O cùng ý tưởng, chỉ khác tên gọi.
+## Key takeaways
+The ELF magic is `7F 'E' 'L' 'F'`, Mach-O is `FEEDFACE/FACF`, and a fat binary is `CAFEBABE`. ELF has two tables: the program header (segments, for the loader to run) and the section header (sections, for analysis). Segments are for running, sections are for reading.
+
+PLT/GOT is how Linux calls library functions, with lazy binding filling the real address into the GOT on the first call. Stripping cuts `.symtab` (internal functions become sub_xxx) but `.dynsym` stays, so imported function names are still visible. Mach-O can be a fat binary containing multiple architectures, and you use `lipo` to extract one. PE, ELF and Mach-O share the same ideas, only the names differ.

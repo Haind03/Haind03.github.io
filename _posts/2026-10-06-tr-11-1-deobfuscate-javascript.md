@@ -1,64 +1,57 @@
 ---
-title: "Bài 11.1: Deobfuscate JavaScript, bóc từng lớp cho tới khi đọc được"
+title: "Lesson 11.1: Deobfuscating JavaScript, peeling layer by layer until it reads"
 date: 2026-10-06 09:09:00 +0700
-categories: ["Technique Reverse", "Phần 11 · JavaScript, Electron, WebAssembly"]
+categories: ["Technique Reverse", "Part 11 · JavaScript, Electron, WebAssembly"]
 tags: [reverse-engineering, javascript, wasm]
 render_with_liquid: false
 ---
-JavaScript không biên dịch ra machine code, nó chạy ngay dạng text. Nghe thì tưởng dễ reverse nhất đời, nhưng chính vì là text nên người ta đổ công sức vào obfuscation: đổi tên biến thành rác, giấu chuỗi trong mảng mã hoá, bẻ vụn luồng điều khiển. Malware JS, skimmer thẻ tín dụng trên web, script chặn adblock, tất cả đều obfuscate. Bài này dạy bóc từng lớp theo đúng thứ tự.
+JavaScript doesn't compile to machine code, it runs right away as text. That sounds like the easiest thing to reverse ever, but precisely because it's text, people put a lot of effort into obfuscation: renaming variables to garbage, hiding strings in encoded arrays, shredding control flow. JS malware, credit card skimmers on websites, adblock-blocking scripts, all of them are obfuscated. This lesson shows how to peel the layers in the right order.
 
-Điểm mấu chốt cần nhớ trước: **obfuscation không mã hoá logic, chỉ làm nó khó đọc.** Code vẫn phải chạy được, nên mọi thứ bạn cần đều ở đó, chỉ bị che. Công việc của bạn là lột lớp che.
+The key point to remember first: **obfuscation doesn't encrypt the logic, it only makes it hard to read.** The code still has to run, so everything you need is there, just covered up. Your job is to remove the cover.
 
-## Bốn mức, từ nhẹ tới nặng
+## Four levels, from light to heavy
 
-Gặp một file JS lạ, nó rơi vào một trong bốn mức, và cách xử lý khác nhau:
+When you get an unfamiliar JS file, it falls into one of four levels, and each is handled differently:
 
-1. **Minified**: chỉ bị nén (xoá khoảng trắng, rút tên biến thành `a`, `b`). Không phải obfuscation thật, chỉ để file nhỏ. Beautify là đọc được gần như ngay.
-2. **Obfuscated**: cố tình làm khó bằng string array, control flow flattening, dead code. Đây là mức tốn công nhất.
-3. **Bundled**: webpack/rollup gộp nhiều module thành một file khổng lồ. Cần tách module ra.
-4. **Compiled**: Electron (bytecode V8) hoặc WebAssembly. Đây là bài [11.2](https://github.com/Haind03/Technique-Reverse/blob/main/phan-11-javascript-electron-wasm/11.2-electron-asar-v8.md) và [11.3](/posts/tr-11-3-webassembly/).
+The first level is minified code, which is only compressed (whitespace removed, variable names shortened to `a`, `b`). It's not real obfuscation, just a way to make the file small, and once you beautify it you can read it almost immediately. The second level is obfuscated code, deliberately made hard with string arrays, control flow flattening and dead code, and it's the most expensive level to deal with. The third is bundled code, where webpack/rollup merges many modules into one giant file and you need to split the modules out. The fourth is compiled code, Electron (V8 bytecode) or WebAssembly, which is lessons [11.2](https://github.com/Haind03/Technique-Reverse/blob/main/phan-11-javascript-electron-wasm/11.2-electron-asar-v8.md) and [11.3](/posts/tr-11-3-webassembly/).
 
-## Mức 1: beautify, việc đầu tiên luôn làm
+## Level 1: beautify, always the first thing
 
-Dù file ở mức nào, bước đầu tiên luôn là format lại cho xuống dòng thụt lề. Một file minified một dòng dài 50KB là không thể đọc, nhưng sau khi beautify thì cấu trúc hiện ra.
+Whatever level the file is at, the first step is always to reformat it with line breaks and indentation. A 50KB minified single-line file is unreadable, but after beautifying the structure shows up.
 
 ```bash
 npx js-beautify minified.js
-# hoặc Prettier, hoặc nút Format trong DevTools của trình duyệt ({})
+# or Prettier, or the Format button in the browser DevTools ({})
 ```
 
-Với file chỉ minified (không obfuscate), beautify là xong. Bạn đọc được logic ngay, chỉ tên biến hơi xấu. Nhiều "mã bị giấu" thực ra chỉ minified, đừng dùng dao mổ trâu.
+For a file that's only minified (not obfuscated), beautify is the whole job. You can read the logic right away, the variable names are just a bit ugly. A lot of "hidden code" is really just minified, so don't use a cleaver to kill a chicken.
 
-## Mức 2: nhận diện obfuscator trước khi gỡ
+## Level 2: identify the obfuscator before removing it
 
-Đây là chỗ người mới hay sai: lao vào gỡ bằng tay trước khi biết nó bị obfuscate bằng tool gì. Phần lớn code obfuscated ngoài đời sinh ra từ **obfuscator.io** (thư viện `javascript-obfuscator`), và nó để lại dấu vân tay rất dễ nhận:
+This is where beginners often go wrong: jumping into unpicking by hand before knowing what tool obfuscated it. Most obfuscated code in the wild comes from **obfuscator.io** (the `javascript-obfuscator` library), and it leaves fingerprints that are easy to recognize:
 
-- Một **string array**: một hàm trả về mảng chuỗi dài, mọi chuỗi trong code được thay bằng lời gọi kiểu `_0x4ae3eb(0xc4)`.
-- Một **rotate function**: đoạn IIFE có vòng `while(true)` với `parseInt` và `push/shift`, dùng để xoay mảng chuỗi về đúng thứ tự lúc chạy.
-- **Control flow flattening**: thân hàm biến thành `while` + `switch` với thứ tự case lộn xộn, điều khiển bằng một chuỗi kiểu `"4|2|3|0|1"[split]`.
-- Tên biến dạng `_0x` hex.
+The first is a string array: a function returning a long array of strings, with every string in the code replaced by a call like `_0x4ae3eb(0xc4)`. The second is a rotate function, an IIFE with a `while(true)` loop using `parseInt` and `push/shift`, which rotates the string array into the right order at runtime. The third is control flow flattening, where function bodies turn into `while` + `switch` with shuffled case order, driven by a string like `"4|2|3|0|1"[split]`. The last is variable names in `_0x` hex form.
 
-Nhận ra bốn dấu này là biết ngay: đây là obfuscator.io, và có tool gỡ sẵn.
+Spot these four signs and you know right away: this is obfuscator.io, and ready-made deobfuscation tools exist.
 
-## Mức 2: chạy tool gỡ
+## Level 2: run a deobfuscation tool
 
-Hai tool chủ lực, nên thử theo thứ tự:
+Two main tools, try them in this order:
 
-- **webcrack**: mạnh nhất hiện nay cho obfuscator.io và cả webpack bundle. `npx webcrack obf.js -o out`. Nó giải string array, unflatten control flow, inline, tách module.
-- **synchrony** (gói `deobfuscator`): `npx deobfuscator file.js`, chuyên obfuscator.io, gỡ string array và đơn giản hoá biểu thức.
+webcrack is the strongest right now for obfuscator.io and also webpack bundles: `npx webcrack obf.js -o out`. It resolves the string array, unflattens control flow, inlines, and splits modules. synchrony (the `deobfuscator` package) is specialized for obfuscator.io: `npx deobfuscator file.js` removes the string array and simplifies expressions.
 
-Thực tế một tool không phải lúc nào cũng gỡ sạch 100%. webcrack chạy code trong sandbox để giải string array, nên đôi khi vướng môi trường (ví dụ isolated-vm trên máy nào đó). synchrony có thể chỉ gỡ được một phần: đổi hằng số hex sang decimal, đơn giản hoá, nhưng vẫn để lại control flow flattening. Không sao. **Bạn không cần tool gỡ sạch, chỉ cần nó gỡ đủ để bạn đọc được logic.**
+In practice a single tool doesn't always clean it 100%. webcrack runs code in a sandbox to resolve the string array, so sometimes it trips on the environment (isolated-vm on some machines, for example). synchrony may only do part of it: convert hex constants to decimal, simplify, but still leave the control flow flattening. That's fine. **You don't need the tool to clean it completely, you only need it to clean enough that you can read the logic.**
 
-Ngay cả khi vẫn còn `switch`-case lộn xộn, bạn đọc từng case là ra logic gốc. Trong lab của bài này, sau khi chạy synchrony, hàm check vẫn còn flattening nhưng các case lộ rõ: một case `split('-')`, một case kiểm tra số phần ttử, một case cộng `charCodeAt`, một case `return` so sánh tổng với một hằng số. Ghép lại là hiểu trọn.
+Even when a messy `switch`-case is still there, you read each case and the original logic comes out. In this lesson's lab, after running synchrony the check function still had flattening, but the cases were clear: one case `split('-')`, one case checking the number of parts, one case summing `charCodeAt`, one case `return`ing a comparison of the sum against a constant. Put together, you understand all of it.
 
-## Mức 2 nâng cao: tự viết AST transform
+## Level 2, advanced: write your own AST transform
 
-Khi gặp obfuscator tuỳ biến mà không tool nào gỡ được, bạn tự viết transform. JavaScript có lợi thế lớn: nó tự parse được chính nó. Dùng **Babel** để biến code thành AST (cây cú pháp), sửa cây, rồi in lại.
+When you hit a custom obfuscator that no tool can unpick, you write the transform yourself. JavaScript has a big advantage: it can parse itself. Use **Babel** to turn the code into an AST (syntax tree), modify the tree, then print it back.
 
-Quy trình: dán code vào **AST Explorer** (astexplorer.net) để nhìn cây, tìm pattern lặp lại (ví dụ mọi lời gọi `_0xabc(0x1f)`), viết một visitor thay nó bằng giá trị thật.
+The workflow: paste the code into **AST Explorer** (astexplorer.net) to look at the tree, find a repeating pattern (for example every `_0xabc(0x1f)` call), and write a visitor that replaces it with the real value.
 
 ```js
-// Ví dụ: thay mọi lời gọi hàm decode bằng chuỗi thật
+// Example: replace every decode function call with the real string
 const { parse } = require("@babel/parser");
 const traverse = require("@babel/traverse").default;
 const generate = require("@babel/generator").default;
@@ -75,30 +68,27 @@ traverse(ast, {
 console.log(generate(ast).code);
 ```
 
-Đây là cách mạnh nhất và cũng là cách các tool trên hoạt động bên trong. Học viết AST transform là bạn gỡ được thứ chưa có tool.
+This is the most powerful way, and it's also how the tools above work inside. Learn to write AST transforms and you can unpick things no tool covers yet.
 
-## Quy trình gọn
+## The short workflow
 
 ```
-1. Beautify (js-beautify / Prettier / nút {} trong DevTools)
-2. Chỉ minified?  -> đọc luôn, xong.
-3. Nhận diện: thấy string array + rotate + _0x + switch flattening -> obfuscator.io
-4. Chạy webcrack, nếu vướng thì synchrony
-5. Còn sót control flow -> đọc từng case, hoặc tự viết Babel transform
-6. Bundle webpack -> webcrack tách module rồi lặp lại từ bước 1 cho từng module
+1. Beautify (js-beautify / Prettier / the {} button in DevTools)
+2. Only minified?  -> just read it, done.
+3. Identify: string array + rotate + _0x + switch flattening -> obfuscator.io
+4. Run webcrack, if it gets stuck use synchrony
+5. Control flow still left -> read each case, or write your own Babel transform
+6. Webpack bundle -> webcrack splits the modules, then repeat from step 1 for each module
 ```
 
-## Một lưu ý về malware JS
+## A note on JS malware
 
-Malware JS hay thêm một lớp nữa: `eval`, `Function()`, hoặc `atob` (giải base64) để chạy payload sinh ra lúc runtime. Đừng chạy mù. Thay `eval(x)` bằng `console.log(x)` để in payload ra thay vì thực thi, đó là cách "giải" an toàn nhất. Làm trong môi trường cô lập theo [Bài 0.3](/posts/tr-0-3-dung-lab-an-toan/).
+JS malware often adds one more layer: `eval`, `Function()`, or `atob` (base64 decode) to run a payload generated at runtime. Don't run it blindly. Replace `eval(x)` with `console.log(x)` to print the payload instead of executing it, which is the safest way to "decode" it. Do this in an isolated environment as in [Lesson 0.3](/posts/tr-0-3-dung-lab-an-toan/).
 
-## Checklist ghi nhớ
-- Obfuscation chỉ che logic, không mã hoá nó. Code chạy được nghĩa là mọi thứ bạn cần đều ở đó.
-- Luôn beautify trước. Nhiều thứ "bị giấu" thực ra chỉ minified.
-- Nhận diện obfuscator trước khi gỡ: string array + rotate + `_0x` + switch flattening là obfuscator.io.
-- webcrack mạnh nhất, synchrony là phương án hai. Không cần gỡ sạch, chỉ cần đọc được logic.
-- Tool bó tay thì tự viết Babel/AST transform, đó cũng là cách tool hoạt động bên trong.
-- Payload trong `eval`/`Function` thì in ra bằng `console.log`, đừng chạy.
+## Key takeaways
+Obfuscation only hides the logic, it doesn't encrypt it, so code that runs means everything you need is there. Always beautify first, since a lot of "hidden" stuff is really just minified. Identify the obfuscator before removing it: string array + rotate + `_0x` + switch flattening is obfuscator.io.
+
+webcrack is the strongest and synchrony is plan B, and you don't need a full cleanup, just readable logic. When the tools give up, write your own Babel/AST transform, which is also how the tools work inside. For payloads in `eval`/`Function`, print them with `console.log` and don't run them.
 
 ## Lab
-Xem [labs/11.1/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/11.1). Có sẵn một license checker, bản minified, bản obfuscated bằng obfuscator.io thật, và kết quả sau khi beautify và chạy synchrony. Nhiệm vụ: bóc ngược về logic gốc và tìm license key hợp lệ.
+See [labs/11.1/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/11.1). It has a license checker ready, a minified version, a version obfuscated with the real obfuscator.io, and the result after beautifying and running synchrony. The task: peel it back to the original logic and find a valid license key.

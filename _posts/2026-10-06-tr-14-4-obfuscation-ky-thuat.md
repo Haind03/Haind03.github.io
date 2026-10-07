@@ -1,21 +1,21 @@
 ---
-title: "Bài 14.4: Obfuscation ở mức code, khi luồng chương trình bị bẻ cong"
+title: "Lesson 14.4: Code-level obfuscation, when the program flow gets bent"
 date: 2026-10-06 09:23:00 +0700
-categories: ["Technique Reverse", "Phần 14 · Packer & Obfuscation"]
+categories: ["Technique Reverse", "Part 14 · Packers and Obfuscation"]
 tags: [reverse-engineering, packer, obfuscation]
 render_with_liquid: false
 ---
-Packer giấu code đến khi chạy (bài 14.1, 14.2). Obfuscation làm chuyện khác: code vẫn nằm đó, bạn vẫn disassemble được, nhưng nó được viết lại cố ý cho khó đọc. Hàm mười dòng phình thành năm trăm dòng, một phép cộng biến thành một mớ phép bit, luồng if/else gọn gàng biến thành một vòng lặp vô hạn với cái switch khổng lồ. Logic không đổi, chỉ hình dạng đổi.
+Packers hide code until runtime (lessons 14.1, 14.2). Obfuscation does something different: the code is still there, you can still disassemble it, but it has been deliberately rewritten to be hard to read. A ten-line function balloons to five hundred lines, an addition turns into a pile of bit operations, a clean if/else flow turns into an infinite loop with a giant switch. The logic doesn't change, only the shape.
 
-Bài này điểm qua các kỹ thuật hay gặp nhất, cách nhận ra từng cái, và quan trọng hơn là chiến lược chung để không bị chúng dọa. Phần lớn trong số này đến từ OLLVM (Obfuscator-LLVM), một bộ pass LLVM mã nguồn mở mà rất nhiều protector thương mại và malware dùng lại.
+This lesson goes over the most common techniques, how to recognize each one, and more importantly the general strategy for not being scared off by them. Most of these come from OLLVM (Obfuscator-LLVM), an open-source set of LLVM passes that a lot of commercial protectors and malware reuse.
 
-## Control flow flattening, kẻ phá đám số một
+## Control flow flattening, the number one troublemaker
 
-Đây là kỹ thuật bạn gặp nhiều nhất và cũng gây ức chế nhất. Ý tưởng: lấy luồng tự nhiên của hàm (khối A chạy xong tới B, B rẽ sang C hoặc D) rồi đập phẳng hết. Mọi khối cơ bản trở thành một `case` trong một `switch` lớn, và một biến trạng thái (state variable) quyết định case nào chạy tiếp. Toàn bộ nằm trong một vòng `while(1)`.
+This is the technique you'll meet most and the most frustrating one. The idea: take the function's natural flow (block A finishes and goes to B, B branches to C or D) and flatten it all. Every basic block becomes a `case` in one big `switch`, and a state variable decides which case runs next. All of it sits inside a `while(1)` loop.
 
-Nhìn trên graph view của IDA, hàm bình thường có hình cây chảy xuống. Hàm bị flatten trông như một con nhện: một dispatcher ở giữa, mọi khối đều quay về dispatcher rồi tỏa ra lại. Cấu trúc if/for/while gốc biến mất hoàn toàn, vì thứ tự chạy giờ do biến state điều khiển chứ không do vị trí lệnh.
+On IDA's graph view, a normal function looks like a tree flowing downward. A flattened function looks like a spider: one dispatcher in the middle, every block returns to the dispatcher and fans out again. The original if/for/while structure disappears completely, because the order of execution is now driven by the state variable and not by instruction position.
 
-Hãy xem cụ thể. Hàm gốc kiểm tra serial:
+Let's look at a concrete case. The original function checks a serial:
 
 ```c
 int check(const char *s) {
@@ -29,7 +29,7 @@ int check(const char *s) {
 }
 ```
 
-Sau khi flatten (đây là file `flattened.c` trong lab, viết tay cho dễ thấy hình dạng):
+After flattening (this is the `flattened.c` file in the lab, written by hand so the shape is easy to see):
 
 ```c
 int check(const char *s) {
@@ -39,8 +39,8 @@ int check(const char *s) {
             case 0:  len = strlen(s); state = 1; break;
             case 1:  if (len != 8) { ret = 0; state = 99; } else state = 2; break;
             case 2:  if (s[0] != 'R') { ret = 0; state = 99; } else { sum = 0; i = 0; state = 3; } break;
-            case 3:  if (i < len) state = 4; else state = 5; break;   // dieu kien loop
-            case 4:  sum += s[i]; i++; state = 3; break;              // than loop
+            case 3:  if (i < len) state = 4; else state = 5; break;   // loop condition
+            case 4:  sum += s[i]; i++; state = 3; break;              // loop body
             case 5:  if (sum % 7 != 0) { ret = 0; state = 99; } else { ret = 1; state = 99; } break;
             case 99: return ret;
         }
@@ -48,58 +48,45 @@ int check(const char *s) {
 }
 ```
 
-Hai bản này chạy ra kết quả y hệt nhau (lab đã kiểm bằng cách build cả hai và so trên nhiều input). Nhưng bản dưới mất hết hình dáng gốc. Muốn hiểu nó, bạn phải làm thủ công cái việc mà biến state đang làm: lần theo state nhảy đi đâu. case 0 đặt state=1, case 1 đặt state=2 nếu qua, case 2 nhảy vào vòng lặp case 3 và 4, xong tới case 5. Dựng lại được chuỗi state là dựng lại được luồng gốc.
+The two versions give identical results (the lab checked this by building both and comparing on many inputs). But the second one has lost all its original shape. To understand it, you have to do by hand what the state variable is doing: follow where state jumps. case 0 sets state=1, case 1 sets state=2 if it passes, case 2 jumps into the loop of case 3 and 4, then on to case 5. Rebuild the chain of states and you've rebuilt the original flow.
 
-Chiến lược đối phó:
-- Nhận ra ngay qua graph "con nhện" và một biến được gán hằng số liên tục rồi so sánh ở đầu vòng lặp. Đó là state variable.
-- Với hàm nhỏ, lần state bằng tay như trên là đủ.
-- Với hàm lớn, dùng công cụ tự động ở bài 14.6 (D-810, Miasm, emulation) để dựng lại CFG gốc.
-- Hoặc bỏ qua static, chạy động: đặt breakpoint và xem thực tế các case chạy theo thứ tự nào với input của bạn.
+You recognize it right away from the "spider" graph and a variable that gets assigned constants over and over and is compared at the top of the loop. That's the state variable. For small functions, tracing state by hand as above is enough. For big functions, use the automated tools in lesson 14.6 (D-810, Miasm, emulation) to rebuild the original CFG. Or skip static and go dynamic: set breakpoints and see which order the cases actually run in with your input.
 
-## Opaque predicate, những nhánh không bao giờ chạy
+## Opaque predicate, branches that never run
 
-Opaque predicate là một điều kiện mà kẻ obfuscate biết chắc kết quả (luôn đúng hoặc luôn sai), nhưng compiler và decompiler thì không. Ví dụ kinh điển: `if ((x*x + x) % 2 == 0)`. Tích của hai số liên tiếp luôn chẵn, nên điều kiện này luôn đúng, nhánh else là code chết (dead code) chỉ để làm nhiễu.
+An opaque predicate is a condition whose result the obfuscator knows for sure (always true or always false), but the compiler and decompiler don't. The classic example: `if ((x*x + x) % 2 == 0)`. The product of two consecutive numbers is always even, so this condition is always true, and the else branch is dead code that's only there to add noise.
 
-Hậu quả: graph đầy nhánh rẽ giả, bạn tốn công đọc code không bao giờ chạy. Nhận ra bằng cách để ý các điều kiện số học kỳ quặc trên một biến mà giá trị thực ra cố định. Công cụ symbolic execution (angr, Triton ở Phần 18) hoặc SMT solver chứng minh được predicate là hằng, rồi cắt nhánh chết.
+The result is a graph full of fake branches, and you waste effort reading code that never runs. You spot it by noticing weird arithmetic conditions on a variable whose value is actually fixed. Symbolic execution tools (angr, Triton in Part 18) or an SMT solver can prove the predicate is constant, and then you cut the dead branch.
 
-## Mixed Boolean-Arithmetic, phép cộng mặc áo giáp
+## Mixed Boolean-Arithmetic, addition in armor
 
-MBA biến một phép toán đơn giản thành biểu thức tương đương nhưng rối mắt, trộn phép số học với phép bit. Ví dụ `x + y` có thể thành `(x ^ y) + 2*(x & y)`, hay tệ hơn là cả một chuỗi `|`, `&`, `^`, `~`, shift dài cả chục dòng. Về mặt toán học chúng bằng nhau, nhưng nhìn vào bạn không đoán nổi nó đang cộng.
+MBA turns a simple operation into an equivalent but eye-straining expression, mixing arithmetic with bit operations. For example `x + y` can become `(x ^ y) + 2*(x & y)`, or worse a whole chain of `|`, `&`, `^`, `~`, shifts a dozen lines long. Mathematically they're equal, but looking at it you can't guess it's adding.
 
-Nhận ra MBA khi thấy một khối toàn phép bit không có mục đích rõ ràng, trên cùng vài biến. Đối phó: dùng công cụ simplify biểu thức (Miasm, Triton có simplifier, hoặc các MBA solver chuyên dụng), hoặc emulate đoạn đó với vài giá trị để suy ra nó thực sự tính gì.
+You recognize MBA when you see a block made entirely of bit operations with no clear purpose, over the same few variables. To deal with it, use an expression simplifier (Miasm, Triton has a simplifier, or dedicated MBA solvers), or emulate that piece with a few values to work out what it actually computes.
 
 ## String encryption
 
-Chuỗi là manh mối quý nhất của reverser (bài 0.4), nên obfuscator mã hoá hết. Thay vì "Invalid license" nằm trong `.rdata`, bạn thấy một mảng byte vô nghĩa và một hàm giải mã được gọi ngay trước khi dùng chuỗi. Giải mã thường rất nhẹ: XOR với khoá, hoặc cộng/trừ hằng số.
+Strings are the reverser's most valuable clue (lesson 0.4), so obfuscators encrypt all of them. Instead of "Invalid license" sitting in `.rdata`, you see a meaningless byte array and a decryption function called right before the string is used. The decryption is usually very light: XOR with a key, or adding/subtracting a constant.
 
-Đối phó hiệu quả nhất là động: đặt breakpoint sau lời gọi hàm giải mã rồi đọc chuỗi đã rõ trong bộ nhớ. Hoặc nếu thuật toán đơn giản, viết lại bằng Python để giải hàng loạt (chính là Phần 16). FLOSS của Mandiant tự động hoá phần lớn việc này.
+The most effective approach is dynamic: set a breakpoint after the decryption function call and read the clear string in memory. Or if the algorithm is simple, rewrite it in Python to decrypt in bulk (that's exactly Part 16). Mandiant's FLOSS automates most of this.
 
 ## Junk code, dead code, instruction substitution
 
-Ba kỹ thuật nhỏ hay đi kèm:
-- **Junk / dead code**: chèn lệnh vô nghĩa (nop biến tấu, tính toán rồi vứt kết quả) để làm loãng. Bỏ qua được một khi nhận ra chúng không ảnh hưởng output.
-- **Instruction substitution**: thay một lệnh bằng chuỗi lệnh tương đương (vd `a = b - c` thành `a = b + (-c)` qua nhiều bước). Decompiler tốt thường gộp lại giúp bạn.
-- **Junk bytes chống disassembly**: chuyện của bài 15.6, hơi khác vì nó đánh vào bộ disassembler chứ không vào người đọc.
+Three small techniques often come along. Junk or dead code inserts meaningless instructions (disguised nops, computing something and throwing the result away) to dilute things, and you can ignore it once you see it doesn't affect the output. Instruction substitution replaces one instruction with an equivalent sequence (e.g. `a = b - c` becomes `a = b + (-c)` over several steps), and a good decompiler usually merges these back for you. Anti-disassembly junk bytes are a topic for lesson 15.6, a bit different because they attack the disassembler and not the reader.
 
-## Chiến lược chung khi gặp obfuscation
+## General strategy when you meet obfuscation
 
-Đừng cố đọc tuyến tính một hàm đã obfuscate, bạn sẽ chết chìm. Thay vào đó:
+Don't try to read an obfuscated function linearly, you'll drown. Instead, first identify which technique you're facing: flattening has the spider shape, MBA has bit-operation blocks, and string encryption has a decryption function before every string.
 
-1. **Nhận diện** đang gặp kỹ thuật gì (flatten có hình con nhện, MBA có khối bit, string encryption có hàm giải mã trước mỗi chuỗi).
-2. **Ưu tiên động hơn tĩnh.** Obfuscation làm khó việc đọc tĩnh, nhưng lúc chạy chương trình vẫn phải làm đúng việc. Breakpoint đặt đúng chỗ cho bạn thấy giá trị thật, chuỗi đã giải mã, nhánh thật sự chạy.
-3. **Tập trung vào input và output của đoạn code**, đừng sa vào từng lệnh. Một khối MBA dài chỉ cần biết "nó cộng hai số này" là đủ.
-4. **Tự động hoá khi quy mô lớn**: emulation và symbolic execution (Phần 18), hoặc công cụ deobfuscation chuyên dụng (bài 14.6).
+Then prefer dynamic over static. Obfuscation makes static reading hard, but at runtime the program still has to do the right thing. A breakpoint in the right place shows you real values, decrypted strings, and the branch that actually runs. Focus on the input and output of the code and don't get lost in individual instructions. For a long MBA block, knowing "it adds these two numbers" is enough. At scale, automate with emulation and symbolic execution (Part 18), or dedicated deobfuscation tools (lesson 14.6).
 
-Điểm mấu chốt: obfuscation làm tốn thời gian chứ không làm bất khả thi. Logic vẫn phải chạy đúng, nên luôn có một con đường động để nhìn thấy sự thật.
+The key point is that obfuscation costs you time, it doesn't make things impossible. The logic still has to run correctly, so there's always a dynamic route to see the truth.
 
-## Lab tự làm
+## Lab
 
-Trong `labs/14.4/` có `original.c` và `flattened.c`, cùng một hàm `check` nhưng một bản gốc, một bản đã control flow flattening thủ công. Build cả hai, xác nhận chúng cho kết quả giống nhau, rồi tập dựng lại luồng gốc chỉ từ bản flattened bằng cách lần biến state. Chi tiết trong `labs/14.4/README.md`, lời giải và serial hợp lệ trong `labs/14.4/solution.md`.
+In `labs/14.4/` there are `original.c` and `flattened.c`, the same `check` function, one original and one manually control-flow-flattened. Build both, confirm they give the same results, then practice rebuilding the original flow from the flattened version alone by tracing the state variable. Details in `labs/14.4/README.md`, the solution and a valid serial in `labs/14.4/solution.md`.
 
-## Checklist ghi nhớ
-- Control flow flattening: while(1) + switch(state), graph hình con nhện. Dựng lại luồng bằng cách lần biến state.
-- Opaque predicate: điều kiện luôn đúng/sai tạo nhánh chết, cắt bằng symbolic execution.
-- MBA: phép toán đơn giản mặc áo phép bit, gỡ bằng simplifier hoặc emulate.
-- String encryption: đặt breakpoint sau hàm giải mã để đọc chuỗi thật.
-- OLLVM là nguồn phổ biến của flatten, substitution, bogus control flow.
-- Nguyên tắc vàng: ưu tiên động hơn tĩnh, tập trung input/output, tự động hoá khi lớn (bài 14.6).
+## Key takeaways
+Control flow flattening is while(1) + switch(state) with a spider-shaped graph, and you rebuild the flow by tracing the state variable. An opaque predicate is an always-true/false condition that creates dead branches, and you cut it with symbolic execution. MBA is a simple operation wearing bit operations, undone with a simplifier or by emulating. For string encryption, set a breakpoint after the decryption function to read the real string. OLLVM is the common source of flattening, substitution and bogus control flow.
+
+The golden rule is to prefer dynamic over static, focus on input/output, and automate when it's big (lesson 14.6).

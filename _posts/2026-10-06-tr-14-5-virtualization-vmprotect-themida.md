@@ -1,84 +1,67 @@
 ---
-title: "Bài 14.5: Code virtualization, bức tường cao nhất"
+title: "Lesson 14.5: Code virtualization, the highest wall"
 date: 2026-10-06 09:24:00 +0700
-categories: ["Technique Reverse", "Phần 14 · Packer & Obfuscation"]
+categories: ["Technique Reverse", "Part 14 · Packers and Obfuscation"]
 tags: [reverse-engineering, packer, obfuscation]
 render_with_liquid: false
 ---
-Tới đây bạn đã unpack được packer, gỡ được obfuscation thường. Giờ là thứ khó nhất trong mảng bảo vệ phần mềm: code virtualization. Khi một hàm bị VMProtect, Themida hay Code Virtualizer "ăn", bạn mở nó trong IDA sẽ không thấy một dòng x86 nào của logic gốc. Chỉ có một vòng lặp lạ chạy mãi. Bài này không dạy bạn giải trọn một binary VMProtect, điều đó cần cả tháng và nhiều bài riêng, mà dạy bạn hiểu nó hoạt động thế nào để biết đường mà đi.
+By now you can unpack packers and strip ordinary obfuscation. Now comes the hardest thing in software protection: code virtualization. When a function gets "eaten" by VMProtect, Themida or Code Virtualizer, you open it in IDA and don't see a single line of the original logic in x86. There's only a strange loop that runs and runs. This lesson doesn't teach you to fully solve a VMProtect binary, that takes a month and several dedicated lessons, but teaches you how it works so you know which way to go.
 
-## Virtualization là gì, và vì sao nó khác mọi thứ trước đó
+## What virtualization is, and why it differs from everything before
 
-Packer giấu code rồi bung ra lúc chạy: tới OEP là bạn có lại x86 gốc. Obfuscation làm code rối nhưng vẫn là x86: đọc kỹ, chạy động, simplify là ra. Virtualization thì khác hẳn về bản chất.
+A packer hides code and expands it at runtime: once you reach the OEP you have the original x86 back. Obfuscation makes code messy but it's still x86: read carefully, run it dynamically, simplify, and you get it. Virtualization is fundamentally different.
 
-Nó lấy code x86 gốc của một hàm và **dịch sang bytecode của một máy ảo (VM) do protector tự chế**. Máy ảo này không phải x86, mà là một tập lệnh riêng, mỗi protector một kiểu, thậm chí mỗi lần build một kiểu. Binary mang theo:
+It takes the original x86 code of a function and translates it into bytecode for a virtual machine (VM) that the protector invents itself. This VM isn't x86 but its own instruction set, a different one for each protector, even for each build. The binary carries a block of bytecode (the original program translated into the VM's language), a dispatcher (a loop that reads each bytecode and calls the right piece of handling code), and a table of handlers (each handler executes one VM opcode, for example add, read memory, jump).
 
-- một khối **bytecode** (chương trình gốc đã dịch sang ngôn ngữ VM),
-- một **dispatcher** (vòng lặp đọc từng bytecode rồi gọi đúng đoạn xử lý),
-- một bảng **handler** (mỗi handler thực thi một opcode VM, ví dụ cộng, đọc bộ nhớ, nhảy).
+When execution reaches a virtualized function, the flow enters the VM entry, the dispatcher starts reading bytecode and running it. The original logic is still executed, but through an interpretation layer. You no longer have the original x86 to read, you have to understand the whole virtual machine first and only then trace out the logic.
 
-Khi chạy tới hàm bị virtualize, luồng đi vào VM entry, dispatcher bắt đầu đọc bytecode và chạy. Logic gốc vẫn được thực thi, nhưng qua một lớp phiên dịch. Bạn không còn x86 gốc để đọc, mà phải hiểu cả cái máy ảo rồi mới lần ra logic.
+A simple picture: instead of reading a book in Vietnamese, you now have to read a book written in an artificial language the author invented, and first you have to rebuild that language's dictionary yourself.
 
-Hình dung đơn giản: thay vì đọc một cuốn sách tiếng Việt, giờ bạn phải đọc một cuốn sách viết bằng ngôn ngữ nhân tạo mà tác giả tự nghĩ ra, và trước hết phải tự dựng lại từ điển của ngôn ngữ đó.
+## The dispatcher loop, the sign of a VM
 
-## Vòng lặp dispatcher, dấu hiệu nhận ra VM
-
-Trái tim của mọi VM là vòng lặp fetch, decode, execute:
+The heart of every VM is the fetch, decode, execute loop:
 
 ```asm
 vm_dispatcher:
-    movzx  eax, byte ptr [vip]    ; fetch: đọc 1 opcode từ con trỏ bytecode (VIP)
-    inc    vip                    ; tiến con trỏ
-    jmp    [handler_table + rax*8] ; decode+execute: nhảy tới handler tương ứng
-    ; ... mỗi handler làm việc của nó rồi nhảy về vm_dispatcher
+    movzx  eax, byte ptr [vip]    ; fetch: read 1 opcode from the bytecode pointer (VIP)
+    inc    vip                    ; advance the pointer
+    jmp    [handler_table + rax*8] ; decode+execute: jump to the matching handler
+    ; ... each handler does its job then jumps back to vm_dispatcher
 ```
 
-Vài khái niệm đặt tên theo kiểu CPU thật:
+A few concepts are named after a real CPU. VIP (virtual instruction pointer) is the pointer to the VM bytecode being run, like rip on a real CPU. VSP (virtual stack pointer) exists because most protector VMs are stack-based, with their own virtual stack. The VM context is a memory region playing the role of the virtual registers.
 
-- **VIP** (virtual instruction pointer): con trỏ tới bytecode VM đang chạy, giống rip của CPU thật.
-- **VSP** (virtual stack pointer): phần lớn VM của protector là stack-based, có một stack ảo riêng.
-- **VM context**: một vùng nhớ đóng vai các thanh ghi ảo.
+When you see a loop that reads a byte, then jumps through a table of pointers to dozens of similar small pieces of code, and keeps coming back to the start, it's almost certainly a VM's dispatcher. That's the sign you're facing virtualization.
 
-Khi bạn thấy một vòng lặp đọc một byte, rồi nhảy qua một bảng con trỏ tới hàng chục đoạn code nhỏ giống nhau, và cứ quay lại điểm đầu, gần như chắc đó là dispatcher của một VM. Đó là dấu hiệu nhận ra bạn đang đối mặt với virtualization.
+## Why it's so hard
 
-## Vì sao nó khó đến thế
+There's no original x86. What you read is the VM's handlers, not the program logic, and a simple `a + b` in the original code can become dozens of VM instructions spread across many handlers. Each build also gets a different VM. The opcodes aren't fixed and the handler table is shuffled, so there's no "universal dictionary", and solving one binary doesn't carry over to another.
 
-- **Không có x86 gốc.** Thứ bạn đọc là handler của VM, không phải logic chương trình. Một phép `a + b` đơn giản trong code gốc có thể trở thành hàng chục lệnh VM trải qua nhiều handler.
-- **Mỗi build một VM khác.** Opcode không cố định, bảng handler xáo trộn, nên không có "từ điển chung". Giải xong một binary không dùng lại được cho binary khác.
-- **Handler còn bị obfuscate thêm.** Bản thân mỗi handler thường bị phủ junk, MBA, opaque predicate (xem [Bài 14.4](/posts/tr-14-4-obfuscation-ky-thuat/)), để bạn không dễ hiểu nó làm gì.
-- **Nhiều lớp.** Themida/WinLicense còn gộp thêm anti-debug, anti-VM, mutation lên trên.
+The handlers are obfuscated too: each one is often covered with junk, MBA, opaque predicates (see [Lesson 14.4](/posts/tr-14-4-obfuscation-ky-thuat/)), so it isn't easy to see what it does. And there are multiple layers, since Themida/WinLicense also stack anti-debug, anti-VM, and mutation on top.
 
-Đây là lý do VMProtect và Themida được dùng cho những phần mềm muốn chống crack nhất, và cũng là lý do giải chúng là đề tài nghiên cứu, không phải việc làm trong một buổi tối.
+This is why VMProtect and Themida are used for the software that wants the strongest crack resistance, and also why solving them is a research topic, not an evening's job.
 
-## Tư duy tiếp cận, bốn hướng
+## The mindset, four directions
 
-Không ai đọc hết một VM bằng mắt. Người ta chọn mức trừu tượng phù hợp với mục tiêu.
+Nobody reads a whole VM by eye. People pick the level of abstraction that suits the goal.
 
-**1. Đừng giải VM, giải bài toán.** Đây là lời khuyên quan trọng nhất. Thường bạn không cần hiểu toàn bộ VM, bạn chỉ cần biết hàm đó nhận gì và trả gì. Nếu hàm bị virtualize là hàm kiểm tra serial, hãy coi nó như hộp đen: cho input, xem output, hoặc đặt breakpoint ở chỗ nó trả kết quả rồi patch kết quả đó, thay vì dịch ngược cả máy ảo. Rất nhiều "crack VMProtect" thực ra chỉ là bơ qua phần VM bằng cách tấn công input/output.
+The most important advice is don't solve the VM, solve the problem. Often you don't need to understand the entire VM, you only need to know what the function takes and what it returns. If the virtualized function is the serial check, treat it as a black box: feed it input and watch the output, or set a breakpoint where it returns its result and patch that result, instead of reversing the whole virtual machine. A lot of "cracking VMProtect" is really just bypassing the VM part by attacking input/output.
 
-**2. Dynamic trace.** Cho binary chạy và ghi lại toàn bộ lệnh thực thi (dùng Pin, DynamoRIO, hoặc x64dbg trace, xem [Bài 17.7](https://github.com/Haind03/Technique-Reverse/tree/main/phan-17-patch-hook-frida)). Trace cho thấy luồng thực thi thật xuyên qua các handler, từ đó suy ra hành vi mà không cần hiểu tĩnh từng handler.
+The second direction is dynamic trace. Run the binary and record every instruction executed (using Pin, DynamoRIO, or the x64dbg trace, see [Lesson 17.7](https://github.com/Haind03/Technique-Reverse/tree/main/phan-17-patch-hook-frida)). The trace shows the real execution flow across the handlers, from which you infer behavior without statically understanding each handler.
 
-**3. Dựng lại từ điển VM (devirtualization).** Khi phải hiểu sâu, bạn phân tích dispatcher, liệt kê bảng handler, rồi map từng opcode VM sang ý nghĩa (handler này đẩy hằng số, handler kia cộng hai giá trị trên stack ảo). Có từ điển rồi thì dịch ngược bytecode VM về một dạng đọc được. Công cụ hỗ trợ hướng này: **VTIL** (VMProtect devirtualization), các framework IL như **Miasm**, **Triton**, và những bộ lifter chuyên dụng theo từng protector.
+The third is rebuilding the VM dictionary (devirtualization). When you have to understand it deeply, you analyze the dispatcher, list the handler table, then map each VM opcode to a meaning (this handler pushes a constant, that one adds two values on the virtual stack). With the dictionary, you translate the VM bytecode back into a readable form. Tools that help in this direction are VTIL (VMProtect devirtualization), IL frameworks like Miasm and Triton, and dedicated lifters for each protector.
 
-**4. Symbolic execution.** Dùng angr hoặc Triton (xem [Bài 18.3](https://github.com/Haind03/Technique-Reverse/tree/main/phan-18-nang-cao)) để biểu diễn output theo input dưới dạng công thức, rồi để solver tìm input thoả điều kiện. Cách này bỏ qua chuyện VM hoạt động ra sao, chỉ quan tâm quan hệ toán học giữa đầu vào và đầu ra.
+The fourth is symbolic execution. Use angr or Triton (see [Lesson 18.3](https://github.com/Haind03/Technique-Reverse/tree/main/phan-18-nang-cao)) to express the output in terms of the input as a formula, then let a solver find an input that satisfies the condition. This ignores how the VM works and only cares about the mathematical relationship between input and output.
 
-Nguyên tắc chung: chọn mức trừu tượng thấp nhất đủ để đạt mục tiêu. Hiểu cả VM là việc tốn kém nhất, chỉ làm khi thật sự cần.
+The general principle: pick the lowest level of abstraction that's enough to reach the goal. Understanding the whole VM is the most expensive job, do it only when you really need to.
 
-## Nhận ra sớm để khỏi mất công
+## Recognize it early to save effort
 
-Đừng ngồi đọc tĩnh một hàm virtualized hàng giờ rồi mới nhận ra nó là VM. Dấu hiệu sớm:
+Don't sit reading a virtualized function statically for hours before realizing it's a VM. The early signs are Detect It Easy reporting VMProtect, Themida, WinLicense or Code Virtualizer, and odd section names like `.vmp0`, `.vmp1`, `.themida`, `.winlice`. Others are a function that jumps into another region and disappears into a huge dispatcher loop, lots of `push`/`pop` with accesses to a "context" through fixed registers, and an IDA decompiler that gives up or produces endless meaningless pseudocode.
 
-- Detect It Easy báo VMProtect, Themida, WinLicense, Code Virtualizer.
-- Section tên lạ: `.vmp0`, `.vmp1`, `.themida`, `.winlice`.
-- Một hàm nhảy vào vùng khác rồi biến mất trong một vòng lặp dispatcher khổng lồ.
-- Rất nhiều `push`/`pop` và truy cập một "context" qua thanh ghi cố định.
-- IDA decompiler bó tay hoặc ra pseudocode vô nghĩa dài dằng dặc.
+When you see these signs, switch right away to black-box or dynamic thinking, don't try to read it statically.
 
-Thấy những dấu hiệu này, hãy chuyển ngay sang tư duy hộp đen hoặc dynamic, đừng cố đọc tĩnh.
+## Key takeaways
+Virtualization translates the original code into bytecode for a custom VM, so there's no original x86 left to read. The heart is the fetch, decode, execute dispatcher loop with a handler table and the virtual pointers VIP/VSP. It's hardest because each build has a different VM, handlers are obfuscated, and layers stack up.
 
-## Checklist ghi nhớ
-- Virtualization dịch code gốc sang bytecode của một VM tự chế, không còn x86 gốc để đọc.
-- Trái tim là vòng lặp dispatcher fetch, decode, execute cùng bảng handler và các con trỏ ảo VIP/VSP.
-- Khó nhất vì mỗi build một VM khác, handler bị obfuscate, nhiều lớp chồng lên.
-- Hướng đi: ưu tiên tấn công input/output như hộp đen, rồi dynamic trace, rồi devirtualization (VTIL/Miasm/Triton), rồi symbolic execution.
-- Chọn mức trừu tượng thấp nhất đủ dùng. Hiểu trọn VM là lựa chọn cuối, không phải mặc định.
+The directions are to first prefer attacking input/output as a black box, then dynamic trace, then devirtualization (VTIL/Miasm/Triton), then symbolic execution. Pick the lowest level of abstraction that's enough. Fully understanding the VM is the last option, not the default.

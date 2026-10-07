@@ -1,50 +1,50 @@
 ---
-title: "Bài 4.4: Exception, template và lambda, ba thứ C++ hiện đại làm binary rối"
+title: "Lesson 4.4: Exceptions, templates and lambdas, three modern C++ things that tangle up binaries"
 date: 2026-10-06 08:34:00 +0700
-categories: ["Technique Reverse", "Phần 4 · C++"]
+categories: ["Technique Reverse", "Part 04 · C++"]
 tags: [reverse-engineering, cpp]
 render_with_liquid: false
 ---
-Tới đây bạn đã đọc được class, vtable, này nọ. Nhưng code C++ thật ngoài đời còn ba thứ làm người mới hoảng khi mở decompiler: khối try/catch biến thành một mớ bảng khó hiểu, một hàm nhỏ bỗng xuất hiện năm sáu bản gần giống nhau, và một lambda trông đơn giản lại hoá thành cả một class ẩn. Hiểu cơ chế của ba thứ này thì chúng hết đáng sợ, chỉ còn là tiếng ồn bạn biết cách bỏ qua.
+By now you can read classes, vtables, and so on. But real-world C++ code has three more things that make beginners panic when they open the decompiler: a try/catch block turns into a mess of confusing tables, a small function suddenly shows up in five or six near-identical copies, and a simple-looking lambda turns into a whole hidden class. Once you understand the mechanism behind these three, they stop being scary and become just noise you know how to skip.
 
-## Template: một hàm nguồn, nhiều hàm binary
+## Templates: one source function, many binary functions
 
-Đây là thứ dễ hiểu nhất nên nói trước. Khi bạn viết một template:
+This is the easiest to understand so I'll start there. When you write a template:
 
 ```cpp
 template <typename T>
 T add_one(T x) { return x + (T)1; }
 ```
 
-thì trong source chỉ có một hàm. Nhưng compiler không sinh ra "một hàm chung" cho mọi kiểu. Mỗi lần bạn gọi với một kiểu mới, nó sinh hẳn một hàm riêng biệt, gọi là một instantiation. Gọi `add_one<int>` và `add_one<double>` cho ra hai hàm máy khác nhau hoàn toàn.
+there's only one function in the source. But the compiler doesn't generate "one shared function" for all types. Each time you call it with a new type, it generates a whole separate function, called an instantiation. Calling `add_one<int>` and `add_one<double>` produces two completely different machine functions.
 
-Nhìn danh sách symbol của chương trình lab là thấy ngay:
+Look at the symbol list of the lab program and you see it right away:
 
 ```
 int    add_one<int>(int)       -> _Z7add_oneIiET_S0_
 double add_one<double>(double) -> _Z7add_oneIdET_S0_
 ```
 
-Và đoạn asm của bản int (gcc -O0, đã demangle tên):
+And the asm of the int version (gcc -O0, name demangled):
 
 ```asm
 _Z7add_oneIiET_S0_:        ; add_one<int>
-    mov   [rbp-0x4], edi    ; x (tham số, int)
+    mov   [rbp-0x4], edi    ; x (parameter, int)
     mov   eax, [rbp-0x4]
     add   eax, 0x1          ; return x + 1
     ret
 ```
 
-Bản double sẽ dùng thanh ghi SSE (xmm) và lệnh `addsd` thay vì `add`, vì nó làm số thực. Cùng một logic nguồn, hai thân hàm khác nhau.
+The double version uses SSE registers (xmm) and the `addsd` instruction instead of `add`, since it works on floating point. The same source logic, two different function bodies.
 
-Hệ quả khi reverse:
-- **Binary phình to.** Một template dùng với mười kiểu là mười hàm. Thư viện nặng template (STL, Boost) đẩy số hàm lên hàng nghìn.
-- **Bạn sẽ thấy nhiều hàm gần như giống hệt**, chỉ khác kích thước dữ liệu hoặc kiểu lệnh. Đừng tưởng tác giả copy-paste, đó là template instantiation.
-- **Mẹo tiết kiệm công:** hiểu một bản là hiểu cả họ. Đọc `add_one<int>`, rồi các bản khác chỉ liếc qua xác nhận cùng logic. Đặt tên nhất quán kiểu `add_one_int`, `add_one_double` để khỏi lẫn.
+Consequences when reversing:
+- **The binary bloats.** A template used with ten types is ten functions. Template-heavy libraries (STL, Boost) push the function count into the thousands.
+- **You'll see many nearly identical functions**, differing only in data size or instruction type. Don't assume the author copy-pasted, that's template instantiation.
+- **A tip to save effort:** understanding one version is understanding the whole family. Read `add_one<int>`, then just glance at the others to confirm the same logic. Name them consistently like `add_one_int`, `add_one_double` so you don't mix them up.
 
-## Lambda: một class ẩn đội lốt hàm
+## Lambdas: a hidden class disguised as a function
 
-Lambda nhìn như một hàm vô danh nhỏ xíu, nhưng compiler biến nó thành một object. Cụ thể, lambda này:
+A lambda looks like a tiny anonymous function, but the compiler turns it into an object. Specifically, this lambda:
 
 ```cpp
 int base = n * 10;
@@ -52,7 +52,7 @@ auto make = [base](int k) { return base + k; };
 make(7);
 ```
 
-được compiler dịch thành đại khái:
+gets translated by the compiler into roughly:
 
 ```cpp
 struct __lambda {
@@ -60,59 +60,59 @@ struct __lambda {
     int operator()(int k) const { return base + k; }
 };
 __lambda make{ n * 10 };
-make(7);                      // thực chất gọi make.operator()(7)
+make(7);                      // actually calls make.operator()(7)
 ```
 
-Nghĩa là: **mỗi biến capture trở thành một field** của một struct ẩn, và **thân lambda trở thành method `operator()`** của struct đó. Gọi lambda chính là gọi method, nên nó có `this` pointer y như bài [4.1](/posts/tr-4-1-name-mangling-this-method-call/) đã nói.
+Meaning: **each captured variable becomes a field** of a hidden struct, and **the lambda body becomes the `operator()` method** of that struct. Calling the lambda is calling a method, so it has a `this` pointer just like lesson [4.1](/posts/tr-4-1-name-mangling-this-method-call/) described.
 
-Đây là asm thật của `operator()` của lambda trên (gcc -O0), nhìn là ra ngay:
+Here's the real asm of the `operator()` of the lambda above (gcc -O0), you can see it right away:
 
 ```asm
 main::{lambda(int)#1}::operator()(int) const:
-    mov   [rbp-0x8], rdi     ; rdi = this (object lambda chứa capture)
-    mov   [rbp-0xc], esi     ; esi = k (tham số thật)
+    mov   [rbp-0x8], rdi     ; rdi = this (the lambda object holding the capture)
+    mov   [rbp-0xc], esi     ; esi = k (the real parameter)
     mov   rax, [rbp-0x8]     ; rax = this
-    mov   edx, [rax]         ; edx = this->base  (capture nằm ở offset 0)
+    mov   edx, [rax]         ; edx = this->base  (the capture is at offset 0)
     mov   eax, [rbp-0xc]     ; eax = k
     add   eax, edx           ; return base + k
     ret
 ```
 
-Để ý hai điều khẳng định đúng mô hình trên: tham số đầu `rdi` là `this` (SysV, trên Windows sẽ là `rcx`), và `[rax]` đọc field `base` ngay đầu object. Capture đã thành dữ liệu trong object, không còn là biến cục bộ.
+Notice two things that confirm the model above: the first parameter `rdi` is `this` (SysV, on Windows it would be `rcx`), and `[rax]` reads the `base` field right at the start of the object. The capture has become data in the object, no longer a local variable.
 
-Khi reverse, nhận ra lambda qua: một struct nhỏ được dựng ngay tại chỗ (các `mov` ghi capture vào object trên stack), rồi một lời gọi method với object đó làm `this`. Tên mangled của nó chứa chuỗi kiểu `ZZ...EUl...` (U cho unnamed lambda). IDA/Ghidra thường hiển thị tên dài loằng ngoằng, cứ rename thành `lambda_xxx` cho dễ.
+When reversing, recognize a lambda by: a small struct being built on the spot (the `mov`s writing the capture into an object on the stack), then a method call with that object as `this`. Its mangled name contains a string like `ZZ...EUl...` (U for unnamed lambda). IDA/Ghidra usually show a long convoluted name, just rename it to `lambda_xxx` to keep it easy.
 
-## Exception: cái giá của try/catch
+## Exceptions: the price of try/catch
 
-Đây là phần làm rối nhất. Trong source, try/catch gọn gàng. Trong binary, nó tách thành hai phần: đường chạy bình thường (happy path) và bộ máy xử lý khi có exception, nằm tách biệt, nối với nhau qua các bảng dữ liệu.
+This is the part that tangles things the most. In the source, try/catch is tidy. In the binary, it splits into two parts: the normal running path (happy path) and the machinery that handles an exception, sitting separately, linked through data tables.
 
-Hai ABI chính, khác nhau khá nhiều:
+The two main ABIs differ quite a bit:
 
-**Linux / Itanium C++ ABI.** Khi `throw`, runtime gọi `__cxa_throw`, rồi nó lần ngược stack (stack unwinding) để tìm handler. Thông tin "frame này có handler nào, cần dọn gì" không nằm trong code mà trong các section riêng: `.eh_frame`, `.gcc_except_table`. Chỗ code bắt exception gọi là landing pad. Trong decompiler bạn thấy hàm có vẻ "kết thúc" ở `ret` nhưng vẫn còn những khối code lẻ phía sau không ai gọi tới trực tiếp, đó là landing pad, runtime nhảy vào khi unwind.
+**Linux / Itanium C++ ABI.** On `throw`, the runtime calls `__cxa_throw`, then it walks back up the stack (stack unwinding) to find a handler. The information "which handlers this frame has, what needs cleaning up" isn't in the code but in dedicated sections: `.eh_frame`, `.gcc_except_table`. The place in code that catches the exception is called a landing pad. In the decompiler you see a function that seems to "end" at `ret` but still has stray code blocks after it that nobody calls directly, those are landing pads, which the runtime jumps into during unwinding.
 
-**Windows / MSVC.** Dùng cơ chế khác, với các funclet (hàm con cho catch block) và dữ liệu unwind trong `.pdata`/`.xdata`. Bạn sẽ thấy các con trỏ tới bảng `FuncInfo`, `__CxxFrameHandler`. Các hàm liên quan: `_CxxThrowException`.
+**Windows / MSVC.** Uses a different mechanism, with funclets (sub-functions for catch blocks) and unwind data in `.pdata`/`.xdata`. You'll see pointers to `FuncInfo` tables, `__CxxFrameHandler`. Related functions: `_CxxThrowException`.
 
-Điểm chung thực tế cho người reverse:
-- **Code try/catch bị cắt rời.** Thân try chạy thẳng, phần catch nằm ở khối tách biệt mà luồng chính không nhảy tới bằng `jmp` thường. Đừng hoảng khi thấy code "mồ côi" sau hàm, đó thường là handler.
-- **Đừng sa đà vào bảng unwind** trừ khi bạn thực sự cần. Trong 90% trường hợp reverse một crackme hay tìm logic chính, bạn chỉ cần biết "chỗ này có thể ném exception, chỗ kia bắt" rồi đi tiếp. Bản thân bảng EH hiếm khi là nơi giấu bí mật.
-- Thấy lời gọi `__cxa_throw` / `_CxxThrowException` là biết có một đường thoát bằng exception từ đây. Thấy `__cxa_begin_catch` / `__CxxFrameHandler` là đang ở vùng xử lý.
+What both have in common, practically, for the reverser:
+- **try/catch code is cut apart.** The try body runs straight, the catch part sits in a separate block that the main flow doesn't reach with a normal `jmp`. Don't panic when you see "orphan" code after a function, that's usually a handler.
+- **Don't get lost in the unwind tables** unless you really need to. In 90% of cases when reversing a crackme or finding the main logic, you only need to know "this spot can throw, that one catches" and move on. The EH tables themselves rarely hide secrets.
+- Seeing a `__cxa_throw` / `_CxxThrowException` call tells you there's an exception exit from here. Seeing `__cxa_begin_catch` / `__CxxFrameHandler` means you're in the handling area.
 
-## Gộp lại: đừng để tiếng ồn che mất tín hiệu
+## Putting it together: don't let the noise hide the signal
 
-Cả ba thứ này đều là compiler sinh thêm code quanh logic thật của tác giả. Chiến lược chung giống nhau: nhận ra chúng, dán nhãn, rồi tập trung vào phần logic. Template là nhiều bản của một hàm (hiểu một, suy ra cả họ). Lambda là class ẩn (tìm `operator()` và field capture). Exception là code bị cắt rời (happy path là chính, handler để sau). Biết ba khuôn này, bạn đọc code C++ hiện đại mà không bị số lượng hàm và các khối lạ làm nản.
+All three of these are the compiler generating extra code around the author's real logic. The general strategy is the same: recognize them, label them, then focus on the logic. A template is many copies of one function (understand one, infer the family). A lambda is a hidden class (find `operator()` and the capture fields). An exception is code cut apart (the happy path is the main thing, the handler comes later). Knowing these three templates, you read modern C++ code without being discouraged by the number of functions and the odd blocks.
 
-## Lab tự làm
+## Lab
 
-Thư mục [labs/4.4/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/4.4). Build `src/modern.cpp`, rồi:
-- Tìm trong symbol hai instantiation `add_one<int>` và `add_one<double>`, so asm của chúng.
-- Tìm `operator()` của lambda, xác định đâu là `this`, đâu là field capture.
-- Khoanh vùng khối try/catch: tìm lời gọi throw và chỗ handler nằm tách ra.
+The folder [labs/4.4/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/4.4). Build `src/modern.cpp`, then:
+- Find the two instantiations `add_one<int>` and `add_one<double>` in the symbols, and compare their asm.
+- Find the lambda's `operator()`, and identify which is `this` and which is the capture field.
+- Mark out the try/catch block: find the throw call and where the handler sits apart.
 
-Chi tiết và lời giải trong [README](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/4.4/README.md) và [solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/4.4/solution.md).
+Details and the solution are in the [README](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/4.4/README.md) and [solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/4.4/solution.md).
 
-## Checklist ghi nhớ
-- Template: mỗi kiểu là một hàm riêng trong binary. Nhiều hàm gần giống nhau thường là instantiation, không phải copy-paste.
-- Lambda: trở thành struct ẩn, capture thành field, thân thành `operator()` có `this` pointer.
-- Exception: try/catch bị tách thành happy path và handler rời, nối qua bảng unwind (.eh_frame/.gcc_except_table trên Linux, .pdata/.xdata trên Windows).
-- Dấu hiệu throw: `__cxa_throw` (Linux), `_CxxThrowException` (MSVC).
-- Đừng sa đà vào bảng EH, phần lớn thời gian chỉ cần biết "có thể ném ở đây, bắt ở kia".
+## Key takeaways
+- Templates: each type is a separate function in the binary. Many near-identical functions are usually instantiations, not copy-paste.
+- Lambdas: become a hidden struct, captures become fields, the body becomes `operator()` with a `this` pointer.
+- Exceptions: try/catch is split into the happy path and separate handlers, linked through unwind tables (.eh_frame/.gcc_except_table on Linux, .pdata/.xdata on Windows).
+- Throw tells: `__cxa_throw` (Linux), `_CxxThrowException` (MSVC).
+- Don't get lost in the EH tables, most of the time you only need to know "it may throw here, it's caught there".

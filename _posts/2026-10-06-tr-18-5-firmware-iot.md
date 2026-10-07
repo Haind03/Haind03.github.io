@@ -1,28 +1,28 @@
 ---
-title: "Bài 18.5: Reverse firmware và thiết bị IoT"
+title: "Lesson 18.5: Reversing firmware and IoT devices"
 date: 2026-10-06 09:51:00 +0700
-categories: ["Technique Reverse", "Phần 18 · Nâng cao"]
+categories: ["Technique Reverse", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
 render_with_liquid: false
 ---
-Cái router cũ trong góc nhà, con camera giá rẻ, ổ khoá thông minh, tất cả đều chạy một mẩu Linux nhúng nhét trong vài MB flash. Reverse firmware là mở cái hộp đen đó ra: lấy được filesystem, đọc code dịch vụ, tìm backdoor và credential cắm cứng, rồi nếu muốn thì chạy giả lập cả con firmware trên máy mình mà không cần phần cứng thật. Bài này đi từ lấy firmware tới chạy được một binary trong đó.
+The old router in the corner of the house, the cheap camera, the smart lock, they all run a bit of embedded Linux stuffed into a few MB of flash. Reversing firmware is opening up that black box: getting the filesystem, reading the service code, finding backdoors and hardcoded credentials, and then, if you want, running the whole firmware in an emulator on your own machine without the real hardware. This lesson goes from getting the firmware to running a binary from it.
 
-Đây là chặng ghép lại gần như mọi thứ đã học: binary thường là MIPS hoặc ARM (nối [Bài 1.9](/posts/tr-1-9-arm-arm64-co-ban/)), định dạng ELF ([Bài 1.8](/posts/tr-1-8-elf-va-mach-o/)), và bạn vẫn mở chúng bằng Ghidra như mọi khi.
+This is the stage that pulls together almost everything you've learned: the binaries are usually MIPS or ARM (tying to [Lesson 1.9](/posts/tr-1-9-arm-arm64-co-ban/)), the format is ELF ([Lesson 1.8](/posts/tr-1-8-elf-va-mach-o/)), and you still open them in Ghidra like always.
 
-## Lấy firmware vào tay đã
+## Getting the firmware in hand first
 
-Không có firmware thì không có gì để reverse. Bốn đường quen thuộc, từ dễ tới khó:
+No firmware, nothing to reverse. Four familiar routes, from easy to hard:
 
-- **Tải từ trang hãng.** Mục support/download của nhà sản xuất thường có file cập nhật firmware. Dễ nhất, và hợp pháp nhất khi là thiết bị của chính bạn.
-- **Bắt gói lúc thiết bị tự update.** Thiết bị tải firmware qua HTTP, chặn bằng mitmproxy là có.
-- **Dump qua UART hoặc JTAG/SWD.** Hàn vào chân serial trên board, vào được bootloader (U-Boot) hay shell, đọc flash ra. JTAG cho quyền debug phần cứng sâu hơn (OpenOCD).
-- **Tháo chip flash ra đọc trực tiếp.** Dùng chip programmer (CH341A) hoặc kẹp SOIC8 với flashrom để đọc con SPI flash. Khi mọi cách mềm đều bị khoá thì đây là cách cuối.
+- **Download from the vendor's site.** The manufacturer's support/download section often has firmware update files. The easiest, and the most legit when it's your own device.
+- **Capture the packets when the device updates itself.** The device downloads firmware over HTTP, intercept it with mitmproxy and you have it.
+- **Dump via UART or JTAG/SWD.** Solder onto the serial pins on the board, get into the bootloader (U-Boot) or a shell, read the flash out. JTAG gives deeper hardware debugging rights (OpenOCD).
+- **Desolder the flash chip and read it directly.** Use a chip programmer (CH341A) or an SOIC8 clip with flashrom to read the SPI flash. When every software route is locked down, this is the last resort.
 
-Trong khuôn khổ bài này ta giả định đã có một file firmware image (`.bin`).
+For this lesson we assume you already have a firmware image file (`.bin`).
 
-## binwalk: con dao đầu tiên
+## binwalk: the first knife
 
-Firmware image là nhiều thứ xếp cạnh nhau: header của hãng, bootloader, kernel nén, và một filesystem. `binwalk` quét toàn file tìm chữ ký magic của từng thành phần.
+A firmware image is several things laid side by side: the vendor header, the bootloader, a compressed kernel, and a filesystem. `binwalk` scans the whole file looking for the magic signatures of each component.
 
 ```
 $ binwalk firmware.bin
@@ -34,74 +34,74 @@ DECIMAL     HEXADECIMAL   DESCRIPTION
 1310720     0x140000      Squashfs filesystem, little endian, version 4.0
 ```
 
-Đọc ra ngay: đây là firmware MIPS Linux, kernel nén LZMA ở đầu, và một SquashFS (filesystem chỉ đọc hay dùng cho nhúng) bắt đầu ở offset `0x140000`. Trích hết ra:
+You can read it right away: this is MIPS Linux firmware, with an LZMA-compressed kernel at the start, and a SquashFS (a read-only filesystem commonly used for embedded) starting at offset `0x140000`. Extract everything:
 
 ```
-$ binwalk -e firmware.bin        # extract, ra thư mục _firmware.bin.extracted/
+$ binwalk -e firmware.bin        # extract, outputs to the _firmware.bin.extracted/ folder
 ```
 
-Thêm `-M` để đệ quy (extract trong extract). Một mẹo nhỏ nhưng quan trọng: nhìn **entropy**. `binwalk -E firmware.bin` vẽ đồ thị entropy, vùng phẳng sát 1.0 là dữ liệu nén hoặc mã hoá. Nếu cả file entropy cao đều thì firmware có thể bị mã hoá, phải tìm key giải (thường nằm trong bootloader hoặc một bản firmware cũ chưa mã hoá).
+Add `-M` to recurse (extract inside extract). A small but important tip: look at the **entropy**. `binwalk -E firmware.bin` draws an entropy graph, and flat regions close to 1.0 are compressed or encrypted data. If the whole file has uniformly high entropy, the firmware may be encrypted, and you have to find the decryption key (usually in the bootloader or an older unencrypted firmware version).
 
-## unblob: khi binwalk bó tay
+## unblob: when binwalk gives up
 
-`binwalk` kinh điển nhưng đôi khi trích sai hoặc bỏ sót định dạng lạ. `unblob` là lựa chọn hiện đại hơn: nhận diện và trích đệ quy hàng trăm định dạng, xử lý nhiều trường hợp binwalk trượt.
+`binwalk` is the classic but sometimes extracts wrongly or misses unusual formats. `unblob` is the more modern option: it identifies and recursively extracts hundreds of formats, and handles many cases binwalk misses.
 
 ```
 $ unblob -e out/ firmware.bin
 ```
 
-Thói quen thực tế: chạy cả hai. Cái nào ra filesystem sạch hơn thì dùng. Mục tiêu là lấy được **root filesystem** đầy đủ (có `/bin`, `/etc`, `/sbin`, `/www`...).
+Practical habit: run both. Whichever gives the cleaner filesystem, use that. The goal is to get the full **root filesystem** (with `/bin`, `/etc`, `/sbin`, `/www`...).
 
-## Lục root filesystem
+## Digging through the root filesystem
 
-Có được rootfs rồi, đây là lúc tìm vàng. Vài chỗ luôn đáng xem:
+Once you have the rootfs, it's time to hunt for gold. A few places always worth a look:
 
-- **`/etc/passwd`, `/etc/shadow`.** Credential cắm cứng, hash mật khẩu root yếu, tài khoản backdoor. `john` hoặc `hashcat` crack hash nếu cần.
-- **`/etc/` nói chung.** Config dịch vụ, chuỗi kết nối, chứng chỉ, key riêng (`*.pem`, `*.key`).
-- **`/www` hoặc web root.** Giao diện quản trị, script CGI, chỗ hay có command injection.
-- **`/bin`, `/sbin`, `/usr/bin`.** Các binary dịch vụ (httpd, telnetd, binary độc quyền của hãng). Đây là thứ bạn đưa vào Ghidra.
+- **`/etc/passwd`, `/etc/shadow`.** Hardcoded credentials, weak root password hashes, backdoor accounts. `john` or `hashcat` crack the hash if needed.
+- **`/etc/` in general.** Service configs, connection strings, certificates, private keys (`*.pem`, `*.key`).
+- **`/www` or the web root.** The admin interface, CGI scripts, where command injection often lives.
+- **`/bin`, `/sbin`, `/usr/bin`.** The service binaries (httpd, telnetd, the vendor's proprietary binaries). This is what you feed into Ghidra.
 
-Quét nhanh toàn rootfs tìm manh mối:
+A quick scan of the whole rootfs for clues:
 
 ```
 $ grep -riIn "password\|admin\|backdoor\|secret\|telnet" rootfs/etc rootfs/www
 $ find rootfs -name "*.pem" -o -name "*.key"
-$ file rootfs/bin/httpd      # xem kiến trúc: MIPS? ARM?
+$ file rootfs/bin/httpd      # check the architecture: MIPS? ARM?
 ```
 
-Lệnh `file` cho biết binary là MIPS hay ARM, 32 hay 64 bit, endian nào. Đó là thông tin bạn cần để nạp đúng vào Ghidra và để emulate.
+The `file` command tells you whether the binary is MIPS or ARM, 32 or 64 bit, which endianness. That's the info you need to load it into Ghidra correctly and to emulate it.
 
-## Phân tích binary nhúng bằng Ghidra
+## Analyzing embedded binaries with Ghidra
 
-Binary dịch vụ của firmware thường là ELF cho MIPS hoặc ARM. Ghidra mở được tất cả: nó tự nhận kiến trúc, có decompiler cho MIPS/ARM. Quy trình giống hệt reverse một ELF x86, chỉ khác tập lệnh. Nếu binary strip hết symbol, bạn vẫn đi từ chuỗi và lời gọi hàm thư viện (`system`, `strcpy`, `popen`) như thường. Những hàm đó trong thiết bị IoT là nơi command injection hay nằm.
+Firmware service binaries are usually ELF for MIPS or ARM. Ghidra opens them all: it recognizes the architecture itself and has a decompiler for MIPS/ARM. The workflow is identical to reversing an x86 ELF, only the instruction set differs. If the binary is fully stripped of symbols, you still start from strings and library function calls (`system`, `strcpy`, `popen`) as usual. In IoT devices, those functions are where command injection tends to sit.
 
-## Emulate để chạy và debug thật
+## Emulating to run and debug for real
 
-Đọc tĩnh có giới hạn. Cho binary chạy sẽ nhanh hơn nhiều, nhưng bạn không có con router thật để cắm vào. QEMU giải quyết: nó emulate CPU MIPS/ARM ngay trên máy x86 của bạn.
+Static reading has limits. Running the binary is much faster, but you don't have the actual router to plug it into. QEMU solves that: it emulates a MIPS/ARM CPU right on your x86 machine.
 
-**User-mode (chạy một binary lẻ).** Chép `qemu-arm-static` (hoặc `qemu-mips-static`) vào rootfs rồi chroot vào đó, binary tưởng mình đang chạy trên thiết bị thật:
+**User-mode (run a single binary).** Copy `qemu-arm-static` (or `qemu-mips-static`) into the rootfs and chroot into it, and the binary thinks it's running on the real device:
 
 ```
 $ sudo cp $(which qemu-mipsel-static) rootfs/usr/bin/
 $ sudo chroot rootfs /usr/bin/qemu-mipsel-static /bin/httpd
 ```
 
-Cần `binfmt_misc` và gói `qemu-user-static` cài sẵn. Cách này tốt để chạy một dịch vụ đơn, nhưng dễ vấp khi binary cần hạ tầng (nvram, các process khác).
+You need `binfmt_misc` and the `qemu-user-static` package installed. This is good for running a single service, but easy to trip on when the binary needs infrastructure (nvram, other processes).
 
-**System-mode (boot cả firmware).** QEMU dựng nguyên một máy ảo MIPS/ARM và boot kernel + rootfs của firmware, gần với thiết bị thật nhất. Dựng tay khá cực, nên có framework tự động:
+**System-mode (boot the whole firmware).** QEMU builds a whole MIPS/ARM virtual machine and boots the firmware's kernel + rootfs, the closest to the real device. Setting it up by hand is pretty painful, so there are automated frameworks:
 
-- **FirmAE** (và tiền thân **firmadyne**): tự trích, tự đoán cấu hình mạng, boot firmware trong QEMU và cho bạn truy cập giao diện web của thiết bị ảo. Tỉ lệ boot thành công khá cao, rất hợp để test lỗ hổng web của router mà không cần mua thiết bị.
+- **FirmAE** (and its predecessor **firmadyne**): extracts automatically, guesses the network config, boots the firmware in QEMU and gives you access to the virtual device's web interface. The boot success rate is fairly high, very suitable for testing a router's web vulnerabilities without buying the device.
 
-Khi đã boot được, bạn gắn `gdbserver` vào để debug động binary MIPS/ARM y như debug trên Linux x86 (nối [Bài 2.6](/posts/tr-2-6-gdb-pwndbg-windbg/)).
+Once it boots, you attach `gdbserver` to debug the MIPS/ARM binary dynamically just like debugging on x86 Linux (tying to [Lesson 2.6](/posts/tr-2-6-gdb-pwndbg-windbg/)).
 
-## Một lời về pháp lý và an toàn
+## A word on legal and safety
 
-Hai điều đừng quên. Thứ nhất, reverse firmware của thiết bị **của chính bạn** để học thì ổn, nhưng phát tán firmware vá sẵn, bẻ khoá khoá vùng, hay tấn công thiết bị của người khác là chuyện khác hẳn, xem lại [Bài 0.2](/posts/tr-0-2-phap-ly-dao-duc/). Thứ hai, firmware tải về từ nguồn lạ cũng là dữ liệu không tin được: trích và phân tích trong VM cô lập ([Bài 0.3](/posts/tr-0-3-dung-lab-an-toan/)), đừng chroot chạy binary lạ trên máy chính.
+Two things not to forget. First, reversing firmware on a device **that's your own** to learn is fine, but distributing pre-patched firmware, cracking region locks, or attacking other people's devices is a different matter entirely, see [Lesson 0.2](/posts/tr-0-2-phap-ly-dao-duc/) again. Second, firmware downloaded from unfamiliar sources is also untrusted data: extract and analyze in an isolated VM ([Lesson 0.3](/posts/tr-0-3-dung-lab-an-toan/)), don't chroot and run unfamiliar binaries on your main machine.
 
-## Checklist ghi nhớ
-- Lấy firmware: tải từ hãng, bắt update, dump UART/JTAG, hoặc đọc chip flash trực tiếp.
-- `binwalk` quét và trích; xem entropy để biết có bị nén/mã hoá; `unblob` khi binwalk trượt.
-- Mục tiêu là root filesystem: lục `/etc/passwd`, `/etc`, `/www`, và binary trong `/bin` `/sbin`.
-- `file` cho biết kiến trúc (MIPS/ARM) để nạp đúng Ghidra và chọn đúng QEMU.
-- Emulate: QEMU user-mode (chroot + qemu-*-static) chạy một binary, system-mode (FirmAE/firmadyne) boot cả firmware.
-- Chỉ đụng thiết bị của mình, trích firmware trong VM cô lập.
+## Key takeaways
+- Getting firmware: download from the vendor, capture an update, dump UART/JTAG, or read the flash chip directly.
+- `binwalk` scans and extracts; check entropy to know if it's compressed/encrypted; `unblob` when binwalk misses.
+- The goal is the root filesystem: dig through `/etc/passwd`, `/etc`, `/www`, and the binaries in `/bin` `/sbin`.
+- `file` tells you the architecture (MIPS/ARM) so you load Ghidra correctly and pick the right QEMU.
+- Emulating: QEMU user-mode (chroot + qemu-*-static) runs one binary, system-mode (FirmAE/firmadyne) boots the whole firmware.
+- Only touch your own devices, extract firmware in an isolated VM.

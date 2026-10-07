@@ -1,32 +1,32 @@
 ---
-title: "Bài 14.2: Unpack UPX, tự động và thủ công"
+title: "Lesson 14.2: Unpacking UPX, automatic and manual"
 date: 2026-10-06 09:21:00 +0700
-categories: ["Technique Reverse", "Phần 14 · Packer & Obfuscation"]
+categories: ["Technique Reverse", "Part 14 · Packers and Obfuscation"]
 tags: [reverse-engineering, packer, obfuscation]
 render_with_liquid: false
 ---
-UPX là packer bạn gặp nhiều nhất, và cũng là nơi tốt nhất để học quy trình unpack thủ công vì nó đơn giản, mã nguồn mở, không có anti-debug. Hiểu UPX là hiểu khung sườn của mọi packer: một đoạn code nhỏ (stub) giải nén phần code thật vào bộ nhớ rồi nhảy tới điểm vào gốc. Bài này đi từ cách lười nhất (một dòng lệnh) tới cách phải tự tay làm khi packer chống lại bạn.
+UPX is the packer you'll meet the most, and also the best place to learn the manual unpacking workflow because it's simple, open source, and has no anti-debug. Understanding UPX is understanding the skeleton of every packer: a small piece of code (the stub) decompresses the real code into memory and then jumps to the original entry point. This lesson goes from the laziest way (one command) to what you have to do by hand when the packer fights back.
 
-## Packer làm gì, nói lại cho gọn
+## What a packer does, said briefly again
 
-Một file đã pack gồm hai phần: dữ liệu nén (code gốc của bạn, đã bị nén lại nên không đọc được) và một stub giải nén đặt ở entry point. Khi chạy, stub bung phần nén ra bộ nhớ, dựng lại bảng import, rồi nhảy về OEP (Original Entry Point, điểm vào thật của chương trình gốc). Từ OEP trở đi chính là chương trình ban đầu đang chạy.
+A packed file has two parts: compressed data (your original code, compressed so it can't be read) and a decompression stub placed at the entry point. When it runs, the stub expands the compressed part into memory, rebuilds the import table, then jumps to the OEP (Original Entry Point, the real entry point of the original program). From the OEP onward it's the original program running.
 
-Mục tiêu của unpack: bắt đúng khoảnh khắc stub vừa bung xong và sắp nhảy về OEP, rồi chụp lại (dump) bộ nhớ lúc đó. Bản dump đó là code gốc.
+The goal of unpacking: catch the exact moment the stub has just finished expanding and is about to jump to the OEP, then snapshot (dump) the memory at that moment. That dump is the original code.
 
-## Cách lười: upx -d
+## The lazy way: upx -d
 
-Nếu file được pack bằng UPX chuẩn và chưa ai đụng vào, chỉ cần:
+If the file was packed with standard UPX and nobody touched it, all you need is:
 
 ```
 upx -d -o output.exe packed.exe
 ```
 
-UPX tự nhận ra định dạng của chính nó và bung ngược lại. Đây là trường hợp đẹp nhất và cũng là lý do UPX một mình nó không phải biện pháp bảo vệ nghiêm túc: ai cũng gỡ được trong một giây.
+UPX recognizes its own format and expands it back. This is the best case, and also the reason UPX alone isn't a serious protection: anyone can remove it in a second.
 
-Một phiên làm việc thật trên Linux để bạn thấy con số:
+A real session on Linux so you can see the numbers:
 
 ```
-$ gcc -O2 -static -o hello_s hello.c      # 900368 byte
+$ gcc -O2 -static -o hello_s hello.c      # 900368 bytes
 $ upx --best -o hello_s.upx hello_s
    900368 ->    352616   39.16%   linux/amd64   hello_s.upx
 $ upx -d -o hello_s.unp hello_s.upx
@@ -35,13 +35,13 @@ $ ./hello_s.unp UPX_s3cr3t
 Correct!
 ```
 
-Nén còn 39% kích thước, và bản giải nén chạy y hệt bản gốc. Xong.
+Compressed to 39% of the size, and the unpacked version runs exactly like the original. Done.
 
-## Khi upx -d từ chối
+## When upx -d refuses
 
-Vấn đề là kẻ đóng gói biết tới `upx -d`. Mẹo chống phổ biến nhất: sửa vài byte trong header để UPX không nhận ra file của chính nó nữa. UPX đánh dấu các khối của nó bằng magic bốn byte `UPX!`. Chỉ cần đổi các dấu này đi, `upx -d` sẽ bó tay, nhưng stub vẫn chạy bình thường vì nó không dựa vào magic đó để giải nén.
+The problem is that whoever packs the file knows about `upx -d`. The most common countermeasure: edit a few bytes in the header so UPX no longer recognizes its own file. UPX marks its blocks with a four-byte magic `UPX!`. Just change these markers and `upx -d` gives up, but the stub still runs fine because it doesn't rely on that magic to decompress.
 
-Vẫn phiên làm việc trên, sau khi đổi cả bốn dấu `UPX!` thành rác:
+Same session as above, after changing all four `UPX!` markers to junk:
 
 ```
 $ upx -d -o out hello_s.broken
@@ -51,75 +51,57 @@ $ ./hello_s.broken UPX_s3cr3t
 Correct!
 ```
 
-UPX nói "không phải file do UPX đóng gói", nhưng file vẫn chạy ra "Correct!". Đây chính là lúc bạn phải tự unpack. Tin tốt: dù header bị sửa, cơ chế giải nén không đổi, nên kỹ thuật thủ công vẫn hiệu quả.
+UPX says "not packed by UPX", but the file still runs and prints "Correct!". This is the moment you have to unpack it yourself. The good news: even though the header was edited, the decompression mechanism is unchanged, so the manual technique still works.
 
-## Giải phẫu stub UPX
+## Anatomy of the UPX stub
 
-Stub UPX trên Windows bắt đầu bằng một thao tác rất đặc trưng: nó lưu toàn bộ thanh ghi, làm việc giải nén, rồi khôi phục thanh ghi trước khi nhảy về OEP.
+The UPX stub on Windows starts with a very characteristic move: it saves all the registers, does the decompression, then restores the registers before jumping to the OEP.
 
 ```asm
-pushad                    ; lưu tất cả thanh ghi lên stack
-mov  esi, <địa chỉ nguồn> ; nguồn: dữ liệu nén
-mov  edi, <địa chỉ đích>  ; đích: nơi đặt code đã giải nén
-...                       ; vòng lặp giải nén
-popad                     ; khôi phục tất cả thanh ghi
-jmp  <OEP>                ; tail jump: nhảy về điểm vào gốc
+pushad                    ; save all registers on the stack
+mov  esi, <source address> ; source: compressed data
+mov  edi, <dest address>   ; destination: where the decompressed code goes
+...                       ; decompression loop
+popad                     ; restore all registers
+jmp  <OEP>                ; tail jump: jump to the original entry point
 ```
 
-Hai chi tiết vàng ở đây:
-- `pushad` đẩy 8 thanh ghi lên stack cùng lúc. Ngay sau `pushad`, con trỏ stack (ESP) trỏ vào khối vừa lưu.
-- Cuối stub là `popad` rồi một `jmp` nhảy xa, gọi là tail jump, đưa thẳng về OEP.
+There are two golden details here. `pushad` pushes 8 registers onto the stack at once, so right after `pushad` the stack pointer (ESP) points to the block it just saved. And at the end of the stub is `popad` and then a far `jmp`, called the tail jump, which goes straight to the OEP. These two details give us two ways to find the OEP.
 
-Hai chi tiết này cho ta hai cách tìm OEP.
+## Method 1: the ESP trick (stack restore)
 
-## Cách 1: ESP trick (stack restore)
+This is the classic technique, fast and almost always effective against UPX.
 
-Đây là kỹ thuật kinh điển, nhanh và gần như luôn hiệu quả với UPX.
+The idea: `pushad` writes 8 registers onto the stack, and `popad` will read back exactly that region. If you set a hardware breakpoint watching reads of the stack region `pushad` just wrote, that breakpoint fires exactly when `popad` runs, which is right before the tail jump to the OEP.
 
-Ý tưởng: `pushad` ghi 8 thanh ghi vào stack, `popad` sẽ đọc lại đúng vùng đó. Nếu bạn đặt một hardware breakpoint theo dõi việc đọc vùng stack mà `pushad` vừa ghi, thì breakpoint đó bật đúng lúc `popad` chạy, tức là ngay trước tail jump về OEP.
+In x64dbg (x32dbg for 32-bit), open the file in the debugger and it stops at the entry point, the start of the stub. Step over the first `pushad` instruction (F8 once). Look at the ESP register, which just decreased after the pushad, then right-click ESP and choose "Follow in Dump". In the Dump window, select the first 4 bytes, right-click, Breakpoint, Hardware, Access. Press F9 (Run), and the debugger will stop when `popad` reads that region back.
 
-Các bước trong x64dbg (32-bit thì x32dbg):
-1. Mở file trong debugger, nó dừng ở entry point (chính là đầu stub).
-2. Bước qua lệnh `pushad` đầu tiên (F8 một lần).
-3. Nhìn vào thanh ghi ESP, nó vừa giảm đi sau pushad. Nhấn chuột phải vào ESP, chọn "Follow in Dump".
-4. Trong cửa sổ Dump, chọn 4 byte đầu, chuột phải, Breakpoint, Hardware, Access.
-5. Nhấn F9 (Run). Debugger sẽ dừng khi `popad` đọc lại vùng đó.
-6. Lúc này bạn đang ở ngay trước tail jump. Bước vài lệnh (F8) tới khi thấy một `jmp` nhảy tới một địa chỉ xa, khác hẳn vùng stub. Đó là tail jump.
-7. Bước qua tail jump. Bạn đã ở OEP.
+Now you're right before the tail jump. Step a few instructions (F8) until you see a `jmp` to a far address, completely different from the stub region. That's the tail jump. Step over it and you're at the OEP.
 
-Khi tới OEP, code trông "sạch": một prologue hàm bình thường (hoặc với chương trình thật là CRT startup, xem [Bài 3.1](/posts/tr-3-1-hello-world-tim-main-that/)), không còn giống stub nén nữa.
+When you reach the OEP, the code looks "clean": a normal function prologue (or for a real program the CRT startup, see [Lesson 3.1](/posts/tr-3-1-hello-world-tim-main-that/)), no longer like a compression stub.
 
-## Cách 2: tìm tail jump trực tiếp
+## Method 2: find the tail jump directly
 
-Nếu quen mắt, bạn có thể cuộn xuống cuối stub tìm luôn cặp `popad` + `jmp xa`. Đặt breakpoint tại tail jump đó, chạy tới, rồi bước qua. Cách này nhanh nhưng cần biết mặt stub. ESP trick an toàn hơn cho người mới.
+If you have a trained eye, you can scroll to the end of the stub and look for the `popad` + far `jmp` pair. Set a breakpoint at that tail jump, run to it, then step over. This is quick but requires knowing what the stub looks like. The ESP trick is safer for beginners.
 
-## Cách 3: breakpoint trên section gốc
+## Method 3: breakpoint on the original section
 
-Một hướng khác: section chứa code gốc ban đầu rỗng (vì code nằm ở dạng nén). Đặt memory breakpoint "execute" trên section đó. Khi stub giải nén xong và CPU bắt đầu chạy code trong section gốc, breakpoint bật, và bạn đang ở gần OEP. Hữu ích khi stub phức tạp làm ESP trick khó.
+Another approach: the section that holds the original code is empty at the start (because the code is in compressed form). Set an "execute" memory breakpoint on that section. When the stub finishes decompressing and the CPU starts running code in the original section, the breakpoint fires, and you're close to the OEP. Useful when a complicated stub makes the ESP trick hard.
 
-## Tới OEP rồi, giờ dump
+## At the OEP, now dump
 
-Tới OEP mới xong một nửa. Code đã giải nén nằm trong bộ nhớ, nhưng bạn cần lưu nó thành một file chạy được. Đây là việc của Scylla (thường đi kèm x64dbg dưới dạng plugin):
+Reaching the OEP is only half the job. The decompressed code is in memory, but you need to save it as a runnable file. That's the job of Scylla (usually shipped with x64dbg as a plugin). Open Scylla, pick the process you're debugging, and put the OEP you just found in the OEP field. Click "IAT Autosearch" then "Get Imports", and Scylla probes and rebuilds the import table (because the stub resolved the imports in memory, but a raw dump doesn't have the right import table yet). Then "Dump" saves the memory to a file, and "Fix Dump" patches the import table into the file you just dumped.
 
-1. Mở Scylla, chọn đúng tiến trình đang debug.
-2. Đặt OEP bạn vừa tìm được vào ô OEP.
-3. Nhấn "IAT Autosearch" rồi "Get Imports": Scylla dò và dựng lại bảng import (vì stub đã resolve import trong bộ nhớ, nhưng file dump thô chưa có bảng import đúng).
-4. "Dump" để lưu bộ nhớ ra file.
-5. "Fix Dump" để vá bảng import vào file vừa dump.
+The details of rebuilding the IAT, why it's needed, and the pitfalls are in [Lesson 14.3](/posts/tr-14-3-dump-rebuild-iat-scylla/). Without rebuilding the IAT, the dumped file opens in IDA for static reading but usually won't run.
 
-Chi tiết phần rebuild IAT, vì sao cần nó và các cạm bẫy, nằm ở [Bài 14.3](/posts/tr-14-3-dump-rebuild-iat-scylla/). Không rebuild IAT thì file dump mở được trong IDA để đọc tĩnh nhưng thường không chạy được.
+## When UPX is no longer UPX
 
-## Khi nào UPX không còn là UPX
+Careful: many packers and malware use UPX as an outer layer and wrap their own protection on top, or modify the stub so heavily that the standard pushad/popad is gone. Then the ESP trick may miss. The general principle still holds (run the stub, find the OEP, dump), but how you find the OEP has to be flexible. UPX is just the intro exercise for an unpacking mindset that applies to every packer.
 
-Cẩn thận: nhiều packer và malware dùng UPX làm lớp ngoài rồi bọc thêm lớp bảo vệ riêng, hoặc sửa stub nặng tới mức không còn pushad/popad chuẩn. Lúc đó ESP trick có thể trượt. Nguyên tắc chung vẫn đúng (chạy stub, tìm OEP, dump), nhưng cách tìm OEP phải linh hoạt. UPX chỉ là bài tập nhập môn cho tư duy unpack áp dụng được cho mọi packer.
+## Key takeaways
+Try `upx -d` first, since often it's done right away. If the header was edited (the `UPX!` magic changed), `upx -d` reports NotPackedException but the file still runs, so you have to unpack manually. The UPX stub has `pushad` at the start and `popad` + tail jump at the end, and those are the two landmarks for finding the OEP.
 
-## Checklist ghi nhớ
-- Thử `upx -d` trước, nhiều khi xong ngay.
-- Nếu header bị sửa (đổi magic `UPX!`), `upx -d` báo NotPackedException nhưng file vẫn chạy, phải unpack thủ công.
-- Stub UPX: `pushad` đầu, `popad` + tail jump cuối. Đó là hai mốc để tìm OEP.
-- ESP trick: hardware breakpoint trên stack ngay sau `pushad`, bật lại khi `popad` chạy, gần tail jump.
-- Tới OEP thì dump bằng Scylla và rebuild IAT (Bài 14.3).
-- UPX là bài nhập môn, tư duy này áp dụng cho mọi packer.
+For the ESP trick, put a hardware breakpoint on the stack right after `pushad`, and it fires again when `popad` runs, near the tail jump. At the OEP, dump with Scylla and rebuild the IAT (Lesson 14.3). UPX is the intro exercise, and this mindset applies to every packer.
 
-## Lab tự làm
-Thư mục [labs/14.2/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/14.2) có chương trình mẫu, lệnh pack, và cách tự tay làm header hỏng để luyện unpack thủ công. Writeup đầy đủ với số liệu thật trong [solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/14.2/solution.md).
+## Lab
+The folder [labs/14.2/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/14.2) has a sample program, the pack command, and how to corrupt the header yourself to practice manual unpacking. The full writeup with real numbers is in [solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/14.2/solution.md).

@@ -1,142 +1,140 @@
 ---
-title: "Bài 1.9: ARM/ARM64 cơ bản cho người đã biết x86"
+title: "Lesson 1.9: ARM/ARM64 basics for people who already know x86"
 date: 2026-10-06 08:12:00 +0700
-categories: ["Technique Reverse", "Phần 1 · Nền tảng máy tính cho RE"]
+categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
-Nếu bạn định reverse app Android, app iOS, hay firmware của router và camera, sớm muộn gì cũng đụng ARM. Tin tốt: khi đã quen x86, học ARM64 không phải bắt đầu lại từ đầu. Khái niệm (thanh ghi, stack, call/ret, tham số, giá trị trả về) y hệt, chỉ khác cú pháp và vài thói quen. Bài này chỉ tập trung vào chỗ khác, để bạn không phí thời gian học lại cái đã biết.
+If you plan to reverse Android apps, iOS apps, or firmware for routers and cameras, sooner or later you'll hit ARM. Good news: once you're used to x86, learning ARM64 isn't starting from scratch. The concepts (registers, stack, call/ret, parameters, return values) are the same, only the syntax and a few habits differ. This lesson focuses only on the differences, so you don't waste time relearning what you already know.
 
-## RISC vs CISC, vì sao code ARM dài hơn
+## RISC vs CISC, why ARM code is longer
 
-x86 là CISC (Complex Instruction Set): một lệnh làm được nhiều việc, ví dụ `add eax, [rbx+rcx*4]` vừa tính địa chỉ, vừa đọc bộ nhớ, vừa cộng, tất cả trong một lệnh.
+x86 is CISC (Complex Instruction Set): one instruction can do a lot, for example `add eax, [rbx+rcx*4]` computes an address, reads memory, and adds, all in one instruction.
 
-ARM là RISC (Reduced Instruction Set): mỗi lệnh làm một việc đơn giản, lệnh dài cố định (4 byte với ARM64), và quan trọng nhất là **lệnh tính toán chỉ làm việc trên thanh ghi, không đụng thẳng vào bộ nhớ.** Muốn cộng một giá trị trong bộ nhớ, bạn phải: nạp (load) nó vào thanh ghi, cộng, rồi ghi (store) ngược ra. Ba lệnh thay vì một.
+ARM is RISC (Reduced Instruction Set): each instruction does one simple thing, instructions have a fixed length (4 bytes on ARM64), and most importantly arithmetic instructions only work on registers, they don't touch memory directly. To add a value in memory, you have to load it into a register, add, then store it back. Three instructions instead of one.
 
-Hệ quả thực tế khi đọc: code ARM64 thường dài hơn x86 về số lệnh, nhưng từng lệnh lại dễ hiểu hơn vì đơn giản. Bạn sẽ thấy rất nhiều cặp `ldr`/`str` bao quanh phần tính toán.
+The practical consequence when reading: ARM64 code is usually longer than x86 in instruction count, but each instruction is easier to understand because it's simple. You'll see lots of `ldr`/`str` pairs surrounding the computation.
 
-## Thanh ghi ARM64
+## ARM64 registers
 
-ARM64 (còn gọi là AArch64) có 31 thanh ghi đa dụng, thoải mái hơn x86 nhiều:
+ARM64 (also called AArch64) has 31 general purpose registers, much roomier than x86:
 
 ```
 x0  x1  x2  ... x30     (64 bit)
-w0  w1  w2  ... w30     (32 bit thấp của x tương ứng)
+w0  w1  w2  ... w30     (low 32 bits of the matching x)
 ```
 
-Giống hệt chuyện `rax`/`eax` bên x86: `x0` là 64 bit, `w0` là 32 bit thấp của chính nó. Thấy `w0` và `x0` trong cùng hàm là cùng một thanh ghi, chỉ khác độ rộng.
+Exactly like `rax`/`eax` on x86: `x0` is 64 bits, `w0` is the low 32 bits of the same register. Seeing `w0` and `x0` in the same function means the same register, just a different width.
 
-Vài thanh ghi có vai trò quy ước phải nhớ, vì chúng giúp đọc nhanh:
+A few registers have conventional roles you must remember, because they help you read fast:
 
-| Thanh ghi | Vai trò |
+| Register | Role |
 |---|---|
-| `x0` tới `x7` | 8 tham số đầu của hàm. Nhiều hơn hẳn x86 (x86-64 chỉ 4 hoặc 6) |
-| `x0` | Cũng là nơi chứa **giá trị trả về**, y như rax |
-| `x29` (fp) | Frame pointer, con trỏ base của stack frame, vai trò như rbp |
-| `x30` (lr) | Link register, chỗ này mới lạ, xem bên dưới |
-| `sp` | Stack pointer, như rsp |
-| `pc` | Program counter, như rip |
+| `x0` to `x7` | First 8 function parameters. Far more than x86 (x86-64 has only 4 or 6) |
+| `x0` | Also holds the return value, just like rax |
+| `x29` (fp) | Frame pointer, the base pointer of the stack frame, plays the role of rbp |
+| `x30` (lr) | Link register, this one is new, see below |
+| `sp` | Stack pointer, like rsp |
+| `pc` | Program counter, like rip |
 
-Điểm người quen x86 hay vấp số một: tham số nằm ở `x0..x7`, không phải `rcx rdx` gì cả. Giá trị trả về ở `x0` chứ không phải rax. Đọc một lời gọi hàm ARM64 là nhìn `x0, x1, x2...` để biết tham số.
+The number one thing x86 people trip over is that parameters are in `x0..x7`, not `rcx rdx` or whatever. The return value is in `x0`, not rax. To read an ARM64 function call, look at `x0, x1, x2...` for the parameters.
 
-## lr, chỗ khác biệt lớn nhất
+## lr, the biggest difference
 
-Bên x86, lệnh `call` đẩy địa chỉ trở về lên stack, rồi `ret` lấy từ stack ra. ARM làm khác: lệnh gọi hàm `bl` (branch with link) lưu địa chỉ trở về vào **thanh ghi lr (x30)**, không đụng stack.
+On x86, the `call` instruction pushes the return address onto the stack, and `ret` pops it off. ARM does it differently: the call instruction `bl` (branch with link) saves the return address into the lr register (x30), without touching the stack.
 
-Nghĩa là với hàm lá (leaf function, hàm không gọi hàm khác), địa chỉ trở về nằm gọn trong lr, chẳng cần stack. `ret` đơn giản là nhảy về địa chỉ trong lr.
+That means for a leaf function (a function that doesn't call other functions), the return address sits entirely in lr, no stack needed. `ret` simply jumps to the address in lr.
 
-Nhưng nếu hàm A gọi hàm B, thì lr đang giữ địa chỉ trở về của A sẽ bị `bl` ghi đè khi gọi B. Nên hàm không phải leaf buộc phải **cất lr lên stack ở đầu hàm** (prologue) và **khôi phục trước khi ret** (epilogue). Bạn sẽ thấy pattern này liên tục:
+But if function A calls function B, then the lr holding A's return address gets overwritten by `bl` when calling B. So a non-leaf function has to save lr onto the stack at the start (prologue) and restore it before ret (epilogue). You'll see this pattern constantly:
 
 ```asm
-stp  x29, x30, [sp, #-16]!   ; cất fp(x29) và lr(x30) lên stack, đồng thời trừ sp 16
-mov  x29, sp                 ; dựng frame pointer
-... thân hàm, có thể bl gọi hàm khác ...
-ldp  x29, x30, [sp], #16     ; khôi phục fp và lr, cộng sp lại 16
-ret                          ; nhảy về lr
+stp  x29, x30, [sp, #-16]!   ; save fp(x29) and lr(x30) to the stack, and subtract 16 from sp
+mov  x29, sp                 ; set up the frame pointer
+... function body, may bl to other functions ...
+ldp  x29, x30, [sp], #16     ; restore fp and lr, add 16 back to sp
+ret                          ; jump to lr
 ```
 
-`stp`/`ldp` là "store pair"/"load pair", cất/nạp hai thanh ghi cùng lúc, ARM rất hay dùng để tiết kiệm lệnh. Dấu `!` nghĩa là cập nhật luôn sp (pre-index). Thấy `stp x29, x30` ở đầu một hàm là bạn biết ngay: đây là prologue, hàm này có gọi hàm khác.
+`stp`/`ldp` are "store pair"/"load pair", saving/loading two registers at once, which ARM uses a lot to save instructions. The `!` means update sp as well (pre-index). Seeing `stp x29, x30` at the start of a function tells you right away: this is a prologue, and this function calls other functions.
 
-## Nhóm lệnh hay gặp
+## Common instructions
 
-Đối chiếu trực tiếp với x86 cho dễ nhớ:
+Mapped directly against x86 so it's easier to remember:
 
 ```asm
-mov  x0, #5          ; x0 = 5           (số tức thời có dấu #)
+mov  x0, #5          ; x0 = 5           (immediate numbers have a #)
 mov  x1, x2          ; x1 = x2
-add  x0, x1, x2      ; x0 = x1 + x2     (ba toán hạng: đích, nguồn1, nguồn2)
+add  x0, x1, x2      ; x0 = x1 + x2     (three operands: dest, source1, source2)
 sub  x0, x1, #8      ; x0 = x1 - 8
-cmp  x0, #10         ; so sánh, đặt cờ  (giống x86)
+cmp  x0, #10         ; compare, set flags  (same as x86)
 ```
 
-Để ý: ARM dùng ba toán hạng, `add x0, x1, x2` là `x0 = x1 + x2`, đích tách riêng khỏi nguồn. Khác x86 nơi `add eax, ebx` là `eax += ebx` (đích cũng là một nguồn).
+Note that ARM uses three operands, `add x0, x1, x2` is `x0 = x1 + x2`, the destination is separate from the sources. Different from x86 where `add eax, ebx` is `eax += ebx` (the destination is also a source).
 
-Truy cập bộ nhớ tách bạch bằng `ldr`/`str`:
+Memory access is separated out with `ldr`/`str`:
 
 ```asm
-ldr  x0, [x1]        ; x0 = *(x1)        nạp từ địa chỉ trong x1
-ldr  x0, [x1, #8]    ; x0 = *(x1 + 8)    thường là đọc field của struct
-str  x0, [x1]        ; *(x1) = x0        ghi ra bộ nhớ
+ldr  x0, [x1]        ; x0 = *(x1)        load from the address in x1
+ldr  x0, [x1, #8]    ; x0 = *(x1 + 8)    usually reading a struct field
+str  x0, [x1]        ; *(x1) = x0        write to memory
 ```
 
-Đây chính là cặp load/store thay cho `mov eax, [rbx]` bên x86. Mọi truy cập bộ nhớ đều qua `ldr`/`str`, nhớ vậy là đọc được.
+This load/store pair is what replaces `mov eax, [rbx]` on x86. Every memory access goes through `ldr`/`str`, remember that and you can read it.
 
-Rẽ nhánh và gọi hàm:
+Branching and calling:
 
 ```asm
-b    label           ; nhảy vô điều kiện    (như jmp)
-b.eq label           ; nhảy nếu bằng        (như je, sau cmp)
-b.ne label           ; nhảy nếu khác        (như jne)
-b.gt / b.lt / ...    ; lớn hơn / nhỏ hơn
-cbz  x0, label       ; nhảy nếu x0 == 0     (compare and branch if zero, gộp cmp+je)
-cbnz x0, label       ; nhảy nếu x0 != 0
-bl   func            ; gọi hàm, lưu địa chỉ trở về vào lr  (như call)
-blr  x8              ; gọi hàm tại địa chỉ trong x8 (gọi gián tiếp)
-ret                  ; trả về (nhảy tới lr)
+b    label           ; unconditional jump    (like jmp)
+b.eq label           ; jump if equal        (like je, after cmp)
+b.ne label           ; jump if not equal    (like jne)
+b.gt / b.lt / ...    ; greater than / less than
+cbz  x0, label       ; jump if x0 == 0     (compare and branch if zero, merges cmp+je)
+cbnz x0, label       ; jump if x0 != 0
+bl   func            ; call a function, save the return address in lr  (like call)
+blr  x8              ; call the function at the address in x8 (indirect call)
+ret                  ; return (jump to lr)
 ```
 
-`cbz`/`cbnz` là tiện lợi riêng của ARM: gộp so sánh với 0 và nhảy vào một lệnh. Thấy `cbz x0, somewhere` thì dịch là "nếu x0 bằng 0 thì nhảy", khỏi cần tìm lệnh cmp trước đó.
+`cbz`/`cbnz` is a convenience unique to ARM: compare with 0 and jump in one instruction. When you see `cbz x0, somewhere`, read it as "if x0 equals 0, jump", no need to look for a cmp before it.
 
-## Đọc thử một đoạn thật
+## Reading a real snippet
 
-Cùng kiểu hàm kiểm tra độ dài như bài 1.3, nhưng bằng ARM64:
+The same kind of length-check function as in lesson 1.3, but in ARM64:
 
 ```asm
 check_password:
-    ldr  w0, [sp, #12]      ; nạp biến cục bộ (độ dài chuỗi) vào w0
-    cmp  w0, #8             ; so sánh với 8
-    b.ne fail              ; nếu khác 8 thì nhảy tới fail
-    mov  w0, #1            ; w0 = 1 (đúng)
+    ldr  w0, [sp, #12]      ; load a local variable (the string length) into w0
+    cmp  w0, #8             ; compare with 8
+    b.ne fail              ; if not 8, jump to fail
+    mov  w0, #1            ; w0 = 1 (correct)
     ret
 fail:
-    mov  w0, #0            ; w0 = 0 (sai)
+    mov  w0, #0            ; w0 = 0 (wrong)
     ret
 ```
 
-Dịch ra C:
+Translated to C:
 
 ```c
 int check_password() {
-    int len = ...;        // biến cục bộ tại [sp+12]
+    int len = ...;        // local variable at [sp+12]
     if (len != 8)         // cmp + b.ne
         return 0;
     return 1;
 }
 ```
 
-Giống hệt bản x86 về mặt logic. Chỉ khác: `w0` thay cho `eax` làm giá trị trả về, `ldr` thay cho `mov` khi đọc bộ nhớ, `b.ne` thay cho `jne`. Quen rồi là đọc trôi chảy.
+Logically identical to the x86 version. The only differences: `w0` instead of `eax` as the return value, `ldr` instead of `mov` for reading memory, `b.ne` instead of `jne`. Once you're used to it you read it smoothly.
 
-## ARM 32-bit và chế độ Thumb, nhắc ngắn
+## 32-bit ARM and Thumb mode, a short reminder
 
-Trên thiết bị cũ và nhiều firmware, bạn gặp ARM 32-bit (AArch32), thanh ghi là `r0..r15` (r13=sp, r14=lr, r15=pc). Nó còn có hai chế độ mã hoá lệnh: **ARM** (lệnh 4 byte) và **Thumb** (lệnh 2 hoặc 4 byte, gọn hơn, hay dùng để tiết kiệm bộ nhớ). Một binary có thể trộn cả hai, và chuyển chế độ qua bit thấp nhất của địa chỉ hàm (lẻ = Thumb). Điểm này hay làm disassembler nhận nhầm, nếu thấy code ARM32 giải mã ra rác thì thử ép sang Thumb hoặc ngược lại. Chi tiết để dành cho các bài firmware ở Phần 18.
+On older devices and lots of firmware, you'll meet 32-bit ARM (AArch32), where the registers are `r0..r15` (r13=sp, r14=lr, r15=pc). It also has two instruction encoding modes: ARM (4-byte instructions) and Thumb (2 or 4-byte instructions, more compact, often used to save memory). One binary can mix both, and the mode switches via the lowest bit of the function address (odd = Thumb). This often makes disassemblers guess wrong, so if ARM32 code decodes into garbage, try forcing Thumb or the other way around. The details are saved for the firmware lessons in Part 18.
 
-## Lab tự làm
+## Lab
 
-Xem [labs/1.9/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/1.9). Bạn sẽ cross-compile một file C nhỏ sang ARM64 rồi tự đối chiếu assembly với source, hoặc nếu không cài được toolchain thì đọc đoạn ARM64 cho sẵn và dịch ngược ra C. Lời giải ở `labs/1.9/solution.md`, tự làm trước khi mở.
+See [labs/1.9/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/1.9). You'll cross-compile a small C file to ARM64 and compare the assembly with the source yourself, or if you can't install the toolchain, read the given ARM64 snippet and translate it back to C. The solution is in `labs/1.9/solution.md`, do it yourself before opening it.
 
-## Checklist ghi nhớ
-- ARM là RISC: lệnh đơn giản, dài cố định, tính toán chỉ trên thanh ghi, truy cập bộ nhớ phải qua `ldr`/`str`.
-- Thanh ghi: `x0..x30` (64 bit), `w0..w30` (32 bit thấp). Tham số ở `x0..x7`, trả về ở `x0`.
-- `bl` lưu địa chỉ trở về vào `lr` (x30), không đẩy stack như `call`. Hàm không phải leaf phải cất lr lên stack ở prologue (`stp x29, x30, [sp,...]`).
-- Đối chiếu nhanh: `mov`/`ldr`/`str` cho dữ liệu, `add`/`sub`/`cmp` cho tính toán, `b`/`b.eq`/`cbz`/`bl`/`ret` cho rẽ nhánh và gọi hàm.
-- ARM32 có chế độ ARM và Thumb trộn lẫn, coi chừng disassembler nhận nhầm chế độ.
+## Key takeaways
+ARM is RISC: simple fixed-length instructions, arithmetic only on registers, and memory access has to go through `ldr`/`str`. The registers are `x0..x30` (64 bit) and `w0..w30` (low 32 bits), with parameters in `x0..x7` and the return in `x0`.
+
+`bl` saves the return address into `lr` (x30) instead of pushing to the stack like `call`, so non-leaf functions must save lr to the stack in the prologue (`stp x29, x30, [sp,...]`). For a quick mapping, `mov`/`ldr`/`str` handle data, `add`/`sub`/`cmp` handle arithmetic, and `b`/`b.eq`/`cbz`/`bl`/`ret` handle branching and calls. ARM32 has ARM and Thumb modes mixed together, so watch out for the disassembler guessing the wrong mode.

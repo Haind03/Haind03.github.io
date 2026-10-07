@@ -1,93 +1,93 @@
 ---
-title: "Bài 5.5: Obfuscator .NET và cách gỡ"
+title: "Lesson 5.5: .NET obfuscators and how to strip them"
 date: 2026-10-06 08:41:00 +0700
-categories: ["Technique Reverse", "Phần 5 · C# / .NET (dnSpy, ILSpy)"]
+categories: ["Technique Reverse", "Part 05 · C# and .NET"]
 tags: [reverse-engineering, dotnet]
 render_with_liquid: false
 ---
-Bốn bài trước bạn thấy .NET dễ reverse tới mức gần như gian lận: decompile ra C# đọc như bản gốc. Chính vì thế người viết phần mềm .NET mới dựng cả một ngành công nghiệp obfuscator để làm khó bạn. Tin tốt là phần lớn obfuscator phổ biến đã có tool gỡ gần như tự động. Tin không vui là vẫn còn những lớp phải tự tay bóc. Bài này cho bạn bản đồ: nhận ra đang gặp cái gì, thử tool nào trước, và khi tool bó tay thì làm sao.
+In the last four lessons you saw that .NET is so easy to reverse it feels like cheating: decompile and you get C# that reads like the original. That's exactly why people who write .NET software built a whole industry of obfuscators to make life hard for you. The good news is that most popular obfuscators already have tools that strip them almost automatically. The less happy news is there are still layers you have to peel by hand. This lesson gives you the map: recognizing what you're facing, which tool to try first, and what to do when the tools give up.
 
-Trước khi đi tiếp, nhắc lại ranh giới ở [Bài 0.2](/posts/tr-0-2-phap-ly-dao-duc/): những kỹ thuật dưới đây chỉ dùng cho assembly của chính bạn, mẫu học, crackme, hoặc phân tích malware phòng thủ. Gỡ bảo vệ phần mềm thương mại để dùng chùa là chuyện khác hẳn.
+Before going further, a reminder of the boundary from [Lesson 0.2](/posts/tr-0-2-phap-ly-dao-duc/): the techniques below are only for your own assemblies, learning samples, crackmes, or defensive malware analysis. Stripping protection from commercial software to use it for free is a completely different matter.
 
-## Obfuscator thực ra làm những gì
+## What obfuscators actually do
 
-Obfuscation không mã hoá chương trình, nó vẫn phải chạy được trên CLR. Nó chỉ làm cho code sau khi decompile trở nên khó đọc. Có vài nhóm kỹ thuật, bạn sẽ gặp lẫn lộn:
+Obfuscation doesn't encrypt the program, it still has to run on the CLR. It only makes the code hard to read after decompiling. There are a few groups of techniques, and you'll meet them mixed together:
 
-- **Renaming.** Đổi tên class, method, field, biến từ `CheckLicense` thành `a`, `b`, hoặc tệ hơn là các ký tự Unicode vô hình, chữ Trung, hay chuỗi lộn xộn. Đây là lớp phổ biến nhất và cũng khó chịu nhất vì nó xoá hết manh mối ngữ nghĩa.
-- **String encryption.** Mọi chuỗi (thông báo, tên hàm gọi động, URL) bị mã hoá, thay bằng lời gọi kiểu `Decrypt(0x1234)`. Bạn không còn grep được chuỗi "Invalid license" nữa.
-- **Control flow obfuscation.** Nhét thêm nhánh giả, biến luồng thẳng thành một cái máy trạng thái (switch lồng vòng while) để decompiler dựng lại thành mớ bòng bong `goto`.
-- **Proxy / indirect call.** Thay lời gọi method trực tiếp bằng lời gọi gián tiếp qua một lớp trung gian, để Analyze không lần ra ai gọi ai.
-- **Anti-tamper.** Assembly tự kiểm tra toàn vẹn của chính nó lúc chạy, sửa một byte là nó hỏng hoặc thoát.
-- **Anti-debug.** Phát hiện dnSpy đang attach rồi thoát hoặc rẽ nhánh khác (xem thêm Phần 15).
+- **Renaming.** Changes the names of classes, methods, fields, variables from `CheckLicense` into `a`, `b`, or worse, invisible Unicode characters, Chinese characters, or jumbled strings. This is the most common layer and also the most annoying because it wipes out all semantic clues.
+- **String encryption.** Every string (messages, names of dynamically called functions, URLs) is encrypted and replaced with calls like `Decrypt(0x1234)`. You can no longer grep for the string "Invalid license".
+- **Control flow obfuscation.** Inserts fake branches, turns straight flow into a state machine (a switch nested in a while loop) so the decompiler rebuilds it into a tangle of `goto`.
+- **Proxy / indirect call.** Replaces direct method calls with indirect calls through an intermediate layer, so Analyze can't trace who calls whom.
+- **Anti-tamper.** The assembly checks its own integrity at runtime, and change one byte and it breaks or exits.
+- **Anti-debug.** Detects dnSpy attached and exits or takes a different branch (see also Part 15).
 
-## Các protector hay gặp
+## Protectors you'll often meet
 
-Biết tên để biết đường tra:
+Know the names so you know what to look up:
 
-- **ConfuserEx.** Mã nguồn mở, miễn phí, cực phổ biến trong crackme và malware .NET. Có nhiều fork (ConfuserEx2, các bản custom). Vì phổ biến nên có nhiều tool unpack riêng.
-- **.NET Reactor.** Thương mại, mạnh, có native stub bọc ngoài, anti-tamper và control flow khó.
-- **Eazfuscator.NET.** Thương mại, string encryption và virtualization tốt.
-- **Dotfuscator.** Đi kèm Visual Studio bản community, nhẹ.
-- **SmartAssembly** (Red Gate). Hay thấy trong phần mềm thương mại.
-- **Agile.NET, Babel, .NET Guard...** các tên ít gặp hơn.
+- **ConfuserEx.** Open source, free, extremely common in crackmes and .NET malware. Has many forks (ConfuserEx2, custom builds). Because it's common there are many dedicated unpack tools.
+- **.NET Reactor.** Commercial, strong, with a native stub wrapped around it, tough anti-tamper and control flow.
+- **Eazfuscator.NET.** Commercial, good string encryption and virtualization.
+- **Dotfuscator.** Ships with the community edition of Visual Studio, light.
+- **SmartAssembly** (Red Gate). Often seen in commercial software.
+- **Agile.NET, Babel, .NET Guard...** the less common names.
 
-## Bước đầu luôn là nhận diện
+## The first step is always identification
 
-Đừng đoán. Mở file bằng **Detect It Easy** hoặc chỉ cần mở trong **dnSpy**, nhìn vài dấu hiệu:
+Don't guess. Open the file with **Detect It Easy** or just open it in **dnSpy**, and look for a few signs:
 
-- DIE thường ghi thẳng tên protector (ConfuserEx, .NET Reactor...).
-- Trong dnSpy, nếu tên type/method toàn ký tự lạ, có module `<Module>` chứa nhiều method khả nghi, hoặc thấy attribute kiểu `ConfusedByAttribute`, là biết ngay.
-- Entropy cao bất thường và một đống chuỗi byte array to là dấu hiệu string/resource encryption.
+- DIE often writes the protector name straight out (ConfuserEx, .NET Reactor...).
+- In dnSpy, if type/method names are all odd characters, there's a `<Module>` containing many suspicious methods, or you see an attribute like `ConfusedByAttribute`, you know right away.
+- Unusually high entropy and a pile of big byte array strings are signs of string/resource encryption.
 
-Nhận ra protector rồi mới chọn tool đúng, chứ quăng đại de4dot vào một mẫu .NET Reactor thì phí công.
+Only after recognizing the protector do you choose the right tool, because throwing de4dot blindly at a .NET Reactor sample is wasted effort.
 
-## de4dot: con dao đa năng
+## de4dot: the all-purpose knife
 
-**de4dot** là tool gỡ obfuscation .NET kinh điển, nhận ra và tự xử lý nhiều protector (gồm ConfuserEx cũ, Dotfuscator, Babel, Eazfuscator ở mức nào đó). Nó làm được mấy việc chính: giải mã chuỗi, bỏ proxy call, khôi phục control flow phần nào, và đổi lại tên cho dễ đọc hơn (tuy không trả lại tên gốc, chỉ là tên sạch kiểu `Class0`, `method_3`).
+**de4dot** is the classic .NET deobfuscation tool, recognizing and handling many protectors automatically (including old ConfuserEx, Dotfuscator, Babel, Eazfuscator to some extent). It does a few main jobs: decrypts strings, removes proxy calls, restores control flow to some degree, and renames things to be more readable (though it doesn't restore the original names, just clean names like `Class0`, `method_3`).
 
-Dùng rất gọn từ dòng lệnh:
+Very simple to use from the command line:
 
 ```
 de4dot.exe target.exe
 ```
 
-Nó tạo `target-cleaned.exe`. Mở bản cleaned trong dnSpy, bạn sẽ thấy decompile ra C# đọc được hơn hẳn: chuỗi đã hiện, luồng đã thẳng lại.
+It creates `target-cleaned.exe`. Open the cleaned version in dnSpy and you'll see the decompiled C# is far more readable: strings are visible, the flow is straight again.
 
-Với ConfuserEx hiện đại, de4dot gốc nhiều khi bó tay. Khi đó dùng bản fork **de4dot-cex** (de4dot chuyên cho ConfuserEx) hoặc các unpacker chuyên dụng theo từng phiên bản ConfuserEx. Riêng **.NET Reactor** có tool riêng tên **.NET Reactor Slayer** xử lý tốt hơn de4dot.
+With modern ConfuserEx, the original de4dot often gives up. Then use the **de4dot-cex** fork (de4dot specialized for ConfuserEx) or dedicated unpackers for specific ConfuserEx versions. For **.NET Reactor** specifically there's a dedicated tool called **.NET Reactor Slayer** that handles it better than de4dot.
 
-## Khi tool không gỡ hết: trace string decryption bằng dnSpy
+## When the tool doesn't strip everything: trace string decryption with dnSpy
 
-Thường gặp nhất là tool gỡ được renaming và control flow nhưng chuỗi vẫn còn mã hoá, hoặc tool mới không hỗ trợ protector phiên bản mới. Lúc này con bài mạnh nhất là **để chính chương trình tự giải mã cho bạn** bằng dnSpy debugger (nhắc lại [Bài 5.3](/posts/tr-5-3-debug-net-khong-source-dnspy/)):
+The most common case is that the tool strips renaming and control flow but strings are still encrypted, or the tool doesn't support a newer protector version. Here the strongest play is to **let the program decrypt for you itself** with the dnSpy debugger (a reminder of [Lesson 5.3](/posts/tr-5-3-debug-net-khong-source-dnspy/)):
 
-1. Tìm hàm giải mã chuỗi. Nó thường là một method static nhận một `int` (hoặc token) và trả về `string`, bị gọi khắp nơi.
-2. Đặt breakpoint ngay sau lời gọi `Decrypt(...)`, hoặc đặt trong chính hàm Decrypt tại chỗ `return`.
-3. Chạy chương trình (F5). Mỗi lần dừng, nhìn giá trị trả về trong Locals, đó là chuỗi thật.
-4. Ghi lại các chuỗi ứng với từng tham số. Giờ bạn có bản đồ `0x1234 -> "Invalid license"`.
+1. Find the string decryption function. It's usually a static method that takes an `int` (or token) and returns a `string`, and is called everywhere.
+2. Set a breakpoint right after the `Decrypt(...)` call, or inside the Decrypt function itself at the `return`.
+3. Run the program (F5). Each time it stops, look at the return value in Locals, that's the real string.
+4. Record the strings matching each parameter. Now you have a map `0x1234 -> "Invalid license"`.
 
-Cách này ăn được vì dù obfuscate thế nào, tới lúc dùng chuỗi thì nó phải tồn tại ở dạng rõ trong bộ nhớ. Nguyên tắc này đúng với mọi lớp bảo vệ: thứ gì chương trình cần dùng, nó phải giải ra, và chỗ giải ra là chỗ bạn rình.
+This works because however it's obfuscated, by the time the string is used it has to exist in the clear in memory. This principle holds for every layer of protection: whatever the program needs to use, it has to decrypt, and the place it decrypts is where you lie in wait.
 
-Với anti-debug chặn dnSpy, bạn patch hoặc bỏ qua check đó trước (kỹ thuật ở Phần 15), hoặc dùng bản dnSpy có sẵn chống anti-debug, rồi mới trace.
+For anti-debug that blocks dnSpy, patch or bypass that check first (techniques in Part 15), or use a dnSpy build that has anti-anti-debug built in, and then trace.
 
-## Nhịp làm việc gợi ý
+## A suggested rhythm
 
 ```
-1. Nhận diện protector   (DIE / dnSpy)
-2. Thử tool tự động       (de4dot / de4dot-cex / Reactor Slayer)
-3. Mở bản cleaned         (dnSpy / ILSpy)
-4. Còn chuỗi mã hoá?      -> trace runtime bằng dnSpy debugger
-5. Còn control flow rối?  -> đọc từng khối, hoặc để debugger chạy qua
+1. Identify the protector  (DIE / dnSpy)
+2. Try the automatic tool  (de4dot / de4dot-cex / Reactor Slayer)
+3. Open the cleaned file   (dnSpy / ILSpy)
+4. Strings still encrypted? -> trace at runtime with the dnSpy debugger
+5. Control flow still messy? -> read block by block, or let the debugger run through
 ```
 
-Đừng kỳ vọng ra lại source đẹp như chưa obfuscate. Mục tiêu là đủ đọc được để hiểu logic, không phải khôi phục hoàn hảo.
+Don't expect to get beautiful source back as if it had never been obfuscated. The goal is readable enough to understand the logic, not a perfect restoration.
 
-## Lab tự làm
+## Lab
 
-Thực hành ở [labs/5.5/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/5.5): tự obfuscate một assembly nhỏ bằng ConfuserEx rồi dùng de4dot gỡ và so sánh, hoặc nếu không cài được thì làm theo quy trình trace string decryption trong dnSpy trên một mẫu obfuscated.
+Practice at [labs/5.5/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/5.5): obfuscate a small assembly yourself with ConfuserEx then use de4dot to strip it and compare, or if you can't install it, follow the string decryption tracing workflow in dnSpy on an obfuscated sample.
 
-## Checklist ghi nhớ
-- Obfuscation không mã hoá chương trình, chỉ làm code sau decompile khó đọc. Nó vẫn phải chạy được.
-- Bốn lớp hay gặp: renaming, string encryption, control flow, anti-tamper/anti-debug.
-- Luôn nhận diện protector trước (DIE/dnSpy) rồi mới chọn tool.
-- de4dot là lựa chọn đầu tiên, de4dot-cex cho ConfuserEx, Reactor Slayer cho .NET Reactor.
-- Tool không gỡ hết thì để chương trình tự giải mã: đặt breakpoint sau hàm Decrypt và đọc chuỗi thật trong dnSpy.
-- Mục tiêu là đọc hiểu được logic, không phải khôi phục source hoàn hảo.
+## Key takeaways
+- Obfuscation doesn't encrypt the program, it only makes the decompiled code hard to read. It still has to run.
+- Four common layers: renaming, string encryption, control flow, anti-tamper/anti-debug.
+- Always identify the protector first (DIE/dnSpy) and then choose the tool.
+- de4dot is the first choice, de4dot-cex for ConfuserEx, Reactor Slayer for .NET Reactor.
+- If the tool doesn't strip everything, let the program decrypt itself: set a breakpoint after the Decrypt function and read the real strings in dnSpy.
+- The goal is to read and understand the logic, not to restore perfect source.

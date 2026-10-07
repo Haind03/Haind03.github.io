@@ -1,105 +1,105 @@
 ---
-title: "Bài 8.1: Đặc trưng binary Go, và vì sao pclntab là món quà"
+title: "Lesson 8.1: What Go binaries look like, and why pclntab is a gift"
 date: 2026-10-06 08:59:00 +0700
-categories: ["Technique Reverse", "Phần 8 · Go"]
+categories: ["Technique Reverse", "Part 08 · Go"]
 tags: [reverse-engineering, golang]
 render_with_liquid: false
 ---
-Lần đầu mở một binary Go trong IDA, cảm giác giống như lạc vào một thành phố lạ: hàng chục nghìn hàm, phần lớn tên là `runtime.*`, một file hello world bé xíu mà nặng gần 2 MB. Nhưng Go dễ thở hơn nhiều so với C++ bị strip, vì Go gói sẵn trong binary một thứ quý giá: bảng tên hàm. Bài này chỉ cho bạn nhận ra một binary Go và khai thác thứ bảng đó.
+The first time you open a Go binary in IDA, it feels like getting lost in a strange city: tens of thousands of functions, most named `runtime.*`, a tiny hello world file that weighs almost 2 MB. But Go is much easier to breathe in than a stripped C++ binary, because Go packs a precious thing into the binary: a table of function names. This lesson shows you how to recognize a Go binary and make use of that table.
 
-Mọi con số và đoạn asm dưới đây lấy từ một binary build thật bằng Go 1.22.0 trên Linux x64, bạn làm lại trong lab sẽ ra tương tự.
+All the numbers and asm below come from a binary built for real with Go 1.22.0 on Linux x64, and if you redo it in the lab you'll get something similar.
 
-## Vì sao binary Go to và nhiều hàm đến thế
+## Why Go binaries are so big and have so many functions
 
-Build một hello world Go rồi so với C:
+Build a Go hello world and compare it with C:
 
 ```
 hello world C   (gcc, dynamic):   ~16 KB
 hello world Go  (go build):       ~1.9 MB
 ```
 
-Chênh hơn trăm lần. Lý do: Go **static-link mặc định**, và quan trọng hơn, nó nhét luôn cả **runtime** vào mỗi binary. Runtime đó gồm bộ lập lịch goroutine, garbage collector, quản lý bộ nhớ, reflection. Vì thế bạn thấy rừng hàm `runtime.*`, `fmt.*`, `sync.*` dù chương trình của bạn chỉ in một dòng.
+A difference of more than a hundred times. The reason: Go **statically links by default**, and more importantly, it stuffs the whole **runtime** into every binary. That runtime includes the goroutine scheduler, the garbage collector, memory management, reflection. So you see a forest of `runtime.*`, `fmt.*`, `sync.*` functions even though your program only prints one line.
 
-Hệ quả thực tế cho người reverse: **đừng cố đọc hết.** 95% số hàm là runtime và thư viện chuẩn. Code của tác giả nằm trong các hàm tên `main.*` và package riêng của họ. Việc đầu tiên luôn là khoanh vùng cái `main.*`, bỏ qua phần còn lại. Nghe quen chứ, đây chính là tư duy "tìm main thật" ở [Bài 3.1](/posts/tr-3-1-hello-world-tim-main-that/), chỉ khác quy mô lớn hơn.
+The practical consequence for a reverser: **don't try to read it all.** 95% of the functions are runtime and the standard library. The author's code is in the functions named `main.*` and their own packages. The first job is always to carve out the `main.*` part and ignore the rest. Sounds familiar, this is the "find the real main" mindset from [Lesson 3.1](/posts/tr-3-1-hello-world-tim-main-that/), just at a larger scale.
 
-## pclntab: tại sao Go không bao giờ thực sự "stripped"
+## pclntab: why Go is never truly "stripped"
 
-![Binary Go: runtime to, pclntab sống sót qua strip](/assets/img/technique-reverse/assets/phan-08/go-binary.svg)
+![Go binary: big runtime, pclntab survives strip](/assets/img/technique-reverse/assets/phan-08/go-binary.svg)
 
-Đây là điểm quan trọng nhất của bài. Go nhúng vào mỗi binary một cấu trúc gọi là **pclntab** (program counter line table). Mục đích gốc của nó là để runtime in stack trace có tên hàm và số dòng khi panic. Nhưng với người reverse, nó là một bảng ánh xạ địa chỉ sang tên hàm, nằm sẵn trong file.
+This is the most important point of the lesson. Go embeds a structure called **pclntab** (program counter line table) into every binary. Its original purpose is so the runtime can print a stack trace with function names and line numbers on panic. But for a reverser, it's an address-to-function-name mapping table that's already in the file.
 
-Điều tuyệt vời: pclntab **sống sót qua cả khi strip**. Thử nghiệm thật:
+The great part: pclntab **survives even stripping**. A real test:
 
 ```
-go build            -> 1.9 MB, có symbol table
+go build            -> 1.9 MB, has symbol table
 go build -ldflags="-s -w"  -> 1.2 MB, "stripped"
 ```
 
-Bản `-s -w` làm `nm` không còn liệt kê được symbol thường. Nhưng pclntab vẫn nằm nguyên đó (trong thí nghiệm, magic của nó ở cùng một offset `0x4030b` trước và sau khi strip). Nghĩa là các tool chuyên dụng vẫn phục hồi được tên hàm từ một binary Go "đã strip". Đây là lý do dân RE hay nói đùa binary Go không bao giờ strip thật sự.
+The `-s -w` build makes `nm` stop listing the normal symbols. But pclntab is still sitting there intact (in the experiment, its magic was at the same offset `0x4030b` before and after stripping). That means specialized tools can still recover function names from a "stripped" Go binary. This is why RE people joke that Go binaries are never really stripped.
 
-Magic number của pclntab theo phiên bản Go (4 byte đầu bảng), nhận ra nó là biết chắc đây là Go:
+The pclntab magic number by Go version (the first 4 bytes of the table), and recognizing it tells you for sure this is Go:
 
-| Magic | Phiên bản Go |
+| Magic | Go version |
 |---|---|
-| `fb ff ff ff` | Go 1.2 tới 1.15 |
+| `fb ff ff ff` | Go 1.2 to 1.15 |
 | `fa ff ff ff` | Go 1.16, 1.17 |
-| `f0 ff ff ff` | Go 1.18 tới 1.19 |
-| `f1 ff ff ff` | Go 1.20 trở lên |
+| `f0 ff ff ff` | Go 1.18 to 1.19 |
+| `f1 ff ff ff` | Go 1.20 and up |
 
-Bài [8.2](https://github.com/Haind03/Technique-Reverse/blob/main/phan-08-go/8.2-khoi-phuc-ten-ham-go.md) sẽ dùng GoReSym và plugin IDA/Ghidra để đọc pclntab và tự đặt lại tên cho hàng nghìn hàm chỉ bằng một cú chạy.
+Lesson [8.2](https://github.com/Haind03/Technique-Reverse/blob/main/phan-08-go/8.2-khoi-phuc-ten-ham-go.md) will use GoReSym and the IDA/Ghidra plugins to read pclntab and rename thousands of functions in a single run.
 
-## Nhận ra một binary là Go
+## Recognizing that a binary is Go
 
-Trước khi xử lý, phải biết chắc đó là Go. Vài dấu hiệu, kiểm trong vài giây:
+Before working on it, you have to be sure it's Go. A few signs, checkable in seconds:
 
-- **Kích thước**: một CLI nhỏ mà nặng 1 tới 5 MB là đáng nghi.
-- **Chuỗi build info**: Go nhúng dòng phiên bản. Chạy lệnh chính thức:
+- **Size**: a small CLI that weighs 1 to 5 MB is suspicious.
+- **Build info string**: Go embeds a version line. Run the official command:
   ```
   go version hello        ->  hello: go1.22.0
-  go version -m hello     ->  kèm GOARCH, GOOS, build flags, module path
+  go version -m hello     ->  with GOARCH, GOOS, build flags, module path
   ```
-  Không có Go toolchain thì `strings` cũng thấy chuỗi kiểu `go1.22.0`.
-- **Strings đặc trưng**: `runtime.`, `runtime.gopanic`, `fmt.`, tên package. Chạy `strings hello | grep '^go1\.'` hoặc `grep 'runtime\.'`.
-- **DIE** (xem [Bài 2.1](/posts/tr-2-1-triage-die-strings-pebear/)) thường nhận ra luôn "Go build ID".
+  Without the Go toolchain, `strings` also shows a string like `go1.22.0`.
+- **Characteristic strings**: `runtime.`, `runtime.gopanic`, `fmt.`, package names. Run `strings hello | grep '^go1\.'` or `grep 'runtime\.'`.
+- **DIE** (see [Lesson 2.1](/posts/tr-2-1-triage-die-strings-pebear/)) often recognizes "Go build ID" right away.
 
-## Calling convention: cái bẫy phiên bản
+## Calling convention: the version trap
 
-Đây là chỗ người reverse hay vấp nếu quen C. Go đổi cách truyền tham số giữa các phiên bản:
+This is where reversers often trip if they're used to C. Go changed how arguments are passed between versions:
 
-- **Trước Go 1.17**: mọi tham số và giá trị trả về đi qua **stack**, không dùng register như C. Đọc code Go cũ bạn sẽ thấy nó đẩy tham số lên stack rồi hàm con đọc từ stack ra, khác hẳn thói quen `rcx/rdx` của Win64.
-- **Từ Go 1.17 trở đi (ABIInternal)**: chuyển sang truyền qua **register**, nhưng thứ tự register KHÁC với C. Go dùng `RAX, RBX, RCX, RDI, RSI, R8, R9, R10, R11` cho tham số (9 register đầu), không phải `RDI, RSI, RDX...` của System V.
+- **Before Go 1.17**: all arguments and return values go through the **stack**, not registers like C. Reading old Go code you'll see it push arguments onto the stack and the callee read them from the stack, very different from the `rcx/rdx` habit of Win64.
+- **From Go 1.17 on (ABIInternal)**: switched to passing through **registers**, but the register order is DIFFERENT from C. Go uses `RAX, RBX, RCX, RDI, RSI, R8, R9, R10, R11` for arguments (the first 9 registers), not System V's `RDI, RSI, RDX...`.
 
-Nhìn hàm `add(a, b int) int` thật, build bằng Go 1.22 (register ABI):
+Looking at a real `add(a, b int) int` function, built with Go 1.22 (register ABI):
 
 ```asm
 TEXT main.add(SB)
     PUSHQ BP
     MOVQ  SP, BP
     SUBQ  $0x8, SP
-    MOVQ  AX, 0x18(SP)     ; a vào từ AX  (không phải RDI)
-    MOVQ  BX, 0x20(SP)     ; b vào từ BX  (không phải RSI)
+    MOVQ  AX, 0x18(SP)     ; a comes in from AX  (not RDI)
+    MOVQ  BX, 0x20(SP)     ; b comes in from BX  (not RSI)
     ADDQ  BX, AX           ; AX = a + b
     MOVQ  AX, 0(SP)
     ...
-    RET                    ; trả về trong AX
+    RET                    ; returned in AX
 ```
 
-Dịch ra: `a` đến trong `AX` (tức RAX), `b` trong `BX` (RBX), kết quả trả về cũng trong `AX`. Nếu bạn áp luật System V (`a` ở RDI) thì đọc sai toàn bộ. Luôn tự hỏi binary này build bằng Go phiên bản nào, rồi áp đúng ABI. IDA và Ghidra bản mới đã nhận ra Go ABI, nhưng bản cũ thì bạn phải tự biết.
+Translated: `a` arrives in `AX` (that is RAX), `b` in `BX` (RBX), and the result is also returned in `AX`. If you apply the System V rule (`a` in RDI) you'll misread everything. Always ask yourself which Go version this binary was built with, then apply the right ABI. Newer IDA and Ghidra recognize the Go ABI, but with older versions you have to know it yourself.
 
-Lưu ý cú pháp: `go tool objdump` dùng dạng Plan 9 (`AX`, `MOVQ`), còn IDA/Ghidra hiển thị Intel (`rax`, `mov`). Cùng một thứ, chỉ khác tên gọi.
+A syntax note: `go tool objdump` uses the Plan 9 form (`AX`, `MOVQ`), while IDA/Ghidra show Intel (`rax`, `mov`). Same thing, just different names.
 
-## Những thứ Go để lại trong code
+## What Go leaves in the code
 
-Vài pattern sẽ gặp nhiều, nói kỹ ở [Bài 8.3](/posts/tr-8-3-string-slice-interface-goroutine/), ở đây điểm danh để bạn khỏi bỡ ngỡ:
+A few patterns you'll see a lot, covered in detail in [Lesson 8.3](/posts/tr-8-3-string-slice-interface-goroutine/), listed here so they don't catch you off guard:
 
-- **String không null-terminated**: Go string là cặp (con trỏ, độ dài), nên một chuỗi trong Go thường nằm dính liền với chuỗi khác trong một blob lớn, cắt ra theo độ dài. Thấy một khối text khổng lồ dính liền nhau là đặc trưng Go.
-- **Kiểm tra bounds**: Go chèn check chỉ số mảng khắp nơi, nên code có nhiều lệnh so sánh rồi nhảy tới `runtime.panicIndex`.
-- **Goroutine**: lời gọi `go f()` biến thành `runtime.newproc`.
-- **Nhiều giá trị trả về**: hàm Go trả nhiều giá trị, trong register ABI là trả qua nhiều register.
+- **Strings aren't null-terminated**: a Go string is a (pointer, length) pair, so a string in Go often sits stuck against other strings in one big blob, cut out by length. Seeing a huge block of text glued together is characteristic of Go.
+- **Bounds checks**: Go inserts array index checks everywhere, so the code has lots of compare instructions followed by a jump to `runtime.panicIndex`.
+- **Goroutines**: a `go f()` call turns into `runtime.newproc`.
+- **Multiple return values**: Go functions return multiple values, and in the register ABI that means returning through several registers.
 
-## Checklist ghi nhớ
-- Binary Go to vì static-link cộng runtime và GC đi kèm. Đừng đọc rừng `runtime.*`, tập trung `main.*`.
-- pclntab là bảng tên hàm nhúng sẵn, sống sót qua strip, nên Go gần như không bao giờ strip thật. Tool phục hồi tên từ đó (Bài 8.2).
-- Magic pclntab cho biết phiên bản Go: `f1 ff ff ff` là Go 1.20+.
-- Nhận ra Go qua kích thước, build info (`go version -m`), chuỗi `runtime.`/`go1.x`.
-- Calling convention đổi theo phiên bản: trước 1.17 qua stack, từ 1.17 qua register nhưng thứ tự là `RAX, RBX, RCX, RDI, RSI...`, khác System V. Trả về trong AX.
+## Key takeaways
+- Go binaries are big because of static linking plus the bundled runtime and GC. Don't read the `runtime.*` forest, focus on `main.*`.
+- pclntab is an embedded function name table that survives strip, so Go is almost never truly stripped. Tools recover names from it (Lesson 8.2).
+- The pclntab magic tells you the Go version: `f1 ff ff ff` is Go 1.20+.
+- Recognize Go by size, build info (`go version -m`), `runtime.`/`go1.x` strings.
+- The calling convention changes by version: before 1.17 through the stack, from 1.17 through registers but in the order `RAX, RBX, RCX, RDI, RSI...`, different from System V. Return in AX.

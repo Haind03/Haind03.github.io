@@ -1,17 +1,17 @@
 ---
-title: "Bài 4.6: Lab crackme C++ có vtable, đi qua vtable để tìm hàm check"
+title: "Lesson 4.6: Lab, a C++ crackme with a vtable, going through the vtable to find the check function"
 date: 2026-10-06 08:36:00 +0700
-categories: ["Technique Reverse", "Phần 4 · C++"]
+categories: ["Technique Reverse", "Part 04 · C++"]
 tags: [reverse-engineering, cpp]
 render_with_liquid: false
 ---
-Đây là bài gom lại cả Phần 4. Bạn sẽ giải một crackme C++ mà điểm mấu chốt là nó không gọi hàm kiểm tra một cách thẳng thắn như crackme C ở Bài 3.5. Thay vào đó nó gọi qua virtual function, nghĩa là lời gọi đi gián tiếp qua vtable. Nếu bạn quen nếp "tìm chỗ `call check`" của C thì ở đây sẽ hụt, vì trong asm chỉ thấy một `call rcx` trống trơn. Học cách lần qua vtable là mục tiêu của bài.
+This lesson wraps up all of Part 4. You'll solve a C++ crackme where the key point is that it doesn't call the check function straightforwardly like the C crackme in Lesson 3.5. Instead it calls through a virtual function, meaning the call goes indirectly through the vtable. If you're used to the C habit of "find the `call check`", you'll come up empty here, since in the asm you only see a bare `call rcx`. Learning to trace through the vtable is the goal of this lesson.
 
-Crackme nằm ở `labs/4.6/`. Hãy tự giải trước, phần dưới là lời dẫn.
+The crackme is in `labs/4.6/`. Try solving it yourself first, what's below is a guide.
 
-## Bước 1: triage, xác nhận đây là C++
+## Step 1: triage, confirm it's C++
 
-Mở binary bằng Detect It Easy, thường thấy compiler là GCC hoặc MSVC. Nhưng dấu hiệu chắc chắn nhất đây là C++ nằm ở chỗ khác: chạy `nm -C` (Linux) hoặc để IDA/Ghidra demangle, bạn thấy những cái tên như:
+Open the binary with Detect It Easy, you'll usually see the compiler is GCC or MSVC. But the surest sign that it's C++ is elsewhere: run `nm -C` (Linux) or let IDA/Ghidra demangle, and you see names like:
 
 ```
 SerialValidator::check(char const*) const
@@ -19,47 +19,47 @@ Validator::Validator()
 SerialValidator::~SerialValidator()
 ```
 
-Tên có `::`, có tham số trong ngoặc, có `const` đuôi. Đó là tên C++ đã demangle. Trong file thô chúng nằm ở dạng mangled kiểu `_ZNK15SerialValidator5checkEPKc`. Thấy mangling là biết ngay không còn ở thế giới C phẳng nữa, có class và method ở đây (xem lại Bài 4.1).
+Names with `::`, with parameters in parentheses, with a trailing `const`. Those are demangled C++ names. In the raw file they sit in mangled form like `_ZNK15SerialValidator5checkEPKc`. Seeing mangling tells you right away you're no longer in the flat world of C, there are classes and methods here (see Lesson 4.1 again).
 
-Ngoài ra RTTI để lại chuỗi tên class ngay trong binary. Tìm trong Strings bạn sẽ thấy `SerialValidator`, `Validator`. Đây là quà miễn phí: tên class lộ ra giúp bạn định hướng.
+Also, RTTI leaves the class name strings right in the binary. Search the Strings and you'll see `SerialValidator`, `Validator`. This is a free gift: the class names leaking out help you orient yourself.
 
-## Bước 2: object có vtable pointer ở đầu
+## Step 2: the object has a vtable pointer at the start
 
-`main` tạo object bằng `new SerialValidator()` rồi gán vào con trỏ kiểu `Validator*`. Vì `check` là virtual, trình biên dịch không biết lúc dịch sẽ gọi hàm nào, nên nó phải tra bảng lúc chạy. Bảng đó là vtable, và mỗi object có virtual function đều mang một con trỏ tới vtable của class mình ngay tại offset 0 (8 byte đầu object trên x64).
+`main` creates the object with `new SerialValidator()` and assigns it to a pointer of type `Validator*`. Because `check` is virtual, the compiler doesn't know at compile time which function will be called, so it has to look it up in a table at runtime. That table is the vtable, and every object with virtual functions carries a pointer to its class's vtable at offset 0 (the first 8 bytes of the object on x64).
 
-Nhớ hình dung này: `object -> [vtable_ptr][field1][field2]...`, và `vtable -> [&check][&name][&destructor]...`. Gọi virtual là hai lần dereference: lấy vtable_ptr từ object, rồi lấy địa chỉ hàm từ vtable.
+Remember this picture: `object -> [vtable_ptr][field1][field2]...`, and `vtable -> [&check][&name][&destructor]...`. A virtual call is two dereferences: take the vtable_ptr from the object, then take the function address from the vtable.
 
-## Bước 3: đọc lời gọi virtual trong asm
+## Step 3: reading the virtual call in asm
 
-Đây là đoạn thật từ `main` (g++ -O0, cắt gọn), chính là chỗ gọi `v->check(argv[1])`:
+Here's the real snippet from `main` (g++ -O0, trimmed), the spot that calls `v->check(argv[1])`:
 
 ```asm
-mov  rax, QWORD PTR [rbp-0x18]   ; rax = con trỏ object (this)
-mov  rax, QWORD PTR [rax]        ; rax = vtable_ptr (8 byte đầu object)
-mov  rcx, QWORD PTR [rax]        ; rcx = vtable[0] = địa chỉ hàm check
+mov  rax, QWORD PTR [rbp-0x18]   ; rax = object pointer (this)
+mov  rax, QWORD PTR [rax]        ; rax = vtable_ptr (first 8 bytes of the object)
+mov  rcx, QWORD PTR [rax]        ; rcx = vtable[0] = address of the check function
 mov  rax, QWORD PTR [rbp-0x30]
 add  rax, 0x8
-mov  rdx, QWORD PTR [rax]        ; rdx = argv[1] (chuỗi nhập)
+mov  rdx, QWORD PTR [rax]        ; rdx = argv[1] (the input string)
 mov  rax, QWORD PTR [rbp-0x18]
-mov  rsi, rdx                    ; rsi = tham số: input
-mov  rdi, rax                    ; rdi = this (tham số ẩn đầu tiên)
-call rcx                         ; gọi gián tiếp qua vtable
+mov  rsi, rdx                    ; rsi = parameter: input
+mov  rdi, rax                    ; rdi = this (the first hidden parameter)
+call rcx                         ; indirect call through the vtable
 ```
 
-Để ý ba điều:
+Notice three things:
 
-1. Cặp `mov rax,[rax]` rồi `mov rcx,[rax]` là chữ ký kinh điển của một lời gọi virtual: dereference object ra vtable, dereference vtable ra con trỏ hàm.
-2. Lệnh cuối là `call rcx`, không phải `call <tên hàm>`. Trong graph của IDA/Ghidra, chỗ này không có mũi tên chỉ tới hàm đích, nên bạn không thể chỉ nhấn đúp để nhảy vào. Đây là chỗ người mới kẹt.
-3. `rdi` nhận `this`, `rsi` nhận input. Đây là System V (Linux). Trên Windows x64 sẽ là `rcx` cho `this`, `rdx` cho input (xem lại Bài 4.1 về this pointer).
+1. The pair `mov rax,[rax]` then `mov rcx,[rax]` is the classic signature of a virtual call: dereference the object to get the vtable, dereference the vtable to get the function pointer.
+2. The last instruction is `call rcx`, not `call <function name>`. In the IDA/Ghidra graph, there's no arrow pointing to the target function here, so you can't just double-click to jump in. This is where beginners get stuck.
+3. `rdi` gets `this`, `rsi` gets the input. This is System V (Linux). On Windows x64 it would be `rcx` for `this`, `rdx` for the input (see Lesson 4.1 again on the this pointer).
 
-Vậy làm sao biết `call rcx` thực ra gọi `SerialValidator::check`? Hai cách:
+So how do you know `call rcx` actually calls `SerialValidator::check`? Two ways:
 
-- **Tĩnh:** `vtable[0]` được nạp từ con trỏ vtable, mà vtable của `SerialValidator` do constructor gán vào. Lần theo constructor (hoặc để IDA/Ghidra phân tích RTTI tự gắn) sẽ ra vtable, trong đó slot đầu trỏ tới `check`. Khi đã có RTTI, IDA thường tự đặt tên vtable là `SerialValidator::vftable` và bạn chỉ việc mở ra đọc.
-- **Động:** đặt breakpoint tại `call rcx`, nhìn giá trị `rcx` lúc chạy, nó chính là địa chỉ `check`. Nhấn step-into là vào thẳng hàm. Đây là lối tắt khi phân tích tĩnh vtable rối.
+- **Static:** `vtable[0]` is loaded from the vtable pointer, and the vtable of `SerialValidator` is assigned by the constructor. Follow the constructor (or let IDA/Ghidra's RTTI analysis attach it automatically) and you get the vtable, where the first slot points to `check`. Once RTTI is there, IDA usually names the vtable `SerialValidator::vftable` itself and you just open it and read.
+- **Dynamic:** set a breakpoint at `call rcx`, look at the value of `rcx` at runtime, it's exactly the address of `check`. Press step-into and you're straight in the function. This is the shortcut when the static vtable analysis is messy.
 
-## Bước 4: đọc logic trong check
+## Step 4: reading the logic in check
 
-Vào được `SerialValidator::check` rồi thì phần còn lại giống crackme C. Logic nó làm:
+Once you're inside `SerialValidator::check`, the rest is like a C crackme. The logic it does:
 
 ```c
 if (strlen(input) != 12) return false;
@@ -70,25 +70,25 @@ for (int i = 0; i < 12; i++) {
 return true;
 ```
 
-Mảng `expected` 12 byte nằm trong object (là field của `SerialValidator`, được constructor điền vào). Thuật toán biến đổi từng ký tự rồi so với hằng số, hệt dạng ở Bài 3.5, chỉ khác giờ bạn phải chui qua vtable mới tới được nó.
+The 12-byte `expected` array lives in the object (a field of `SerialValidator`, filled in by the constructor). The algorithm transforms each character then compares with a constant, the same form as Lesson 3.5, the only difference being that now you have to go through the vtable to reach it.
 
-## Bước 5: đảo ngược để tìm password
+## Step 5: reverse it to find the password
 
-Phép biến đổi `t = (c ^ 0x5A) + i` đảo được: `c = (expected[i] - i) ^ 0x5A`. Viết vài dòng Python là ra password. Chi tiết số và lời giải đầy đủ nằm trong `labs/4.6/solution.md`, password đã được kiểm bằng cách build và chạy thật.
+The transform `t = (c ^ 0x5A) + i` is invertible: `c = (expected[i] - i) ^ 0x5A`. A few lines of Python give you the password. The details of the numbers and the full solution are in `labs/4.6/solution.md`, and the password was verified by actually building and running it.
 
-## Vì sao bài này quan trọng
+## Why this lesson matters
 
-Crackme C bạn tìm `call check` là xong. Crackme C++ với virtual function không cho bạn cái đó. Rất nhiều phần mềm thật, nhất là game engine và ứng dụng lớn, dùng đầy virtual call, interface, plugin. Quen lần qua vtable (nhận ra pattern hai lần dereference, dùng RTTI, hoặc đặt breakpoint đọc con trỏ hàm lúc chạy) là kỹ năng bạn sẽ xài suốt đời khi reverse C++.
+With a C crackme you find the `call check` and you're done. A C++ crackme with virtual functions doesn't give you that. Lots of real software, especially game engines and big applications, is full of virtual calls, interfaces, plugins. Getting used to tracing through the vtable (recognizing the two-dereference pattern, using RTTI, or setting a breakpoint to read the function pointer at runtime) is a skill you'll use for life when reversing C++.
 
-## Checklist ghi nhớ
-- Tên có `::` và tham số sau demangle, cùng chuỗi tên class từ RTTI, là dấu hiệu chắc chắn của C++.
-- Object có virtual function mang vtable pointer tại offset 0.
-- Lời gọi virtual trong asm: `mov reg,[obj]` rồi `mov reg2,[reg]` rồi `call reg2`. Không có tên hàm đích.
-- `this` là tham số ẩn đầu tiên: rdi (Linux) hoặc rcx (Windows).
-- Khi kẹt với vtable tĩnh, đặt breakpoint tại `call reg` và đọc giá trị thanh ghi để biết hàm đích.
+## Key takeaways
+- Names with `::` and parameters after demangling, along with class name strings from RTTI, are a sure sign of C++.
+- An object with virtual functions carries a vtable pointer at offset 0.
+- A virtual call in asm: `mov reg,[obj]` then `mov reg2,[reg]` then `call reg2`. No target function name.
+- `this` is the first hidden parameter: rdi (Linux) or rcx (Windows).
+- When you're stuck with a static vtable, set a breakpoint at `call reg` and read the register value to learn the target function.
 
-## Lab tự làm
-Thư mục `labs/4.6/`:
-- `src/crackme.cpp`: mã nguồn và lệnh build (g++ / MSVC / MinGW).
-- `README.md`: nhiệm vụ.
-- `solution.md`: writeup đầy đủ kèm password đã kiểm.
+## Lab
+The folder `labs/4.6/`:
+- `src/crackme.cpp`: source code and build commands (g++ / MSVC / MinGW).
+- `README.md`: the task.
+- `solution.md`: the full writeup with the verified password.

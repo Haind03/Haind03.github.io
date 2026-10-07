@@ -1,102 +1,94 @@
 ---
-title: "Bài 1.10: Windows internals (1), Win32 API và DLL, đọc ý đồ qua danh sách hàm"
+title: "Lesson 1.10: Windows internals (1), Win32 API and DLLs, reading intent from the function list"
 date: 2026-10-06 08:13:00 +0700
-categories: ["Technique Reverse", "Phần 1 · Nền tảng máy tính cho RE"]
+categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
-Một chương trình Windows gần như không tự làm được gì một mình. Muốn mở file, nó phải hỏi Windows. Muốn cấp bộ nhớ, tạo thread, ghi registry, gửi gói mạng, tất cả đều phải nhờ hệ điều hành. Nó nhờ bằng cách gọi API. Và đây là tin vui lớn nhất cho người làm RE: **danh sách API mà một chương trình gọi kể gần hết câu chuyện nó định làm gì, trước cả khi bạn đọc một dòng assembly.**
+A Windows program can hardly do anything on its own. To open a file, it has to ask Windows. To get memory, create a thread, write to the registry or send a network packet, it all has to go through the OS. It asks by calling APIs. And this is the best news for anyone doing RE: **the list of APIs a program calls tells you almost the whole story of what it's trying to do, before you read a single line of assembly.**
 
-Bài này dạy bạn đọc câu chuyện đó.
+This lesson teaches you to read that story.
 
-## Win32 API là gì, và nó nằm ở đâu
+## What is the Win32 API, and where does it live
 
-Win32 API là bộ hàm Windows công khai cho lập trình viên. Chúng không nằm trong exe của bạn mà sống trong các thư viện liên kết động, file `.dll` (Dynamic Link Library). Khi chạy, exe được nạp kèm các DLL nó cần, rồi gọi hàm trong đó.
+The Win32 API is the set of public Windows functions for developers. They aren't inside your exe. They live in dynamic link libraries, the `.dll` files (Dynamic Link Library). At runtime the exe gets loaded together with the DLLs it needs, then calls functions in them.
 
-Vài DLL cốt lõi phải thuộc tên, vì nhìn tên là đoán được nhóm chức năng:
+A few core DLLs you should know by name, because the name alone tells you the functional area:
 
-| DLL | Chứa gì |
+| DLL | What it holds |
 |---|---|
-| `kernel32.dll` | Lõi: file, process, thread, memory, module (CreateFile, VirtualAlloc, CreateThread, LoadLibrary) |
-| `ntdll.dll` | Tầng thấp nhất ở user-mode, cổng xuống kernel (các hàm Nt*/Zw*) |
-| `user32.dll` | Giao diện: cửa sổ, message, input (MessageBox, GetWindowText, SetWindowsHookEx) |
-| `advapi32.dll` | Registry, service, token, crypto cũ (RegSetValueEx, OpenSCManager, CryptEncrypt) |
-| `gdi32.dll` | Vẽ đồ hoạ 2D |
-| `ws2_32.dll` / `wininet.dll` / `winhttp.dll` | Mạng: socket và HTTP |
+| `kernel32.dll` | Core: file, process, thread, memory, module (CreateFile, VirtualAlloc, CreateThread, LoadLibrary) |
+| `ntdll.dll` | Lowest layer in user mode, the gateway down to the kernel (the Nt*/Zw* functions) |
+| `user32.dll` | UI: windows, messages, input (MessageBox, GetWindowText, SetWindowsHookEx) |
+| `advapi32.dll` | Registry, services, tokens, legacy crypto (RegSetValueEx, OpenSCManager, CryptEncrypt) |
+| `gdi32.dll` | 2D graphics drawing |
+| `ws2_32.dll` / `wininet.dll` / `winhttp.dll` | Networking: sockets and HTTP |
 
-## Chuỗi gọi xuống kernel
+## The call chain down to the kernel
 
-Điều nhiều người mới không biết: phần lớn hàm trong `kernel32.dll` không tự làm việc thật. Chúng chỉ là lớp bọc gọi tiếp xuống `ntdll.dll`, và `ntdll` mới là nơi thực hiện cú nhảy vào kernel (qua lệnh `syscall`). Ví dụ:
+Something a lot of beginners don't know: most functions in `kernel32.dll` don't do the real work themselves. They're just wrappers that call down into `ntdll.dll`, and `ntdll` is where the jump into the kernel happens (via the `syscall` instruction). For example:
 
 ```
-Chương trình -> CreateFileW (kernel32) -> NtCreateFile (ntdll) -> syscall -> kernel
+Program -> CreateFileW (kernel32) -> NtCreateFile (ntdll) -> syscall -> kernel
 ```
 
-Vì sao điều này quan trọng với RE: malware tinh vi hay bỏ qua `kernel32` và gọi thẳng hàm `Nt*` trong `ntdll`, hoặc thậm chí tự gọi `syscall` để né các hook mà công cụ bảo mật đặt ở tầng kernel32. Thấy một chương trình bình thường mà gọi trực tiếp `NtCreateFile`, `NtAllocateVirtualMemory` là một dấu hiệu đáng để ý. Chuyện Native API và syscall để bài [1.12](/posts/tr-1-12-windows-internals-3-seh-tls-syscall/) đào sâu.
+Why this matters for RE: sophisticated malware often skips `kernel32` and calls the `Nt*` functions in `ntdll` directly, or even issues `syscall` itself, to dodge the hooks security tools place at the kernel32 level. If an ordinary-looking program calls `NtCreateFile` or `NtAllocateVirtualMemory` directly, that's worth noticing. Native API and syscalls get a deeper look in lesson [1.12](/posts/tr-1-12-windows-internals-3-seh-tls-syscall/).
 
-## A và W, hai phiên bản của gần như mọi hàm
+## A and W, two versions of almost every function
 
-Bạn sẽ thấy `CreateFileA` và `CreateFileW`, `MessageBoxA` và `MessageBoxW`. Hậu tố cho biết kiểu chuỗi:
+You'll see `CreateFileA` and `CreateFileW`, `MessageBoxA` and `MessageBoxW`. The suffix tells you the string type. `A` means ANSI, strings with 1 byte per character (the old style), and `W` means Wide, Unicode UTF-16 strings with 2 bytes per character (the modern Windows style).
 
-- `A` = ANSI, chuỗi 1 byte mỗi ký tự (kiểu cũ).
-- `W` = Wide, chuỗi Unicode UTF-16, 2 byte mỗi ký tự (kiểu hiện đại của Windows).
+When reading in IDA, knowing the suffix tells you what kind of string to look for in memory. A W string in a hex editor has `00` bytes interleaved (`H.e.l.l.o.`), while an A string is contiguous. Mix this up and you'll search for a string forever without finding it.
 
-Khi đọc trong IDA, biết hậu tố giúp bạn biết đang tìm chuỗi dạng nào trong bộ nhớ. Một chuỗi W nhìn trong hex editor sẽ có byte `00` xen kẽ (`H.e.l.l.o.`), còn A thì liền mạch. Nhầm chỗ này là tìm chuỗi mãi không ra.
+## Two ways a program calls an API
 
-## Hai cách một chương trình gọi API
+This is the core part, because it decides where you see the API.
 
-Đây là phần cốt lõi, vì nó quyết định bạn thấy API ở đâu.
+### Static import, through the IAT
 
-### Import tĩnh, qua IAT
+The normal way: at compile time, the linker writes a list into the PE file saying "I need function X from DLL Y". This list sits in the Import Directory, and at load time Windows fills in the real address of each function into a table called the IAT (Import Address Table). Every API call in the code goes through this table.
 
-Cách thông thường: lúc biên dịch, trình liên kết ghi sẵn vào file PE một danh sách "tôi cần hàm X của DLL Y". Danh sách này nằm trong Import Directory, và khi nạp, Windows điền địa chỉ thật của từng hàm vào một bảng gọi là IAT (Import Address Table). Mọi lời gọi API trong code đi qua bảng này.
+What's great for you: the import list is right there in the file, readable without running anything. Open DIE or PE-bear and you see every function the program intends to use. This is the first thing you look at after triage.
 
-Với bạn, điều tuyệt vời là: danh sách import nằm ngay trong file, đọc được mà không cần chạy. Mở DIE hay PE-bear là thấy toàn bộ hàm chương trình định dùng. Đây là thứ bạn xem đầu tiên sau khi triage.
+### Dynamic, through LoadLibrary and GetProcAddress
 
-### Dynamic, qua LoadLibrary và GetProcAddress
-
-Cách giấu mình: chương trình không khai báo import trước, mà lúc chạy mới gọi:
+The hiding way: the program doesn't declare imports up front, and only calls these at runtime:
 
 ```c
-HMODULE h = LoadLibrary("wininet.dll");      // nạp DLL
-void* f = GetProcAddress(h, "InternetOpenA"); // lấy địa chỉ hàm theo tên
-f(...);                                        // gọi
+HMODULE h = LoadLibrary("wininet.dll");      // load the DLL
+void* f = GetProcAddress(h, "InternetOpenA"); // get the function address by name
+f(...);                                        // call it
 ```
 
-Cặp `LoadLibrary` + `GetProcAddress` là chữ ký kinh điển của việc gọi API động. Malware chuộng cách này vì danh sách import tĩnh trông sạch sẽ vô hại, hàm thật chỉ lộ ra lúc chạy. Có khi tên hàm còn bị mã hoá chuỗi để qua mặt cả người đọc static. Thấy `GetProcAddress` gọi nhiều lần trong một vòng lặp là biết nó đang tự dựng bảng API riêng, một cờ đỏ.
+The `LoadLibrary` + `GetProcAddress` pair is the classic signature of dynamic API calls. Malware likes this because the static import list looks clean and harmless, and the real functions only show up at runtime. Sometimes the function names are even string-encrypted to fool a static reader too. If you see `GetProcAddress` called many times in a loop, it's building its own private API table, a red flag.
 
-Kết luận thực tế: import tĩnh cho bạn bức tranh trên đĩa, nhưng đừng tin nó là đầy đủ. Luôn để mắt tới `LoadLibrary`/`GetProcAddress`.
+Practical takeaway: static imports give you the picture on disk, but don't trust that it's complete. Always keep an eye out for `LoadLibrary`/`GetProcAddress`.
 
-## Đọc ý đồ qua nhóm API
+## Reading intent from API groups
 
-Đây là kỹ năng kiếm cơm. Nhóm hàm theo mục đích, và sự có mặt của một nhóm là manh mối:
+This is the bread-and-butter skill. Group functions by purpose, and the presence of a group is a clue:
 
-| Nhóm | Hàm tiêu biểu | Gợi ý chương trình làm gì |
+| Group | Typical functions | What it hints the program does |
 |---|---|---|
-| File | CreateFile, ReadFile, WriteFile, DeleteFile, FindFirstFile | Đọc/ghi/quét file. Ransomware duyệt file sẽ đầy nhóm này |
-| Registry | RegOpenKeyEx, RegSetValueEx, RegQueryValueEx | Đọc/ghi registry, thường để cấu hình hoặc cài persistence |
-| Process/Thread | CreateProcess, OpenProcess, CreateRemoteThread, CreateThread | Tạo/can thiệp tiến trình. OpenProcess + CreateRemoteThread là bộ đôi injection |
-| Memory | VirtualAlloc, VirtualProtect, WriteProcessMemory | Cấp/đổi quyền bộ nhớ. VirtualAlloc quyền RWX + ghi code là dấu hiệu unpack/shellcode |
-| Network | socket, connect, send, InternetOpen, HttpSendRequest, WinHttpConnect | Liên lạc mạng, có thể là tải payload hoặc gọi C2 |
-| Crypto | CryptEncrypt, CryptDecrypt, BCryptEncrypt, CryptAcquireContext | Mã hoá/giải mã, thường gặp trong ransomware hoặc giấu cấu hình |
-| Service | OpenSCManager, CreateService, StartService | Cài service, một kiểu persistence quyền cao |
+| File | CreateFile, ReadFile, WriteFile, DeleteFile, FindFirstFile | Reads/writes/scans files. Ransomware that walks files will be full of this group |
+| Registry | RegOpenKeyEx, RegSetValueEx, RegQueryValueEx | Reads/writes the registry, usually for config or to set up persistence |
+| Process/Thread | CreateProcess, OpenProcess, CreateRemoteThread, CreateThread | Creates/tampers with processes. OpenProcess + CreateRemoteThread is the injection duo |
+| Memory | VirtualAlloc, VirtualProtect, WriteProcessMemory | Allocates/changes memory permissions. VirtualAlloc with RWX plus a code write is a sign of unpacking/shellcode |
+| Network | socket, connect, send, InternetOpen, HttpSendRequest, WinHttpConnect | Network communication, maybe downloading a payload or calling C2 |
+| Crypto | CryptEncrypt, CryptDecrypt, BCryptEncrypt, CryptAcquireContext | Encrypts/decrypts, common in ransomware or for hiding config |
+| Service | OpenSCManager, CreateService, StartService | Installs a service, a high-privilege kind of persistence |
 
-Một ví dụ ghép lại: thấy đồng thời `CreateFile` + `CryptEncrypt` + `FindFirstFile` + `RegSetValueEx`, bạn chưa đọc dòng code nào đã có thể nghi: chương trình quét file, mã hoá chúng, ghi gì đó vào registry. Đó là profile của ransomware. Static analysis sau đó chỉ việc xác nhận.
+Putting it together: if you see `CreateFile` + `CryptEncrypt` + `FindFirstFile` + `RegSetValueEx` all at once, before reading any code you can already suspect the program scans files, encrypts them, and writes something into the registry. That's the profile of ransomware. Static analysis afterwards just has to confirm it.
 
-## Xem import trong thực tế
+## Looking at imports in practice
 
-Hai cách nhanh:
-- **DIE**: tab Import liệt kê DLL và hàm. Tiện khi triage.
-- **PE-bear / CFF Explorer**: xem Import Directory chi tiết, cả IAT.
-- Trong **IDA**, cửa sổ Imports (Shift+F3 hoặc View > Open subviews > Imports) cho danh sách, double-click một hàm rồi nhấn `X` để xem nó được gọi ở đâu trong code. Đây là cách bạn đi từ "chương trình có gọi VirtualAlloc" tới "nó gọi ở hàm nào, với tham số gì".
+A few quick ways to look at imports. DIE has an Import tab that lists DLLs and functions, which is handy for triage. PE-bear or CFF Explorer give a detailed view of the Import Directory, including the IAT. In IDA, the Imports window (Shift+F3 or View > Open subviews > Imports) gives you the list, and if you double-click a function and press `X` you see where it's called in the code. This is how you go from "the program calls VirtualAlloc" to "which function calls it, and with what arguments".
 
-## Lab tự làm
+## Lab
 
-Bài tập ở [labs/1.10/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/1.10): mở import của vài exe khác nhau rồi tập đoán chức năng chỉ từ danh sách API, và ghép từng hàm vào đúng nhóm mục đích. Writeup mẫu trong `solution.md`.
+The exercise is at [labs/1.10/](https://github.com/Haind03/Technique-Reverse/tree/main/labs/1.10): open the imports of a few different exes and practice guessing their functionality from the API list alone, and put each function into the right purpose group. A sample writeup is in `solution.md`.
 
-## Checklist ghi nhớ
-- Win32 API sống trong DLL (kernel32, user32, advapi32, ntdll...), exe gọi vào đó để nhờ Windows làm việc.
-- kernel32 thường gọi tiếp xuống ntdll rồi syscall vào kernel. Gọi thẳng Nt*/syscall là đáng ngờ.
-- Hậu tố A = ANSI, W = Unicode UTF-16 (có byte 00 xen kẽ trong bộ nhớ).
-- Import tĩnh hiện trong IAT, đọc được từ file (DIE/PE-bear). Nhưng LoadLibrary + GetProcAddress mới là cách giấu API, luôn để mắt.
-- Nhóm API theo mục đích (file, registry, process, memory, network, crypto) để đoán ý đồ trước khi đọc code.
+## Key takeaways
+The Win32 API lives in DLLs (kernel32, user32, advapi32, ntdll...), and the exe calls into them to ask Windows to do things. kernel32 usually calls down into ntdll and then syscalls into the kernel, so calling Nt*/syscall directly is suspicious. The suffix A means ANSI and W means Unicode UTF-16 (with interleaved 00 bytes in memory).
+
+Static imports show up in the IAT and can be read from the file (DIE/PE-bear). But LoadLibrary + GetProcAddress is how APIs get hidden, so always watch for it. Group APIs by purpose (file, registry, process, memory, network, crypto) to guess intent before reading code.

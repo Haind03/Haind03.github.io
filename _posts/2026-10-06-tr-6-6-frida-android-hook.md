@@ -1,82 +1,82 @@
 ---
-title: "Bài 6.6: Frida trên Android, sửa hành vi app lúc nó đang chạy"
+title: "Lesson 6.6: Frida on Android, changing app behavior while it runs"
 date: 2026-10-06 08:49:00 +0700
-categories: ["Technique Reverse", "Phần 6 · Java / Kotlin / Android (JADX)"]
+categories: ["Technique Reverse", "Part 06 · Java, Kotlin and Android"]
 tags: [reverse-engineering, android, java]
 render_with_liquid: false
 ---
-Đọc tĩnh một APK trong JADX cho bạn biết app định làm gì. Nhưng nhiều lúc bạn muốn tận mắt thấy một giá trị lúc runtime, hoặc thử đổi kết quả một hàm để xem app phản ứng ra sao mà không phải patch rồi đóng gói lại cả APK. Đó là lúc Frida vào cuộc. Nó cho bạn chen vào bất kỳ method Java nào lúc app chạy, đọc tham số, đổi giá trị trả về, tất cả bằng vài dòng JavaScript.
+Reading an APK statically in JADX tells you what the app intends to do. But often you want to see a value with your own eyes at runtime, or try changing a function's result to see how the app reacts, without patching and repackaging the whole APK. That's when Frida comes in. It lets you step into any Java method while the app runs, read the arguments, change the return value, all in a few lines of JavaScript.
 
-Nói thẳng về ranh giới trước: những gì trong bài này là kỹ thuật kiểm thử bảo mật (security testing). Dùng trên app của chính bạn, app bạn được phép kiểm thử, hoặc app luyện tập như OWASP UnCrackable. Hook để qua mặt kiểm tra bản quyền của app người khác, hay gian lận trong game online, là chuyện khác và không nằm trong phạm vi series. Công cụ trung lập, mục đích mới quyết định.
+Let me be upfront about the boundary first: what's in this lesson is security testing technique. Use it on your own apps, apps you're authorized to test, or practice apps like OWASP UnCrackable. Hooking to bypass the licensing checks of someone else's app, or cheating in online games, is a different matter and outside the scope of this series. The tool is neutral, the purpose is what counts.
 
-## Frida hoạt động thế nào
+## How Frida works
 
-Frida là một dynamic instrumentation toolkit. Trên Android, mô hình gồm hai phần:
+Frida is a dynamic instrumentation toolkit. On Android, the model has two parts:
 
-- **frida-server**: một binary chạy trên thiết bị (thường cần root) hoặc trên emulator. Nó là cánh tay nối dài, chịu trách nhiệm chèn code vào tiến trình app.
-- **frida / objection**: công cụ chạy trên máy tính của bạn (host), nói chuyện với frida-server qua USB hoặc TCP, nạp script của bạn vào app.
+- **frida-server**: a binary that runs on the device (usually needs root) or on an emulator. It's the extended arm, responsible for injecting code into the app process.
+- **frida / objection**: tools that run on your computer (the host), talk to frida-server over USB or TCP, and load your script into the app.
 
-Script bạn viết bằng JavaScript. Frida tiêm một JS engine vào tiến trình app, và từ trong đó script của bạn gọi được vào runtime của Android, nắm lấy class và method Java như thể bạn đang viết Java vậy.
+You write scripts in JavaScript. Frida injects a JS engine into the app process, and from inside it your script can call into the Android runtime and grab Java classes and methods as if you were writing Java.
 
-## Dựng môi trường
+## Setting up the environment
 
-Các bước tối thiểu, giả định bạn đã có một emulator hoặc thiết bị đã root:
+The minimum steps, assuming you already have an emulator or a rooted device:
 
 ```bash
-# trên host
+# on the host
 pip install frida-tools
 
-# tải frida-server đúng kiến trúc thiết bị (vd arm64) từ GitHub của Frida
-# đẩy lên thiết bị và chạy
+# download frida-server for the device's architecture (e.g. arm64) from Frida's GitHub
+# push it to the device and run it
 adb push frida-server /data/local/tmp/
 adb shell "chmod 755 /data/local/tmp/frida-server"
 adb shell "su -c /data/local/tmp/frida-server &"
 
-# kiểm tra host thấy thiết bị
-frida-ps -U        # liệt kê tiến trình qua USB
+# check that the host sees the device
+frida-ps -U        # list processes over USB
 ```
 
-`frida-ps -U` liệt kê được app là môi trường đã thông. Phiên bản frida-server phải khớp phiên bản frida-tools trên host, lệch version là lỗi ngay, đây là cái bẫy số một của người mới.
+If `frida-ps -U` lists the apps, the environment works. The frida-server version has to match the frida-tools version on the host, a version mismatch errors out right away, and this is the number one trap for beginners.
 
-## Hook method Java: ba mẫu bạn dùng mãi
+## Hooking Java methods: three patterns you'll use forever
 
-Mọi script Android bắt đầu bằng `Java.perform`, bên trong lấy class bằng `Java.use`, rồi ghi đè implementation của method. Ba việc hay làm nhất:
+Every Android script starts with `Java.perform`, inside it you get a class with `Java.use`, then override the method's implementation. The three most common jobs:
 
-### 1. Đổi giá trị trả về
+### 1. Change the return value
 
-Giả sử app có `SecurityCheck.isRooted()` trả về `true` khi phát hiện máy đã root, và app từ chối chạy. Bạn hook để nó luôn trả `false`:
+Say the app has `SecurityCheck.isRooted()` returning `true` when it detects a rooted device, and the app refuses to run. You hook it so it always returns `false`:
 
 ```javascript
 Java.perform(function () {
     var SecurityCheck = Java.use("com.example.app.SecurityCheck");
     SecurityCheck.isRooted.implementation = function () {
-        console.log("[*] isRooted() bị gọi, ép trả về false");
-        return false;   // bỏ qua giá trị thật, trả cái ta muốn
+        console.log("[*] isRooted() called, forcing false");
+        return false;   // ignore the real value, return what we want
     };
 });
 ```
 
-### 2. Log tham số và kết quả thật
+### 2. Log arguments and the real result
 
-Khi muốn hiểu một hàm nhận gì và trả gì mà không đổi hành vi, gọi method gốc rồi in ra:
+When you want to understand what a function takes and returns without changing behavior, call the original method and then print:
 
 ```javascript
 Java.perform(function () {
     var Checker = Java.use("com.example.app.LicenseChecker");
     Checker.validate.implementation = function (input) {
         console.log("[*] validate() input = " + input);
-        var ret = this.validate(input);   // gọi bản gốc
-        console.log("[*] validate() trả về = " + ret);
+        var ret = this.validate(input);   // call the original
+        console.log("[*] validate() returned = " + ret);
         return ret;
     };
 });
 ```
 
-Mẹo quan trọng: `this.validate(input)` gọi lại chính method gốc. Nhờ vậy bạn quan sát mà không phá logic, rất hợp để lần ra thuật toán kiểm tra.
+An important tip: `this.validate(input)` calls the original method itself. That lets you observe without breaking the logic, very handy for tracing out the checking algorithm.
 
-### 3. Method bị overload
+### 3. Overloaded methods
 
-Nếu một method có nhiều overload, Frida bắt bạn chỉ rõ chữ ký, nếu không nó báo lỗi ambiguous:
+If a method has several overloads, Frida makes you specify the signature, otherwise it errors with ambiguous:
 
 ```javascript
 var Util = Java.use("com.example.app.Util");
@@ -85,52 +85,52 @@ Util.check.overload("java.lang.String", "int").implementation = function (s, n) 
 };
 ```
 
-Chạy script:
+Run the script:
 
 ```bash
-frida -U -f com.example.app -l hook.js        # spawn app kèm script
-# hoặc attach vào app đang chạy:
+frida -U -f com.example.app -l hook.js        # spawn the app with the script
+# or attach to a running app:
 frida -U com.example.app -l hook.js
 ```
 
-`-f` spawn app từ đầu (bắt được cả code chạy sớm), còn attach thì gắn vào tiến trình đang sống.
+`-f` spawns the app from the start (catching early-running code too), while attach hooks into a live process.
 
-## JADX sinh sẵn snippet cho bạn
+## JADX generates the snippet for you
 
-Không cần gõ tay class name dài loằng ngoằng. Trong JADX-GUI (bài [6.3](/posts/tr-6-3-jadx-gui-chuyen-sau/)), chuột phải vào một method rồi chọn **Copy as Frida snippet**. Nó sinh sẵn khung `Java.use(...).implementation` đúng class và chữ ký, bạn chỉ việc dán vào script và điền phần thân. Đây là cách nhanh nhất để đi từ "tìm thấy hàm trong decompiler" sang "hook được nó".
+No need to type long class names by hand. In JADX-GUI (lesson [6.3](/posts/tr-6-3-jadx-gui-chuyen-sau/)), right-click a method and choose **Copy as Frida snippet**. It generates the `Java.use(...).implementation` skeleton with the right class and signature, and you just paste it into the script and fill in the body. This is the fastest way to go from "found the function in the decompiler" to "hooked it".
 
-## SSL pinning và vì sao cần vượt qua khi kiểm thử
+## SSL pinning and why you need to bypass it when testing
 
-Nhiều app ghim chứng chỉ (SSL pinning) để từ chối mọi kết nối không đúng certificate định sẵn. Tốt cho bảo mật, nhưng khi bạn kiểm thử chính app của mình và muốn xem traffic qua Burp/mitmproxy, pinning chặn luôn cả bạn. Giải pháp trong kiểm thử là hook lớp kiểm tra chứng chỉ để nó chấp nhận proxy của bạn.
+Many apps pin certificates (SSL pinning) to reject every connection that doesn't use a predefined certificate. Good for security, but when you're testing your own app and want to see the traffic through Burp/mitmproxy, pinning blocks you too. The solution in testing is to hook the certificate checking layer so it accepts your proxy.
 
-Cách nhanh nhất là dùng objection, lớp tự động hoá dựng trên Frida:
+The fastest way is objection, an automation layer built on Frida:
 
 ```bash
 pip install objection
 objection -g com.example.app explore
-# trong shell objection:
+# inside the objection shell:
 android sslpinning disable
 android root disable
 ```
 
-Hai lệnh này gói sẵn hàng loạt hook phổ biến cho pinning và root detection, đỡ phải tự viết. Khi objection không xử lý được cơ chế lạ, bạn quay lại viết hook Frida tay cho đúng lớp đó.
+These two commands bundle a lot of common hooks for pinning and root detection, so you don't write them yourself. When objection can't handle an unusual mechanism, you go back to writing a manual Frida hook for that exact layer.
 
-## Cạm bẫy hay gặp
+## Common pitfalls
 
-- **Lệch version** giữa frida-server và frida-tools: lỗi khó hiểu, luôn kiểm tra trước.
-- **Class chưa được nạp** lúc bạn hook: dùng `-f` để spawn sớm, hoặc hook ClassLoader.
-- **Tên method sau obfuscation**: nếu app bị R8/ProGuard (bài [6.8](/posts/tr-6-8-obfuscation-android/)) đổi tên, class name trong snippet cũng là tên rối, cứ dùng đúng tên rối đó.
-- **Phát hiện Frida**: app phòng thủ có thể dò frida-server qua cổng 27042 hoặc tên tiến trình. Khi đó cần chạy frida-server đổi tên/đổi cổng, hoặc dùng gadget nhúng.
+- **Version mismatch** between frida-server and frida-tools: confusing errors, always check first.
+- **Class not yet loaded** when you hook: use `-f` to spawn early, or hook the ClassLoader.
+- **Method names after obfuscation**: if the app is renamed by R8/ProGuard (lesson [6.8](/posts/tr-6-8-obfuscation-android/)), the class names in the snippet are scrambled too, just use those exact scrambled names.
+- **Frida detection**: a defensive app may probe for frida-server via port 27042 or the process name. Then you need to run a renamed/different-port frida-server, or use an embedded gadget.
 
-## Lab tự làm
+## Lab
 
-Xem [labs/6.6/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/6.6). Bạn sẽ hook một method trong app luyện tập của chính mình để đổi giá trị trả về, và quan sát app đổi hành vi theo. File `src/hook.js` là script mẫu để bạn sửa.
+See [labs/6.6/](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/6.6). You'll hook a method in a practice app of your own to change the return value, and watch the app change behavior accordingly. The file `src/hook.js` is a sample script for you to edit.
 
-## Checklist ghi nhớ
-- Frida gồm frida-server trên thiết bị và frida/objection trên host, version hai bên phải khớp.
-- Mẫu cốt lõi: `Java.perform` rồi `Java.use("class").method.implementation = function(){...}`.
-- Gọi `this.method(...)` để chạy bản gốc, dùng khi chỉ muốn log mà không đổi hành vi.
-- Method overload phải chỉ rõ bằng `.overload(...)`.
-- JADX Copy as Frida snippet sinh sẵn khung hook đúng chữ ký.
-- objection gói sẵn hook cho SSL pinning và root detection.
-- Chỉ dùng trên app của mình hoặc được phép, đây là kiểm thử bảo mật chứ không phải gian lận.
+## Key takeaways
+- Frida has frida-server on the device and frida/objection on the host, and the versions on both sides must match.
+- The core pattern: `Java.perform` then `Java.use("class").method.implementation = function(){...}`.
+- Call `this.method(...)` to run the original, use it when you only want to log without changing behavior.
+- Overloaded methods must be specified with `.overload(...)`.
+- JADX Copy as Frida snippet generates a hook skeleton with the right signature.
+- objection bundles hooks for SSL pinning and root detection.
+- Only use it on your own apps or ones you're authorized for, this is security testing and not cheating.

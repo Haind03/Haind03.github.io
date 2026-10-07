@@ -1,76 +1,76 @@
 ---
-title: "Bài 10.3: Script đóng thành exe, mở lại nhanh hơn bạn tưởng"
+title: "Lesson 10.3: Scripts packed into exes, easier to open back up than you think"
 date: 2026-10-06 09:08:00 +0700
-categories: ["Technique Reverse", "Phần 10 · Ngôn ngữ legacy: Delphi, VB6, AutoIt, AHK"]
+categories: ["Technique Reverse", "Part 10 · Legacy: Delphi, VB6, AutoIt, AHK"]
 tags: [reverse-engineering, legacy]
 render_with_liquid: false
 ---
-Có một nhóm "exe" mà nếu bạn lôi thẳng vào IDA thì phí cả buổi tối: đó là các script được gói vào một file chạy. Bên trong không phải code C được biên dịch, mà là một đoạn AutoIt, AutoHotkey, hay một bộ cài NSIS, kèm theo một cái stub chỉ làm mỗi việc bung script ra rồi chạy. Reverse đúng cách là không đọc assembly của stub, mà trích lại script gốc. Nhiều khi bạn lấy lại gần như nguyên văn mã nguồn.
+There's a group of "exes" where dragging them straight into IDA wastes your whole evening: scripts packed into an executable. Inside isn't compiled C code, but an AutoIt or AutoHotkey script, or an NSIS installer, plus a stub whose only job is to unpack the script and run it. The right way to reverse these isn't reading the stub's assembly, it's extracting the original script. A lot of the time you get back nearly the exact source.
 
-Đây không phải kiến thức bên lề. Malware rất chuộng AutoIt và NSIS vì gói nhanh, khó bị diệt theo chữ ký, và trông vô hại. Biết moi script ra là một kỹ năng dùng thật.
+This isn't side knowledge. Malware loves AutoIt and NSIS because they're quick to pack, hard to kill by signature, and look harmless. Knowing how to dig the script out is a skill you really use.
 
-## Nguyên tắc chung: nhận diện trước, trích sau
+## General principle: identify first, extract after
 
-Mọi loại trong bài này theo cùng một nhịp. Đầu tiên nhận diện loại wrapper bằng Detect It Easy (DIE) và `strings`, vì mỗi loại để lại dấu vết rất rõ. Sau đó dùng đúng công cụ trích cho loại đó. Đừng bao giờ nhảy vào disassembler trước khi loại trừ khả năng đây chỉ là script được gói.
+Every type in this lesson follows the same rhythm. First identify the wrapper type with Detect It Easy (DIE) and `strings`, since each type leaves very clear traces. Then use the right extraction tool for that type. Never jump into a disassembler before ruling out that it's just a packed script.
 
-Dấu hiệu nhanh trong `strings` hoặc DIE:
+Quick tells in `strings` or DIE:
 
-| Loại | Dấu vết hay thấy |
+| Type | Common traces |
 |---|---|
-| AutoIt | chuỗi `AU3!`, `>>>AUTOIT SCRIPT<<<`, `AutoIt v3` |
-| AutoHotkey | resource `RCDATA` tên `>AUTOHOTKEY SCRIPT<`, chuỗi `AutoHotkey` |
-| NSIS | chuỗi `Nullsoft Install System`, `NSIS` |
-| Inno Setup | chuỗi `Inno Setup`, section `JR.` trong resource |
-| PyInstaller | chuỗi `MEI`, `pyi` (xem lại Bài 7.4) |
+| AutoIt | the strings `AU3!`, `>>>AUTOIT SCRIPT<<<`, `AutoIt v3` |
+| AutoHotkey | an `RCDATA` resource named `>AUTOHOTKEY SCRIPT<`, the string `AutoHotkey` |
+| NSIS | the strings `Nullsoft Install System`, `NSIS` |
+| Inno Setup | the string `Inno Setup`, a `JR.` section in the resources |
+| PyInstaller | the strings `MEI`, `pyi` (see Lesson 7.4 again) |
 
 ## AutoIt
 
-AutoIt là ngôn ngữ script tự động hoá cho Windows. Khi compile, nó nhúng mã script (dạng đã token hoá, không phải text thuần) vào một stub interpreter. Điều may mắn: token hoá không phải mã hoá mạnh, nên tool giải lại được gần hết.
+AutoIt is an automation scripting language for Windows. When compiled, it embeds the script code (tokenized, not plain text) into an interpreter stub. Luckily, tokenizing isn't strong encryption, so tools can reverse almost all of it.
 
-Công cụ:
-- **Exe2Aut**: kéo thả exe vào, nó bung ra file `.au3` gốc. Chạy trên Windows, đơn giản nhất.
-- **AutoIt-Ripper** (Python): chạy được đa nền, trích script từ exe hoặc từ dump bộ nhớ.
+Tools:
+- **Exe2Aut**: drag and drop the exe in and it unpacks the original `.au3` file. Runs on Windows, the simplest.
+- **AutoIt-Ripper** (Python): cross-platform, extracts the script from the exe or from a memory dump.
 
-Với các biến thể AutoIt mới có mã hoá thêm, Exe2Aut đôi khi phải chạy chính file đó (nguy hiểm nếu là malware) để bắt lúc script được giải trong bộ nhớ. Khi phân tích mẫu độc, làm trong VM cô lập theo [Bài 0.3](/posts/tr-0-3-dung-lab-an-toan/).
+For newer AutoIt variants with extra encryption, Exe2Aut sometimes has to run the file itself (dangerous if it's malware) to catch the moment the script gets decoded in memory. When analyzing malicious samples, do it in an isolated VM following [Lesson 0.3](/posts/tr-0-3-dung-lab-an-toan/).
 
 ## AutoHotkey
 
-AutoHotkey (AHK) còn dễ hơn. Script được nhúng gần như nguyên văn vào một resource kiểu `RCDATA`, thường tên `>AUTOHOTKEY SCRIPT<`. Bạn không cần tool chuyên dụng:
+AutoHotkey (AHK) is even easier. The script is embedded almost verbatim in an `RCDATA`-type resource, usually named `>AUTOHOTKEY SCRIPT<`. You don't need a specialized tool:
 
-- Mở exe bằng **Resource Hacker** hoặc **CFF Explorer**, tìm resource RCDATA, export ra là có script `.ahk`.
-- Với AHK v2 hoặc bản nén, có thể cần giải nén resource trước, nhưng cách tiếp cận không đổi.
+- Open the exe with **Resource Hacker** or **CFF Explorer**, find the RCDATA resource, export it and you have the `.ahk` script.
+- For AHK v2 or compressed builds, you may need to decompress the resource first, but the approach doesn't change.
 
-Vì script nằm dạng text, nhiều khi bạn chỉ cần `strings` là đã thấy lấp ló nội dung.
+Since the script is in text form, a lot of the time just running `strings` already shows the content peeking out.
 
 ## NSIS installer
 
-NSIS (Nullsoft Scriptable Install System) là bộ tạo installer rất phổ biến. Bên trong là một archive chứa các file sẽ cài, cộng với script cài đặt đã biên dịch.
+NSIS (Nullsoft Scriptable Install System) is a very popular installer builder. Inside is an archive holding the files to be installed, plus the compiled install script.
 
-- **7-Zip** (bản hỗ trợ NSIS) mở thẳng file `.exe` NSIS như một archive, cho bạn xem và trích các file bên trong. Đây là cách nhanh nhất để lấy payload mà installer sẽ thả ra.
-- Lưu ý 7-Zip đời mới đã bỏ bớt hỗ trợ xem script `.nsi`, nhưng vẫn trích được các file. Muốn đọc lại logic script thì dùng các fork chuyên như **nsisunbz** hoặc bản 7-Zip cũ.
+- **7-Zip** (the version that supports NSIS) opens an NSIS `.exe` directly as an archive, letting you view and extract the files inside. This is the fastest way to get the payload the installer will drop.
+- Note that newer 7-Zip versions dropped some support for viewing the `.nsi` script, but they can still extract the files. To read the script logic back, use specialized forks like **nsisunbz** or an older 7-Zip.
 
-Với malware, NSIS thường chỉ là lớp vỏ: trích ra rồi bạn sẽ thấy payload thật (một exe/dll/script khác) để phân tích tiếp.
+With malware, NSIS is often just a shell: extract it and you'll see the real payload (another exe/dll/script) to analyze next.
 
 ## Inno Setup
 
-Inno Setup là một bộ tạo installer phổ biến khác. Khác NSIS ở định dạng nên 7-Zip không mở được tử tế.
+Inno Setup is another popular installer builder. Its format differs from NSIS so 7-Zip can't open it properly.
 
-- **innounp** (Inno Setup Unpacker): dòng lệnh, `innounp -x setup.exe` để trích toàn bộ file và cả script `install_script.iss` đã decompile.
-- **UniExtract2** gói sẵn nhiều trình trích, nhận diện tự động cả NSIS lẫn Inno lẫn vài loại khác, tiện khi bạn lười nhớ tool nào cho loại nào.
+- **innounp** (Inno Setup Unpacker): command line, `innounp -x setup.exe` extracts all the files and also the decompiled `install_script.iss` script.
+- **UniExtract2** bundles many extractors, auto-detecting NSIS, Inno and a few other types, handy when you're too lazy to remember which tool goes with which type.
 
-## Các wrapper khác
+## Other wrappers
 
-- **BAT to EXE** (batch gói thành exe): thường trích được bằng các tool như `Batch2Exe` ngược, hoặc đơn giản là dump chuỗi/temp file lúc chạy.
-- **Các packer script tự chế**: khi không có tool sẵn, cách tổng quát luôn đúng là chạy trong VM rồi bắt file tạm hoặc dump bộ nhớ lúc script được giải (dùng Procmon xem file nó ghi ra `%TEMP%`, xem lại [Bài 2.8](/posts/tr-2-8-giam-sat-he-thong/)).
+- **BAT to EXE** (batch packed into an exe): can usually be extracted with tools like a reverse `Batch2Exe`, or simply by dumping strings/temp files at runtime.
+- **Homemade script packers**: when there's no ready tool, the general approach that always works is to run it in a VM and catch the temp file or dump memory at the moment the script is decoded (use Procmon to see which files it writes to `%TEMP%`, see [Lesson 2.8](/posts/tr-2-8-giam-sat-he-thong/) again).
 
-## Vì sao nên thử hướng này đầu tiên
+## Why you should try this route first
 
-Một mẫu malware được báo là "khó", kéo vào IDA thấy toàn code lạ, hoá ra chỉ là stub AutoIt. Trích script ra là đọc được ý đồ trong vài phút, thay vì lội assembly cả ngày. Thói quen tốt: trước khi than phiền binary khó, hãy loại trừ khả năng nó chỉ là một script được gói. DIE và `strings` cho bạn câu trả lời trong mười giây.
+A malware sample is reported as "hard", you drag it into IDA and see nothing but strange code, and it turns out to be just an AutoIt stub. Extracting the script lets you read the intent in a few minutes, instead of wading through assembly all day. A good habit: before complaining a binary is hard, rule out that it's just a packed script. DIE and `strings` give you the answer in ten seconds.
 
-## Checklist ghi nhớ
-- Nhiều "exe" thật ra là script (AutoIt/AHK) hoặc installer (NSIS/Inno) được gói. Đừng đọc assembly của stub.
-- Luôn nhận diện trước bằng DIE và `strings`, mỗi loại có dấu vết rất rõ.
-- AutoIt: Exe2Aut hoặc AutoIt-Ripper. AHK: trích resource RCDATA bằng Resource Hacker.
-- NSIS: 7-Zip. Inno: innounp. Lười thì UniExtract2 lo cả hai.
-- Malware chuộng AutoIt và NSIS, trích script/payload là kỹ năng thực tế.
-- Khi không có tool, chạy trong VM cô lập rồi bắt file tạm hoặc dump bộ nhớ.
+## Key takeaways
+- Many "exes" are really packed scripts (AutoIt/AHK) or installers (NSIS/Inno). Don't read the stub's assembly.
+- Always identify first with DIE and `strings`, each type has very clear traces.
+- AutoIt: Exe2Aut or AutoIt-Ripper. AHK: extract the RCDATA resource with Resource Hacker.
+- NSIS: 7-Zip. Inno: innounp. If you're lazy, UniExtract2 handles both.
+- Malware likes AutoIt and NSIS, extracting the script/payload is a practical skill.
+- When there's no tool, run it in an isolated VM and catch the temp file or dump memory.

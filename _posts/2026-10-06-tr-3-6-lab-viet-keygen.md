@@ -1,36 +1,36 @@
 ---
-title: "Bài 3.6: Viết keygen, khi moi serial không còn đủ"
+title: "Lesson 3.6: Writing a keygen, when fishing out the serial isn't enough"
 date: 2026-10-06 08:30:00 +0700
-categories: ["Technique Reverse", "Phần 3 · C: ngôn ngữ gốc của mọi thứ"]
+categories: ["Technique Reverse", "Part 03 · C"]
 tags: [reverse-engineering, c]
 render_with_liquid: false
 ---
-Ở bài 3.5 bạn tìm ra password của một crackme bằng cách moi nó từ bộ nhớ. Cách đó hiệu quả với loại check đơn giản: chương trình giữ serial đúng ở đâu đó rồi đem so, bạn chỉ việc đọc trộm lúc nó so. Nhưng có một loại khác cứng đầu hơn, và chính nó phân biệt người mới với người thực sự hiểu code: keygenme.
+In lesson 3.5 you found the password of a crackme by fishing it out of memory. That works for simple checks: the program keeps the correct serial somewhere and compares against it, and you just peek at it while it compares. But there's a more stubborn kind, and it's what separates beginners from people who really understand code: the keygenme.
 
-Keygenme không giữ sẵn serial nào cả. Nó **tính** serial đúng từ username ngay lúc chạy, rồi so với cái bạn nhập. Mỗi username một serial khác nhau. Moi một serial ra chỉ giải quyết được đúng một username, mà nhiều khi username còn do bạn tự nhập. Muốn thắng kiểu này, bạn phải hiểu thuật toán đủ sâu để tự sinh serial cho username bất kỳ. Thứ bạn viết ra gọi là keygen.
+A keygenme doesn't keep any serial ready-made. It **computes** the correct serial from the username right at runtime, then compares it with what you typed. Each username gets a different serial. Fishing out one serial only solves exactly one username, and often you're the one choosing the username anyway. To win this kind, you have to understand the algorithm deeply enough to generate a serial for any username yourself. What you write is called a keygen.
 
-## Hai loại crackme, hai lối đánh
+## Two kinds of crackme, two ways to attack
 
-Trước khi đụng tay, phải phân loại mục tiêu. Nhìn nhầm loại là tốn công vô ích.
+Before touching anything, classify the target. Misjudging the type is wasted effort.
 
-**Loại 1: so sánh serial cố định.** Trong code có một chuỗi hằng, hoặc một serial được dựng ra không phụ thuộc username, rồi `strcmp` với cái bạn nhập. Dấu hiệu: hàm validate không hề đọc username, hoặc đọc nhưng không dùng nó để tính serial. Lối đánh: moi serial từ bộ nhớ (bài 3.5) hoặc patch jump cho qua. Nhanh, gọn.
+**Type 1: fixed serial comparison.** The code has a constant string, or a serial built independently of the username, then `strcmp`s it with what you typed. Sign: the validate function never reads the username, or reads it but doesn't use it to compute the serial. How to attack: fish the serial out of memory (lesson 3.5) or patch the jump to get past. Quick and neat.
 
-**Loại 2: kiểm tra theo thuật toán (keygenme).** Hàm validate lấy username, chạy qua một loạt phép tính, ra serial kỳ vọng, rồi so. Lối đánh moi serial vẫn chạy nhưng chỉ cho một username. Patch jump thì phần mềm "mở khoá" trên máy bạn nhưng bạn không có chìa tổng quát. Muốn keygen, bạn buộc phải đọc hiểu phép tính đó rồi viết lại nó.
+**Type 2: algorithmic check (keygenme).** The validate function takes the username, runs it through a series of computations, gets the expected serial, then compares. Fishing out the serial still works but only for one username. Patching the jump "unlocks" the software on your machine but you have no general key. To make a keygen, you have to read and understand that computation and then rewrite it.
 
-Câu hỏi quyết định khi mở hàm validate: **nó có dùng username để tính ra cái đem so không?** Có thì là loại 2, chuẩn bị viết keygen.
+The deciding question when you open the validate function: **does it use the username to compute what it compares against?** If yes, it's type 2, get ready to write a keygen.
 
-## Quy trình viết keygen
+## The keygen workflow
 
-Bốn bước, lần nào cũng vậy:
+Four steps, every time:
 
-1. **Định vị hàm validate.** Đi từ chuỗi "Correct"/"Wrong" bằng xref, như mọi khi.
-2. **Tách phần tính serial.** Đọc xem username được biến đổi thế nào: cộng dồn, nhân trọng số, băm, định dạng ra chuỗi ra sao.
-3. **Viết lại thuật toán bằng ngôn ngữ của bạn.** Python là lựa chọn tự nhiên vì nhanh và không phải build.
-4. **Kiểm chéo.** Chạy keygen cho một username, nạp serial vào keygenme, phải thấy "Correct". Nếu sai, bạn đọc nhầm một bước nào đó, quay lại bước 2.
+1. **Locate the validate function.** Go from the "Correct"/"Wrong" strings via xref, as always.
+2. **Isolate the serial computation.** Read how the username is transformed: accumulated, multiplied by weights, hashed, how it's formatted into a string.
+3. **Rewrite the algorithm in your own language.** Python is the natural choice because it's fast and needs no build.
+4. **Cross-check.** Run the keygen for a username, feed the serial into the keygenme, and you must see "Correct". If it's wrong, you misread a step, go back to step 2.
 
-## Mổ keygenme của lab
+## Dissecting the lab's keygenme
 
-Lab [labs/3.6](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/3.6) có một keygenme nhận `username` và `serial`. Mở trong Ghidra, đi tới `validate`, bạn thấy lõi của nó là vòng lặp này (đã dịch về C cho dễ nhìn):
+The lab [labs/3.6](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/3.6) has a keygenme that takes a `username` and a `serial`. Open it in Ghidra, go to `validate`, and you see its core is this loop (translated back to C so it's easier to look at):
 
 ```c
 static const uint16_t SEED[4] = { 0x1337, 0xBEEF, 0xCAFE, 0x5A5A };
@@ -45,16 +45,16 @@ for (int k = 0; k < 4; k++) {
 }
 ```
 
-Rồi bốn block 16-bit đó được in ra dạng hex: `"%04X%04X%04X%04X"`, chính là serial đúng.
+Then those four 16-bit blocks are printed in hex: `"%04X%04X%04X%04X"`, which is the correct serial.
 
-Có hai manh mối mà bạn nên bắt được ngay trong disassembly:
+There are two clues you should catch right away in the disassembly:
 
-- **Bốn hằng số seed đẹp** `0x1337, 0xBEEF, 0xCAFE, 0x5A5A`. Hằng số literal kiểu này nhảy vào mắt, và chúng gần như luôn là tham số của thuật toán. Thấy chúng là biết mình đang ở đúng chỗ.
-- **Vòng lặp lồng đi qua từng ký tự username** với một phép nhân theo chỉ số. Đó là dấu hiệu rõ ràng của loại 2: serial phụ thuộc cả nội dung lẫn vị trí ký tự.
+- **Four pretty seed constants** `0x1337, 0xBEEF, 0xCAFE, 0x5A5A`. Literal constants like this jump out at you, and they're almost always parameters of the algorithm. Seeing them tells you you're in the right place.
+- **A nested loop going through each username character** with a multiplication by index. That's a clear sign of type 2: the serial depends on both the content and the position of the characters.
 
-Thuật toán này cố tình đối xứng, nghĩa là tính xuôi được thì tính lại cũng được, không có hàm một chiều chặn đường. Keygen chỉ việc lặp lại đúng công thức.
+This algorithm is deliberately symmetric, meaning if you can compute it forward you can compute it again, there's no one-way function blocking the way. The keygen just repeats the exact formula.
 
-## Keygen chưa tới mười dòng
+## A keygen in under ten lines
 
 ```python
 SEED = [0x1337, 0xBEEF, 0xCAFE, 0x5A5A]
@@ -71,19 +71,19 @@ def make_serial(user):
 print(make_serial("alice"))   # 193F-C6FA-D50C-666B
 ```
 
-Chạy thử với username `alice` ra `193F-C6FA-D50C-666B`, nạp vào keygenme và nó báo "Correct". Thử `bob`, `RE_Learner`, hay bất cứ chuỗi nào khác, đều ra serial hợp lệ. Đó là khác biệt giữa "qua được một lần" và "hiểu thật": bạn vừa tái tạo được logic cấp phép của chương trình.
+Run with the username `alice` it gives `193F-C6FA-D50C-666B`, feed it into the keygenme and it says "Correct". Try `bob`, `RE_Learner`, or any other string, and each gives a valid serial. That's the difference between "got through once" and "really understood": you just reproduced the program's licensing logic.
 
-Writeup đầy đủ, gồm cả kết quả kiểm chéo đã chạy thật, nằm ở [labs/3.6/solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/3.6/solution.md).
+The full writeup, including the cross-check results actually run, is at [labs/3.6/solution.md](https://github.com/Haind03/Technique-Reverse/blob/main/../labs/3.6/solution.md).
 
-## Khi nào keygen bất lực
+## When a keygen is helpless
 
-Keygen sống được nhờ thuật toán đối xứng. Nếu validate dùng một hàm băm một chiều thật (SHA-256 chẳng hạn): tính từ username ra hash thì dễ, nhưng tìm serial sao cho hash khớp thì chỉ còn nước brute-force, bất khả thi. Mạnh hơn nữa, phần mềm thương mại thường ký serial bằng chữ ký số RSA: trong binary chỉ có public key để kiểm tra, còn private key để tạo serial thì nằm ở máy chủ nhà sản xuất. Bạn đọc hết thuật toán cũng không sinh được serial, vì thiếu khoá bí mật. Lúc đó người ta quay về patch (vô hiệu hoá bước kiểm chữ ký), và đó lại là một cuộc chơi khác, thuộc Phần 15 về anti-tamper.
+A keygen survives thanks to a symmetric algorithm. If validate uses a real one-way hash function (SHA-256, say): computing the hash from the username is easy, but finding a serial whose hash matches leaves only brute force, which is infeasible. Stronger still, commercial software often signs serials with an RSA digital signature: the binary contains only the public key for checking, while the private key for creating serials sits on the vendor's server. Even if you read the whole algorithm you can't generate a serial, because you lack the secret key. Then people go back to patching (disabling the signature check), and that's another game, belonging to Part 15 on anti-tamper.
 
-Hiểu được ranh giới này quan trọng hơn bản thân cái keygen: nó cho bạn biết khi nào nên đọc thuật toán, khi nào nên chuyển sang patch.
+Understanding this boundary matters more than the keygen itself: it tells you when to read the algorithm and when to switch to patching.
 
-## Checklist ghi nhớ
-- Phân loại trước: validate có dùng username để tính cái đem so không? Có thì là keygenme.
-- Moi serial và patch jump chỉ giải loại so sánh cố định, không cho chìa tổng quát.
-- Viết keygen: định vị validate, tách phần tính serial, viết lại, kiểm chéo bằng cách nạp serial sinh ra.
-- Hằng số seed đẹp và vòng lặp qua từng ký tự username là dấu hiệu của thuật toán phụ thuộc username.
-- Thuật toán đối xứng thì keygen được. Hàm băm một chiều hay chữ ký RSA thì không, phải chuyển sang patch.
+## Key takeaways
+- Classify first: does validate use the username to compute what it compares against? If yes, it's a keygenme.
+- Fishing out the serial and patching the jump only solve the fixed comparison type, they give no general key.
+- Writing a keygen: locate validate, isolate the serial computation, rewrite it, cross-check by feeding in the generated serial.
+- Pretty seed constants and a loop over each username character are signs of an algorithm that depends on the username.
+- A symmetric algorithm can be keygenned. A one-way hash or RSA signature can't, switch to patching.
