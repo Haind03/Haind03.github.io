@@ -22,7 +22,7 @@ Michael Sikorski and Andrew Honig, [No Starch Press](https://nostarch.com/malwar
 
 ## Practical Reverse Engineering
 
-Bruce Dang, Alexandre Gazet and Elias Bachaalany, [Wiley](https://www.wiley.com/en-us/Practical+Reverse+Engineering-p-9781118787250). Denser than Practical Malware Analysis. It covers x86, x64 and ARM, then spends a big chunk on the Windows kernel and rootkits, and finishes with obfuscation. The exercises use real system binaries instead of toy samples, which is painful at first but teaches you to read code you didn't write for you.
+Bruce Dang, Alexandre Gazet and Elias Bachaalany, [Wiley](https://www.wiley.com/en-us/Practical+Reverse+Engineering-p-9781118787250). Denser than Practical Malware Analysis. It covers x86, x64 and ARM, then spends a big chunk on the Windows kernel and rootkits, and finishes with obfuscation. The exercises use real system binaries instead of toy samples, which is painful at first but teaches you to read code nobody wrote for you to read.
 
 ## Assembly Language for x86 Processors (7th edition)
 
