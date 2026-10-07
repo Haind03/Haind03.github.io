@@ -37,9 +37,6 @@ We went home with something. When they called BlueCyber_Intern for the consolati
 ![The consolation prize board from Digital Dragons 2025](/assets/img/posts/digital-dragons-2025/consolation-prize.webp)
 _The prize board: consolation prize, Digital Dragons 2025._
 
-## Thanks
-
-Besides BlueCyber, thank you to the organizers, evvolabs, VKU and the NCA, for a well-run contest and for bringing it to Da Nang, and to the sponsors Agribank, AGEST, BIDV and Sun World Ba Na Hills for supporting it. Thanks also to ISP Club at PTIT for the shoutout after the closing ceremony. And thank you to my teammates for a long, loud, stressful and very fun day.
 
 ## What I took home
 

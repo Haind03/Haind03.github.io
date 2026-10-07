@@ -52,4 +52,4 @@ _The finalist case: medal, badge, stickers, USB card and an NIS gift._
 
 What I really brought home is simpler. Reaching fourth place against those teams means the level is within reach. Losing it means the afternoon matters as much as the morning: stamina, picking the right challenge when you're tired, and not getting comfortable when the board looks good. And a tie broken by a timestamp is the best argument I know for submitting the moment you have the flag.
 
-Thank you to PTIT for sending us, to the organizers and the city of Sejong for a beautifully run event, and to my teammates for one of the best trips of my life. Top 10 this time. We'll see about next time.
+Thank you again to PTIT for sending us. Top 10 this time. We'll see about next time.

@@ -26,9 +26,6 @@ The first hour was mostly confusion. Getting the services up, reading code we'd 
 
 We finished on the prize list with a consolation prize. Looking back, the result matters less to me than what the day showed us: how much of Attack-Defense is discipline rather than cleverness, and how quickly a team falls behind when attack and defense aren't both covered all the time.
 
-## Thanks
-
-Thank you to PTIT and our teachers for giving all three teams everything we needed to compete, and to ISP Club for training us and cheering for us. Thank you to my teammates on PTIT.Sn0rlax for learning a new format with me in the middle of a final. And congratulations to every team that played. It was a strong field, and it was a great place to get our first real taste of Attack-Defense.
 
 ## A year later
 

@@ -40,9 +40,6 @@ When they read our name for third prize it felt earned in a way the Jeopardy pri
 ![Team PTIT.Celebi with the ISP flag and the third prize board](/assets/img/posts/asean-2024/team-celebi.webp)
 _PTIT.Celebi with the ISP flag and the Attack-Defense third prize._
 
-## Thanks
-
-Thank you to the organizers, the Vietnam Information Security Association (VNISA), the ICT Department of the Ministry of Education and Training and the Authority of Information Security, and to the Military Technical Academy for hosting the final. Thanks to Viettel as principal sponsor and to Napas, Mi2, VNPT Cyber Immunity and CMC Telecom for supporting it. Thank you to PTIT and our teachers for backing the teams, and to ISP Club, which is where most of us learned to play in the first place. And to my teammates on PTIT.Celebi: the pepeviewer SLA is on all of us, the 651 flags are on all of us too.
 
 ## Next time
 
