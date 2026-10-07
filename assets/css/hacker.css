@@ -495,3 +495,11 @@ details.lab-solution[open] > :not(summary) { animation: cp-line .3s ease-out bot
 @media (prefers-reduced-motion: reduce) {
   #sidebar .site-title, .cp-boot-logo { animation: none; }
 }
+
+/* post cover: no caption, cut corners */
+.preview-img figcaption, header + .preview-img figcaption, .post .preview-img figcaption { display: none !important; }
+.preview-img img { border: 1px solid var(--cp-line-2) !important; clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 22px 100%, 0 calc(100% - 22px)); border-radius: 0 !important; }
+
+/* code blocks: one solid background */
+.highlight, .highlight pre, .highlight table, .highlight .rouge-table, .highlight td, .highlight .gutter, .highlight .code { background: var(--highlight-bg-color) !important; }
+.highlight table, .highlight .rouge-table { width: 100%; }

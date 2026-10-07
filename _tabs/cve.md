@@ -50,7 +50,7 @@ order: 2
   .ca-filters button.on { background: var(--cp-cyan); color: var(--cp-bg); border-color: var(--cp-cyan); }
   .ca-filters button b { opacity: .6; margin-left: .35rem; font-weight: 600; }
 
-  .ca-head, .ca-row { display: grid; grid-template-columns: 3.6rem 9.8rem minmax(0, 1fr) minmax(0, 14rem) 6.5rem; gap: 1rem; align-items: center; }
+  .ca-head, .ca-row { display: grid; grid-template-columns: 3.6rem 9.8rem minmax(0, 1.35fr) minmax(0, 1fr) 6.5rem; gap: 1rem; align-items: center; }
   .ca-head { font: 500 .66rem var(--cp-mono); letter-spacing: .16em; text-transform: uppercase; color: var(--cp-mute); padding: 0 .9rem .6rem; border-bottom: 1px solid var(--cp-cyan-dim); }
   .ca-row { padding: .75rem .9rem; border-bottom: 1px solid var(--cp-line); transition: background .15s, opacity .25s; }
   .ca-row:hover { background: linear-gradient(90deg, rgb(0 240 255 / 6%), transparent); }
@@ -70,8 +70,12 @@ order: 2
   .ca-plat strong { display: block; font: 700 1.1rem var(--cp-display); color: var(--cp-ink); text-transform: uppercase; letter-spacing: .04em; }
   .ca-plat span { font-size: .86rem; color: var(--cp-mute); }
 
+  @media (max-width: 1599px) {
+    .ca-head, .ca-row { grid-template-columns: 3.6rem 9.8rem minmax(0, 1.35fr) minmax(0, 1fr); }
+    .ca-head .dt, .ca-row .dt { display: none; }
+  }
   @media (max-width: 1199px) {
-    .ca-head, .ca-row { grid-template-columns: 3.6rem 9.8rem minmax(0, 1fr) minmax(0, 12rem); }
+    .ca-head, .ca-row { grid-template-columns: 3.6rem 9.8rem minmax(0, 1.35fr) minmax(0, 1fr); }
     .ca-head .dt, .ca-row .dt { display: none; }
     .ca-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   }
