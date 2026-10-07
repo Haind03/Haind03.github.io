@@ -1,6 +1,6 @@
 /* Site-wide terminal palette on top of Chirpy's dark scheme */
-html,
-html[data-mode='dark'] {
+html:root,
+html:root[data-bs-theme] {
   --hk-accent: #37e6c0;
   --hk-accent-dim: #1f8f78;
   --hk-bg: #0a1114;
