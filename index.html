@@ -46,11 +46,12 @@ title: About
   .btn-cp i { margin-right: .4rem; }
 
   /* ---------- stats ---------- */
-  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .8rem; margin: 2.75rem 0 0; }
+  .stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .8rem; margin: 2.75rem 0 0; }
   .stat { position: relative; background: var(--cp-panel); border: 1px solid var(--cp-line); padding: 1rem 1.1rem .9rem; clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%); }
   .stat::before { content: ''; position: absolute; left: 0; top: 0; width: 40%; height: 2px; background: var(--cp-cyan); box-shadow: 0 0 10px var(--cp-cyan); }
   .stat:nth-child(2)::before { background: var(--cp-magenta); box-shadow: 0 0 10px var(--cp-magenta); }
   .stat:nth-child(3)::before { background: var(--cp-yellow); box-shadow: 0 0 10px var(--cp-yellow); }
+  .stat:nth-child(5)::before { background: #5fe3b0; box-shadow: 0 0 10px #5fe3b0; }
   .stat b { display: block; font: 700 1.75rem/1.1 var(--cp-display); color: var(--cp-ink); }
   .stat span { font: .68rem var(--cp-mono); color: var(--cp-mute); text-transform: uppercase; letter-spacing: .14em; }
 
@@ -127,6 +128,7 @@ title: About
     .portrait { width: 150px; height: 150px; margin: 0 auto 1.5rem; order: -1; }
     .name, .kicker { text-align: center; }
     .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 2rem; }
+    .stat:last-child { grid-column: 1 / -1; }
     .cards { grid-template-columns: 1fr; }
     .cve-head { display: none; }
     .cve { grid-template-columns: 3.4rem minmax(0, 1fr); gap: .35rem .8rem; }
@@ -148,7 +150,7 @@ title: About
       <div class="kicker">Security researcher // PTIT</div>
       <h1 class="name">Nguyen Dinh <span>Hai</span></h1>
       <div class="term" role="img" aria-label="Terminal: whoami prints Nguyen Dinh Hai, HaiND">
-        <div class="term-bar"><b>root@haind</b> /home/haind <span class="live">online</span></div>
+        <div class="term-bar"><b>root@haind</b> /home/haind <span class="live">online<span data-cp-total-wrap> · <span data-cp-total>…</span> views</span></span></div>
 <pre id="term"><span class="p">haind@ptit</span>:<span class="d">~</span>$ whoami
 Nguyen Dinh Hai <span class="m">(HaiND)</span>
 <span class="p">haind@ptit</span>:<span class="d">~</span>$ cat role.txt
@@ -179,6 +181,7 @@ threat hunting · vulnerability research
     <div class="stat"><b>{{ site.data.cves.size }}</b><span>CVEs credited</span></div>
     <div class="stat"><b>11 · 12</b><span>Flare-On finisher</span></div>
     <div class="stat"><b>{{ site.posts.size }}</b><span>Posts written</span></div>
+    <div class="stat" data-cp-total-wrap><b data-cp-total>…</b><span>Total views</span></div>
   </div>
 
   <section class="sec">

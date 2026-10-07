@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="330" viewBox="0 0 720 330" font-family="Segoe UI, Arial, sans-serif">
+  <rect x="0" y="0" width="720" height="330" rx="10" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="360" y="30" text-anchor="middle" font-size="18" font-weight="700" fill="#111">Modern .NET packaging forms</text>
+  <text x="360" y="52" text-anchor="middle" font-size="12" fill="#888">if IL + metadata remain, dnSpy/ILSpy can read it; if gone, reverse it like native</text>
+
+  <!-- col 1 -->
+  <rect x="30" y="70" width="200" height="200" rx="8" fill="#eafaf0" stroke="#2e8b57"/>
+  <text x="130" y="94" text-anchor="middle" font-size="13" font-weight="700" fill="#1d5e3a">Single-file bundle</text>
+  <text x="130" y="122" text-anchor="middle" font-size="11" fill="#333">All DLLs merged into 1 exe</text>
+  <text x="130" y="146" text-anchor="middle" font-size="11" fill="#333">IL fully intact</text>
+  <text x="130" y="170" text-anchor="middle" font-size="11" fill="#333">Extract, then open in dnSpy</text>
+  <rect x="55" y="210" width="150" height="40" rx="6" fill="#d7f0e0" stroke="#2e8b57"/>
+  <text x="130" y="235" text-anchor="middle" font-size="12" font-weight="600" fill="#1d5e3a">EASY: decompilable</text>
+
+  <!-- col 2 -->
+  <rect x="260" y="70" width="200" height="200" rx="8" fill="#fff7e6" stroke="#d99a00"/>
+  <text x="360" y="94" text-anchor="middle" font-size="13" font-weight="700" fill="#8a6100">ReadyToRun (R2R)</text>
+  <text x="360" y="122" text-anchor="middle" font-size="11" fill="#333">Includes native code</text>
+  <text x="360" y="146" text-anchor="middle" font-size="11" fill="#333">but IL is still included</text>
+  <text x="360" y="170" text-anchor="middle" font-size="11" fill="#333">dnSpy still reads IL</text>
+  <rect x="285" y="210" width="150" height="40" rx="6" fill="#fdf0d0" stroke="#d99a00"/>
+  <text x="360" y="235" text-anchor="middle" font-size="12" font-weight="600" fill="#8a6100">STILL decompilable</text>
+
+  <!-- col 3 -->
+  <rect x="490" y="70" width="200" height="200" rx="8" fill="#fdecea" stroke="#c0392b"/>
+  <text x="590" y="94" text-anchor="middle" font-size="13" font-weight="700" fill="#7b241c">NativeAOT</text>
+  <text x="590" y="122" text-anchor="middle" font-size="11" fill="#333">Compiled straight to native</text>
+  <text x="590" y="146" text-anchor="middle" font-size="11" fill="#333">NO IL/metadata left</text>
+  <text x="590" y="170" text-anchor="middle" font-size="11" fill="#333">managed as before</text>
+  <rect x="515" y="210" width="150" height="40" rx="6" fill="#f8d7d2" stroke="#c0392b"/>
+  <text x="590" y="229" text-anchor="middle" font-size="12" font-weight="600" fill="#7b241c">HARD: must use</text>
+  <text x="590" y="244" text-anchor="middle" font-size="12" font-weight="600" fill="#7b241c">IDA/Ghidra</text>
+
+  <text x="360" y="300" text-anchor="middle" font-size="12" fill="#555">Use Detect It Easy to identify the form before choosing tools.</text>
+</svg>

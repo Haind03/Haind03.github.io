@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="320" viewBox="0 0 720 320" font-family="Segoe UI, Arial, sans-serif">
+  <rect x="0" y="0" width="720" height="320" rx="10" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="360" y="30" text-anchor="middle" font-size="18" font-weight="700" fill="#111">Python packaged as exe: easy or hard?</text>
+
+  <rect x="30" y="56" width="320" height="110" rx="8" fill="#eafaf0" stroke="#2e8b57"/>
+  <text x="190" y="80" text-anchor="middle" font-size="13" font-weight="700" fill="#1d5e3a">PyInstaller / py2exe / cx_Freeze</text>
+  <text x="190" y="104" text-anchor="middle" font-size="11" fill="#333">Only bundles .pyc + Python runtime</text>
+  <text x="190" y="124" text-anchor="middle" font-size="11" fill="#333">Extract (pyinstxtractor), fix magic,</text>
+  <text x="190" y="142" text-anchor="middle" font-size="11" fill="#333">then decompile with pycdc</text>
+  <rect x="90" y="150" width="200" height="0" />
+  <text x="190" y="160" text-anchor="middle" font-size="11" font-weight="700" fill="#1d5e3a">EASY: near-original source recovered</text>
+
+  <rect x="370" y="56" width="320" height="110" rx="8" fill="#fdecea" stroke="#c0392b"/>
+  <text x="530" y="80" text-anchor="middle" font-size="13" font-weight="700" fill="#7b241c">Nuitka / Cython / PyArmor</text>
+  <text x="530" y="104" text-anchor="middle" font-size="11" fill="#333">Nuitka/Cython: translate to C, then native,</text>
+  <text x="530" y="122" text-anchor="middle" font-size="11" fill="#333">no bytecode, reverse like C (IDA/Ghidra)</text>
+  <text x="530" y="142" text-anchor="middle" font-size="11" fill="#333">PyArmor: encrypts bytecode at runtime</text>
+  <text x="530" y="160" text-anchor="middle" font-size="11" font-weight="700" fill="#7b241c">HARD: no .pyc left to decompile</text>
+
+  <rect x="120" y="196" width="480" height="60" rx="8" fill="#eef1f5" stroke="#999"/>
+  <text x="360" y="220" text-anchor="middle" font-size="13" font-weight="600" fill="#333">First step is always identifying with Detect It Easy + strings</text>
+  <text x="360" y="242" text-anchor="middle" font-size="11" fill="#555">MEI/pyi strings mean PyInstaller; Nuitka/libpython means natively compiled</text>
+
+  <text x="360" y="290" text-anchor="middle" font-size="12" fill="#c0392b">Like .NET's NativeAOT turning point: once native, the approach must change completely.</text>
+</svg>

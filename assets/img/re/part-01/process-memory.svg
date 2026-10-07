@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="470" viewBox="0 0 560 470" font-family="Segoe UI, Arial, sans-serif">
+  <rect x="0" y="0" width="560" height="470" rx="10" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="280" y="30" text-anchor="middle" font-size="18" font-weight="700" fill="#111">Process memory map</text>
+
+  <text x="60" y="58" font-size="12" fill="#888">low address</text>
+  <text x="500" y="58" text-anchor="end" font-size="12" fill="#888">perms</text>
+
+  <!-- blocks -->
+  <g font-size="13">
+    <rect x="60" y="66" width="340" height="46" fill="#fdecea" stroke="#c0392b"/>
+    <text x="74" y="86" font-weight="600" fill="#7b241c">.text  (code)</text>
+    <text x="74" y="104" font-size="11" fill="#555">machine instructions</text>
+    <text x="410" y="93" font-size="12" fill="#c0392b" font-weight="700">R-X</text>
+
+    <rect x="60" y="112" width="340" height="40" fill="#e8f0fe" stroke="#4472c4"/>
+    <text x="74" y="137" font-weight="600" fill="#1a3a6b">.data / .bss</text>
+    <text x="410" y="137" font-size="12" fill="#4472c4" font-weight="700">RW-</text>
+
+    <rect x="60" y="152" width="340" height="40" fill="#eef6ff" stroke="#4472c4"/>
+    <text x="74" y="177" font-weight="600" fill="#1a3a6b">.rdata (constants, strings)</text>
+    <text x="410" y="177" font-size="12" fill="#4472c4" font-weight="700">R--</text>
+
+    <rect x="60" y="200" width="340" height="56" fill="#eafaf0" stroke="#2e8b57"/>
+    <text x="74" y="224" font-weight="600" fill="#1d5e3a">Heap</text>
+    <text x="74" y="243" font-size="11" fill="#555">dynamic allocation (malloc/new)</text>
+    <text x="300" y="224" font-size="16" fill="#2e8b57">grows up &#8593;</text>
+
+    <rect x="60" y="300" width="340" height="56" fill="#fff7e6" stroke="#d99a00"/>
+    <text x="74" y="324" font-weight="600" fill="#8a6100">Stack</text>
+    <text x="74" y="343" font-size="11" fill="#555">locals, return address</text>
+    <text x="300" y="343" font-size="16" fill="#d99a00">grows down &#8595;</text>
+
+    <rect x="60" y="376" width="340" height="44" fill="#f0eefb" stroke="#6b46c1"/>
+    <text x="74" y="403" font-weight="600" fill="#45307d">Libraries (DLL / .so)</text>
+    <text x="410" y="403" font-size="12" fill="#6b46c1" font-weight="700">R-X</text>
+  </g>
+
+  <!-- gap arrows -->
+  <path d="M230 258 L230 298" stroke="#aaa" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <text x="240" y="283" font-size="10" fill="#aaa">free space</text>
+
+  <text x="60" y="440" font-size="12" fill="#888">high address</text>
+  <text x="400" y="452" text-anchor="end" font-size="11" fill="#c0392b">RWX = red flag (packer/malware)</text>
+</svg>

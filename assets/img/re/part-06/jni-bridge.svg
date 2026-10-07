@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="700" height="280" viewBox="0 0 700 280" font-family="Segoe UI, Arial, sans-serif">
+  <rect x="0" y="0" width="700" height="280" rx="10" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="350" y="30" text-anchor="middle" font-size="18" font-weight="700" fill="#111">JNI: Java calls down into native .so</text>
+
+  <rect x="40" y="60" width="280" height="150" rx="8" fill="#e8f0fe" stroke="#4472c4"/>
+  <text x="180" y="84" text-anchor="middle" font-size="13" font-weight="700" fill="#1a3a6b">Java / Kotlin (classes.dex)</text>
+  <text x="60" y="112" font-size="11" font-family="Consolas,monospace" fill="#333">System.loadLibrary("native-lib")</text>
+  <text x="60" y="136" font-size="11" font-family="Consolas,monospace" fill="#333">native boolean check(String s)</text>
+  <text x="60" y="168" font-size="11" fill="#555">The key logic is not here,</text>
+  <text x="60" y="186" font-size="11" fill="#555">only the native declaration.</text>
+
+  <rect x="380" y="60" width="280" height="150" rx="8" fill="#fdecea" stroke="#c0392b"/>
+  <text x="520" y="84" text-anchor="middle" font-size="13" font-weight="700" fill="#7b241c">lib/arm64-v8a/libnative-lib.so</text>
+  <text x="400" y="112" font-size="10" font-family="Consolas,monospace" fill="#333">Java_com_app_Check_check(</text>
+  <text x="400" y="128" font-size="10" font-family="Consolas,monospace" fill="#333">  JNIEnv*, jobject, jstring)</text>
+  <text x="400" y="156" font-size="11" fill="#555">or registered dynamically via</text>
+  <text x="400" y="174" font-size="11" font-family="Consolas,monospace" fill="#c0392b">JNI_OnLoad + RegisterNatives</text>
+  <text x="400" y="194" font-size="11" fill="#555">(harder to find, not name-based)</text>
+
+  <path d="M320 135 L378 135" stroke="#888" stroke-width="2" marker-end="url(#a)"/>
+  <text x="349" y="126" text-anchor="middle" font-size="9" fill="#666">JNI</text>
+
+  <text x="350" y="240" text-anchor="middle" font-size="12" fill="#333">Open the .so in IDA/Ghidra (ARM64, see Lesson 1.9) to read native logic.</text>
+  <text x="350" y="264" text-anchor="middle" font-size="12" fill="#c0392b">The Java_pkg_Class_method name is the top clue for finding the right function.</text>
+
+  <defs><marker id="a" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#888"/></marker></defs>
+</svg>
