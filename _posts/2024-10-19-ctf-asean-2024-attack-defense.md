@@ -18,7 +18,7 @@ _Both PTIT teams after the awards: third prize in Jeopardy on the left, third pr
 
 This was only my second time playing Attack-Defense at a big contest. The first was [the same final a year earlier](/posts/ctf-asean-2023-first-attack-defense/), with team PTIT.Sn0rlax, where we got a consolation prize and a very clear lesson in how different this format is from Jeopardy. In Jeopardy you solve puzzles and the points are yours forever. In Attack-Defense every team runs the same vulnerable services, you attack everyone else's copy to steal flags every round, and at the same time you patch your own copy while keeping it alive, because a service the checker can't reach costs you points every single tick. You are attacker, defender and sysadmin all at once, for hours, with the scoreboard moving every few minutes.
 
-I went into 2024 thinking I understood that. The final board says I understood about half of it.
+In 2023 our problem had been the opposite of what you'd expect: our services stayed up almost all day, but we patched too slowly and bled hundreds of flags. I went into 2024 determined to fix that. The final board says I fixed about half of it.
 
 ## What the scoreboard says
 
