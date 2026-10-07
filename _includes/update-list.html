@@ -1,0 +1,14 @@
+<!-- The 5 newest posts by publish date -->
+{% if site.posts.size > 0 %}
+  <section id="access-lastmod">
+    <h2 class="panel-heading">Latest posts</h2>
+    <ul class="content list-unstyled ps-0 pb-1 ms-1 mt-2">
+      {% for post in site.posts limit: 5 %}
+        <li class="text-truncate lh-lg">
+          <a href="{{ post.url | relative_url }}">{{ post.title }}</a>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+  <!-- #access-lastmod -->
+{% endif %}
