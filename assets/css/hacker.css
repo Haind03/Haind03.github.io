@@ -503,3 +503,8 @@ details.lab-solution[open] > :not(summary) { animation: cp-line .3s ease-out bot
 /* code blocks: one solid background */
 .highlight, .highlight pre, .highlight table, .highlight .rouge-table, .highlight td, .highlight .gutter, .highlight .code { background: var(--highlight-bg-color) !important; }
 .highlight table, .highlight .rouge-table { width: 100%; }
+
+/* keep photos in posts from taking over the screen; click opens full size */
+.content img:not(.no-popup) { max-height: 520px; width: auto !important; max-width: 100%; height: auto !important; object-fit: contain; }
+.content a.img-link, .content a.popup { display: block; text-align: center; }
+@media (max-width: 767px) { .content img:not(.no-popup) { max-height: 420px; } }
