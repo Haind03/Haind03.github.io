@@ -16,7 +16,7 @@ timezone: Asia/Ho_Chi_Minh
 
 title: Haind03 # the main title
 
-tagline: Just a personal blog # it will display as the subtitle
+tagline: reverse · malware · vulns # it will display as the subtitle
 
 description: >- # used by seo meta and the atom feed
   HaiND. Reverse engineering notes, CTF write-ups and security research.
