@@ -525,3 +525,4 @@ details.lab-solution[open] > :not(summary) { animation: cp-line .3s ease-out bot
 
 /* longer sidebar tagline: readable sentence case */
 #sidebar .site-subtitle { text-transform: none !important; letter-spacing: 0 !important; font-size: .74rem !important; line-height: 1.55; color: var(--cp-mute) !important; }
+#sidebar .site-subtitle { height: auto !important; margin-bottom: .5rem; }
