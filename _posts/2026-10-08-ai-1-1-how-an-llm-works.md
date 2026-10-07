@@ -16,7 +16,13 @@ _Text becomes tokens, the model produces a probability distribution, one token i
 
 ## Tokens: the unit the model actually sees
 
-The model does not read letters or words the way a person does. Text is split into **tokens**, small pieces that range from a few characters to a whole word. "prompt injection" might become `prompt`, ` inj`, `ection`. Spaces, punctuation and even emoji are tokens too.
+The model does not read letters or words the way a person does. Text is split into **tokens**, small pieces that range from a few characters to a whole word. For example "prompt injection" might be split into three tokens, where the leading space is part of a token:
+
+```text
+"prompt"  +  " inj"  +  "ection"
+```
+
+Spaces, punctuation and even emoji are tokens too.
 
 This matters to an attacker for two reasons:
 - Content filters usually match **strings or words**. If you insert odd whitespace, a look-alike Unicode character, or split a blocked word into two tokens, the token sequence changes and the filter may miss it, while the model still understands the text. This is the basis of **token manipulation / TokenBreak** (Lesson 10.3).
