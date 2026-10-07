@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/ai-1-4-tool-calling-agents-mcp.webp
   alt: "Tool calling, agents and MCP"
 date: 2026-10-08 11:20:00 +0700
-categories: ["AI Vuln Tech", "Part 01 · LLM Foundations"]
+categories: ["LLM Security", "Part 01 · LLM Foundations"]
 tags: [ai-security, llm, owasp, agents, mcp]
 render_with_liquid: false
 ---

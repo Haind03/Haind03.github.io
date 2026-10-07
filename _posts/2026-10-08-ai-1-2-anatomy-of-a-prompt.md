@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/ai-1-2-anatomy-of-a-prompt.webp
   alt: "Anatomy of a prompt"
 date: 2026-10-08 10:40:00 +0700
-categories: ["AI Vuln Tech", "Part 01 · LLM Foundations"]
+categories: ["LLM Security", "Part 01 · LLM Foundations"]
 tags: [ai-security, llm, owasp, prompt, chat-template]
 render_with_liquid: false
 ---

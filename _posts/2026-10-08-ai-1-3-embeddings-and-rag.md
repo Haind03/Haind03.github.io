@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/ai-1-3-embeddings-and-rag.webp
   alt: "Embeddings and RAG"
 date: 2026-10-08 11:00:00 +0700
-categories: ["AI Vuln Tech", "Part 01 · LLM Foundations"]
+categories: ["LLM Security", "Part 01 · LLM Foundations"]
 tags: [ai-security, llm, owasp, rag, embeddings]
 render_with_liquid: false
 ---

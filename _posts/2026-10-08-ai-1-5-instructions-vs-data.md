@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/ai-1-5-instructions-vs-data.webp
   alt: "Why LLMs cannot separate instructions from data"
 date: 2026-10-08 11:40:00 +0700
-categories: ["AI Vuln Tech", "Part 01 · LLM Foundations"]
+categories: ["LLM Security", "Part 01 · LLM Foundations"]
 tags: [ai-security, llm, owasp, prompt-injection]
 render_with_liquid: false
 ---

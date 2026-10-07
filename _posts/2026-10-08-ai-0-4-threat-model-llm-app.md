@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/ai-0-4-threat-model-llm-app.webp
   alt: "Threat model of an LLM app"
 date: 2026-10-08 10:00:00 +0700
-categories: ["AI Vuln Tech", "Part 00 · Getting Started"]
+categories: ["LLM Security", "Part 00 · Getting Started"]
 tags: [ai-security, llm, owasp, threat-model]
 render_with_liquid: false
 ---

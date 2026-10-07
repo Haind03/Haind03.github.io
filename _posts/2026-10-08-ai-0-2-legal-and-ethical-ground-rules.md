@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/ai-0-2-legal-and-ethical-ground-rules.webp
   alt: "Legal and ethical ground rules"
 date: 2026-10-08 09:20:00 +0700
-categories: ["AI Vuln Tech", "Part 00 · Getting Started"]
+categories: ["LLM Security", "Part 00 · Getting Started"]
 tags: [ai-security, llm, owasp, ethics]
 render_with_liquid: false
 ---

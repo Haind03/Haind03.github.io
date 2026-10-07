@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/ai-0-3-building-a-safe-lab.webp
   alt: "Building a safe lab with Ollama"
 date: 2026-10-08 09:40:00 +0700
-categories: ["AI Vuln Tech", "Part 00 · Getting Started"]
+categories: ["LLM Security", "Part 00 · Getting Started"]
 tags: [ai-security, llm, owasp, lab, ollama]
 render_with_liquid: false
 ---

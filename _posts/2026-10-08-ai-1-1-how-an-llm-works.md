@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/ai-1-1-how-an-llm-works.webp
   alt: "How an LLM works"
 date: 2026-10-08 10:20:00 +0700
-categories: ["AI Vuln Tech", "Part 01 · LLM Foundations"]
+categories: ["LLM Security", "Part 01 · LLM Foundations"]
 tags: [ai-security, llm, owasp, tokens, temperature]
 render_with_liquid: false
 ---

@@ -1,5 +1,5 @@
 ---
-title: AI Vuln Tech
+title: LLM Security
 icon: fas fa-robot
 order: 2
 render_with_liquid: false
