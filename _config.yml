@@ -16,7 +16,7 @@ timezone: Asia/Ho_Chi_Minh
 
 title: HaiND's Blog # the main title
 
-tagline: "Cybersecurity researcher focused on vulnerability research, reverse engineering, and digital forensics. Threat hunter | CTF player | AI vuln" # it will display as the subtitle
+tagline: '<span>Vuln research</span><span>Reverse engineering</span><span>Forensics</span><span>Threat hunting</span><span>CTF player</span><span>AI vuln</span>' # it will display as the subtitle
 
 description: >- # used by seo meta and the atom feed
   HaiND. Reverse engineering notes, CTF write-ups and security research.

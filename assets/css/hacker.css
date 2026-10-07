@@ -526,3 +526,8 @@ details.lab-solution[open] > :not(summary) { animation: cp-line .3s ease-out bot
 /* longer sidebar tagline: readable sentence case */
 #sidebar .site-subtitle { text-transform: none !important; letter-spacing: 0 !important; font-size: .74rem !important; line-height: 1.55; color: var(--cp-mute) !important; }
 #sidebar .site-subtitle { height: auto !important; margin-bottom: .5rem; }
+
+/* sidebar tagline as small tags */
+#sidebar .site-subtitle { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .6rem; }
+#sidebar .site-subtitle span { font: 500 .62rem var(--cp-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--cp-cyan); background: rgb(0 240 255 / 6%); border: 1px solid rgb(0 240 255 / 25%); padding: .18rem .45rem; clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px); }
+#sidebar .site-subtitle span:nth-child(2n) { color: var(--cp-magenta); background: rgb(255 42 109 / 6%); border-color: rgb(255 42 109 / 28%); }
