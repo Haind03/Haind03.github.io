@@ -46,7 +46,7 @@ title: Home
   .btn-cp i { margin-right: .4rem; }
 
   /* ---------- stats ---------- */
-  .stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .8rem; margin: 2.75rem 0 0; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .8rem; margin: 2.75rem 0 0; }
   .stat { position: relative; background: var(--cp-panel); border: 1px solid var(--cp-line); padding: 1rem 1.1rem .9rem; clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%); }
   .stat::before { content: ''; position: absolute; left: 0; top: 0; width: 40%; height: 2px; background: var(--cp-cyan); box-shadow: 0 0 10px var(--cp-cyan); }
   .stat:nth-child(2)::before { background: var(--cp-magenta); box-shadow: 0 0 10px var(--cp-magenta); }
