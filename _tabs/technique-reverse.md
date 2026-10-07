@@ -34,6 +34,7 @@ Nội dung chỉ để học, chơi CTF, crackme hoặc phân tích phần mềm
 ### Chặng 1: Nền tảng
 
 #### Phần 0 · Nhập môn
+
 | # | Bài |
 |---|---|
 | 0.1 | [Reverse Engineering là gì? Bản đồ toàn cảnh](/posts/tr-0-1-reverse-engineering-la-gi/) |
@@ -42,6 +43,7 @@ Nội dung chỉ để học, chơi CTF, crackme hoặc phân tích phần mềm
 | 0.4 | [Quy trình RE chuẩn: Triage - Static - Dynamic - Ghi chép](/posts/tr-0-4-quy-trinh-reverse/) |
 
 #### Phần 1 · Nền tảng máy tính cho RE
+
 | # | Bài |
 |---|---|
 | 1.1 | [Hệ số, hex, endianness, bitwise: đọc hexdump như đọc chữ](/posts/tr-1-1-hex-endian-bitwise/) |
@@ -59,6 +61,7 @@ Nội dung chỉ để học, chơi CTF, crackme hoặc phân tích phần mềm
 | 1.13 | [Nhận diện Windows API trong IDA/x64dbg: tra cứu MSDN, đọc tham số trên stack, Apiscout](/posts/tr-1-13-nhan-dien-windows-api/) |
 
 #### Phần 2 · Làm quen bộ công cụ
+
 | # | Bài |
 |---|---|
 | 2.1 | [Triage file với Detect It Easy (DIE), file, strings, PE-bear](/posts/tr-2-1-triage-die-strings-pebear/) |
@@ -73,6 +76,7 @@ Nội dung chỉ để học, chơi CTF, crackme hoặc phân tích phần mềm
 ### Chặng 2: Reverse theo ngôn ngữ
 
 #### Phần 3 · C: ngôn ngữ gốc của mọi thứ
+
 | # | Bài |
 |---|---|
 | 3.1 | [Hello world dưới kính hiển vi: main, CRT startup, tìm main thật](/posts/tr-3-1-hello-world-tim-main-that/) |
@@ -83,6 +87,7 @@ Nội dung chỉ để học, chơi CTF, crackme hoặc phân tích phần mềm
 | 3.6 | [Lab: viết keygen cho thuật toán serial đơn giản](/posts/tr-3-6-lab-viet-keygen/) |
 
 #### Phần 4 · C++
+
 | # | Bài |
 |---|---|
 | 4.1 | [Name mangling, this pointer, method call](/posts/tr-4-1-name-mangling-this-method-call/) |
@@ -93,6 +98,7 @@ Nội dung chỉ để học, chơi CTF, crackme hoặc phân tích phần mềm
 | 4.6 | [Lab: crackme C++ có vtable](/posts/tr-4-6-lab-crackme-cpp-vtable/) |
 
 #### Phần 5 · C# / .NET (dnSpy, ILSpy)
+
 | # | Bài |
 |---|---|
 | 5.1 | [.NET bên trong: CLR, IL, metadata, assembly, vì sao decompile gần như ra source](/posts/tr-5-1-net-ben-trong-clr-il-metadata/) |
@@ -104,6 +110,7 @@ Nội dung chỉ để học, chơi CTF, crackme hoặc phân tích phần mềm
 | 5.7 | [Lab: crackme .NET từ dễ đến obfuscated](/posts/tr-5-7-lab-crackme-net/) |
 
 #### Phần 6 · Java / Kotlin / Android (JADX)
+
 | # | Bài |
 |---|---|
 | 6.1 | [JVM bytecode & .class; decompiler Java: JADX, CFR, Procyon, Vineflower, Recaf](/posts/tr-6-1-jvm-bytecode-decompiler-java/) |
@@ -117,6 +124,7 @@ Nội dung chỉ để học, chơi CTF, crackme hoặc phân tích phần mềm
 | 6.9 | [Lab: UnCrackable (OWASP MASTG) Level 1-3](/posts/tr-6-9-lab-uncrackable-mastg/) |
 
 #### Phần 7 · Python (pycdc)
+
 | # | Bài |
 |---|---|
 | 7.1 | [Bytecode Python, file .pyc, magic number theo phiên bản](/posts/tr-7-1-bytecode-python-pyc-magic/) |
@@ -127,6 +135,7 @@ Nội dung chỉ để học, chơi CTF, crackme hoặc phân tích phần mềm
 | 7.6 | [Lab: decompile các file .pyc mẫu trong pycdc-master/](/posts/tr-7-6-lab-decompile-pyc-mau/) |
 
 #### Phần 8 · Go
+
 | # | Bài |
 |---|---|
 | 8.1 | [Đặc trưng binary Go: runtime, pclntab, calling convention theo register](/posts/tr-8-1-dac-trung-binary-go/) |
@@ -135,6 +144,7 @@ Nội dung chỉ để học, chơi CTF, crackme hoặc phân tích phần mềm
 | 8.4 | [Lab: crackme Go](/posts/tr-8-4-lab-crackme-go/) |
 
 #### Phần 9 · Rust
+
 | # | Bài |
 |---|---|
 | 9.1 | [Đặc trưng binary Rust: mangling v0/legacy, panic, Option/Result](/posts/tr-9-1-dac-trung-binary-rust/) |
@@ -142,6 +152,7 @@ Nội dung chỉ để học, chơi CTF, crackme hoặc phân tích phần mềm
 | 9.3 | [Lab: crackme Rust](/posts/tr-9-3-lab-crackme-rust/) |
 
 #### Phần 10 · Ngôn ngữ legacy: Delphi, VB6, AutoIt, AHK
+
 | # | Bài |
 |---|---|
 | 10.1 | [Delphi/C++Builder: IDR, DeDe, form DFM](/posts/tr-10-1-delphi-cpp-builder/) |
@@ -149,6 +160,7 @@ Nội dung chỉ để học, chơi CTF, crackme hoặc phân tích phần mềm
 | 10.3 | [Script compiled: AutoIt, AutoHotkey, NSIS/Inno Setup](/posts/tr-10-3-script-compiled-autoit-ahk-installer/) |
 
 #### Phần 11 · JavaScript, Electron, WebAssembly
+
 | # | Bài |
 |---|---|
 | 11.1 | [Deobfuscate JavaScript: beautify, de4js, webcrack, synchrony, AST transform](/posts/tr-11-1-deobfuscate-javascript/) |
@@ -156,6 +168,7 @@ Nội dung chỉ để học, chơi CTF, crackme hoặc phân tích phần mềm
 | 11.3 | [WebAssembly: wabt (wasm2wat/wasm2c), Ghidra wasm plugin](/posts/tr-11-3-webassembly/) |
 
 #### Phần 12 · Swift / Objective-C (macOS, iOS)
+
 | # | Bài |
 |---|---|
 | 12.1 | [Objective-C runtime: objc_msgSend, class-dump](/posts/tr-12-1-objc-runtime-class-dump/) |
@@ -163,6 +176,7 @@ Nội dung chỉ để học, chơi CTF, crackme hoặc phân tích phần mềm
 | 12.3 | [iOS app: IPA, decrypt, Frida/objection trên iOS](/posts/tr-12-3-ios-app-ipa-frida/) |
 
 #### Phần 13 · Game: Unity, Unreal, Lua
+
 | # | Bài |
 |---|---|
 | 13.1 | [Unity Mono: Assembly-CSharp.dll + dnSpy](/posts/tr-13-1-unity-mono/) |
@@ -174,6 +188,7 @@ Nội dung chỉ để học, chơi CTF, crackme hoặc phân tích phần mềm
 ### Chặng 3: Kỹ thuật chuyên sâu
 
 #### Phần 14 · Packer & Obfuscation
+
 | # | Bài |
 |---|---|
 | 14.1 | [Packer hoạt động thế nào; entropy; nhận diện bằng DIE](/posts/tr-14-1-packer-entropy-nhan-dien/) |
@@ -184,6 +199,7 @@ Nội dung chỉ để học, chơi CTF, crackme hoặc phân tích phần mềm
 | 14.6 | [Deobfuscation: D-810, HexRaysDeob, Miasm, symbolic lifting](/posts/tr-14-6-deobfuscation-tu-dong/) |
 
 #### Phần 15 · Anti-Reverse chuyên sâu và cách vượt qua
+
 | # | Bài |
 |---|---|
 | 15.1 | [Anti-debug (1) API-based: IsDebuggerPresent, NtQueryInformationProcess, OutputDebugString](/posts/tr-15-1-anti-debug-api/) |
@@ -198,6 +214,7 @@ Nội dung chỉ để học, chơi CTF, crackme hoặc phân tích phần mềm
 | 15.10 | [Chiến lược khi gặp nhiều lớp anti kết hợp](/posts/tr-15-10-chien-luoc-nhieu-lop-anti/) |
 
 #### Phần 16 · Crypto & thuật toán
+
 | # | Bài |
 |---|---|
 | 16.1 | [Nhận diện hằng số crypto: findcrypt, capa, signsrch](/posts/tr-16-1-nhan-dien-hang-so-crypto/) |
@@ -206,6 +223,7 @@ Nội dung chỉ để học, chơi CTF, crackme hoặc phân tích phần mềm
 | 16.4 | [Viết lại thuật toán bằng Python & giải bằng Z3](/posts/tr-16-4-viet-lai-python-z3/) |
 
 #### Phần 17 · Patch, Hook, Injection & Instrumentation
+
 | # | Bài |
 |---|---|
 | 17.1 | [Patch binary: đổi jump, NOP, code cave, patch trên đĩa vs runtime](/posts/tr-17-1-patch-binary-jump-nop-codecave/) |
@@ -217,6 +235,7 @@ Nội dung chỉ để học, chơi CTF, crackme hoặc phân tích phần mềm
 | 17.7 | [Pin, DynamoRIO, QBDI, TinyInst: dynamic binary instrumentation](/posts/tr-17-7-dbi-pin-dynamorio-tinyinst/) |
 
 #### Phần 18 · Nâng cao
+
 | # | Bài |
 |---|---|
 | 18.1 | [Scripting decompiler: IDAPython, Ghidra script (Java/Python), Binary Ninja API](/posts/tr-18-1-scripting-decompiler/) |
@@ -229,6 +248,7 @@ Nội dung chỉ để học, chơi CTF, crackme hoặc phân tích phần mềm
 | 18.8 | [AI hỗ trợ RE: LLM plugin cho IDA/Ghidra, MCP server cho decompiler](/posts/tr-18-8-ai-ho-tro-re-mcp/) |
 
 #### Phần 19 · Phân tích mã độc cơ bản (phòng thủ)
+
 | # | Bài |
 |---|---|
 | 19.1 | [Quy trình phân tích malware an toàn; sandbox (ANY.RUN, CAPE, Triage)](/posts/tr-19-1-quy-trinh-phan-tich-malware-sandbox/) |
@@ -237,6 +257,7 @@ Nội dung chỉ để học, chơi CTF, crackme hoặc phân tích phần mềm
 | 19.4 | [Trích xuất config & C2](/posts/tr-19-4-trich-config-c2/) |
 
 #### Phần 20 · Thực chiến
+
 | # | Bài |
 |---|---|
 | 20.1 | [Giải crackmes.one từ cấp 1 đến 4](/posts/tr-20-1-giai-crackmes-one/) |
