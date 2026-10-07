@@ -1,6 +1,6 @@
 ---
 layout: about
-title: About
+title: Home
 ---
 
 <style>
@@ -223,9 +223,9 @@ threat hunting · vulnerability research
 
   <section class="sec">
     <div class="sec-h"><span class="n">0x03</span><h2>Vuln research</h2></div>
-    <p>I hunt for security bugs in WordPress plugins and disclose them responsibly through the Wordfence bug bounty program. So far that's {{ site.data.cves.size }} CVEs, which puts me at #244 all time among Wordfence researchers. They're listed below from the highest CVSS score down, and the advisories are on my <a href="https://www.wordfence.com/threat-intel/vulnerabilities/researchers/nguyen-dinh-hai-haind" target="_blank" rel="noopener">Wordfence researcher profile</a>.</p>
+    <p>I hunt bugs in WordPress plugins through the Wordfence and Patchstack bug bounty programs: read the source, prove the bug with a working PoC, report it, wait for the patch, then the CVE gets published and the bounty gets paid. So far that's {{ site.data.cves.size }} CVEs, which puts me at #244 all time among Wordfence researchers. The five highest-scoring ones are below; the full list with filters is in the <a href="/cve/">CVE archive</a>, and the advisories are on my <a href="https://www.wordfence.com/threat-intel/vulnerabilities/researchers/nguyen-dinh-hai-haind" target="_blank" rel="noopener">Wordfence researcher profile</a>.</p>
     <div class="cve-head"><span>CVSS</span><span>CVE</span><span>Affected</span><span class="ty">Type</span></div>
-    {% for c in site.data.cves %}
+    {% for c in site.data.cves limit: 5 %}
       {% assign sev = "low" %}{% if c.cvss >= 9 %}{% assign sev = "crit" %}{% elsif c.cvss >= 7 %}{% assign sev = "high" %}{% elsif c.cvss >= 4 %}{% assign sev = "med" %}{% endif %}
       <div class="cve">
         <span class="cv"><span class="cvss {{ sev }}">{{ c.cvss }}</span></span>
@@ -234,11 +234,7 @@ threat hunting · vulnerability research
         <span class="ty">{{ c.type }}</span>
       </div>
     {% endfor %}
-    <div class="sev-legend">
-      <span><i style="background:var(--cp-magenta)"></i>Critical 9.0+</span>
-      <span><i style="background:#ff8a3d"></i>High 7.0+</span>
-      <span><i style="background:var(--cp-yellow)"></i>Medium 4.0+</span>
-    </div>
+    <div class="links" style="margin-top:1.1rem"><a class="btn-cp hot" href="/cve/"><i class="fas fa-bug"></i>Open the CVE archive</a></div>
   </section>
 
   <section class="sec">
