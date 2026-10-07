@@ -1,8 +1,8 @@
 ---
-title: "HackTheon Sejong 2025: top 10 in Korea, and the top 4 we couldn't hold"
+title: "HackTheon Sejong 2025: top 10 in Korea"
 image:
   path: /assets/img/covers/ctf-hacktheon-sejong-2025.webp
-  alt: "HackTheon Sejong 2025: top 10 in Korea, and the top 4 we couldn't hold"
+  alt: "HackTheon Sejong 2025: top 10 in Korea"
 date: 2025-07-11 22:00:00 +0700
 categories: ["CTF Journey"]
 tags: [ctf, hacktheon, korea, ptit]
