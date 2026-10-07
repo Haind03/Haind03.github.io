@@ -12,7 +12,7 @@ Everything here is for learning, CTFs, authorized red teaming, and defending you
 
 ## Chapter 1: Foundations
 
-### Part 00 · Getting Started
+### Part 00 · Intro to LLM Security
 
 | # | Lesson |
 |---|---|

@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/ai-0-1-what-ai-attacks-are.webp
   alt: "What AI attacks are and how they differ"
 date: 2026-10-08 09:00:00 +0700
-categories: ["LLM Security", "Part 00 · Getting Started"]
+categories: ["LLM Security", "Part 00 · Intro to LLM Security"]
 tags: [ai-security, llm, owasp, fundamentals]
 render_with_liquid: false
 ---
