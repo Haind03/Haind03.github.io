@@ -231,3 +231,5 @@ jekyll-archives:
   permalinks:
     tag: /tags/:name/
     category: /categories/:name/
+
+future: true   # build posts dated slightly ahead of the build server clock
