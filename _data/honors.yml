@@ -1,7 +1,7 @@
 # Shown on the landing page, in this order.
 # badge: gold | silver | bronze | acc | (empty)
 # post: optional URL of a blog post about it, e.g. /posts/mctf-2025/
-- date: Oct 2026
+- date: "2026"
   name: Flare-On 13, Mandiant's reverse engineering challenge
   result: FINISHER
   badge: acc
@@ -28,8 +28,8 @@
   result: TOP 10
   badge: acc
   post: /posts/ctf-hacktheon-sejong-2025/
-- date: Nov 2024
-  name: Flare-On 11, every challenge solved
+- date: "2024"
+  name: Flare-On 11, Mandiant's reverse engineering challenge
   result: FINISHER
   badge: acc
 - date: Oct 2024
