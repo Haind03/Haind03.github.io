@@ -16,12 +16,12 @@ First, thanks to PTIT. The school paid for the whole trip and sent us there, and
 ![Our table, number 33, PTIT.BlueCyber, before the final started](/assets/img/posts/hacktheon-sejong-2025/our-table.webp)
 _Table 33, just before the start._
 
-The final was on July 10, from 10:00 to 17:43. In the morning things went well and at one point we were 4th. Then in the afternoon other teams kept solving and we slowly dropped down. Our last flag went in at 17:31:40, around 12 minutes before the end, and that got us to 3,764 points.
+The final was on July 10, from 10:00 to 18:00. In the morning things went well and at one point we were 4th. Then in the afternoon other teams kept solving and we slowly dropped down. Our last flag went in at 17:31:40, about half an hour before the end, and that got us to 3,764 points.
 
 ![The final scoreboard of HackTheon Sejong 2025](/assets/img/posts/hacktheon-sejong-2025/scoreboard.webp)
-_Final scoreboard. PTIT.BlueCyber is 10th with 3,764 points, same as UIT.TNTCrew in 9th._
+_Final scoreboard. PTIT.BlueCyber is 10th with 3,764 points._
 
-The annoying part: UIT.TNTCrew also had exactly 3,764. The tiebreak is whoever got there first, and their last submission was at 16:45, so they got 9th and we got 10th. 7th and 8th were only 114 points above us, which is less than one challenge. So top 10 is a good result and I'm happy with it, but I do still think about how close we were to a few places higher.
+Only the top 7 got prizes. 7th place had 3,878 points, so we were just 114 points short of a prize, which is less than one challenge. Top 10 is still a good result, but being that close to a prize is what I remember most.
 
 ![The team at table 33 with our HackTheon medals](/assets/img/posts/hacktheon-sejong-2025/team-medals.webp)
 _After the final, with the medals._
@@ -38,4 +38,4 @@ Every finalist got the same black case with the medal, stickers, a USB card, an 
 ![The HackTheon Sejong 2025 finalist case with medal, badge and stickers](/assets/img/posts/hacktheon-sejong-2025/swag.webp)
 _The finalist gift case._
 
-If I had to take one thing from this: the afternoon matters as much as the morning, and when you have a flag, submit it right away. A tie broken by timestamp is a frustrating way to lose a place. Thanks again PTIT for sending us.
+If I had to take one thing from this: the afternoon matters as much as the morning. Thanks again PTIT for sending us.
