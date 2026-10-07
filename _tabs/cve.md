@@ -93,9 +93,9 @@ order: 2
 
 <div class="ca-kick">Bug bounty // WordPress</div>
 
-<p class="ca-lead">Most of my evenings outside of work go into reading other people's PHP. I pick WordPress plugins with a big install base, follow every way user input can reach something dangerous, and when I find a hole I write a proof of concept and report it through a bug bounty program. When the vendor ships a fix, the advisory goes public, a CVE is assigned, and the bounty gets paid.</p>
+<p class="ca-lead">These are the CVEs I've got from bug bounty work on WordPress plugins. I report through Wordfence and Patchstack. Once the vendor ships a fix, the advisory goes public, the CVE is published and the bounty is paid.</p>
 
-<p>It's the same muscle as reverse engineering, just with source code instead of assembly. You look for the one function that trusts what it shouldn't: a REST route registered with a permission callback that always returns true, an AJAX action that checks a nonce but never checks who is calling, a value concatenated into a SQL query, a shortcode attribute echoed back without escaping. The ones I like most are the unauthenticated bugs, where an anonymous visitor can do something that should need an admin account. The critical ones on this list are like that: a remote code execution in Easy Invoice that scores a full 10.0, and three SQL injections an anonymous visitor can fire straight at the database.</p>
+<p>Most of what I find is in access control and input handling: REST routes or AJAX actions without proper permission checks, SQL built from user input, and stored XSS. I mostly look for bugs that work without logging in. The highest one here is an unauthenticated RCE in Easy Invoice (CVSS 10.0).</p>
 
 <div class="ca-stats">
   <div class="ca-stat"><b>{{ total }}</b><span>CVEs assigned</span></div>
@@ -115,21 +115,21 @@ order: 2
   <span><i style="background: var(--cp-yellow)"></i>Medium · {{ med }}</span>
 </div>
 
-<div class="ca-h"><span class="n">0x01</span><h2>How a bug becomes a CVE</h2></div>
+<div class="ca-h"><span class="n">0x01</span><h2>Process</h2></div>
 
-<p>Every entry below went through the same pipeline. Wordfence and Patchstack both run the coordination for me, which is why I report through them instead of chasing plugin authors by email.</p>
+<p>The process is the same for every one of them.</p>
 
 <div class="ca-steps">
-  <div>Hunt<span>Read the plugin source, map every entry point an outsider can reach.</span></div>
-  <div>Prove<span>Write a PoC on a local WordPress install. No PoC, no report.</span></div>
-  <div>Report<span>Submit to the bounty program with the vulnerable code path and impact.</span></div>
-  <div>Patch<span>The program validates it and works with the vendor until a fix ships.</span></div>
-  <div>CVE + bounty<span>The advisory goes public, the CVE is published, the reward is paid.</span></div>
+  <div>Find<span>Read the plugin code and look at what an outside user can reach.</span></div>
+  <div>PoC<span>Confirm it on a local WordPress install.</span></div>
+  <div>Report<span>Send it to the bounty program with the code path and impact.</span></div>
+  <div>Patch<span>They verify it and contact the vendor.</span></div>
+  <div>CVE + bounty<span>Advisory and CVE published, bounty paid.</span></div>
 </div>
 
 <div class="ca-h"><span class="n">0x02</span><h2>The archive</h2></div>
 
-<p>Sorted by CVSS, highest first, using the scores on the official CVE records. Use the filters to see one class of bug at a time. Each ID links to the public CVE record.</p>
+<p>Sorted by CVSS (scores from the official CVE records). Each ID links to its CVE record.</p>
 
 <div class="ca-filters" id="ca-filters">
   <button class="on" data-f="all">All<b>{{ total }}</b></button>
@@ -158,8 +158,8 @@ order: 2
 <div class="ca-h"><span class="n">0x03</span><h2>Where I report</h2></div>
 
 <div class="ca-plat">
-  <a href="https://www.wordfence.com/threat-intel/vulnerabilities/researchers/nguyen-dinh-hai-haind" target="_blank" rel="noopener"><strong>Wordfence</strong><span>Researcher profile with every advisory, CVSS vector and disclosure date.</span></a>
-  <a href="https://patchstack.com/database/researchers/e27f086e-ad03-440c-aee4-f95fd885527e" target="_blank" rel="noopener"><strong>Patchstack</strong><span>My Patchstack researcher profile in their vulnerability database.</span></a>
+  <a href="https://www.wordfence.com/threat-intel/vulnerabilities/researchers/nguyen-dinh-hai-haind" target="_blank" rel="noopener"><strong>Wordfence</strong><span>Researcher profile with all advisories.</span></a>
+  <a href="https://patchstack.com/database/researchers/e27f086e-ad03-440c-aee4-f95fd885527e" target="_blank" rel="noopener"><strong>Patchstack</strong><span>Researcher profile on Patchstack.</span></a>
 </div>
 
 </div>

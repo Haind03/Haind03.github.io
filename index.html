@@ -194,9 +194,9 @@ threat hunting · vulnerability research
 
   <section class="sec">
     <div class="sec-h"><span class="n">0x01</span><h2>Whoami</h2></div>
-    <p class="lead-cp">I like taking things apart to see how they really work. In security that usually means a binary nobody gave me the source for, a piece of malware that doesn't want to be read, or a disk image that still remembers what happened on it.</p>
-    <p>I'm a Cybersecurity Teaching Assistant at the Posts and Telecommunications Institute of Technology (PTIT), where I help run security courses, support academic research and train students for competitions. Before that I spent a little over three years at BlueCyber, first as an intern doing reverse engineering and malware analysis, then full time on threat hunting, tracking down persistent threats and working incident response investigations.</p>
-    <p>Outside of work I look for bugs in WordPress plugins and report them through Wordfence, and I play a lot of CTF, usually the reversing and forensics side. With the PTIT team that has taken me from the school contest to the ASEAN finals and to an Attack-Defense final in Russia, which we won.</p>
+    <p class="lead-cp">I'm Hai. I mostly do reverse engineering and malware analysis, plus some digital forensics and web bug hunting. This blog is where I keep my notes.</p>
+    <p>Right now I'm a cybersecurity teaching assistant at PTIT (Posts and Telecommunications Institute of Technology). I help with security courses, some research, and training students for CTFs. Before that I was at BlueCyber for about three years, first as an intern doing RE and malware analysis, then full time on threat hunting and incident response.</p>
+    <p>In my free time I look for bugs in WordPress plugins and report them through Wordfence and Patchstack. I also play CTF with the PTIT team, usually reversing and forensics.</p>
   </section>
 
   <section class="sec">
@@ -218,7 +218,7 @@ threat hunting · vulnerability research
         <div class="when">Feb 2023 · Feb 2024</div>
         <div class="what">Intern, Reverse Engineering &amp; Malware Analysis</div>
         <div class="where">BlueCyber Limited Company</div>
-        <p>Where I learned to read malware properly, one sample at a time.</p>
+        <p>Reverse engineering and malware analysis.</p>
       </li>
       <li>
         <div class="when">2024 · 2025</div>
@@ -231,7 +231,7 @@ threat hunting · vulnerability research
 
   <section class="sec">
     <div class="sec-h"><span class="n">0x03</span><h2>Vuln research</h2></div>
-    <p>I hunt bugs in WordPress plugins through the Wordfence and Patchstack bug bounty programs: read the source, prove the bug with a working PoC, report it, wait for the patch, then the CVE gets published and the bounty gets paid. So far that's {{ site.data.cves.size }} CVEs, which puts me at #244 all time among Wordfence researchers. The five highest-scoring ones are below; the full list with filters is in the <a href="/cve/">CVE archive</a>, and the advisories are on my <a href="https://www.wordfence.com/threat-intel/vulnerabilities/researchers/nguyen-dinh-hai-haind" target="_blank" rel="noopener">Wordfence researcher profile</a>.</p>
+    <p>I find bugs in WordPress plugins and report them through the Wordfence and Patchstack bug bounty programs. So far that's {{ site.data.cves.size }} CVEs (#244 all time on Wordfence). Top 5 by CVSS below, the full list is in the <a href="/cve/">CVE archive</a>, and the advisories are on my <a href="https://www.wordfence.com/threat-intel/vulnerabilities/researchers/nguyen-dinh-hai-haind" target="_blank" rel="noopener">Wordfence researcher profile</a>.</p>
     <div class="cve-head"><span>CVSS</span><span>CVE</span><span>Affected</span><span class="ty">Type</span></div>
     {% for c in site.data.cves limit: 5 %}
       {% assign sev = "low" %}{% if c.cvss >= 9 %}{% assign sev = "crit" %}{% elsif c.cvss >= 7 %}{% assign sev = "high" %}{% elsif c.cvss >= 4 %}{% assign sev = "med" %}{% endif %}
@@ -259,9 +259,9 @@ threat hunting · vulnerability research
   <section class="sec">
     <div class="sec-h"><span class="n">0x05</span><h2>Start reading</h2></div>
     <div class="cards">
-      <a href="/technique-reverse/"><code>$ cd technique-reverse/</code><strong>Technique Reverse</strong><span>A full RE series, from reading hexdumps to unpacking, anti-debug and Frida.</span></a>
-      <a href="/categories/malware-analysis/"><code>$ cd malware-analysis/</code><strong>Malware analysis</strong><span>Real samples taken apart: LNK droppers, spyware and a threat hunting lab.</span></a>
-      <a href="/categories/ctf-journey/"><code>$ cat ctf-journey.log</code><strong>CTF journey</strong><span>The contests behind the honors list, from a first consolation prize to finals abroad.</span></a>
+      <a href="/technique-reverse/"><code>$ cd technique-reverse/</code><strong>Technique Reverse</strong><span>My RE series: assembly, file formats, languages, unpacking, anti-debug, Frida.</span></a>
+      <a href="/categories/malware-analysis/"><code>$ cd malware-analysis/</code><strong>Malware analysis</strong><span>Write-ups on malware samples and a threat hunting lab.</span></a>
+      <a href="/categories/ctf-journey/"><code>$ cat ctf-journey.log</code><strong>CTF journey</strong><span>Posts about the CTFs I've played.</span></a>
       <a href="/archives/"><code>$ ls -la archives/</code><strong>Archives</strong><span>Every post, by date.</span></a>
     </div>
   </section>
