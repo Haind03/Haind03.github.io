@@ -93,7 +93,7 @@ Comparing the three publish styles:
 | ReadyToRun | .NET, with native code too | Yes | Yes (with native) | Read the IL, ignore the native part |
 | NativeAOT | Native PE (no managed marker) | No | No | Reverse like C++ with IDA/Ghidra |
 
-Single-file is a bundle: the original .NET DLLs are glued onto the end of the exe in a dedicated bundle format. Recent dnSpy builds recognize it and let you browse each assembly as if it were a separate file. If dnSpy can't open it, use ExtractAllTheThings or a bundle extraction script to split it into `.dll` files and open those normally. The size is large (tens of MB) because the runtime is packed in.
+Single-file is a bundle: the original .NET DLLs are glued onto the end of the exe in a dedicated bundle format. Recent dnSpy builds recognize it and let you browse each assembly as a separate file. If dnSpy can't open it, use ExtractAllTheThings or a bundle extraction script to split it into `.dll` files and open those normally. The size is large (tens of MB) because the runtime is packed in.
 
 ReadyToRun holds two versions of the same logic in the file: the original IL and a precompiled native version for fast startup. dnSpy reads the IL part and decompiles to C# as usual, and the native part is a compiled copy that adds nothing. In practice, when you meet R2R just read the IL and ignore the native part unless you have a special reason.
 

@@ -1,8 +1,8 @@
 ---
-title: "Digital Dragons 2025: a weekend in Da Nang, and a prize we fought for"
+title: "Digital Dragons 2025: a weekend in Da Nang, and a prize we worked for"
 image:
   path: /assets/img/covers/ctf-digital-dragons-2025.webp
-  alt: "Digital Dragons 2025: a weekend in Da Nang, and a prize we fought for"
+  alt: "Digital Dragons 2025: a weekend in Da Nang, and a prize we worked for"
 date: 2025-09-21 21:30:00 +0700
 categories: ["CTF Journey"]
 tags: [ctf, jeopardy, digital-dragons, bluecyber]

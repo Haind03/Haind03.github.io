@@ -98,7 +98,7 @@ When I open a C binary, before reading any function I check whether the file is 
 
 ## Lab
 
-In this lab you look at the forest of functions in a static binary, then use FLIRT to clear it away so only the author's code is left. The source is `greet.c`. The program has only two functions written by the author (`make_tag` and `main`), and everything else in a static binary is libc and CRT.
+In this lab you look at the many functions in a static binary, then use FLIRT to clear it away so only the author's code is left. The source is `greet.c`. The program has only two functions written by the author (`make_tag` and `main`), and everything else in a static binary is libc and CRT.
 
 Build two variants on Linux:
 

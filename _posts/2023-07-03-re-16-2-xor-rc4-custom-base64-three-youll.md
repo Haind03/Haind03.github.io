@@ -121,7 +121,7 @@ For the custom Base64, the alphabet is `ZYXWVUTSRQPONMLKJIHGFEDCBAzyxwvutsrqponm
 [B64] plaintext = flag{custom_base64_alphabet}
 ```
 
-Known plaintext is the strongest weapon against XOR, since you only need to guess the first few bytes right. RC4 is recognized by structure and not by constants. And a Base64 that decodes to garbage is usually a shuffled alphabet.
+Known plaintext is the most effective attack on XOR, since you only need to guess the first few bytes right. RC4 is recognized by structure and not by constants. And a Base64 that decodes to garbage is usually a shuffled alphabet.
 
 </details>
 

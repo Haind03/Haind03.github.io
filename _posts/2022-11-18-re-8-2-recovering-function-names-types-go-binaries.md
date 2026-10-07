@@ -8,7 +8,7 @@ categories: ["Technique Reverse", "Part 08 · Go"]
 tags: [reverse-engineering, golang]
 render_with_liquid: false
 ---
-Open a Go binary in IDA for the first time and you get a pile of `sub_xxxxxx` functions and that familiar feeling of despair. But even when a Go binary is stripped, most function names are still inside it. The tools just don't read them by default. This lesson shows how to pull them out.
+Open a Go binary in IDA for the first time and you get many `sub_xxxxxx` functions and that familiar feeling of being lost. But even when a Go binary is stripped, most function names are still inside it. The tools just don't read them by default. This lesson shows how to pull them out.
 
 ## Why stripped Go can still be recovered
 
@@ -52,7 +52,7 @@ The last step saves the most time. After recovering names, `main.main` and `main
 
 ## Lab
 
-The goal is to see how pclntab turns a stripped Go binary from a pile of `sub_xxx` into a list of named functions. You need Ghidra (or IDA), GoReSym (download a release from the Mandiant GoReSym repository, or build it with `go build`), and a Go binary to try on. To be sure of what you have, build one yourself from this program:
+The goal is to see how pclntab turns a stripped Go binary from many `sub_xxx` names into a list of named functions. You need Ghidra (or IDA), GoReSym (download a release from the Mandiant GoReSym repository, or build it with `go build`), and a Go binary to try on. To be sure of what you have, build one yourself from this program:
 
 ```go
 // main.go
@@ -98,7 +98,7 @@ Two questions to think about. Why does stripping with `-s -w` still fail to hide
 
 This writeup describes the procedure and the typical results. The exact numbers (the function count) will differ with the Go version you use, but the shape of the result is as described.
 
-After auto-analysis, the Functions window of a stripped Go binary looks messy: thousands of entries, most of them `FUN_00xxxxxx`. Ghidra can't recover the names because the ELF/PE symbol table was wiped by `-s -w`. Searching for `main.main` by name finds nothing, so you're left feeling your way by strings or from the entry point, which is very slow. The binary looks as if it lost all its information, but it didn't. The information is still in pclntab, and Ghidra just doesn't read it for Go by default.
+After auto-analysis, the Functions window of a stripped Go binary looks messy: thousands of entries, most of them `FUN_00xxxxxx`. Ghidra can't recover the names because the ELF/PE symbol table was wiped by `-s -w`. Searching for `main.main` by name finds nothing, so you're left feeling your way by strings or from the entry point, which is very slow. The binary appears to have lost all its information, but it didn't. The information is still in pclntab, and Ghidra just doesn't read it for Go by default.
 
 Then GoReSym gets the names back:
 

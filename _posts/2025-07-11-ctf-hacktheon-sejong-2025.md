@@ -38,4 +38,4 @@ Every finalist got the same black case with the medal, stickers, a USB card, an 
 ![The HackTheon Sejong 2025 finalist case with medal, badge and stickers](/assets/img/posts/hacktheon-sejong-2025/swag.webp)
 _The finalist gift case._
 
-If I had to take one thing from this: the afternoon matters as much as the morning, and when you have a flag, submit it right away. A tie broken by timestamp is a painful way to lose a place. Thanks again PTIT for sending us.
+If I had to take one thing from this: the afternoon matters as much as the morning, and when you have a flag, submit it right away. A tie broken by timestamp is a frustrating way to lose a place. Thanks again PTIT for sending us.

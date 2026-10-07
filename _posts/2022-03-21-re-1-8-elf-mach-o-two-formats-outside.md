@@ -81,7 +81,7 @@ lipo binary -thin arm64 -output binary_arm64   # extract one architecture
 nm binary               # symbols
 ```
 
-Objective-C and Swift also have their own metadata sections for the runtime, but that's for Part 12. Here you only need to get used to the Mach-O skeleton.
+Objective-C and Swift also have their own metadata sections for the runtime, but that's for Part 12. Here you only need to get used to the Mach-O layout.
 
 ## Comparing the three formats
 
@@ -222,7 +222,7 @@ $ nm -D hello_stripped
 
 After stripping, `nm` sees nothing because `.symtab` has been cut, so `secret_len` and `main` lose their names. But `nm -D` (dynamic symbols, read from `.dynsym`) still lists `puts` and `strlen`, because imported functions need their names at run time for the linker to resolve them. Strip removes internal function names, not the names of imported library functions.
 
-Finally, the comparison with PE. The ELF `e_entry` corresponds to the PE `AddressOfEntryPoint`. The PLT/GOT corresponds to the IAT (Import Address Table). `.rodata` corresponds to `.rdata`. A LOAD segment corresponds to a section mapped according to its characteristics, and the `ld-linux` interpreter corresponds to the Windows loader plus ntdll. Same skeleton, different names, so moving between Windows and Linux reversing is mostly translating vocabulary.
+Finally, the comparison with PE. The ELF `e_entry` corresponds to the PE `AddressOfEntryPoint`. The PLT/GOT corresponds to the IAT (Import Address Table). `.rodata` corresponds to `.rdata`. A LOAD segment corresponds to a section mapped according to its characteristics, and the `ld-linux` interpreter corresponds to the Windows loader plus ntdll. Same structure, different names, so moving between Windows and Linux reversing is mostly translating vocabulary.
 
 </details>
 

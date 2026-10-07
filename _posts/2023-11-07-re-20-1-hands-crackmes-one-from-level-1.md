@@ -90,17 +90,17 @@ def gen(name):
 
 Real check: `gen("reverser")` gives `F10E026B`, and entering the pair `reverser` / `F10E026B` into the crackme gives "Correct!". Change to another username and the keygen still produces a valid serial. This is the same approach as [Lesson 3.6](/posts/re-3-6-writing-keygen-when-fishing-out-serial/).
 
-When the check algorithm gets so tangled that inverting by hand is too painful (many cross constraints between characters), don't solve it by hand. Throw it at Z3 as in [Lesson 16.4](/posts/re-16-4-rewriting-algorithm-python-letting-z3-solve/), or angr as in [Lesson 18.3](/posts/re-18-3-symbolic-execution-making-computer-solve-crackme/). The solver finds an input that meets the conditions.
+When the check algorithm gets so tangled that inverting by hand is too tedious (many cross constraints between characters), don't solve it by hand. Throw it at Z3 as in [Lesson 16.4](/posts/re-16-4-rewriting-algorithm-python-letting-z3-solve/), or angr as in [Lesson 18.3](/posts/re-18-3-symbolic-execution-making-computer-solve-crackme/). The solver finds an input that meets the conditions.
 
 ## Level 4: anti-reverse, needs dynamic
 
-At level 4, the challenge fights back: a light anti-debug layer, strings that are encrypted and decrypted at runtime, sometimes packed with UPX. Static reading no longer gives it away because what you need only appears in memory at runtime.
+At level 4, the challenge resists analysis: a light anti-debug layer, strings that are encrypted and decrypted at runtime, sometimes packed with UPX. Static reading no longer gives it away because what you need only appears in memory at runtime.
 
 There's no fixed sample file for this level because it's a combination, but the process is the same each time. Start with more careful triage. If DIE says packed, unpack first ([Lesson 14.2](/posts/re-14-2-unpacking-upx-automatic-manual/)). High entropy and a poor import table are the signs. Then prepare a debugger that can survive anti-debug by turning on ScyllaHide in x64dbg ([Lesson 15.9](/posts/re-15-9-bypassing-anti-debug-from-mouse-click/)) to get past `IsDebuggerPresent`, PEB checks and timing. If there's an anti-debug TLS callback, enable breaking at the TLS callback ([Lesson 15.4](/posts/re-15-4-advanced-anti-debug-self-debug-tls/)).
 
 Next, let the program decrypt itself and catch it there. For encrypted strings, set a breakpoint after the decryption function and read the result in memory instead of decrypting by hand. When the anti-debug is too thick, drop the debugger and emulate the decryption piece with Unicorn ([Lesson 18.2](/posts/re-18-2-emulation-running-piece-code-without-whole/)). Without a real debugger the anti-debug checks do nothing.
 
-The overall strategy for multiple anti layers is in [Lesson 15.10](/posts/re-15-10-when-several-anti-layers-are-stacked/). Peel each layer from the outside in, and switch to dynamic as soon as static gets blocked.
+The overall strategy for multiple anti layers is in [Lesson 15.10](/posts/re-15-10-when-several-anti-layers-are-stacked/). Decode or bypass each layer from the outside in, and switch to dynamic as soon as static gets blocked.
 
 ## Advice for improving fast
 

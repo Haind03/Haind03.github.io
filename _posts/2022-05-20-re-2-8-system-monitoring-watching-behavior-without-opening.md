@@ -10,7 +10,7 @@ render_with_liquid: false
 ---
 A lot of the time you can tell what a program is doing without reading a single line of assembly. You just watch where it touches the system: which files it creates, which registry keys it writes, which server it calls, what child processes it spawns. This is called behavioral analysis, and it's often the first dynamic step before you decide whether you need to sit down and debug in detail.
 
-This lesson is the toolkit for that. None of the tools are hard to use. The hard part is reading the pile of events they spit out.
+This lesson is the toolkit for that. None of the tools are hard to use. The hard part is reading the large number of events they log.
 
 ## Procmon
 
@@ -36,7 +36,7 @@ Process Explorer is also from Sysinternals. It's lighter than Process Hacker and
 
 ## API Monitor
 
-Procmon only sees interactions at the operating system level. API Monitor gets closer to the code: it hooks and records Win32 API calls with the real parameters and return values. You pick the API groups you want to follow (file, registry, memory, crypto, network...), run the program, and then read things like `CreateFileW(L"C:\\Users\\...\\secret.dat", GENERIC_READ, ...)`, which gives you the full file name right away. You might also see `CryptEncrypt(...)` or `VirtualAlloc(..., PAGE_EXECUTE_READWRITE)`, which allocates memory that's both writable and executable. That's a common red flag when code is preparing to run a payload.
+Procmon only sees interactions at the operating system level. API Monitor gets closer to the code: it hooks and records Win32 API calls with the real parameters and return values. You pick the API groups you want to follow (file, registry, memory, crypto, network...), run the program, and then read things like `CreateFileW(L"C:\\Users\\...\\secret.dat", GENERIC_READ, ...)`, which gives you the full file name right away. You might also see `CryptEncrypt(...)` or `VirtualAlloc(..., PAGE_EXECUTE_READWRITE)`, which allocates memory that's both writable and executable. That's a common sign of suspicious activity when code is preparing to run a payload.
 
 The good part is seeing parameters in a readable form. The bad part is that a lot of malware evades its hooks, or calls the Native API/syscalls directly to go around them (see lesson 1.12). When API Monitor is suspiciously silent, that silence is itself a clue.
 
@@ -136,7 +136,7 @@ write(3, "hello from watchme\n", 19)   = 19
 
 These are the exact system calls that open and write the file, with the `O_CREAT|O_TRUNC` flags equivalent to `CREATE_ALWAYS` on Windows. It's the Linux version of what Procmon captured, just at the rawer syscall level.
 
-For the questions: if `watchme` wrote the file and then executed it, the pattern of `CreateFile` and `WriteFile` into TEMP followed by a `Process Create` of the file it just wrote is the classic sign of a dropper, a component that drops a payload to disk and runs it. Seeing that chain in Procmon is a red flag even before you know what the payload contains. Filtering by process is the first step because Procmon records every process on the machine at once. Without a filter, your target's events are buried in tens of thousands of lines from system processes, while a process name filter narrows things to what you want to see.
+For the questions: if `watchme` wrote the file and then executed it, the pattern of `CreateFile` and `WriteFile` into TEMP followed by a `Process Create` of the file it just wrote is the classic sign of a dropper, a component that drops a payload to disk and runs it. Seeing that chain in Procmon is suspicious even before you know what the payload contains. Filtering by process is the first step because Procmon records every process on the machine at once. Without a filter, your target's events are buried in tens of thousands of lines from system processes, while a process name filter narrows things to what you want to see.
 
 </details>
 

@@ -20,7 +20,7 @@ A hash identifies one file, a C2 identifies a whole campaign.
 
 If malware left the C2 domain as a plain string in the binary, `strings` would pull it out, and so would every antivirus. So authors almost always hide it. Common ways are an encrypted blob in a data section (usually XOR, RC4, AES, see Part 16) that is decrypted at runtime right before use, and compression (zlib, LZ) before encryption. Others are stack strings built one character at a time with `mov` instructions so they don't sit together as a string, and values computed at runtime by an algorithm (DGA, domain generation algorithm) instead of being stored.
 
-In all cases the config on disk is a pile of meaningless bytes, and it only becomes a readable string in memory, in the short moment before the malware uses it. Your job is to get it out, by the static or the dynamic route.
+In all cases the config on disk is a block of meaningless bytes, and it only becomes a readable string in memory, in the short moment before the malware uses it. Your job is to get it out, by the static or the dynamic route.
 
 ## Three ways to extract
 
@@ -57,7 +57,7 @@ Suppose you've reversed the decryptor and it works in two layers: RC4 with a str
 }
 ```
 
-From a pile of bytes `43 46 47 30 95 00 00 00 f3 56 96 16 ...` to a complete set of IOCs. That's what this lesson is about. (The config in the lab is made up and harmless, with domains from the non-routable TEST-NET range.)
+From a block of bytes `43 46 47 30 95 00 00 00 f3 56 96 16 ...` to a complete set of IOCs. That's what this lesson is about. (The config in the lab is made up and harmless, with domains from the non-routable TEST-NET range.)
 
 ## Understand the C2 protocol too
 

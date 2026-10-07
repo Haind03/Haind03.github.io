@@ -8,7 +8,7 @@ categories: ["Technique Reverse", "Part 04 · C++"]
 tags: [reverse-engineering, cpp]
 render_with_liquid: false
 ---
-Real C++ code almost never uses bare C arrays alone. It's full of `std::string`, `std::vector`, `std::map`. Each of these containers has a fixed layout that repeats everywhere. Once you recognize it, a pile of `[rax]`, `[rax+8]`, `[rax+10h]` in pseudocode starts to mean something, and you can tell this is a string and that is a vector without the decompiler telling you.
+Real C++ code almost never uses bare C arrays alone. It's full of `std::string`, `std::vector`, `std::map`. Each of these containers has a fixed layout that repeats everywhere. Once you recognize it, a series of `[rax]`, `[rax+8]`, `[rax+10h]` in pseudocode starts to mean something, and you can tell this is a string and that is a vector without the decompiler telling you.
 
 This lesson focuses on the two containers you meet most (`string` and `vector`), then quickly covers the rest. Every layout number below is from libstdc++ on x64 (the g++ toolchain), checked with the lab program. MSVC differs a little, with notes at the end.
 

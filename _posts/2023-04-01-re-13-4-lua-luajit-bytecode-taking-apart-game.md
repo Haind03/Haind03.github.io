@@ -73,7 +73,7 @@ Many games don't leave the bytecode bare but encrypt it (XOR, a custom cipher) a
 
 One approach is to dump from runtime. Let the game decrypt it itself, then pull the decrypted bytecode out of memory. Hook the script loading function (for example `luaL_loadbuffer`, `lua_load`, `luaL_loadbufferx`) with Frida and print the buffer at the moment it's clean bytecode. It's the same dynamic unpacking idea as Part 14. The other case is when the key sits in the binary. If the cipher is simple, find the decryption function in the native code, get the key, and decrypt offline.
 
-The principle is the same as for every kind of packer: find where the data is in its cleanest form and grab it there, instead of fighting the encryption layer.
+The principle is the same as for every kind of packer: find where the data is in its cleanest form and grab it there, instead of working against the encryption layer.
 
 ## Lab
 

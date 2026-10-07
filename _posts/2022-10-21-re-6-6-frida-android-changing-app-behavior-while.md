@@ -16,7 +16,7 @@ First, the boundary. This lesson is security testing technique. Use it on your o
 
 Frida is a dynamic instrumentation toolkit. On Android there are two parts. frida-server is a binary that runs on the device (usually needs root) or on an emulator, and it injects code into the app process. frida / objection run on your computer (the host), talk to frida-server over USB or TCP, and load your script into the app.
 
-You write scripts in JavaScript. Frida injects a JS engine into the app process, and from inside it your script can call into the Android runtime and grab Java classes and methods as if you were writing Java.
+You write scripts in JavaScript. Frida injects a JS engine into the app process, and from inside it your script can call into the Android runtime and grab Java classes and methods using Java syntax.
 
 ## Setting up the environment
 
@@ -36,7 +36,7 @@ adb shell "su -c /data/local/tmp/frida-server &"
 frida-ps -U        # list processes over USB
 ```
 
-If `frida-ps -U` lists the apps, the environment works. The frida-server version has to match the frida-tools version on the host. A mismatch errors out right away, and it's the most common trap for beginners.
+If `frida-ps -U` lists the apps, the environment works. The frida-server version has to match the frida-tools version on the host. A mismatch errors out right away, and it's the most common mistake for beginners.
 
 ## Hooking Java methods: three patterns
 
@@ -97,7 +97,7 @@ frida -U com.example.app -l hook.js
 
 ## JADX generates the snippet for you
 
-You don't need to type long class names by hand. In JADX-GUI (lesson [6.3](/posts/re-6-3-jadx-gui-depth-number-one-tool/)), right-click a method and choose **Copy as Frida snippet**. It generates the `Java.use(...).implementation` skeleton with the right class and signature, and you paste it into the script and fill in the body. It's the fastest way to go from "found the function in the decompiler" to "hooked it".
+You don't need to type long class names by hand. In JADX-GUI (lesson [6.3](/posts/re-6-3-jadx-gui-depth-number-one-tool/)), right-click a method and choose **Copy as Frida snippet**. It generates the `Java.use(...).implementation` template with the right class and signature, and you paste it into the script and fill in the body. It's the fastest way to go from "found the function in the decompiler" to "hooked it".
 
 ## SSL pinning
 
@@ -131,7 +131,7 @@ pip install frida-tools objection
 
 You also need the frida-server build for the right architecture, pushed to the device and running (see the setup section above). Check that everything is connected with `frida-ps -U`, which should list the apps. A good target is OWASP UnCrackable-Level1, downloaded from the official OWASP MASTG UnCrackable apps page (https://mas.owasp.org/crackmes/). It has a function that checks for root and then exits, and a function that verifies a secret string, which makes it good for practicing hooks.
 
-Open the APK in JADX-GUI and find the class and method that check for root (or the condition that makes the app quit early). Use Copy as Frida snippet to get the hook skeleton for that method, then edit `hook.js` to force the method to return the value that lets the app continue. The file is a sample script with three patterns: forcing a root check to return false, logging the arguments and real result of a verification function, and hooking an overloaded method where you must spell out the signature. Adjust the class and method names to your target. Run it with the command below and check that the app no longer exits.
+Open the APK in JADX-GUI and find the class and method that check for root (or the condition that makes the app quit early). Use Copy as Frida snippet to get the hook template for that method, then edit `hook.js` to force the method to return the value that lets the app continue. The file is a sample script with three patterns: forcing a root check to return false, logging the arguments and real result of a verification function, and hooking an overloaded method where you must spell out the signature. Adjust the class and method names to your target. Run it with the command below and check that the app no longer exits.
 
 ```
 frida -U -f <package> -l hook.js
@@ -213,4 +213,4 @@ One caveat: the class names and structure of UnCrackable-Level1 above follow the
 ## Key takeaways
 Frida has frida-server on the device and frida/objection on the host, and the versions on both sides must match. The core pattern is `Java.perform` then `Java.use("class").method.implementation = function(){...}`. Call `this.method(...)` to run the original, which you use when you only want to log without changing behavior. Overloaded methods must be specified with `.overload(...)`.
 
-JADX Copy as Frida snippet generates a hook skeleton with the right signature, and objection bundles hooks for SSL pinning and root detection. Only use it on your own apps or ones you're authorized for, since this is security testing and not cheating.
+JADX Copy as Frida snippet generates a hook template with the right signature, and objection bundles hooks for SSL pinning and root detection. Only use it on your own apps or ones you're authorized for, since this is security testing and not cheating.

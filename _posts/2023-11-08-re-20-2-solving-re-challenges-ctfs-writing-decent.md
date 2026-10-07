@@ -48,7 +48,7 @@ A write-up that only says "opened IDA, saw the flag, done" is useless. A write-u
 
 Flare-On challenge number 1 each season is usually solved in ten minutes. Challenges 10 and 11 can take a strong person a whole week. That's normal. The goal isn't to solve everything right away but to learn one more technique from each challenge. This year you're stuck on challenge 7, next year you get through it in one sitting, and that's measurable progress.
 
-Read other people's write-ups after you've struggled enough on your own. Seeing how a strong person approached the same challenge you just solved painfully is one of the fastest ways to learn.
+Read other people's write-ups after you've struggled enough on your own. Seeing how a strong person approached the same challenge you just solved with difficulty is one of the fastest ways to learn.
 
 ## Lab
 

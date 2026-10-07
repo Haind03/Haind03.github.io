@@ -63,7 +63,7 @@ void* f = GetProcAddress(h, "InternetOpenA"); // get the function address by nam
 f(...);                                        // call it
 ```
 
-The `LoadLibrary` + `GetProcAddress` pair is the classic sign of dynamic API calls. Malware likes this because the static import list looks clean and harmless, and the real functions only show up at runtime. Sometimes the function names are string-encrypted too, to fool a static reader. If you see `GetProcAddress` called many times in a loop, it's building its own private API table, which is a red flag.
+The `LoadLibrary` + `GetProcAddress` pair is the classic sign of dynamic API calls. Malware likes this because the static import list looks clean and harmless, and the real functions only show up at runtime. Sometimes the function names are string-encrypted too, to fool a static reader. If you see `GetProcAddress` called many times in a loop, it's building its own private API table, which is suspicious.
 
 Static imports give you the picture on disk, but don't trust that it's complete. Always watch for `LoadLibrary`/`GetProcAddress`.
 
@@ -131,7 +131,7 @@ Grouping the functions:
 | BCryptEncrypt, CryptAcquireContextW | Crypto |
 | CreateServiceW | Service |
 
-Note that `OpenProcess` + `VirtualAllocEx` + `WriteProcessMemory` + `CreateRemoteThread` appearing together is the classic recipe for DLL or shellcode injection (see Part 17).
+Note that `OpenProcess` + `VirtualAllocEx` + `WriteProcessMemory` + `CreateRemoteThread` appearing together is the usual API combination for DLL or shellcode injection (see Part 17).
 
 Inferring the profile. The functions enumerate files (`FindFirstFileW`/`FindNextFileW`), open and read/write them (`CreateFileW`, `ReadFile`, `WriteFile`), encrypt (`CryptAcquireContextW`, `CryptEncrypt`), write to the registry (`RegSetValueExW`) and delete files (`DeleteFileW`). My conclusion is that the program sweeps through files, reads their contents, encrypts them and writes the result over the original or as a new encrypted copy, deletes the original, and leaves a trace in the registry. That's the profile of ransomware. You can't be 100% sure from imports alone, but it's enough to put the sample in the dangerous bucket and analyze it in an isolated VM.
 

@@ -8,7 +8,7 @@ categories: ["Technique Reverse", "Part 09 · Rust"]
 tags: [reverse-engineering, rust]
 render_with_liquid: false
 ---
-Last lesson you learned how to recognize a Rust binary and demangle its function names. Now the harder part, reading the code inside. Rust follows "zero-cost abstraction", which means the nice things you write in source, iterators, closures, Option, get flattened by the compiler into plain loops and branches with no trace of their original shape. The code runs fast, but the disassembly is painful to read.
+Last lesson you learned how to recognize a Rust binary and demangle its function names. Now the harder part, reading the code inside. Rust follows "zero-cost abstraction", which means the nice things you write in source, iterators, closures, Option, get flattened by the compiler into plain loops and branches with no trace of their original shape. The code runs fast, but the disassembly is hard to read.
 
 This lesson covers a few of Rust's core data structures, so you can still tell what you're looking at in a lot of inlined code.
 

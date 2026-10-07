@@ -92,7 +92,7 @@ For INT 3 / INT 2D / ICEBP, configure x64dbg to pass the exception back to the p
 
 For hardware breakpoint detection, use software breakpoints instead of hardware ones, or have ScyllaHide/TitanHide hide the DR registers from `GetThreadContext`. The trap flag check usually also comes down to patching the branch that compares the result.
 
-For all of group 3, don't fight each measurement one by one. Find the final point where every check ends up in one jump that decides whether it's being debugged, and neutralize that jump. A lot of layered measurements usually end in one or two branches.
+For all of group 3, don't defeat each measurement one by one. Find the final point where every check ends up in one jump that decides whether it's being debugged, and neutralize that jump. A lot of layered measurements usually end in one or two branches.
 
 ## Lab
 
@@ -162,4 +162,4 @@ Group 3 doesn't ask the OS, it works things out from time and exceptions, so it'
 
 Traps work by the program placing its own int 3 / int 2d / icebp and seeing whether the debugger swallows the exception. The logic is usually inverted: the handler running means not being debugged. To get past them, configure the debugger to pass the exception back to the program, or nop the trap instruction.
 
-Hardware breakpoints get detected via DR0-DR7, so switch to software breakpoints or use ScyllaHide/TitanHide to hide the debug registers. In general, find the final deciding jump and neutralize it instead of fighting every single measurement.
+Hardware breakpoints get detected via DR0-DR7, so switch to software breakpoints or use ScyllaHide/TitanHide to hide the debug registers. In general, find the final deciding jump and neutralize it instead of defeating every single measurement.

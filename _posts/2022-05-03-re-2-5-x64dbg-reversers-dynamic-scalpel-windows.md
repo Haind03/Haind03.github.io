@@ -14,7 +14,7 @@ x64dbg is two builds in one package: `x64dbg.exe` for 64-bit binaries and `x32db
 
 ## The screen layout
 
-The first time you open it, x64dbg shows a pile of panels. Only a few are used all the time.
+The first time you open it, x64dbg shows many panels. Only a few are used all the time.
 
 The CPU tab is the main one. On the left is the disassembly, where you see each instruction about to run, and the line being executed (at `rip`) is highlighted. You spend most of your time here. In the top right of the CPU tab, Registers shows the value of every register right now (`rax`, `rcx`, flags...), and you can read and edit there. Dump, at the bottom left, shows memory as hex at any address, so when you want to know what data a pointer points to, look there. Stack, at the bottom right, shows the stack contents at `rsp`, useful for reading parameters and return addresses.
 
@@ -55,7 +55,7 @@ Once stopped, you move the program forward step by step. These keys should becom
 | `F8` | Step over: run one instruction, and if it's a `call`, run the whole function and stop at the next instruction |
 | `F9` | Run: continue to the next breakpoint |
 | `Ctrl+F9` | Execute till return: run until the current function `ret`s, used to quickly get out of a library function you don't care about |
-| `F4` | Run to selection: run to exactly the line you selected, like a one-time breakpoint |
+| `F4` | Run to selection: run to exactly the line you selected, as a one-time breakpoint does |
 
 I use `F8` to move through quickly, and only `F7` into a function when it's worth looking at. If you `F7` into some long library function, `Ctrl+F9` jumps back out. The full shortcut list is in the [cheatsheet](/posts/re-resources-cheatsheet-shortcuts-quick-reference/).
 

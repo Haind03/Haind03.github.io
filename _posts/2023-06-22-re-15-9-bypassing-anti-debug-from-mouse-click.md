@@ -16,7 +16,7 @@ Almost every anti-debug check boils down to one question, "am I being watched", 
 
 ScyllaHide is a plugin for x64dbg (and IDA, OllyDbg too). It hooks the functions in ntdll inside the process you're debugging, then adjusts return values and flags so every user-mode check misses. Turn it on once and it handles a whole batch of things you've already learned.
 
-It forces `IsDebuggerPresent` and `PEB.BeingDebugged` to 0, and clears the flags in `PEB.NtGlobalFlag` and the heap flags that expose the debugger (lesson 15.2). For `NtQueryInformationProcess` with ProcessDebugPort/DebugFlags/DebugObjectHandle it returns the values of a clean process (lesson 15.1). It swallows `NtSetInformationThread` with ThreadHideFromDebugger so your thread doesn't hide itself (lesson 15.4). It also covers `NtQueryObject`, `NtClose` (the CloseHandle trap), `OutputDebugString`, and timing via `NtQuerySystemTime`/`GetTickCount`.
+It forces `IsDebuggerPresent` and `PEB.BeingDebugged` to 0, and clears the flags in `PEB.NtGlobalFlag` and the heap flags that expose the debugger (lesson 15.2). For `NtQueryInformationProcess` with ProcessDebugPort/DebugFlags/DebugObjectHandle it returns the values of a clean process (lesson 15.1). It swallows `NtSetInformationThread` with ThreadHideFromDebugger so your thread doesn't hide itself (lesson 15.4). It also covers `NtQueryObject`, `NtClose` (the CloseHandle check), `OutputDebugString`, and timing via `NtQuerySystemTime`/`GetTickCount`.
 
 To use it in x64dbg, install the plugin in the `plugins` folder, open the ScyllaHide menu, pick a profile (I start with the default "x64dbg" profile, which already has most options on), apply, then run again. Most ordinary crackmes and malware stop yelling "debugger detected" right here.
 
@@ -70,7 +70,7 @@ This lab has no source code of its own. It reuses the anti-debug programs you bu
 
 You need Windows, x64dbg, and the ScyllaHide plugin (copied into the x64dbg `plugins` folder), plus the anti-debug programs from those three labs.
 
-Start by opening the Lesson 15.1 program in x64dbg and running it normally, without ScyllaHide. Confirm that it prints "debugger detected" (or exits early) and note which check fired. Then turn on ScyllaHide through Plugins > ScyllaHide, choose the default profile for x64dbg, tick the groups (IsDebuggerPresent, PEB, NtQueryInformationProcess, NtSetInformationThread) and apply. Run again and see that the program now behaves as if there were no debugger. Match each check from Lessons 15.1 and 15.2 to the corresponding ScyllaHide option.
+Start by opening the Lesson 15.1 program in x64dbg and running it normally, without ScyllaHide. Confirm that it prints "debugger detected" (or exits early) and note which check fired. Then turn on ScyllaHide through Plugins > ScyllaHide, choose the default profile for x64dbg, tick the groups (IsDebuggerPresent, PEB, NtQueryInformationProcess, NtSetInformationThread) and apply. Run again and see that the program now behaves as it does with no debugger attached. Match each check from Lessons 15.1 and 15.2 to the corresponding ScyllaHide option.
 
 Repeat with the Lesson 15.2 program (direct PEB access) and the Lesson 15.3 program (timing). Write down which ones ScyllaHide gets past immediately and which need extra options. Timing usually needs the time group turned on.
 

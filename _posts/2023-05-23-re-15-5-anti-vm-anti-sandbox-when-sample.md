@@ -41,7 +41,7 @@ If you see `cpuid` with the constant `0x40000000` in code, there's almost certai
 
 The VM and its guest tools leave a lot of traces that malware scans for. In the registry there are keys like `HKLM\SOFTWARE\VMware, Inc.\VMware Tools`, `HKLM\HARDWARE\...\SystemBiosVersion` containing "VBOX" or "VMWARE", and the VirtualBox Guest Additions keys. On disk there are files and drivers such as `C:\Windows\System32\drivers\vmmouse.sys`, `vmhgfs.sys`, `VBoxMouse.sys`, `VBoxGuest.sys`, and the VMware Tools install folder. Services and processes include `vmtoolsd.exe`, `VBoxService.exe` and `vmware.exe`. Devices give it away too, with disk drive names containing "VMware" or "VBOX" and the display adapter "VirtualBox Graphics Adapter".
 
-In code, these checks show up as calls to `RegOpenKeyEx`, `CreateFile`, `Process32Next`, `GetAdaptersInfo` with the distinctive strings above as parameters. Run `strings` or FLOSS on the sample, and if you see a pile of "VBoxGuest", "vmtoolsd", "VMware" strings, it has anti-VM.
+In code, these checks show up as calls to `RegOpenKeyEx`, `CreateFile`, `Process32Next`, `GetAdaptersInfo` with the distinctive strings above as parameters. Run `strings` or FLOSS on the sample, and if you see many strings such as "VBoxGuest", "vmtoolsd", "VMware" strings, it has anti-VM.
 
 ## MAC address and hardware
 

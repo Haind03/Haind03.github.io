@@ -21,7 +21,7 @@ hello world C   (gcc, dynamic):   ~16 KB
 hello world Go  (go build):       ~1.9 MB
 ```
 
-That's more than a hundred times bigger. Go statically links by default, and it also puts the whole runtime into every binary. The runtime includes the goroutine scheduler, the garbage collector, memory management and reflection. So you see a forest of `runtime.*`, `fmt.*`, `sync.*` functions even though your program only prints one line.
+That's more than a hundred times bigger. Go statically links by default, and it also puts the whole runtime into every binary. The runtime includes the goroutine scheduler, the garbage collector, memory management and reflection. So you see many `runtime.*`, `fmt.*`, `sync.*` functions even though your program only prints one line.
 
 For a reverser this means don't try to read it all. 95% of the functions are runtime and the standard library. The author's code is in the functions named `main.*` and their own packages. The first job is always to carve out the `main.*` part and ignore the rest. It's the "find the real main" idea from [Lesson 3.1](/posts/re-3-1-hello-world-under-microscope-finding-real/) at a larger scale.
 
@@ -193,6 +193,6 @@ A stripped Go binary is easier than a stripped C one because pclntab is a functi
 </details>
 
 ## Key takeaways
-Go binaries are big because of static linking plus the bundled runtime and GC, so don't read the `runtime.*` forest and focus on `main.*`. pclntab is an embedded function name table that survives strip, so Go is almost never truly stripped, and tools recover names from it (Lesson 8.2). The pclntab magic tells you the Go version: `f1 ff ff ff` is Go 1.20+.
+Go binaries are big because of static linking plus the bundled runtime and GC, so don't read the `runtime.*` functions and focus on `main.*`. pclntab is an embedded function name table that survives strip, so Go is almost never truly stripped, and tools recover names from it (Lesson 8.2). The pclntab magic tells you the Go version: `f1 ff ff ff` is Go 1.20+.
 
 Recognize Go by size, build info (`go version -m`), and `runtime.`/`go1.x` strings. The calling convention changes by version: before 1.17 it goes through the stack, and from 1.17 through registers but in the order `RAX, RBX, RCX, RDI, RSI...`, different from System V, with the return in AX.

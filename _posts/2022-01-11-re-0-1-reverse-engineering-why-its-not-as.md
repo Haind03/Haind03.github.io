@@ -8,7 +8,7 @@ categories: ["Technique Reverse", "Part 00 · Getting Started"]
 tags: [reverse-engineering, basics]
 render_with_liquid: false
 ---
-The first time you open an `.exe` in IDA you get a wall of green assembly: thousands of `mov`, `push`, `call` lines with no beginning and no end. I wanted to close the laptop and go to sleep. Everyone feels that. But reverse engineering (RE) doesn't mean reading all of it. You learn which parts are worth reading and skip the other 95%.
+The first time you open an `.exe` in IDA you get a long listing of assembly: thousands of `mov`, `push`, `call` lines with no beginning and no end. I wanted to close the laptop and go to sleep. Everyone feels that. But reverse engineering (RE) doesn't mean reading all of it. You learn which parts are worth reading and skip the other 95%.
 
 RE means taking a finished product and working out how it works when you don't have the source code. People take an engine apart to see how it runs. Here we take a program apart.
 

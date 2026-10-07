@@ -14,7 +14,7 @@ When you double-click an `.exe` file, the OS doesn't run it straight from disk. 
 
 Two processes can both see the address `0x401000`, and they are two completely different physical memory cells. Each process lives in its own isolated virtual address space, so process A can't accidentally read the memory of process B.
 
-The addresses you see in IDA or a debugger are virtual addresses, and the OS translates them to real physical addresses in RAM. As a reverse engineer you almost always work with virtual addresses, so treat the process as if it has one continuous range of addresses to itself.
+The addresses you see in IDA or a debugger are virtual addresses, and the OS translates them to real physical addresses in RAM. As a reverse engineer you almost always work with virtual addresses, so each process sees its own continuous range of addresses.
 
 In practice, to read or write another process's memory (which every injection technique in Part 17 relies on), you have to ask the OS through APIs like `ReadProcessMemory` and `WriteProcessMemory`. You can't reach over directly.
 
@@ -77,4 +77,4 @@ Each memory region has permissions: R (read), W (write), X (execute). They tell 
 ## Key takeaways
 Every process has its own isolated virtual address space, and the addresses you see are virtual. The layout is code (.text), data (.data/.bss/.rdata), heap (grows up), stack (grows down), and libraries. The stack is LIFO, grows down, and holds locals and the return address, with locals showing up as `[rbp-x]`. The heap is allocated at runtime and you have to free it yourself.
 
-ASLR changes addresses every run, so compare the offset part and not absolute addresses. An RWX region is a red flag, often seen in packers and malware.
+ASLR changes addresses every run, so compare the offset part and not absolute addresses. An RWX region is suspicious, often seen in packers and malware.

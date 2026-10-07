@@ -8,7 +8,7 @@ categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
-Beginners often ask: I wrote a clean C function, so why is it a pile of assembly in IDA that looks nothing like the original? The reason is the road from source to binary, and mostly the optimizer. Once you understand this road, weird decompiler output annoys you less, and you know ahead of time what kind of binary you're facing.
+Beginners often ask: I wrote a clean C function, so why is it so much assembly in IDA that looks nothing like the original? The reason is the process from source to binary, and mostly the optimizer. Once you understand this process, weird decompiler output annoys you less, and you know ahead of time what kind of binary you're facing.
 
 ## The compilation pipeline
 
@@ -107,7 +107,7 @@ Two hints. `sum_fixed()` always returns 0+1+2+3 = 6, and the optimizer knows tha
 
 Try it yourself first. The exact output depends on your gcc or clang version, but the patterns below hold for every recent release.
 
-At `-O0` the binary is honest. All four functions are intact and separate, and `compute` contains three `call` instructions, to `square`, `sum_fixed` and `scale`, so the control flow matches the source exactly. Every function has a full prologue and epilogue, local variables are spilled to the stack (`[rbp-x]`), and there are many seemingly pointless `mov` instructions shuffling values through memory. That's the price of not optimizing, and in exchange the code stays close to what the author wrote. It's the reason to build with `-O0` first when you're learning.
+At `-O0` the binary keeps the source structure. All four functions are intact and separate, and `compute` contains three `call` instructions, to `square`, `sum_fixed` and `scale`, so the control flow matches the source exactly. Every function has a full prologue and epilogue, local variables are spilled to the stack (`[rbp-x]`), and there are many seemingly pointless `mov` instructions shuffling values through memory. That's the price of not optimizing, and in exchange the code stays close to what the author wrote. It's the reason to build with `-O0` first when you're learning.
 
 At `-O2` the optimizer gets to work. You won't find `call square` any more. The body of `square`, a single multiplication, has been pasted straight into `compute`, and with a constant `n` the whole squaring can even be folded at compile time. In optimized code a "missing" function doesn't mean the author never wrote it, only that it was inlined.
 

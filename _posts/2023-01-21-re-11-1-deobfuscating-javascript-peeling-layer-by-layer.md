@@ -31,7 +31,7 @@ For a file that's only minified (not obfuscated), beautify is the whole job. You
 
 ## Level 2: identify the obfuscator first
 
-Beginners often jump into unpicking by hand before knowing what tool obfuscated the code. Most obfuscated code in the wild comes from obfuscator.io (the `javascript-obfuscator` library), and it leaves fingerprints that are easy to recognize.
+Beginners often jump into unpicking by hand before knowing what tool obfuscated the code. Most obfuscated code in the wild comes from obfuscator.io (the `javascript-obfuscator` library), and it leaves patterns that are easy to recognize.
 
 The first is a string array: a function returning a long array of strings, with every string in the code replaced by a call like `_0x4ae3eb(0xc4)`. The second is a rotate function, an IIFE with a `while(true)` loop using `parseInt` and `push/shift`, which rotates the string array into the right order at runtime. The third is control flow flattening, where function bodies turn into `while` + `switch` with shuffled case order, driven by a string like `"4|2|3|0|1"[split]`. The last is variable names in `_0x` hex form.
 

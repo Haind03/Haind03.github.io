@@ -153,6 +153,6 @@ Z3 has limits. It struggles when the constraints pass through a truly one-way fu
 If the check is a system of equations/inequalities on bytes (add, xor, multiply, compare), Z3 does well. If the check is "hash and compare the hash", Z3 is useless and you have to attack another way.
 
 ## Key takeaways
-For a reversible transform, rewrite in Python and invert; for a small space, brute-force. For a system of constraints tangled across many bytes, hand it to Z3 instead of solving by hand. The Z3 skeleton is BitVec variables, domain constraints, constraints from the binary, then check and model.
+For a reversible transform, rewrite in Python and invert; for a small space, brute-force. For a system of constraints tangled across many bytes, hand it to Z3 instead of solving by hand. The structure of a Z3 script is BitVec variables, domain constraints, constraints from the binary, then check and model.
 
 Use BitVec with the right width and ZeroExt when accumulating, to match the CPU's wrap-around, and check uniqueness by blocking the old solution and calling check again. Z3 gives up against one-way hashes, so change the attack direction then.

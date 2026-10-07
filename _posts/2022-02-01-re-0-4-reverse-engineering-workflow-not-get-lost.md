@@ -34,7 +34,7 @@ The entry point of a native binary is the runtime's startup code, not the author
 
 Rename and comment as soon as you understand something. Found out `sub_401000` hashes a string? Rename it to `hash_string` right away. Every name makes the next function easier to read. This is the main difference between someone slow but steady and someone drowning in `sub_xxx`.
 
-Static gives you the map, but the map has blurry spots: encrypted code, values only known at runtime, loops that are hard to trace by eye. For those you switch to dynamic.
+Static analysis shows you the structure, but some parts stay unclear: encrypted code, values only known at runtime, loops that are hard to trace by eye. For those you switch to dynamic.
 
 ## Step 3: Dynamic analysis
 
@@ -77,6 +77,6 @@ One small habit that works for me: write the question first, answer later. "What
 Don't bother memorizing the diagram. Just always start with a question. What's the correct serial? Where does this malware connect to? What algorithm does this function encrypt with? With a clear question you know when to stop. Without one you'll read assembly until morning for nothing.
 
 ## Key takeaways
-Always triage first: file type, language, packed or not, bitness, strings. Use static to draw the map, working backwards from strings and imports and renaming as soon as you understand something. Use dynamic to see the real values at runtime. It complements static, it doesn't replace it.
+Always triage first: file type, language, packed or not, bitness, strings. Use static to understand the structure, working backwards from strings and imports and renaming as soon as you understand something. Use dynamic to see the real values at runtime. It complements static, it doesn't replace it.
 
 Take notes inside the tool and in a separate file, otherwise you'll start from scratch. Start each session with a specific question so you know when you're done.

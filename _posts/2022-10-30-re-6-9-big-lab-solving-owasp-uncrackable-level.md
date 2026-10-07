@@ -18,7 +18,7 @@ Download it from the official OWASP MASTG UnCrackable apps page (https://mas.owa
 
 All three apps show an input box, and if you type the right secret it reports success. The task is to find the secret, or make the app believe you entered it correctly. There are two approaches and you should know both. The static one is to open the app in JADX, read the code, pull the secret out directly or understand the checking algorithm and compute backwards, without running the app. The dynamic one is to run the app on a device or emulator and use Frida to hook the checking function, either to read the real value or to force it to return the right result.
 
-The higher the level, the less the static route works and the more you need dynamic, especially when the secret is pushed down into native code or the app actively fights you.
+The higher the level, the less the static route works and the more you need dynamic, especially when the secret is pushed down into native code or the app actively resists analysis.
 
 ## Level 1: root detection and a secret in Java
 
@@ -63,7 +63,7 @@ You remove the layers one at a time, in order. Get past anti-Frida first. Hook e
 
 The order matters. You can't hook verify if the app has already exited after detecting Frida. Remove the outermost defense first and work inward. [Lesson 15.10](/technique-reverse/) covers handling combined layers of anti in detail.
 
-When the app fights your tools, it turns into layer removal. Be patient, go one layer at a time, and keep the final comparison as your hook point.
+When the app resists your tools, it turns into layer removal. Be patient, go one layer at a time, and keep the final comparison as your hook point.
 
 ## Which route to choose
 
@@ -72,9 +72,9 @@ When the app fights your tools, it turns into layer removal. Be patient, go one 
 | The secret is a hardcoded string in Java | Static, read it directly in JADX |
 | There's a clear checking algorithm | Static, compute backwards (like the Lesson 3.6 keygen) |
 | The secret is in a native .so | Static reading of the .so, or dynamic hooking of strcmp |
-| The app fights you (anti-*) | Dynamic, remove layers one at a time with Frida |
+| The app resists analysis (anti-*) | Dynamic, remove layers one at a time with Frida |
 
-Most beginners jump straight to Frida because it feels cool. I'd try reading statically first. Often the secret is right there, and five minutes in JADX is faster than half an hour fighting with frida-server.
+Most beginners jump straight to Frida because it feels cool. I'd try reading statically first. Often the secret is right there, and five minutes in JADX is faster than half an hour troubleshooting frida-server.
 
 ## Lab
 

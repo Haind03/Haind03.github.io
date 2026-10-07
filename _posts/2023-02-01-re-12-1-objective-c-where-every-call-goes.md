@@ -41,7 +41,7 @@ mov  rdx, r14                     ; rdx = input parameter
 call objc_msgSend
 ```
 
-Look at `rsi` (or `x1`) to know which method is being called. IDA and Ghidra usually annotate the selector next to the call themselves, so you read `objc_msgSend(account, "checkPassword:", input)` almost like a line of the original code. When the tool doesn't, you trace `rsi` back to the `__objc_selrefs` region yourself to get the name.
+Look at `rsi` (or `x1`) to know which method is being called. IDA and Ghidra usually annotate the selector next to the call themselves, so you read `objc_msgSend(account, "checkPassword:", input)` almost as readable as a line of the original code. When the tool doesn't, you trace `rsi` back to the `__objc_selrefs` region yourself to get the name.
 
 ARM64 is the same, just with different registers:
 

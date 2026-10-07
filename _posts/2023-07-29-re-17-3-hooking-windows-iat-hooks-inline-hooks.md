@@ -122,4 +122,4 @@ One caveat: the prologue bytes and syscall number above are the standard ntdll W
 ## Key takeaways
 A hook puts itself into a function call, and it's the basis of EDRs, Frida, compatibility tools, and analysis. An IAT hook changes a pointer in the Import Address Table, so it only catches calls through the IAT: clean but not comprehensive. An inline hook overwrites the start of a function with `jmp`, and a trampoline keeps the original bytes to call the real function, so it catches every call.
 
-Inline hooks have to copy whole instructions and fix relative addresses, which is why people use Detours/MinHook/PolyHook2. To detect hooks, compare the prologue in memory with the original bytes on disk, and treat a `jmp` (E9 / FF 25) at the function start as a red flag.
+Inline hooks have to copy whole instructions and fix relative addresses, which is why people use Detours/MinHook/PolyHook2. To detect hooks, compare the prologue in memory with the original bytes on disk, and treat a `jmp` (E9 / FF 25) at the function start as suspicious.

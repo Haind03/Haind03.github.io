@@ -8,7 +8,7 @@ categories: ["Technique Reverse", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
 render_with_liquid: false
 ---
-Reversing is a lot of reading: reading pseudocode, guessing what a function does, renaming a pile of `sub_401000` and `v7`. Most of it is repetitive and eats time. An LLM can help here: it reads a function, guesses the purpose, suggests variable names, explains a confusing chunk. It doesn't reverse for you, but it speeds up the boring parts. This lesson covers two ways to use AI in RE, and when not to trust it.
+Reversing is a lot of reading: reading pseudocode, guessing what a function does, renaming many `sub_401000` and `v7`. Most of it is repetitive and eats time. An LLM can help here: it reads a function, guesses the purpose, suggests variable names, explains a confusing chunk. It doesn't reverse for you, but it speeds up the boring parts. This lesson covers two ways to use AI in RE, and when not to trust it.
 
 ## Two kinds of AI integration
 

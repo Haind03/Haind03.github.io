@@ -48,7 +48,7 @@ For heavier obfuscation (string encryption, control flow) JADX gives up on that 
 
 Mobile people really like this JADX feature. Right-click a method and choose Copy as Frida snippet, and JADX generates a ready-made piece of JavaScript that hooks that method with Frida, with the right class name and parameter signature. You paste it into a Frida script and add logic to print the parameters or change the return value.
 
-For example it generates a skeleton like:
+For example it generates a template like:
 
 ```javascript
 Java.perform(function () {
@@ -104,7 +104,7 @@ For renaming, an obfuscated app shows things like `a.a.b(String)`. Once you unde
 
 With deobfuscation on, classes `a`, `b`, `c` that share names across different packages get consistent fake names such as `C0001a`, `C0002b`. These aren't the original names, which R8 removed at build time, but they tell the entities apart and avoid confusion.
 
-The Frida snippet is a skeleton like the one in the lesson. It hooks the right class and method and prints the arguments and return value. You can change `return ret;` to `return true;` to force the check to pass when running on a real device (Frida details are in Lesson 6.6).
+The Frida snippet is a template like the one in the lesson. It hooks the right class and method and prints the arguments and return value. You can change `return ret;` to `return true;` to force the check to pass when running on a real device (Frida details are in Lesson 6.6).
 
 After Save all, you can search the export:
 

@@ -8,7 +8,7 @@ categories: ["Technique Reverse", "Part 10 · Legacy: Delphi, VB6, AutoIt, AHK"]
 tags: [reverse-engineering, legacy]
 render_with_liquid: false
 ---
-Visual Basic 6 came out in the late 90s, but there's still a lot of internal software, small tools, and even malware written in it. Reversing VB6 has a trap from the start: two exe files can both be VB6 and still need completely different analysis. The reason is the compile mode. Knowing this first saves you a whole session of fumbling around.
+Visual Basic 6 came out in the late 90s, but there's still a lot of internal software, small tools, and even malware written in it. Reversing VB6 has a catch from the start: two exe files can both be VB6 and still need completely different analysis. The reason is the compile mode. Knowing this first saves you a whole session of fumbling around.
 
 Don't confuse VB6 with VB.NET. The names are similar but the technologies are different. VB.NET compiles to IL and runs on the CLR, and you open it with dnSpy/ILSpy like any other .NET assembly (see Part 5 again). VB6 has nothing to do with .NET, and it compiles to a very distinct form that this lesson covers. Working out which one you're holding is the first job, and Detect It Easy does it in a second.
 
@@ -20,7 +20,7 @@ Another sign is that the VB6 entry point always calls `ThunRTMain` (the function
 
 ## P-Code and Native
 
-When compiling VB6, the programmer picks one of two modes (in Project Properties, the Compile tab). This is the main trap.
+When compiling VB6, the programmer picks one of two modes (in Project Properties, the Compile tab). This is the main catch.
 
 In P-Code (Pseudo-Code) mode, the program is compiled to a VB-specific bytecode, and `msvbvm60.dll` acts as a virtual machine interpreting that bytecode at runtime, a bit like CPython running .pyc or the JVM running .class. When you open a P-Code exe in IDA, you see very little real x86 code, mostly calls into the runtime, because the real logic is in the P-Code bytecode. IDA doesn't understand P-Code, so it's almost useless here. On the plus side, P-Code is high-level bytecode that keeps quite a lot of information, so a specialized decompiler can recover it fairly cleanly, close to the original source.
 

@@ -27,7 +27,7 @@ File on disk:                 At runtime (in memory):
 +------------------+          +------------------+
 ```
 
-The important consequence for RE is that the real code only exists in readable form in memory at runtime, not on disk. Static analysis (opening the file in IDA/Ghidra) only sees the stub and a pile of junk. To see the real code, you have to let it unpack itself and then grab it, which is what lessons [14.2](/posts/re-14-2-unpacking-upx-automatic-manual/) and [14.3](/posts/re-14-3-dumping-process-rebuilding-iat-scylla/) cover.
+The important consequence for RE is that the real code only exists in readable form in memory at runtime, not on disk. Static analysis (opening the file in IDA/Ghidra) only sees the stub and a lot of unreadable data. To see the real code, you have to let it unpack itself and then grab it, which is what lessons [14.2](/posts/re-14-2-unpacking-upx-automatic-manual/) and [14.3](/posts/re-14-3-dumping-process-rebuilding-iat-scylla/) cover.
 
 ## OEP
 
@@ -66,7 +66,7 @@ The standard compiler sections are `.text`, `.data`, `.rdata`, `.rsrc`. A strang
 
 ### 4. A section that's both writable and executable
 
-Normal code lives in a read-and-execute only section (R-X). But the stub has to write the unpacked code into a region and then run it, so that region needs both write and execute permission (RWX, or a section with both WRITE and EXECUTE). A section that's both writable and executable is a red flag, rarely seen in clean software (see [Lesson 1.2](/posts/re-1-2-process-memory-map-where-everything-happens/) again).
+Normal code lives in a read-and-execute only section (R-X). But the stub has to write the unpacked code into a region and then run it, so that region needs both write and execute permission (RWX, or a section with both WRITE and EXECUTE). A section that's both writable and executable is suspicious, rarely seen in clean software (see [Lesson 1.2](/posts/re-1-2-process-memory-map-where-everything-happens/) again).
 
 ### 5. Very few meaningful strings
 
@@ -112,7 +112,7 @@ A packed file in DIE. With UPX, DIE recognizes it immediately and reports "UPX" 
 
 Entropy of the packed file. A flat, horizontal block appears right near the 8.0 level, which is the region holding the compressed original code. This is the clearest difference from the clean file. The stub (the code that decompresses things) has lower entropy because it's real, runnable code.
 
-Comparing sections. The clean file has `.text`, `.rdata`, `.data`, `.rsrc` and so on with standard permissions (`.text` is R-X, `.data` is RW-). The UPX file has sections renamed to `UPX0` and `UPX1` (with `.rsrc` kept). `UPX0` usually has zero size on disk, since it only reserves memory space to hold the decompressed code, while `UPX1` holds the compressed data and the stub. The section that ends up holding the decompressed code is both WRITE and EXECUTE, which is a red flag.
+Comparing sections. The clean file has `.text`, `.rdata`, `.data`, `.rsrc` and so on with standard permissions (`.text` is R-X, `.data` is RW-). The UPX file has sections renamed to `UPX0` and `UPX1` (with `.rsrc` kept). `UPX0` usually has zero size on disk, since it only reserves memory space to hold the decompressed code, while `UPX1` holds the compressed data and the stub. The section that ends up holding the decompressed code is both WRITE and EXECUTE, which is suspicious.
 
 The import table. The clean file has dozens to hundreds of functions from several DLLs (kernel32, user32, gdi32 and so on). The packed file has very few, often just kernel32 with `LoadLibraryA` and `GetProcAddress` plus a handful more. The reason is explained below.
 

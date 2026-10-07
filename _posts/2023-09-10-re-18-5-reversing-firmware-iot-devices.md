@@ -83,7 +83,7 @@ $ sudo chroot rootfs /usr/bin/qemu-mipsel-static /bin/httpd
 
 You need `binfmt_misc` and the `qemu-user-static` package installed. This works for running a single service, but it breaks easily when the binary needs infrastructure (nvram, other processes).
 
-System-mode boots the whole firmware. QEMU builds a whole MIPS/ARM virtual machine and boots the firmware's kernel + rootfs, which is closest to the real device. Setting it up by hand is painful, so there are automated frameworks like FirmAE (and its predecessor firmadyne). They extract automatically, guess the network config, boot the firmware in QEMU and give you access to the virtual device's web interface. The boot success rate is fairly high, which suits testing a router's web vulnerabilities without buying the device.
+System-mode boots the whole firmware. QEMU builds a whole MIPS/ARM virtual machine and boots the firmware's kernel + rootfs, which is closest to the real device. Setting it up by hand is tedious, so there are automated frameworks like FirmAE (and its predecessor firmadyne). They extract automatically, guess the network config, boot the firmware in QEMU and give you access to the virtual device's web interface. The boot success rate is fairly high, which suits testing a router's web vulnerabilities without buying the device.
 
 Once it boots, you attach `gdbserver` to debug the MIPS/ARM binary dynamically just like on x86 Linux (see [Lesson 2.6](/posts/re-2-6-gdb-pwndbg-windbg-debugging-from-command/)).
 

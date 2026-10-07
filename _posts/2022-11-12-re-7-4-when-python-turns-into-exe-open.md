@@ -56,7 +56,7 @@ Two lines matter here. The first is "Python version: 3.11". You need it to pick 
 
 After extraction you have a `secretapp_extracted/` folder with all the `.pyc` files and accompanying libraries.
 
-## The magic header trap
+## The missing magic header
 
 Beginners often trip here. A proper `.pyc` file starts with a 16-byte header (magic number + flags + timestamp/hash + size), as Lesson 7.1 said. Many PyInstaller versions strip the magic header of the entry point file when packaging, so the extracted `.pyc` is missing the first 8 or 16 bytes. A decompiler opening it will report an error or read it wrong.
 

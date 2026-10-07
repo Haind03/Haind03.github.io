@@ -8,7 +8,7 @@ categories: ["Technique Reverse", "Part 02 · The Toolkit"]
 tags: [reverse-engineering, tools]
 render_with_liquid: false
 ---
-IDA is the name you hear most when you first get into this field, and it also scares off a lot of people in the first ten minutes. A screen full of windows, strange shortcuts, a pile of `sub_401000` that tell you nothing. IDA isn't really hard, it's just big. This lesson covers what I use 90% of the time and skips the rest until you need it.
+IDA is the name you hear most when you first get into this field, and it also scares off a lot of people in the first ten minutes. A screen full of windows, strange shortcuts, many `sub_401000` names that tell you nothing. IDA isn't really hard, it's just big. This lesson covers what I use 90% of the time and skips the rest until you need it.
 
 The series uses IDA Free as the baseline because it's free and enough to learn x86/x64. The Pro version adds the Hex-Rays decompiler (the F5 key) and more architectures, but the basic operations are identical.
 
@@ -20,15 +20,15 @@ Drag a file into IDA and it shows a dialog asking for the file type and architec
 
 IDA has a huge number of windows, but a day of work uses about five. If you close one by accident, reopen it through View > Open subviews.
 
-The IDA View (disassembly) is where you read assembly. It has two modes, graph view (blocks connected by arrows, easy to see the flow) and text view (a linear listing), and `Space` switches between them. Beginners should use graph view to see the branches clearly. The Functions window, on the left, lists every function IDA found, and you double-click to jump to one. It works like a table of contents.
+The IDA View (disassembly) is where you read assembly. It has two modes, graph view (blocks connected by arrows, easy to see the flow) and text view (a linear listing), and `Space` switches between them. Beginners should use graph view to see the branches clearly. The Functions window, on the left, lists every function IDA found, and you double-click to jump to one. It shows the functions in a list.
 
 The Strings window lists every string in the file and opens with `Shift+F12`. It's the most useful window for beginners and I cover it below. Imports shows the API functions the program calls from external DLLs, and from that list you can guess what the program does (touches files, registry, network...). Pseudocode is the Hex-Rays output, C-like code, which you open with `F5` when the cursor is inside a function (Pro version only).
 
 ## Moving around
 
-Reversing means constantly jumping between functions. A few operations are enough. `G` lets you type an address or name to jump straight to it. Double-clicking a function or variable name jumps to its definition, and double-clicking a string or constant jumps to where it's defined. `Esc` goes back to where you just were (like a browser's Back button), and `Ctrl+Enter` goes forward. You'll press these two constantly.
+Reversing means constantly jumping between functions. A few operations are enough. `G` lets you type an address or name to jump straight to it. Double-clicking a function or variable name jumps to its definition, and double-clicking a string or constant jumps to where it's defined. `Esc` goes back to where you just were, and `Ctrl+Enter` goes forward. You'll press these two constantly.
 
-Treat IDA like a web browser. Click a link (a function name), read, then `Esc` to go back. Once back/forward feels natural, you're halfway there.
+Navigate IDA the way you navigate a web browser. Click a link (a function name), read, then `Esc` to go back. Once back/forward feels natural, you're halfway there.
 
 ## Three habits
 

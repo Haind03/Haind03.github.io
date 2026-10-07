@@ -26,7 +26,7 @@ Know the names so you know what to look up. ConfuserEx is open source, free, and
 
 ## Identify first
 
-Don't guess. Open the file with Detect It Easy or just open it in dnSpy and look for a few signs. DIE often prints the protector name directly (ConfuserEx, .NET Reactor...). In dnSpy, if type and method names are all odd characters, there's a `<Module>` containing many suspicious methods, or you see an attribute like `ConfusedByAttribute`, you know right away. Unusually high entropy and a pile of big byte array strings point to string or resource encryption.
+Don't guess. Open the file with Detect It Easy or just open it in dnSpy and look for a few signs. DIE often prints the protector name directly (ConfuserEx, .NET Reactor...). In dnSpy, if type and method names are all odd characters, there's a `<Module>` containing many suspicious methods, or you see an attribute like `ConfusedByAttribute`, you know right away. Unusually high entropy and many big byte array strings point to string or resource encryption.
 
 Only after you know the protector should you pick a tool. Running de4dot blindly on a .NET Reactor sample is wasted effort.
 
@@ -64,7 +64,7 @@ If anti-debug blocks dnSpy, patch or bypass that check first (techniques in Part
 5. Control flow still messy? -> read block by block, or let the debugger run through
 ```
 
-Don't expect to get clean source back as if it had never been obfuscated. The goal is code readable enough to understand the logic.
+Don't expect to get clean source back in its original form. The goal is code readable enough to understand the logic.
 
 ## Lab
 

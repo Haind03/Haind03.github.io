@@ -42,7 +42,7 @@ Every name you set makes the next function easier to read, because Ghidra propag
 
 ## Navigation
 
-Double-click a function name or address to jump to it. The back/forward arrow buttons on the toolbar (or Alt+Left/Right arrow) take you back to where you just left, like a browser, and you'll use them constantly when following a chain of calls. Press G to jump to a specific address.
+Double-click a function name or address to jump to it. The back/forward arrow buttons on the toolbar (or Alt+Left/Right arrow) take you back to where you just were, and you'll use them constantly when following a chain of calls. Press G to jump to a specific address.
 
 ## Ghidra vs IDA
 

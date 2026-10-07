@@ -10,7 +10,7 @@ render_with_liquid: false
 ---
 You write three lines of C, compile, and open it in Ghidra. You expect to see `main`, but you land in a function with a weird name like `entry`, `start`, or `__scrt_common_main_seh`, which calls a dozen functions that have nothing to do with "hello world". The entry point is not your main. This lesson shows how to get past that init code to the lines the author wrote.
 
-## Why there's a pile of code before main
+## Why there's a lot of code before main
 
 ![From entry point through CRT startup to the real main](/assets/img/re/part-03/crt-to-main.svg)
 
@@ -18,7 +18,7 @@ When the operating system loads the program, it doesn't jump straight into `main
 
 CRT startup has groundwork to do before `main` can run. It sets up the C environment by initializing the heap, threads and locale, and it gets `argc`, `argv` and the `envp` environment variables to pass to `main`. It runs the global constructors: global variables needing initialization, functions marked `__attribute__((constructor))`, and in C++ the constructors of every global object. Then it calls `main`, and afterwards takes the value `main` returns and passes it to `exit` to finish cleanly.
 
-So `main` is just a function the CRT calls in the middle. When you see a forest of strange code, you just skim past it to reach `main`.
+So `main` is just a function the CRT calls in the middle. When you see a lot of strange code, you just skim past it to reach `main`.
 
 ## On Linux: follow __libc_start_main
 

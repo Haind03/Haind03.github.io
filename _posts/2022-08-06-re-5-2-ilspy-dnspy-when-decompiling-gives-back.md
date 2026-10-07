@@ -8,7 +8,7 @@ categories: ["Technique Reverse", "Part 05 · C# and .NET"]
 tags: [reverse-engineering, dotnet]
 render_with_liquid: false
 ---
-After two whole parts of native assembly, opening a .NET file in dnSpy is a pleasant surprise. You click a method, and instead of a pile of `mov`/`call`, the window shows C# almost exactly as the author wrote it: class names, method names, local variable names, even a `foreach` loop. The reason is in lesson [5.1](/posts/re-5-1-net-internals-why-decompiling-gives-back/). .NET compiles to IL with full metadata, so the decompiler can rebuild a lot. This lesson covers the two main tools.
+After two whole parts of native assembly, opening a .NET file in dnSpy is a pleasant surprise. You click a method, and instead of many `mov`/`call` lines, the window shows C# almost exactly as the author wrote it: class names, method names, local variable names, even a `foreach` loop. The reason is in lesson [5.1](/posts/re-5-1-net-internals-why-decompiling-gives-back/). .NET compiles to IL with full metadata, so the decompiler can rebuild a lot. This lesson covers the two main tools.
 
 Both are free portable downloads, `dnSpy.exe` and `ILSpy.exe`, so there's nothing to install.
 
@@ -40,7 +40,7 @@ A .NET Core apphost `.exe` (for example `dnSpy.exe`) is often just a launcher, a
 
 ## View the C#, then flip to IL
 
-By default the decompiler shows C#. Sometimes it translates wrong or hides details (especially with obfuscated code), and then you need the raw IL, which doesn't lie.
+By default the decompiler shows C#. Sometimes it translates wrong or hides details (especially with obfuscated code), and then you need the raw IL, which is always accurate.
 
 In ILSpy, use the language dropdown on the toolbar and switch from `C#` to `IL`, or choose `IL with C#` to see them side by side. In dnSpy, use the context menu or the language button to switch between `C#` and `IL`.
 

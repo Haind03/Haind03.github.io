@@ -20,7 +20,7 @@ What's usually accepted is reversing your own software, or software where the ow
 
 What gets people in trouble is cracking, patching licenses or sharing cracks of commercial software, and bypassing DRM and then distributing the content. Reversing someone else's system without permission is risky even "just to look". Breaking terms of use (EULA/ToS) is a problem too, especially in online games and cloud services. So is publishing a 0-day with a working exploit before the vendor has a chance to patch.
 
-"I'm just learning" is not a legal shield. The line gets crossed when you distribute tools or patches, not when you sit reading code alone.
+"I'm just learning" does not protect you legally. The line gets crossed when you distribute tools or patches, not when you sit reading code alone.
 
 ## A few legal frameworks worth knowing by name
 

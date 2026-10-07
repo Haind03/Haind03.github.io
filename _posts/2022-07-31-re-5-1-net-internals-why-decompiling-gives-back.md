@@ -8,7 +8,7 @@ categories: ["Technique Reverse", "Part 05 · C# and .NET"]
 tags: [reverse-engineering, dotnet]
 render_with_liquid: false
 ---
-After several parts of fighting native assembly, this part is a lot easier. Open a .NET file in dnSpy or ILSpy and you usually get C# that reads almost exactly like what the author wrote: the right class names, method names and variable names. Comments are gone but the structure is intact. Why is native such a mess while .NET is so readable? The answer explains the approach for this whole part.
+After several parts of working with native assembly, this part is a lot easier. Open a .NET file in dnSpy or ILSpy and you usually get C# that reads almost exactly like what the author wrote: the right class names, method names and variable names. Comments are gone but the structure is intact. Why is native such a mess while .NET is so readable? The answer explains the approach for this whole part.
 
 ## A .NET program doesn't contain machine code
 
@@ -73,7 +73,7 @@ The method name `Add`, the type `int32`, and the parameter names `a` and `b` are
 | Decompile result | approximate pseudocode | C# nearly like the original |
 | Main obstacle | compiler optimization | obfuscation (see Lesson 5.5) |
 
-The last row matters. What stands between you and .NET source is usually not the format but an obfuscator that renames and distorts things on purpose. So most of this part is about removing obfuscation, not fighting IL.
+The last row matters. What stands between you and .NET source is usually not the format but an obfuscator that renames and distorts things on purpose. So most of this part is about removing obfuscation, not reading IL.
 
 ## Tools
 

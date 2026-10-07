@@ -10,7 +10,7 @@ render_with_liquid: false
 ---
 A disassembler shows you instructions and a debugger shows you what happens at runtime. Sometimes you just want to open the file and look at every byte: fix a broken magic number, patch one byte to get past a check, or read a weird file format nobody wrote a parser for. That's what a hex editor is for.
 
-This lesson doesn't go through every button of the three programs. It covers when you need a hex editor, which one to pick, and the template/pattern idea that turns a pile of bytes into a readable structure.
+This lesson doesn't go through every button of the three programs. It covers when you need a hex editor, which one to pick, and the template/pattern idea that turns raw bytes into a readable structure.
 
 ## When you need a hex editor
 

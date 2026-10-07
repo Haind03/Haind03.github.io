@@ -89,7 +89,7 @@ apksigner sign --ks my.keystore patched.apk
 
 You can also use `uber-apk-signer -a patched.apk`, which is quicker (it creates a debug key itself). After signing you can `adb install patched.apk`.
 
-The biggest trap in this workflow is the signature, not the smali. If you forget to sign, it won't install. If the app checks its own signature (anti-tamper), re-signing with a different key gets detected. Getting past anti-tamper is covered in the obfuscation lesson [6.8](/posts/re-6-8-obfuscation-packers-android/) and the Frida part.
+The biggest problem in this workflow is the signature, not the smali. If you forget to sign, it won't install. If the app checks its own signature (anti-tamper), re-signing with a different key gets detected. Getting past anti-tamper is covered in the obfuscation lesson [6.8](/posts/re-6-8-obfuscation-packers-android/) and the Frida part.
 
 ## Smali patching vs Frida
 

@@ -88,7 +88,7 @@ MD5 T0 0xd76aa478 -> FOUND at offset 0x1171 (embedded in .rodata/.text)
 
 If you have capa, it usually reports a capability such as "hash data via MD5" or flags a reference to the MD5 constants, because capa has rules that recognize these init values. capa answers at the level of what the program does, rather than where the constants are.
 
-### The TEA delta, a compiler trap
+### The TEA delta and compiler optimization
 
 This is the most important lesson of the lab. In the source, `tea_round` adds `0x9E3779B9`:
 

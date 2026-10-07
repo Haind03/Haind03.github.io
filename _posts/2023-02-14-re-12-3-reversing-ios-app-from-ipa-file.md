@@ -87,7 +87,7 @@ Two situations come up when security testing your own app. With jailbreak detect
 
 ## Common pitfalls
 
-A common mistake is forgetting that App Store apps are still FairPlay encrypted, opening IDA anyway and thinking the binary is broken, so always check `cryptid` first. Analyzing an App Store app without a jailbroken device is almost a dead end, so start with an app you build yourself. A version mismatch between frida-server on the device and frida on the host makes hooks silently not run. Swift methods also often don't expose nice selectors like ObjC, so you have to demangle and rely on metadata.
+A common mistake is forgetting that App Store apps are still FairPlay encrypted, opening IDA anyway and thinking the binary is broken, so always check `cryptid` first. Analyzing an App Store app without a jailbroken device is almost impossible, so start with an app you build yourself. A version mismatch between frida-server on the device and frida on the host makes hooks silently not run. Swift methods also often don't expose nice selectors like ObjC, so you have to demangle and rely on metadata.
 
 ## Lab
 

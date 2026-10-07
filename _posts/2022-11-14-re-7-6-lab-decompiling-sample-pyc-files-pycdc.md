@@ -148,7 +148,7 @@ The bytecode disassembly for 3.13 is a bit off too (pycdc hasn't mapped all the 
 
 ## When the tool can't do it, do it by hand
 
-pycdc can't read 3.13, but Python itself can read its marshal (with a bit of flexibility). So we peel off each layer ourselves, the same way the loader does. Write a script (run it with `python3 -I` to be safe, see the note at the start of the course about the folder holding unfamiliar files):
+pycdc can't read 3.13, but Python itself can read its marshal (with a bit of flexibility). So we decode each layer ourselves, the same way the loader does. Write a script (run it with `python3 -I` to be safe, see the note at the start of the course about the folder holding unfamiliar files):
 
 ```python
 import sys, base64, zlib, marshal
@@ -199,7 +199,7 @@ You end up with `pycdc` and `pycdas`.
 
 For `ok.pyc`, run `pycdc` on it, explain the error message, check the file size and decide what that tells you. For `apple_collector_game.pyc`, run `pycdc` directly and ask why you get "Bad MAGIC!" even though the file isn't empty. Look at the first bytes with `xxd ... | head -1` and think about what they say about the file format. Use `pycdas -c -v <ver>` to probe for the right Python version (try 3.8 through 3.12), then decompile with `pycdc -c -v <ver>`. What does the program do, which tool packaged it (look for clues in the code), and where is the flag?
 
-For `out_sequencer.pyc`, look at the first bytes and work out the Python version from the magic. Run `pycdc` and find out why it fails. Run `pycdas` and read the `[Names]` and `[Constants]` sections: what does this program do with the base85 blob in the constants? The harder challenge is to peel the encoding layers yourself with a short Python script. As a hint, drop the 16 byte header, call `marshal.loads`, take the bytes constant, then `base64.b85decode`, `zlib.decompress` and `marshal.loads` once more. Which crypto algorithm does the inner payload use?
+For `out_sequencer.pyc`, look at the first bytes and work out the Python version from the magic. Run `pycdc` and find out why it fails. Run `pycdas` and read the `[Names]` and `[Constants]` sections: what does this program do with the base85 blob in the constants? The harder challenge is to decode the encoding layers yourself with a short Python script. As a hint, drop the 16 byte header, call `marshal.loads`, take the bytes constant, then `base64.b85decode`, `zlib.decompress` and `marshal.loads` once more. Which crypto algorithm does the inner payload use?
 
 A few questions to think about afterwards. Why doesn't "Bad MAGIC!" always mean a wrong version? When pycdc doesn't support the file's Python version, what other ways do you have to get information? And why would a loader hide its payload behind several layers of base85, zlib and marshal instead of leaving the code in the open?
 
@@ -300,7 +300,7 @@ pycdc fails because 3.13 is too new. Switch to pycdas and read the names and con
              '--- Calibrating Genetic Sequencer ---', ...
 ```
 
-The names give away the loader logic: `base64.b85decode(blob)`, then `zlib.decompress`, then `marshal.loads` into a code object, then `types.FunctionType` to run it. It's a loader that decodes itself through three layers. To peel it by hand (run with `python3 -I`):
+The names give away the loader logic: `base64.b85decode(blob)`, then `zlib.decompress`, then `marshal.loads` into a code object, then `types.FunctionType` to run it. It's a loader that decodes itself through three layers. To decode it by hand (run with `python3 -I`):
 
 ```python
 import base64, zlib, marshal
@@ -331,9 +331,9 @@ str: 'AUTHENTICATION   FAILED'
 
 This is the "Project Chimera" challenge. The real payload encrypts the "secret formula" with RC4 (`arc4.ARC4`), with a key derived from `os.getlogin()` (the user name playing the role of a "biometric scan"). pycdc couldn't show a single line, yet peeling base85, zlib and marshal by hand recovers the whole structure and the algorithm. Getting the real flag needs the exact username the author used as the key, which is the puzzle part of the challenge. The goal of this lab is to recover the logic, and we did that even though the main tool failed.
 
-The three files gave three different causes of "Bad MAGIC!" or a failed decompile: an empty file, a stripped header and a version that is too new. `-c -v` rescues a bare code object file, and you find the version by trying it with pycdas. pycdas can almost always still read names and constants even when pycdc breaks. And when the tools can't keep up with the version, Python's own `marshal` plus an understanding of the encoding flow lets you peel the payload by hand.
+The three files gave three different causes of "Bad MAGIC!" or a failed decompile: an empty file, a stripped header and a version that is too new. `-c -v` rescues a bare code object file, and you find the version by trying it with pycdas. pycdas can almost always still read names and constants even when pycdc breaks. And when the tools can't keep up with the version, Python's own `marshal` plus an understanding of the encoding flow lets you decode the payload by hand.
 
 </details>
 
 ## Key takeaways
-Build pycdc from source if the prebuilt binary doesn't run (GLIBC/GLIBCXX mismatch). "Bad MAGIC!" has three common causes: an empty or broken file, a bare code object with no header, or an unfamiliar version. A first byte of `e3` (or `63`) means a bare code object, so use `-c -v` and find the version with pycdas. When pycdc fails, pycdas can almost always still read the names and consts, enough to rebuild the logic. Python loaders often hide payloads via base64/base85 + zlib + marshal, and peeling in that order brings it out. When every tool breaks, use Python's own `marshal` to peel off the layers by hand.
+Build pycdc from source if the prebuilt binary doesn't run (GLIBC/GLIBCXX mismatch). "Bad MAGIC!" has three common causes: an empty or broken file, a bare code object with no header, or an unfamiliar version. A first byte of `e3` (or `63`) means a bare code object, so use `-c -v` and find the version with pycdas. When pycdc fails, pycdas can almost always still read the names and consts, enough to rebuild the logic. Python loaders often hide payloads via base64/base85 + zlib + marshal, and decoding in that order recovers it. When every tool breaks, use Python's own `marshal` to decode the layers by hand.

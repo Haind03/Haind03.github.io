@@ -26,7 +26,7 @@ render_with_liquid: false
 | `U` | Undefine |
 | `Y` | Set/edit the type of a variable or function |
 | `Alt+T` | Search text |
-| `Esc` / `Ctrl+Enter` | Go back / forward (like a browser's back/forward) |
+| `Esc` / `Ctrl+Enter` | Go back / forward |
 | `Shift+F12` | Open the Strings window |
 
 ## Ghidra

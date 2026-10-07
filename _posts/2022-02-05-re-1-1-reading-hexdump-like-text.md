@@ -25,7 +25,7 @@ The 4-bit conversion table, the sooner you memorize it the better:
 
 So `0100 1000` = `48` hex = 72 decimal. Hex is usually written `0x48` or `48h`.
 
-A few landmarks are worth knowing by heart. One byte is 8 bits, which is 2 hex digits, with values from `0x00` to `0xFF` (0 to 255). `0xFF` is 255, `0xFFFF` is 65535, and `0xFFFFFFFF` is just over 4 billion (the 32-bit limit). `0x10` is 16, `0x100` is 256, `0x1000` is 4096. A round number in hex usually means something, like a size or an alignment.
+A few values are worth memorizing. One byte is 8 bits, which is 2 hex digits, with values from `0x00` to `0xFF` (0 to 255). `0xFF` is 255, `0xFFFF` is 65535, and `0xFFFFFFFF` is just over 4 billion (the 32-bit limit). `0x10` is 16, `0x100` is 256, `0x1000` is 4096. A round number in hex usually means something, like a size or an alignment.
 
 ## Byte, word, and the confusing names
 

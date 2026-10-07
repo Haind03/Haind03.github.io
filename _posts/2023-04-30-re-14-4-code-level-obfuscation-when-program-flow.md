@@ -8,7 +8,7 @@ categories: ["Technique Reverse", "Part 14 · Packers and Obfuscation"]
 tags: [reverse-engineering, packer, obfuscation]
 render_with_liquid: false
 ---
-Packers hide code until runtime (lessons 14.1, 14.2). Obfuscation is different. The code is still there and you can disassemble it, but it's been rewritten on purpose to be hard to read. A ten-line function grows to five hundred lines, an addition becomes a pile of bit operations, and a clean if/else flow becomes an infinite loop with a giant switch. The logic stays the same, only the shape changes.
+Packers hide code until runtime (lessons 14.1, 14.2). Obfuscation is different. The code is still there and you can disassemble it, but it's been rewritten on purpose to be hard to read. A ten-line function grows to five hundred lines, an addition becomes many bit operations, and a clean if/else flow becomes an infinite loop with a giant switch. The logic stays the same, only the shape changes.
 
 This lesson covers the most common techniques, how to recognize each one, and a general strategy for dealing with them. Most come from OLLVM (Obfuscator-LLVM), an open-source set of LLVM passes that a lot of commercial protectors and malware reuse.
 
@@ -16,7 +16,7 @@ This lesson covers the most common techniques, how to recognize each one, and a 
 
 This is the one you'll meet most, and it's the most annoying. The idea is to take the function's natural flow (block A finishes and goes to B, B branches to C or D) and flatten it. Every basic block becomes a `case` in one big `switch`, and a state variable decides which case runs next. All of it sits inside a `while(1)` loop.
 
-In IDA's graph view a normal function looks like a tree flowing downward. A flattened function looks like a spider: one dispatcher in the middle, and every block returns to the dispatcher and fans out again. The original if/for/while structure is gone, because the order of execution is now driven by the state variable and not by instruction position.
+In IDA's graph view a normal function looks like a tree flowing downward. A flattened function has one dispatcher in the middle, and every block returns to the dispatcher and branches out again. The original if/for/while structure is gone, because the order of execution is now driven by the state variable and not by instruction position.
 
 Here's a concrete case. The original function checks a serial:
 

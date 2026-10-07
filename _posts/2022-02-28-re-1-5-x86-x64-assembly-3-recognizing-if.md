@@ -8,7 +8,7 @@ categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
-Lesson 1.3 covered the instruction set and lesson 1.4 the stack frame. Now we put them together to read high-level structure. A compiler takes your `for` statement and turns it into a pile of `cmp`, `jmp`, `inc`. Reversing means going the other way: look at the pile and recognize "this is a loop".
+Lesson 1.3 covered the instruction set and lesson 1.4 the stack frame. Now we put them together to read high-level structure. A compiler takes your `for` statement and turns it into a series of `cmp`, `jmp`, `inc`. Reversing means going the other way: look at the pile and recognize "this is a loop".
 
 Compilers are very mechanical. They translate each construct with a few fixed templates, so once you know the templates you can read the code. This lesson is that set of templates.
 

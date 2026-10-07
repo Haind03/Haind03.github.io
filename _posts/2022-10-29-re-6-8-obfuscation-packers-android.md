@@ -8,7 +8,7 @@ categories: ["Technique Reverse", "Part 06 · Java, Kotlin and Android"]
 tags: [reverse-engineering, android, java]
 render_with_liquid: false
 ---
-So far every APK you've opened shows clean Java code in JADX. Real apps are different: commercial apps are almost always obfuscated. You open one and it's all `a.a.a`, strings turn into piles of meaningless characters, and sometimes JADX doesn't even find the code. This lesson helps you recognize which kind of protection you're facing and how to get through it.
+So far every APK you've opened shows clean Java code in JADX. Real apps are different: commercial apps are almost always obfuscated. You open one and it's all `a.a.a`, strings turn into meaningless characters, and sometimes JADX doesn't even find the code. This lesson helps you recognize which kind of protection you're facing and how to get through it.
 
 Beginners often lump two different things together: obfuscation (code is hard to read but still there) and packing (code is hidden entirely and only expanded at runtime). Each is handled differently.
 

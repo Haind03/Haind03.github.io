@@ -8,7 +8,7 @@ categories: ["Technique Reverse", "Part 15 · Anti-Reversing and Bypasses"]
 tags: [reverse-engineering, anti-debug]
 render_with_liquid: false
 ---
-The earlier anti-debug lessons were about getting past the debugger at runtime. This one targets the static step: making IDA, Ghidra or objdump decode a pile of wrong instructions the moment you open the file, while the CPU still runs the code correctly. You read the pseudocode, think it's the real logic, and it turns out to be garbage. Once you know these tricks you stop trusting the disassembler's output blindly.
+The earlier anti-debug lessons were about getting past the debugger at runtime. This one targets the static step: making IDA, Ghidra or objdump decode many wrong instructions the moment you open the file, while the CPU still runs the code correctly. You read the pseudocode, think it's the real logic, and it turns out to be garbage. Once you know these tricks you stop trusting the disassembler's output blindly.
 
 Every trick rests on one fact: x86 has variable-length instructions, so a byte can be the start of one instruction and also the middle of another. Fool the disassembler about where an instruction begins and everything after it is decoded wrong.
 

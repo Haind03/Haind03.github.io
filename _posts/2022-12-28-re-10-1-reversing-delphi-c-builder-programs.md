@@ -8,11 +8,11 @@ categories: ["Technique Reverse", "Part 10 · Legacy: Delphi, VB6, AutoIt, AHK"]
 tags: [reverse-engineering, legacy]
 render_with_liquid: false
 ---
-Say you open an old exe in IDA. The decompiler gives pseudocode but every function is `sub_xxx`, there isn't one familiar name, the strings have a length stuck in front of them, and thousands of functions from some framework fill the screen. You probably have a Delphi binary. Delphi is old but still alive in enterprise software, POS systems, Vietnamese accounting software and a fair amount of malware. It isn't harder than C, just different, and you need the right tools.
+Say you open an old exe in IDA. The decompiler gives pseudocode but every function is `sub_xxx`, there isn't one familiar name, the strings have a length stuck in front of them, and thousands of functions from some framework fill the screen. You probably have a Delphi binary. Delphi is old but still in use in enterprise software, POS systems, Vietnamese accounting software and a fair amount of malware. It isn't harder than C, just different, and you need the right tools.
 
 ## What Delphi is and why it's different
 
-Delphi (and its sibling C++Builder) uses the Borland compiler, now Embarcadero. The code is Object Pascal compiled straight to native x86/x64, so you're still reading normal assembly. But Delphi leaves some specific fingerprints that make reversing different from what you're used to in C.
+Delphi (and its sibling C++Builder) uses the Borland compiler, now Embarcadero. The code is Object Pascal compiled straight to native x86/x64, so you're still reading normal assembly. But Delphi leaves some specific signatures that make reversing different from what you're used to in C.
 
 The first is the VCL framework (Visual Component Library). Almost every Delphi app pulls in a lot of VCL functions for forms, buttons, strings and streams. Like a statically linked libc in C, most of the code you see isn't the author's but the framework's, and filtering it out is half the work.
 
@@ -28,7 +28,7 @@ Once you confirm it's Delphi, don't start reading assembly in IDA yet. Get the r
 
 ## IDR
 
-The problem with plain IDA on Delphi is that it doesn't know those thousands of functions are VCL, so it leaves them as `sub_xxx` and you drown. IDR (Interactive Delphi Reconstructor) was made for exactly this. It recovers the names of known VCL/RTL functions, renaming them to things like `TStringList.Add` and `ShowMessage`, so you can skip them and focus on the author's code. It rebuilds the forms and event handlers from the DFM, so you see which address `Button1Click` is at and where the code runs when the user clicks a button. And it exports a map/idc that you import back into IDA, which turns the pile of `sub_xxx` into meaningful names.
+The problem with plain IDA on Delphi is that it doesn't know those thousands of functions are VCL, so it leaves them as `sub_xxx` and you drown. IDR (Interactive Delphi Reconstructor) was made for exactly this. It recovers the names of known VCL/RTL functions, renaming them to things like `TStringList.Add` and `ShowMessage`, so you can skip them and focus on the author's code. It rebuilds the forms and event handlers from the DFM, so you see which address `Button1Click` is at and where the code runs when the user clicks a button. And it exports a map/idc that you import back into IDA, which turns the `sub_xxx` names into meaningful names.
 
 My workflow: run IDR on the Delphi exe, let it analyze, export the helper file (for example .idc or .map), then load it into IDA. After this IDA becomes readable. DeDe is an older tool with the same idea, only good for very old Delphi, and these days I almost always use IDR.
 
@@ -41,7 +41,7 @@ This is the most useful tip in the lesson. With a C app you look for `main`. Wit
 Since IDR rebuilds the forms, you know the names and addresses of the handlers. Jump straight to the handler of the relevant button and you're in the right place, skipping all the UI init code. If there are no names, search by message strings ("Wrong password", "Registration successful") and follow xrefs backwards, like in earlier parts. Just remember Delphi strings have a length prefix, so search for the text part and leave out the length byte.
 
 ## Key takeaways
-Delphi/C++Builder is native x86/x64, but it pulls in a lot of VCL functions and has its own fingerprints. Delphi strings have a length prefix and are not null-terminated, and the default calling convention is register (EAX, EDX, ECX for the first 3 parameters), so keep both in mind when reading and searching.
+Delphi/C++Builder is native x86/x64, but it pulls in a lot of VCL functions and has its own signatures. Delphi strings have a length prefix and are not null-terminated, and the default calling convention is register (EAX, EDX, ECX for the first 3 parameters), so keep both in mind when reading and searching.
 
 Identify with DIE, then use IDR to recover VCL names and rebuild forms and event handlers. Start from event handlers such as Button1Click rather than from main, because main is just the message loop.
 

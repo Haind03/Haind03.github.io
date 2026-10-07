@@ -28,7 +28,7 @@ When I open a large C++ binary in IDA, this is usually the first step: run Class
 
 ### HexRaysPyTools
 
-Class Informer gives you the list of classes, and HexRaysPyTools helps turn that list into types usable in the decompiler. It can build a struct from usage: put the cursor on a variable that the decompiler shows as `a1` with a pile of `*(a1 + 8)`, `*(a1 + 16)`, and the plugin gathers those offsets and proposes a struct. Accept it and Hex-Rays shows `obj->field_8` instead of raw pointer arithmetic. It also recognizes vtables and creates vtable structs, hooking virtual methods up in the right place, and it can scan multiple functions to merge what you've learned about the same type.
+Class Informer gives you the list of classes, and HexRaysPyTools helps turn that list into types usable in the decompiler. It can build a struct from usage: put the cursor on a variable that the decompiler shows as `a1` with many `*(a1 + 8)`, `*(a1 + 16)`, and the plugin gathers those offsets and proposes a struct. Accept it and Hex-Rays shows `obj->field_8` instead of raw pointer arithmetic. It also recognizes vtables and creates vtable structs, hooking virtual methods up in the right place, and it can scan multiple functions to merge what you've learned about the same type.
 
 Class Informer (finds classes) plus HexRaysPyTools (turns them into types) is the standard combo for C++ RE on IDA. See also the [tool collection](/posts/re-resources-reverse-engineering-tool-repository-roundup/).
 

@@ -44,7 +44,7 @@ A few rules for a quick guess: a trailing `C` on a name means class, `V` is stru
 
 ## Why Swift is harder than Objective-C
 
-In ObjC, every method call goes through `objc_msgSend(receiver, selector, ...)`. You read the selector and know what's called. It's uniform and easy to trace. In pure Swift, the compiler knows the exact type at compile time, so it calls the function address directly (static dispatch), or for protocol methods it calls through a witness table, a table of function pointers like a C++ vtable. There's no `objc_msgSend` landmark and no string selector to read. You rely on demangled symbols and witness tables.
+In ObjC, every method call goes through `objc_msgSend(receiver, selector, ...)`. You read the selector and know what's called. It's uniform and easy to trace. In pure Swift, the compiler knows the exact type at compile time, so it calls the function address directly (static dispatch), or for protocol methods it calls through a witness table, a table of function pointers like a C++ vtable. There's no `objc_msgSend` call to anchor on and no string selector to read. You rely on demangled symbols and witness tables.
 
 The exception is anything marked `@objc` or inheriting from `NSObject`, which still goes through `objc_msgSend`, so many Swift apps mix the two worlds. When you see `objc_msgSend`, that part is as easy as ObjC.
 
@@ -141,7 +141,7 @@ call [rax+0x10]       ; call the 3rd slot in the table
 
 It's like the C++ vtable in Lesson 4.2: `call [reg+offset]` with the offset telling you the slot. Rebuild the table by looking at the function pointers the witness table points to (IDA and Ghidra have often already named them if they could read `__swift5_proto`).
 
-Compared with ObjC, the `@objc` part goes through `objc_msgSend(receiver, selector, ...)`, and by reading the selector (the second parameter, usually a pointer to a string in `__objc_methname`) you know which method is being called, as in Lesson 12.1. Pure Swift has no such landmark, so you rely on the demangled symbols and witness tables. With a hybrid app, work on the `@objc` part first, because it's cheaper.
+Compared with ObjC, the `@objc` part goes through `objc_msgSend(receiver, selector, ...)`, and by reading the selector (the second parameter, usually a pointer to a string in `__objc_methname`) you know which method is being called, as in Lesson 12.1. Pure Swift has no such reference point, so you rely on the demangled symbols and witness tables. With a hybrid app, work on the `@objc` part first, because it's cheaper.
 
 Swift adds a demangling step and ARC noise, but once demangled, the function names tell you almost everything. The best anchors are still the demangled symbols, the strings (including panic and assert messages), and the bridge boundary into ObjC.
 
@@ -149,6 +149,6 @@ Swift adds a demangling step and ARC noise, but once demangled, the function nam
 
 ## Key takeaways
 
-A Swift binary shows `$s`/`_$s` symbols, `__swift5_*` sections, and a link to `libswiftCore.dylib`. Always demangle with `swift demangle` or let IDA/Ghidra/Hopper do it. Pure Swift calls statically or through witness tables, with no `objc_msgSend` landmark like ObjC, so it's harder. Anything marked `@objc` or inheriting NSObject still goes through `objc_msgSend` and that part is easy.
+A Swift binary shows `$s`/`_$s` symbols, `__swift5_*` sections, and a link to `libswiftCore.dylib`. Always demangle with `swift demangle` or let IDA/Ghidra/Hopper do it. Pure Swift calls statically or through witness tables, with no `objc_msgSend` reference point like ObjC, so it's harder. Anything marked `@objc` or inheriting NSObject still goes through `objc_msgSend` and that part is easy.
 
 ARC adds retain/release everywhere, so treat it as noise and skip it. Swift String isn't null-terminated, and comparison goes through its own functions, not strcmp.

@@ -8,7 +8,7 @@ categories: ["Technique Reverse", "Part 04 · C++"]
 tags: [reverse-engineering, cpp]
 render_with_liquid: false
 ---
-The last lesson covered the `this` pointer and name mangling. This one is the main part of C++ reversing. Newcomers don't hate C++ for the syntax. They hate that a simple-looking function call turns into a `call rdx` with no clue where it goes. That's a virtual call, and behind it is the vtable. Once you understand the vtable you can read C++, and if you don't you stay stuck on a pile of `call [reg]`.
+The last lesson covered the `this` pointer and name mangling. This one is the main part of C++ reversing. Newcomers don't hate C++ for the syntax. They hate that a simple-looking function call turns into a `call rdx` with no clue where it goes. That's a virtual call, and behind it is the vtable. Once you understand the vtable you can read C++, and if you don't you stay stuck on many `call [reg]` instructions.
 
 ## Why vtables exist
 
@@ -44,7 +44,7 @@ offset 16 : radius      (8 bytes, Circle's own field)
 total sizeof(Circle) = 24
 ```
 
-Two things to remember. The vptr is always at offset 0, so if you see a function load `[object]` and then load `[that result]` to call, it's going through the vptr into the vtable. That's the C++ fingerprint. And the base class's fields come before the derived class's fields. Circle contains all of Shape (vptr + id) and only then radius. Single inheritance is just stacking layouts: a `Circle*` cast to `Shape*` doesn't change the address, because the Shape part is at the start.
+Two things to remember. The vptr is always at offset 0, so if you see a function load `[object]` and then load `[that result]` to call, it's going through the vptr into the vtable. That's the typical C++ pattern. And the base class's fields come before the derived class's fields. Circle contains all of Shape (vptr + id) and only then radius. Single inheritance is just stacking layouts: a `Circle*` cast to `Shape*` doesn't change the address, because the Shape part is at the start.
 
 ## Recognizing a virtual call in assembly
 

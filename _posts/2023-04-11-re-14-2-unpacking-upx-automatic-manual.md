@@ -8,7 +8,7 @@ categories: ["Technique Reverse", "Part 14 · Packers and Obfuscation"]
 tags: [reverse-engineering, packer, obfuscation]
 render_with_liquid: false
 ---
-UPX is the packer you'll meet most, and a good place to learn manual unpacking because it's simple, open source, and has no anti-debug. The skeleton of every packer is the same: a small piece of code (the stub) decompresses the real code into memory and then jumps to the original entry point. This lesson goes from the laziest way (one command) to what you do by hand when the packer fights back.
+UPX is the packer you'll meet most, and a good place to learn manual unpacking because it's simple, open source, and has no anti-debug. The structure of every packer is the same: a small piece of code (the stub) decompresses the real code into memory and then jumps to the original entry point. This lesson goes from the laziest way (one command) to what you do by hand when the packer resists.
 
 ## What a packer does
 

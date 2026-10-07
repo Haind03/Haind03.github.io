@@ -52,7 +52,7 @@ Once you've answered everything, stop digging and start writing. Gather the scat
 
 ## The structure of a good RE report
 
-Many people skip the report, and it's what separates people who do this as a job from people who just play with tools. If you understand a function but can't write it up, three months later it's as if you never understood it. The standard outline has seven sections.
+Many people skip the report, and it's what separates people who do this as a job from people who just play with tools. If you understand a function but can't write it up, three months later you will have forgotten it. The standard outline has seven sections.
 
 It opens with an executive summary: a few short paragraphs for people who won't read the technical parts, saying what this is, the main conclusion and how much it matters. Write this part last but put it first. Next comes methodology and tools, covering what you used and what environment you ran in (mention the isolated lab if it's malware), so others can reproduce it. Then sample information: file name, size, hashes (MD5/SHA-256), file type, compiler and version, which is the target's identity.
 

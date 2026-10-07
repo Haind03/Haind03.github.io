@@ -16,7 +16,7 @@ The lab for this lesson is at the end of the post. Try it yourself first, the wa
 
 Before opening the disassembler, run a quick triage. `strings crackme | grep -iE "rustc|\.rs|panicked"` almost always returns something: a `rustc` version string, `.rs` file paths embedded in panic messages, and mangled symbols like `_ZN` or `_R`. That tells you it's Rust and not C.
 
-Detect It Easy recognizes it too, but I still run `strings` because it also gives me the landmark strings to xref in a moment.
+Detect It Easy recognizes it too, but I still run `strings` because it also gives me the reference strings to xref in a moment.
 
 ## Step 1: use panic strings and strings as landmarks
 
@@ -71,7 +71,7 @@ Done. The algorithm checks out in Python: encrypting forward gives the constant 
 
 ## Practicing Rust
 
-Most beginners avoid Rust because the decompiler gives a confusing pile of inlining. There are only a few tricks though. Use panic strings and strings to locate things, look at the length of the constant block to know the input length, and invert the check instead of reading every line of the optimized assembly. Those three habits solve most beginner to intermediate Rust crackmes.
+Most beginners avoid Rust because the decompiler gives confusing inlined code. There are only a few tricks though. Use panic strings and strings to locate things, look at the length of the constant block to know the input length, and invert the check instead of reading every line of the optimized assembly. Those three habits solve most beginner to intermediate Rust crackmes.
 
 ## Lab
 
@@ -146,11 +146,11 @@ Correct! Flag: RE{Rust_1s_Fun!}
 
 As a check on the algorithm in `main.rs`: encoding the password `Rust_1s_Fun!` gives the `EXPECTED` array above, and reversing the `EXPECTED` array gives back `Rust_1s_Fun!`.
 
-What to take from this: with Rust, panic strings and `.rs` paths are the best landmarks, so use them before diving into assembly. The length of the constant block tells you the length of the password. And when the check is reversible, write a keygen (reverse it) instead of brute forcing or patching.
+What to take from this: with Rust, panic strings and `.rs` paths are the best reference points, so use them before diving into assembly. The length of the constant block tells you the length of the password. And when the check is reversible, write a keygen (reverse it) instead of brute forcing or patching.
 
 </details>
 
 ## Key takeaways
-Confirm Rust with `strings`: the rustc version, `.rs` paths, and `_ZN`/`_R` mangling. Go from strings (`Nope.`, `Correct!`) and panic strings backwards into the check function, and don't fight the wrapped `main`. The length of the constant block in `.rodata` is often exactly the password length.
+Confirm Rust with `strings`: the rustc version, `.rs` paths, and `_ZN`/`_R` mangling. Go from strings (`Nope.`, `Correct!`) and panic strings backwards into the check function, and don't struggle with the wrapped `main`. The length of the constant block in `.rodata` is often exactly the password length.
 
 Iterator chains get inlined into flat loops, so read what they do instead of rebuilding the syntax. If the check is reversible, write a keygen and don't brute force.
