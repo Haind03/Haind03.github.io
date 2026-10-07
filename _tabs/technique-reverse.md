@@ -15,6 +15,7 @@ Everything here is for learning, CTFs, crackmes and analysing software you own o
 | Post |
 |---|
 | [Cheatsheet: shortcuts and quick reference](/posts/re-resources-cheatsheet-shortcuts-quick-reference/) |
+| [Reading list: the books behind these notes](/posts/re-resources-reading-list-windows-internals-books/) |
 | [Reverse Engineering technique repository (map)](/posts/re-resources-reverse-engineering-technique-repository-map/) |
 | [Reverse Engineering tool repository (roundup)](/posts/re-resources-reverse-engineering-tool-repository-roundup/) |
 | [Study materials and places to practice](/posts/re-resources-study-materials-places-practice/) |
