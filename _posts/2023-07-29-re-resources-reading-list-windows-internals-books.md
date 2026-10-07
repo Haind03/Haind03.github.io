@@ -26,7 +26,7 @@ Bruce Dang, Alexandre Gazet and Elias Bachaalany, [Wiley](https://www.wiley.com/
 
 ## Assembly Language for x86 Processors (7th edition)
 
-Kip Irvine, Pearson ([author's site](http://asmirvine.com/)). A textbook rather than an RE book, but it's how I got comfortable with x86 in the first place. If assembly still feels like noise, working through the first half of this, writing small programs yourself, makes Part 1 of the series much easier.
+Kip Irvine, Pearson ([author's site](https://asmirvine.com/)). A textbook rather than an RE book, but it's how I got comfortable with x86 in the first place. If assembly still feels like noise, working through the first half of this, writing small programs yourself, makes Part 1 of the series much easier.
 
 ## Other material
 
