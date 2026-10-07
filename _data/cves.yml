@@ -1,135 +1,135 @@
-# Credited WordPress plugin CVEs (Wordfence). Keep this file sorted by cvss, highest first;
+# Credited WordPress plugin CVEs. CVSS scores are the CNA scores on cve.org. Keep this file sorted by cvss, highest first;
 # the landing page renders it in file order.
 
-- id: CVE-2026-32481
-  cvss: 9.8
-  plugin: "Ezoic <= 2.22.11"
-  type: "Authentication Bypass"
-  date: 2026-08-14
-  url: https://www.cve.org/CVERecord?id=CVE-2026-32481
 - id: CVE-2026-48836
-  cvss: 9.8
+  cvss: 10.0
   plugin: "Easy Invoice <= 2.1.19"
   type: "Unauthenticated Remote Code Execution"
   date: 2026-06-01
   url: https://www.cve.org/CVERecord?id=CVE-2026-48836
 - id: CVE-2026-61950
-  cvss: 7.5
+  cvss: 9.3
   plugin: "TrueBooker Appointment Booking and Scheduler System <= 1.2.3"
   type: "Unauthenticated SQL Injection"
   date: 2026-07-16
   url: https://www.cve.org/CVERecord?id=CVE-2026-61950
 - id: CVE-2026-57683
-  cvss: 7.5
+  cvss: 9.3
   plugin: "WP Fast Total Search <= 1.80.280"
   type: "Unauthenticated SQL Injection"
   date: 2026-06-29
   url: https://www.cve.org/CVERecord?id=CVE-2026-57683
 - id: CVE-2026-49776
-  cvss: 7.5
+  cvss: 9.3
   plugin: "GPTranslate <= 2.32.6"
   type: "Unauthenticated SQL Injection"
   date: 2026-06-04
   url: https://www.cve.org/CVERecord?id=CVE-2026-49776
-- id: CVE-2026-27536
-  cvss: 7.2
-  plugin: "MailChimp Subscribe Form, Optin Builder, PopUp Builder, Form Builder <= 4.3.3"
-  type: "Unauthenticated Stored Cross-Site Scripting"
-  date: 2026-08-11
-  url: https://www.cve.org/CVERecord?id=CVE-2026-27536
-- id: CVE-2026-57388
-  cvss: 7.2
-  plugin: "Hydra Booking <= 1.1.44"
-  type: "Unauthenticated Stored Cross-Site Scripting"
-  date: 2026-07-08
-  url: https://www.cve.org/CVERecord?id=CVE-2026-57388
-- id: CVE-2026-57403
-  cvss: 7.2
-  plugin: "GD Security Headers <= 1.8"
-  type: "Unauthenticated Stored Cross-Site Scripting"
-  date: 2026-07-08
-  url: https://www.cve.org/CVERecord?id=CVE-2026-57403
-- id: CVE-2026-57337
-  cvss: 7.2
-  plugin: "Landing Page Builder <= 1.5.3.5"
-  type: "Unauthenticated Stored Cross-Site Scripting"
-  date: 2026-06-29
-  url: https://www.cve.org/CVERecord?id=CVE-2026-57337
-- id: CVE-2026-42729
-  cvss: 7.2
-  plugin: "Property Hive <= 2.2.2"
-  type: "Unauthenticated Stored Cross-Site Scripting"
-  date: 2026-05-23
-  url: https://www.cve.org/CVERecord?id=CVE-2026-42729
-- id: CVE-2026-57765
-  cvss: 6.5
-  plugin: "Shopping Cart & eCommerce Store <= 5.9.1"
-  type: "Authenticated (Contributor+) SQL Injection"
-  date: 2026-07-02
-  url: https://www.cve.org/CVERecord?id=CVE-2026-57765
-- id: CVE-2026-57362
-  cvss: 6.1
-  plugin: "WPBot AI ChatBot <= 8.3.2"
-  type: "Reflected Cross-Site Scripting"
-  date: 2026-07-01
-  url: https://www.cve.org/CVERecord?id=CVE-2026-57362
-- id: CVE-2026-78536
-  cvss: 5.3
-  plugin: "Robokassa payment gateway for WooCommerce <= 1.8.9"
-  type: "Missing Authorization"
-  date: 2026-09-09
-  url: https://www.cve.org/CVERecord?id=CVE-2026-78536
-- id: CVE-2026-81787
-  cvss: 5.3
-  plugin: "IMPress for IDX Broker <= 3.3.0"
-  type: "Unauthenticated Unauthorized Lead and Search Manipulation"
-  date: 2026-09-08
-  url: https://www.cve.org/CVERecord?id=CVE-2026-81787
 - id: CVE-2026-65542
-  cvss: 5.3
+  cvss: 8.8
   plugin: "Super Socializer <= 7.14.5"
   type: "Missing Authorization"
   date: 2026-07-28
   url: https://www.cve.org/CVERecord?id=CVE-2026-65542
-- id: CVE-2026-57375
-  cvss: 5.3
-  plugin: "MStore API <= 4.18.4"
-  type: "Missing Authorization"
-  date: 2026-07-07
-  url: https://www.cve.org/CVERecord?id=CVE-2026-57375
-- id: CVE-2026-57340
-  cvss: 5.3
-  plugin: "Japanized for WooCommerce <= 2.9.12"
-  type: "Missing Authorization"
-  date: 2026-06-29
-  url: https://www.cve.org/CVERecord?id=CVE-2026-57340
-- id: CVE-2026-56050
-  cvss: 5.3
-  plugin: "PPOM Product Addons & Custom Fields for WooCommerce <= 33.0.18"
-  type: "Missing Authorization"
-  date: 2026-06-25
-  url: https://www.cve.org/CVERecord?id=CVE-2026-56050
+- id: CVE-2026-57765
+  cvss: 8.5
+  plugin: "Shopping Cart & eCommerce Store <= 5.9.1"
+  type: "Authenticated (Contributor+) SQL Injection"
+  date: 2026-07-02
+  url: https://www.cve.org/CVERecord?id=CVE-2026-57765
+- id: CVE-2026-32481
+  cvss: 7.5
+  plugin: "Ezoic <= 2.22.11"
+  type: "Authentication Bypass"
+  date: 2026-08-14
+  url: https://www.cve.org/CVERecord?id=CVE-2026-32481
 - id: CVE-2026-54824
-  cvss: 5.3
+  cvss: 7.5
   plugin: "Quads Ads Manager for Google AdSense <= 3.0.3"
   type: "Unauthenticated Information Exposure"
   date: 2026-06-17
   url: https://www.cve.org/CVERecord?id=CVE-2026-54824
 - id: CVE-2026-54828
-  cvss: 5.3
+  cvss: 7.5
   plugin: "Motors Car Dealership & Classified Listings <= 1.4.109"
   type: "Missing Authorization"
   date: 2026-06-17
   url: https://www.cve.org/CVERecord?id=CVE-2026-54828
+- id: CVE-2026-27536
+  cvss: 7.1
+  plugin: "MailChimp Subscribe Form, Optin Builder, PopUp Builder, Form Builder <= 4.3.3"
+  type: "Unauthenticated Stored Cross-Site Scripting"
+  date: 2026-08-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-27536
+- id: CVE-2026-57388
+  cvss: 7.1
+  plugin: "Hydra Booking <= 1.1.44"
+  type: "Unauthenticated Stored Cross-Site Scripting"
+  date: 2026-07-08
+  url: https://www.cve.org/CVERecord?id=CVE-2026-57388
+- id: CVE-2026-57403
+  cvss: 7.1
+  plugin: "GD Security Headers <= 1.8"
+  type: "Unauthenticated Stored Cross-Site Scripting"
+  date: 2026-07-08
+  url: https://www.cve.org/CVERecord?id=CVE-2026-57403
+- id: CVE-2026-57405
+  cvss: 7.1
+  plugin: "Open Shop theme <= 1.7.1"
+  type: "Missing Authorization"
+  date: 2026-07-08
+  url: https://www.cve.org/CVERecord?id=CVE-2026-57405
+- id: CVE-2026-57362
+  cvss: 7.1
+  plugin: "WPBot AI ChatBot <= 8.3.2"
+  type: "Reflected Cross-Site Scripting"
+  date: 2026-07-01
+  url: https://www.cve.org/CVERecord?id=CVE-2026-57362
+- id: CVE-2026-57337
+  cvss: 7.1
+  plugin: "Landing Page Builder <= 1.5.3.5"
+  type: "Unauthenticated Stored Cross-Site Scripting"
+  date: 2026-06-29
+  url: https://www.cve.org/CVERecord?id=CVE-2026-57337
+- id: CVE-2026-42729
+  cvss: 7.1
+  plugin: "Property Hive <= 2.2.2"
+  type: "Unauthenticated Stored Cross-Site Scripting"
+  date: 2026-05-23
+  url: https://www.cve.org/CVERecord?id=CVE-2026-42729
+- id: CVE-2026-78536
+  cvss: 6.5
+  plugin: "Robokassa payment gateway for WooCommerce <= 1.8.9"
+  type: "Missing Authorization"
+  date: 2026-09-09
+  url: https://www.cve.org/CVERecord?id=CVE-2026-78536
+- id: CVE-2026-81787
+  cvss: 6.5
+  plugin: "IMPress for IDX Broker <= 3.3.0"
+  type: "Unauthenticated Unauthorized Lead and Search Manipulation"
+  date: 2026-09-08
+  url: https://www.cve.org/CVERecord?id=CVE-2026-81787
+- id: CVE-2026-57375
+  cvss: 6.5
+  plugin: "MStore API <= 4.18.4"
+  type: "Missing Authorization"
+  date: 2026-07-07
+  url: https://www.cve.org/CVERecord?id=CVE-2026-57375
+- id: CVE-2026-57340
+  cvss: 6.5
+  plugin: "Japanized for WooCommerce <= 2.9.12"
+  type: "Missing Authorization"
+  date: 2026-06-29
+  url: https://www.cve.org/CVERecord?id=CVE-2026-57340
+- id: CVE-2026-56050
+  cvss: 6.5
+  plugin: "PPOM Product Addons & Custom Fields for WooCommerce <= 33.0.18"
+  type: "Missing Authorization"
+  date: 2026-06-25
+  url: https://www.cve.org/CVERecord?id=CVE-2026-56050
 - id: CVE-2026-81788
-  cvss: 4.3
+  cvss: 6.3
   plugin: "IMPress for IDX Broker <= 3.3.0"
   type: "Missing Authorization"
   date: 2026-09-08
   url: https://www.cve.org/CVERecord?id=CVE-2026-81788
-- id: CVE-2026-57405
-  cvss: 4.3
-  plugin: "Open Shop <= 1.7.1"
-  type: "Missing Authorization"
-  date: 2026-07-08
-  url: https://www.cve.org/CVERecord?id=CVE-2026-57405

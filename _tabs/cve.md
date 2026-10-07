@@ -95,7 +95,7 @@ order: 2
 
 <p class="ca-lead">Most of my evenings outside of work go into reading other people's PHP. I pick WordPress plugins with a big install base, follow every way user input can reach something dangerous, and when I find a hole I write a proof of concept and report it through a bug bounty program. When the vendor ships a fix, the advisory goes public, a CVE is assigned, and the bounty gets paid.</p>
 
-<p>It's the same muscle as reverse engineering, just with source code instead of assembly. You look for the one function that trusts what it shouldn't: a REST route registered with a permission callback that always returns true, an AJAX action that checks a nonce but never checks who is calling, a value concatenated into a SQL query, a shortcode attribute echoed back without escaping. The ones I like most are the unauthenticated bugs, where an anonymous visitor can do something that should need an admin account. The two critical ones on this list are like that: an authentication bypass in Ezoic and a remote code execution in Easy Invoice.</p>
+<p>It's the same muscle as reverse engineering, just with source code instead of assembly. You look for the one function that trusts what it shouldn't: a REST route registered with a permission callback that always returns true, an AJAX action that checks a nonce but never checks who is calling, a value concatenated into a SQL query, a shortcode attribute echoed back without escaping. The ones I like most are the unauthenticated bugs, where an anonymous visitor can do something that should need an admin account. The critical ones on this list are like that: a remote code execution in Easy Invoice that scores a full 10.0, and three SQL injections an anonymous visitor can fire straight at the database.</p>
 
 <div class="ca-stats">
   <div class="ca-stat"><b>{{ total }}</b><span>CVEs assigned</span></div>
@@ -129,7 +129,7 @@ order: 2
 
 <div class="ca-h"><span class="n">0x02</span><h2>The archive</h2></div>
 
-<p>Sorted by CVSS, highest first. Use the filters to see one class of bug at a time. Each ID links to the public CVE record.</p>
+<p>Sorted by CVSS, highest first, using the scores on the official CVE records. Use the filters to see one class of bug at a time. Each ID links to the public CVE record.</p>
 
 <div class="ca-filters" id="ca-filters">
   <button class="on" data-f="all">All<b>{{ total }}</b></button>

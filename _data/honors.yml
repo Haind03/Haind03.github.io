@@ -1,6 +1,10 @@
 # Shown on the landing page, in this order.
 # badge: gold | silver | bronze | acc | (empty)
 # post: optional URL of a blog post about it, e.g. /posts/mctf-2025/
+- date: Oct 2026
+  name: Flare-On 13, Mandiant's reverse engineering challenge
+  result: FINISHER
+  badge: acc
 - date: Dec 2025
   name: M*CTF 2025, international Attack-Defense CTF, Russia
   result: CHAMPION
