@@ -11,7 +11,7 @@ render_with_liquid: false
 
 This was my first time playing Attack-Defense at a real final. The ASEAN Student Contest on Information Security 2023 had its A&D final on November 11, and I played it with team PTIT.Sn0rlax. We got a consolation prize, and the awards were handed out on November 30.
 
-PTIT sent three teams and all three got something: PTIT.inj3cted and us with consolation prizes in Attack-Defense, and PTIT.R4c1ngBoizzz with a consolation prize in Jeopardy.
+PTIT sent three teams and all three got a consolation prize, two in Attack-Defense (PTIT.inj3cted and us) and one in Jeopardy (PTIT.R4c1ngBoizzz).
 
 ![ISP Club's congratulations post listing the three PTIT teams and their prizes](/assets/img/posts/asean-2023/ptit-results.webp)
 _Results of the three PTIT teams._
@@ -23,10 +23,10 @@ I took a screenshot of the scoreboard at the end of the day, and it shows pretty
 ![The final Attack-Defense scoreboard of the 2023 ASEAN Student Contest](/assets/img/posts/asean-2023/scoreboard.webp)
 _The final board on November 11, 2023. PTIT.Sn0rlax is 15th (team 115), on the right._
 
-There were four services: petstore, web 1, binary chef and web 2. We finished 15th with 4,881.03 points.
+There were four services, petstore, web 1, binary chef and web 2. We finished 15th with 4,881.03 points.
 
 Our SLA was 95.08% on petstore and 100% on the other three, so the services were almost always up. The problem was patching. We lost 482 flags on petstore and 658 on web 1, and captured 120 and 189 on them. The services were running but stayed vulnerable for too long. We didn't get a working exploit for web 2 or binary chef.
 
-What I took from this final: keeping services up is not enough, they also have to be patched early.
+What I took from this final is that keeping services up is not enough, they also have to be patched early.
 
 I went back to the same final in 2024 with PTIT.Celebi and got third prize. That one's [here](/posts/ctf-asean-2024-attack-defense/).

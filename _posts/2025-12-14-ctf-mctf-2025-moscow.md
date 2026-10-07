@@ -19,7 +19,7 @@ _Arriving in Moscow, December 7, 2025._
 ![The PTIT team in front of the M*CTF 2025 banner](/assets/img/posts/mctf-2025/team-banner.webp)
 _The four of us at M\*CTF 2025._
 
-There were nine teams on the final board, from Russia, Vietnam and a few other countries. The game had 180 rounds and four services: pupocer, qrb, erpdotnet and arasaka. Same A&D rules as usual: steal flags from the others and keep your own services patched and running.
+There were nine teams on the final board, from Russia, Vietnam and a few other countries. The game had 180 rounds and four services, pupocer, qrb, erpdotnet and arasaka. The rules were the usual A&D ones, where you steal flags from the other teams and keep your own services patched and running.
 
 I've played A&D twice before at the ASEAN contest. [In 2023](/posts/ctf-asean-2023-first-attack-defense/) our services were up but we patched too slowly. [In 2024](/posts/ctf-asean-2024-attack-defense/) we attacked a lot but let our own services go down. So this time we tried to keep our services safe first.
 

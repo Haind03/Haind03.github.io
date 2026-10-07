@@ -21,7 +21,7 @@ _Final board. PTIT.Celebi is 6th with 6,812.92 points._
 
 We finished 6th on the board with 6,812.92 points, which was enough for third prize. There were two services, Linkextractor 2.0 and pepeviewer.
 
-On Linkextractor our SLA was 91.30%. We captured 159 flags and lost 231. On pepeviewer we captured 651 flags, our best attack result of the day, but we lost 433 and the SLA was 71.36%. So compared to 2023 our attack was much better, while defense on pepeviewer was still the weak point: the service was down or vulnerable for too much of the game.
+On Linkextractor our SLA was 91.30%. We captured 159 flags and lost 231. On pepeviewer we captured 651 flags, our best attack result of the day, but we lost 433 and the SLA was 71.36%. So compared to 2023 our attack was much better, but defense on pepeviewer was still weak, and the service was down or vulnerable for too much of the game.
 
 ![Team PTIT.Celebi with the ISP flag and the third prize board](/assets/img/posts/asean-2024/team-celebi.webp)
 _PTIT.Celebi with the third prize._
