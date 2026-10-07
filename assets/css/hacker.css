@@ -522,3 +522,6 @@ details.lab-solution[open] > :not(summary) { animation: cp-line .3s ease-out bot
 .categories .list-group-item a::after { content: ''; position: absolute; inset: 0; z-index: 1; }
 .categories .category-trigger { position: relative; z-index: 2; }
 .categories .card-header:hover, .categories .list-group-item:hover { background: rgb(0 240 255 / 6%) !important; cursor: pointer; }
+
+/* longer sidebar tagline: readable sentence case */
+#sidebar .site-subtitle { text-transform: none !important; letter-spacing: 0 !important; font-size: .74rem !important; line-height: 1.55; color: var(--cp-mute) !important; }
