@@ -30,13 +30,15 @@
   name: Flare-On 11, every challenge solved
   result: FINISHER
   badge: acc
-- date: Nov 2024
-  name: ASEAN Student Contest on Information Security, Attack-Defense final
+- date: Oct 2024
+  name: ASEAN Student Contest on Information Security, Attack-Defense final (team PTIT.Celebi)
   result: 3RD PRIZE
   badge: bronze
+  post: /posts/ctf-asean-2024-attack-defense/
 - date: Nov 2023
-  name: ASEAN Student Contest on Information Security, Attack-Defense final
+  name: ASEAN Student Contest on Information Security, Attack-Defense final (team PTIT.Sn0rlax)
   result: CONSOLATION
+  post: /posts/ctf-asean-2023-first-attack-defense/
 - date: Aug 2023
   name: PTIT Student Information Security Competition, individual Jeopardy
   result: 2ND PRIZE
