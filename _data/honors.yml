@@ -39,10 +39,12 @@
   name: ASEAN Student Contest on Information Security, Attack-Defense final (team PTIT.Sn0rlax)
   result: CONSOLATION
   post: /posts/ctf-asean-2023-first-attack-defense/
-- date: Aug 2023
-  name: PTIT Student Information Security Competition, individual Jeopardy
+- date: Oct 2023
+  name: PTIT CTF 2023, Student Information Security Competition, individual Jeopardy
   result: 2ND PRIZE
   badge: silver
+  post: /posts/ctf-ptit-ctf-2023/
 - date: Aug 2022
-  name: PTIT Student Information Security Competition, individual Jeopardy
+  name: PTIT CTF 2022, Student Information Security Competition, individual Jeopardy (my first CTF prize)
   result: CONSOLATION
+  post: /posts/ctf-ptit-ctf-2022/
