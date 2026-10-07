@@ -26,7 +26,7 @@ You can see it in our row. 100% SLA on pupocer and qrb, 85.56% on arasaka, and n
 MTUCI actually attacked better on erpdotnet, +92 and nothing lost. But their uptime was lower on every service (90.28%, 86.94%, 77.50%, 73.33%), and over 180 rounds that adds up. We won mostly by staying up and not getting robbed. After the last two years, winning on defense felt really good.
 
 ![The PTIT team with players from MTUCI in front of the final scoreboard](/assets/img/posts/mctf-2025/with-mtuci.webp)
-_With some of the MTUCI players after the final._
+_With players from MTUCI after the final._
 
 Outside the contest, Moscow in December was cold and snowy, which was an experience by itself for us. We went to Red Square and St. Basil's Cathedral, and to Moscow State University.
 
@@ -39,7 +39,7 @@ _Moscow State University._
 MTUCI also has a drone arena, a big sports hall with nets everywhere, and we got to try the drones there. That was fun. It's also where we took the photo with the diploma.
 
 ![The team in MTUCI's drone arena with the diploma](/assets/img/posts/mctf-2025/drone-arena.webp)
-_In MTUCI's drone arena, with the diploma._
+_In the MTUCI drone arena._
 
 We flew home on December 7.
 

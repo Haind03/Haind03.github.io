@@ -12,7 +12,7 @@ render_with_liquid: false
 On October 19, 2024 I played the Attack-Defense final of the ASEAN Student Contest on Information Security (the 17th one) at the Military Technical Academy in Hanoi, with team PTIT.Celebi. We got third prize. PTIT's other team also got third prize in the Jeopardy bracket, so we ended up with one in each.
 
 ![PTIT's two teams on stage with their third prizes and the ISP flag](/assets/img/posts/asean-2024/ptit-teams.webp)
-_Both PTIT teams after the awards, Jeopardy third prize on the left and Attack-Defense third prize on the right._
+_The two PTIT teams at the awards ceremony._
 
 It was my second A&D final. At [the first one in 2023](/posts/ctf-asean-2023-first-attack-defense/) our services stayed up but we patched way too slowly and lost hundreds of flags. So this time I wanted to fix that. Looking at the final board, we only half fixed it.
 
@@ -28,6 +28,6 @@ KMA.0range, who won, had big numbers on both services and still kept their SLA a
 The day itself was chaotic, as A&D always is. Services going down, patches breaking things, exploits that worked on our box and not on others. When it ended I wasn't sure if we'd make the prize list, so hearing our name for third prize was a big relief.
 
 ![Team PTIT.Celebi with the ISP flag and the third prize board](/assets/img/posts/asean-2024/team-celebi.webp)
-_PTIT.Celebi with the ISP flag and the third prize._
+_PTIT.Celebi with the third prize._
 
 After this I kept one simple rule for A&D: someone on the team always watches our own services, no matter how good the attack is going. A year later in Moscow [it worked out pretty well](/posts/ctf-mctf-2025-moscow/).

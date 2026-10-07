@@ -14,7 +14,7 @@ This was my first time playing Attack-Defense at a real final. The ASEAN Student
 PTIT sent three teams and all three got something: PTIT.inj3cted and us with consolation prizes in Attack-Defense, and PTIT.R4c1ngBoizzz with a consolation prize in Jeopardy.
 
 ![ISP Club's congratulations post listing the three PTIT teams and their prizes](/assets/img/posts/asean-2023/ptit-results.webp)
-_ISP Club's post with the results of the three PTIT teams._
+_Results of the three PTIT teams._
 
 Before this I had basically only played Jeopardy, where you solve a challenge and the points stay yours. A&D is different. Every team gets the same vulnerable services. You attack everyone else's copy to steal flags every round, and you also have to patch your own copy without breaking it, because the checker keeps testing it. For the first hour we were mostly confused, trying to read code we'd never seen and find the bugs before other teams used them on us.
 

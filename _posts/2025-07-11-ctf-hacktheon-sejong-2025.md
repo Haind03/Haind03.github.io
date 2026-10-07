@@ -24,18 +24,18 @@ _Final scoreboard. PTIT.BlueCyber is 10th with 3,764 points, same as UIT.TNTCrew
 The annoying part: UIT.TNTCrew also had exactly 3,764. The tiebreak is whoever got there first, and their last submission was at 16:45, so they got 9th and we got 10th. 7th and 8th were only 114 points above us, which is less than one challenge. So top 10 is a good result and I'm happy with it, but I do still think about how close we were to a few places higher.
 
 ![The team at table 33 with our HackTheon medals](/assets/img/posts/hacktheon-sejong-2025/team-medals.webp)
-_After the final, with the medals. The screen says the shuttle to the awards ceremony leaves at 8:20 the next morning._
+_After the final, with the medals._
 
 The awards ceremony was the next morning, on July 11. After that we had some time to look around, and we ended up in Seoul one night walking around the streets. Lots of neon signs, very nice place to just walk.
 
 ![A night street in Seoul](/assets/img/posts/hacktheon-sejong-2025/seoul-night.webp)
-_Achasan-ro, Seoul, at night._
+_Seoul at night._
 
 This was also one of the last contests for PTIT.BlueCyber as a team, so it meant a bit more than usual.
 
 Every finalist got the same black case with the medal, stickers, a USB card, an NIS gift and the competition badge inside.
 
 ![The HackTheon Sejong 2025 finalist case with medal, badge and stickers](/assets/img/posts/hacktheon-sejong-2025/swag.webp)
-_What was in the case._
+_The finalist gift case._
 
 If I had to take one thing from this: the afternoon matters as much as the morning, and when you have a flag, submit it right away. A tie broken by timestamp is a painful way to lose a place. Thanks again PTIT for sending us.
