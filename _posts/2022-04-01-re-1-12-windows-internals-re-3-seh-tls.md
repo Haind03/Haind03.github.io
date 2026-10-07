@@ -89,6 +89,14 @@ In practice, if you only hook or set breakpoints at the kernel32 level, a progra
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 1.12</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/1.12.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/1.12/src/tls_demo.c" download><i class="fa-solid fa-download"></i>src/tls_demo.c</a>
+</div>
+</div>
+
 In this lab you check that a TLS callback runs before the entry point, find it inside the PE, and watch a system call go down to the `Nt*` layer of ntdll. Everything here uses a binary you build or a clean system file, so it's safe to run on a normal machine, and there's no malware involved. You need x64dbg (x32dbg for a 32-bit build), PE-bear or CFF Explorer, and a compiler, either MSVC (`cl.exe`) or MinGW (`gcc`), to build the demo `tls_demo.c`.
 
 Build it with one of these and run it directly:
@@ -105,13 +113,6 @@ Next, catch the callback in x64dbg. Open the file without running it, go to Opti
 Finally, follow a call down into ntdll. In x64dbg, with any process (the demo file works), set a breakpoint on a Win32 function by typing `bp CreateFileW` in the command box. When it hits, keep pressing Step Into (F7) and you'll see it call `NtCreateFile` in ntdll. Once you reach the `NtCreateFile` stub, look for `mov r10, rcx`, then `mov eax, <number>`, then `syscall`, and write down the syscall number on your machine. That's the Native API layer right next to the kernel.
 
 Two questions to think about. If a program puts its debugger check in a TLS callback, why is a breakpoint on `main` too late? And if you only break on `CreateFileW` (kernel32) but the malware calls `NtCreateFile` directly or uses a direct syscall, will your breakpoint hit, and why?
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 1.12</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/1.12/src/tls_demo.c" download><i class="fa-solid fa-file-code"></i>src/tls_demo.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

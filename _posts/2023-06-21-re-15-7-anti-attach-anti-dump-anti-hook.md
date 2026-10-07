@@ -54,6 +54,14 @@ The overall strategy for multiple layers is covered in [Lesson 15.10](/posts/re-
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 15.7</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/15.7.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/15.7/src/antidump.c" download><i class="fa-solid fa-download"></i>src/antidump.c</a>
+</div>
+</div>
+
 The goal is to see a program corrupt its own PE header in memory, then rebuild the header yourself so you can dump it, plus two observation exercises on anti-attach and anti-hook. The tools are x64dbg, Scylla (or PE-sieve), PE-bear and Process Hacker.
 
 `antidump.c` is a small program that, once its startup is done, blanks the MZ and PE signatures of its own image in memory. It prints the ImageBase and then waits for Enter, which gives you time to work. Build it on Windows with:
@@ -71,13 +79,6 @@ Second, rebuild the header. In x64dbg, attach to the process while it waits for 
 Third, think about anti-attach. Suppose the program also had a background thread that every 3 seconds checks `IsDebuggerPresent` and calls `ExitProcess` when it sees a debugger. What happens when you attach in the second exercise, and how could you avoid it? A hint is to spawn instead of attach, or use ScyllaHide.
 
 Fourth, think about anti-hook. Suppose a program reads the first 5 bytes of `VirtualProtect` in memory and compares them with the first 5 bytes of the same function read from `C:\Windows\System32\kernel32.dll` on disk. If you inline-hook `VirtualProtect` with Detours, it detects that immediately. Which kind of hook is not caught by this prologue comparison?
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 15.7</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/15.7/src/antidump.c" download><i class="fa-solid fa-file-code"></i>src/antidump.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

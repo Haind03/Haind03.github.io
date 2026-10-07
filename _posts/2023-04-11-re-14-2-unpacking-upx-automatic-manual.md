@@ -108,6 +108,14 @@ For the ESP trick, put a hardware breakpoint on the stack right after `pushad`, 
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 14.2</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/14.2.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/14.2/src/hello.c" download><i class="fa-solid fa-download"></i>src/hello.c</a>
+</div>
+</div>
+
 This lab has you take both UPX unpacking routes and understand why `upx -d` fails when the header has been edited. You need `upx` (on Linux `apt install upx-ucl`, or download the official build), `gcc` on Linux or MinGW on Windows, and for the manual part x64dbg or x32dbg with the Scylla plugin on Windows. The target is `hello.c`.
 
 For the automatic route, build it. On Linux use `gcc -O2 -static -o hello hello.c`, and on Windows `x86_64-w64-mingw32-gcc -O2 -o hello.exe hello.c`. Then pack it with `upx --best -o hello.upx hello` and write down the compression ratio UPX prints. Open both files in Detect It Easy and compare the entropy and the import table (see Lesson 14.1). Unpack with `upx -d -o hello.unp hello.upx` and try `./hello.unp UPX_s3cr3t`.
@@ -117,13 +125,6 @@ Next, break the header so `upx -d` fails. Copy the packed file and change every 
 For the manual route on Windows, open the packed file in x32dbg or x64dbg and stop at the entry point, the start of the stub. Step over `pushad` with F8, right-click ESP and choose Follow in Dump, select the first 4 bytes in the Dump and set a hardware access breakpoint on them, then press F9 and stop when `popad` reads that region back. Step to the tail jump (the far `jmp`) and step over it, and you are at the OEP. To finish, open Scylla, set the OEP, then IAT Autosearch, Get Imports, Dump and Fix Dump, as covered in Lesson 14.3.
 
 Three questions to think about. Why does changing the `UPX!` magic make `upx -d` fail while the file still runs? Which property of the `pushad` and `popad` pair does the ESP trick rely on? And why is dumping memory not enough, so that the IAT has to be rebuilt?
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 14.2</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/14.2/src/hello.c" download><i class="fa-solid fa-file-code"></i>src/hello.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

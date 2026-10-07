@@ -103,6 +103,14 @@ Triage first so you don't waste time on a packed file, static to understand the 
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 3.5</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/3.5.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/3.5/src/crackme.c" download><i class="fa-solid fa-download"></i>src/crackme.c</a>
+</div>
+</div>
+
 The task is to find the correct password of `crackme.c`. It's a summary exercise for Parts 1 through 3.4. Build it with one of these commands. On Linux:
 
 ```
@@ -124,13 +132,6 @@ cl /Od crackme.c
 Work in this order. Triage with Detect It Easy to see which compiler built it and whether it's packed. Run `strings` and check whether the password shows up in plaintext, and whether any function name hints at the destination. Open it in Ghidra or IDA and go from the result strings to the checking function by xref. Read the check logic and work out how long the password is and how each character is transformed before the comparison. Take the constant array used in the comparison and compute the password backwards. Enter it and confirm the program prints `Correct!`. Optionally, open it in x64dbg, put a breakpoint at the comparison loop and watch the two operands of `cmp`, so you can read the constant array without hunting for it statically.
 
 A hint is that the password isn't in the file as readable text. It's transformed, so you have to understand the transformation and undo it. Look at the properties of XOR in [Lesson 1.1](/posts/re-1-1-reading-hexdump-like-text/) if you need a refresher. Do all the steps yourself before opening the solution.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 3.5</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/3.5/src/crackme.c" download><i class="fa-solid fa-file-code"></i>src/crackme.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

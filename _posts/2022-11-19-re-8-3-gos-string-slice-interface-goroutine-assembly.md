@@ -114,6 +114,14 @@ Go hands a lot of work to the runtime, and the runtime functions have clear name
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 8.3</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/8.3.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/8.3/src/main.go" download><i class="fa-solid fa-download"></i>src/main.go</a>
+</div>
+</div>
+
 The goal is to see that Go strings are glued together in the binary, and to follow how the code loads a string with a pointer plus a length. You need a Go toolchain (`go version`), and the lab was checked with Go 1.22 on Linux x64. The program is `main.go`, and you build it with:
 
 ```
@@ -145,13 +153,6 @@ go tool nm demo83 | grep -iE "func1|newproc|gowrap|deferwrap"
 The function `main.main.func1` is the body of `go func(...)`, and `runtime.newproc` is where the goroutine gets created.
 
 Two questions to think about. Why does letting IDA auto-detect C-style strings on a Go binary give wrong results? And if the binary is stripped, what still lets you find `main.main` (the hint is to look back at Lesson 8.2)?
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 8.3</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/8.3/src/main.go" download><i class="fa-solid fa-file-code"></i>src/main.go</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

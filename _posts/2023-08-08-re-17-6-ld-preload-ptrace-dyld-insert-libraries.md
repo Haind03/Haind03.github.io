@@ -82,6 +82,15 @@ LD_PRELOAD can't touch static functions, inlined functions, or direct syscalls t
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 17.6</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/17.6.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/17.6/src/crackme.c" download><i class="fa-solid fa-download"></i>src/crackme.c</a>
+<a class="lab-file" href="/assets/labs/17.6/src/hook.c" download><i class="fa-solid fa-download"></i>src/hook.c</a>
+</div>
+</div>
+
 This lab runs on Linux (or WSL) and should only be used on the crackme provided here. There are two files. `crackme.c` is a small crackme that reads a password from the keyboard and compares it with `strcmp` against a secret built in memory, so no obvious literal shows up in the strings. `hook.c` is an LD_PRELOAD library that overrides `strcmp`, prints both operands to stderr and then calls the real `strcmp`. Build both:
 
 ```sh
@@ -98,14 +107,6 @@ echo "wrongpass" | LD_PRELOAD=./hook.so ./crackme
 The line `[hook] strcmp("wrongpass", "...")` shows the second operand, which is the password. Enter the password you found to confirm it prints "Correct!".
 
 Now think about this case. If the crackme didn't use `strcmp` and instead wrote its own loop comparing byte by byte, would an LD_PRELOAD hook on `strcmp` still work? As an advanced step, write a `ptrace` hook that always returns 0 to see how to neutralize a ptrace-based anti-debug check on Linux. Keep in mind that a hook only catches functions called through the dynamic library (the PLT), not static or inline functions, and that the log goes to stderr so it doesn't mix with the program's output.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 17.6</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/17.6/src/crackme.c" download><i class="fa-solid fa-file-code"></i>src/crackme.c</a>
-<a class="lab-file" href="/assets/labs/17.6/src/hook.c" download><i class="fa-solid fa-file-code"></i>src/hook.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

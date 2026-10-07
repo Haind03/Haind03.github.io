@@ -68,6 +68,14 @@ Don't expect to get clean source back in its original form. The goal is code rea
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 5.5</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/5.5.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/5.5/src/LicenseCheck.cs" download><i class="fa-solid fa-download"></i>src/LicenseCheck.cs</a>
+</div>
+</div>
+
 The goal is to see how obfuscation deforms code, use de4dot to bring it back to a readable form, and when strings are still encrypted, pull them out with the dnSpy debugger. This lab runs on Windows. You need the dotnet SDK (or .NET Framework plus `csc`) to build, ConfuserEx (a release build from GitHub), de4dot or de4dot-cex for newer ConfuserEx, and dnSpy.
 
 First build the original assembly from `LicenseCheck.cs`:
@@ -86,13 +94,6 @@ Next strip it with de4dot by running `de4dot.exe LicenseCheck.exe` on the obfusc
 If you still have a sample where de4dot can't decrypt the strings, find the function `Decrypt(int)` that returns a string, set a breakpoint at its `return`, run with F5, and read the returned value in Locals for each call. Write down a table of token to string.
 
 Two questions to finish. Why, despite obfuscation, must strings still appear in clear form in memory at runtime? And de4dot renames things to `Class0` and `method_1` instead of restoring `CheckKey`, so why can't it recover the original names?
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 5.5</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/5.5/src/LicenseCheck.cs" download><i class="fa-solid fa-file-code"></i>src/LicenseCheck.cs</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

@@ -60,6 +60,14 @@ No F5? You can still do RE, you just read assembly more slowly. Ghidra (Lesson 2
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 2.2</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/2.2.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/2.2/src/crackme01.c" download><i class="fa-solid fa-download"></i>src/crackme01.c</a>
+</div>
+</div>
+
 Here's a small crackme to practice the workflow above, `crackme01.c`. It's harmless and fine to run on a normal machine. The aim is to drill the IDA routine, which is to start from strings, use xrefs, rename, read the logic. Build it first. On Windows with the MSVC Developer Command Prompt:
 
 ```
@@ -83,13 +91,6 @@ Don't open `crackme01.c` to read it. The whole exercise is finding the password 
 Run the program, type a random password and see what it prints. Then open the built file in IDA and wait for auto-analysis to finish (AU: idle). Open the Strings window (`Shift+F12`) and look for a message about a right or wrong password. Double-click it to land in the data, then press `X` to see which function references it. Jump into that function and find the sub-function that does the real checking, and rename it (`N`) to `check_password`. Inside it, find the secret string the input is compared against, rename variables so they read well and add comments (`:`). If you have Hex-Rays, press `F5` to read the pseudocode and compare it with the assembly. Finally work out the correct password, run the program again and type it in to confirm you see "Correct!".
 
 A few questions to think about afterwards. Why is going from strings faster than reading from `main`? What does the program check before comparing the strings (a hint is to look at a length comparison)? And if there were no Strings window, how else could you locate the check function (a hint is to look at Imports, and functions like `strcmp`)?
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 2.2</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/2.2/src/crackme01.c" download><i class="fa-solid fa-file-code"></i>src/crackme01.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

@@ -99,6 +99,14 @@ That's a Go crackme done end to end, where you triaged as Go, used pclntab to ge
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 8.4</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/8.4.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/8.4/src/crackme.go" download><i class="fa-solid fa-download"></i>src/crackme.go</a>
+</div>
+</div>
+
 The crackme is written in Go, and the task is to find the password without brute force. You need Go installed (check with `go version`), and the lab was built and verified with Go 1.22.0. Build the crackme from `crackme.go` in the three ways below, namely the full build that keeps pclntab, a stripped build for comparison, and an optional Windows build.
 
 ```
@@ -110,13 +118,6 @@ GOOS=windows go build -o crackme.exe crackme.go       # Windows build (optional)
 First use `file` and `go version crackme` to confirm it's a Go binary and see which version built it. Compare the size of the normal and the `-s -w` builds, check with `strings` whether `main.checkKey` is still there in the stripped one, and draw your conclusion about pclntab. Then find the function `main.checkKey` and read its logic. How many characters is the password, and how do you know? How does the algorithm transform each character? Write a snippet that reverses it to compute the password, then run `./crackme <password>` and confirm you get "Correct!".
 
 Two questions to think about. Why does `strings` not find the password directly while it still shows function names? And if the binary were fully stripped and IDA didn't recognize the Go function names, which tool would you use (see Lesson 8.2)? Do it yourself before opening the solution. Build both the normal and stripped versions, confirm `main.checkKey` is still there in the stripped one, then invert the algorithm to get the password without running it.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 8.4</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/8.4/src/crackme.go" download><i class="fa-solid fa-file-code"></i>src/crackme.go</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

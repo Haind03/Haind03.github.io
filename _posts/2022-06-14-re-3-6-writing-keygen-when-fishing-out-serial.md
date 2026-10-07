@@ -78,6 +78,15 @@ Knowing this boundary matters more than the keygen itself. It tells you when to 
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 3.6</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/3.6.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/3.6/keygen.py" download><i class="fa-solid fa-download"></i>keygen.py</a>
+<a class="lab-file" href="/assets/labs/3.6/src/keygenme.c" download><i class="fa-solid fa-download"></i>src/keygenme.c</a>
+</div>
+</div>
+
 The goal here goes beyond getting past one check, which is to understand the algorithm well enough to generate a valid serial for any username. The lab has the target program `keygenme.c`, which takes a `username` and a `serial` and prints "Correct!" if the serial is valid, plus `keygen.py`, a reference keygen that is the solution, so don't open it early. Build the target like this:
 
 ```
@@ -96,14 +105,6 @@ Try it with `./keygenme alice 0000-0000-0000-0000`, which reports "Wrong serial"
 Open `keygenme` in IDA or Ghidra and find the `validate` function by going from the "Correct!" or "Wrong serial" string through an xref. Decide what kind of crackme this is, either a comparison against a fixed serial, or an algorithmic check that depends on the username, and why patching a single jump isn't enough if the goal is to generate serials. Work out how the right serial is computed from the username, including the formula, the seed constants and the string format. Then write your own keygen in any language that takes a username and prints a valid serial. To check it, run the keygen for your own username, paste the serial into `keygenme`, and you should see "Correct!".
 
 Two questions to think about. If the algorithm used a real one-way hash such as SHA-256, could you still write a keygen, or would brute force be the only way? And why do real software vendors usually sign serials with a digital signature (RSA) instead of a symmetric formula like the one in this lab?
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 3.6</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/3.6/keygen.py" download><i class="fa-solid fa-file-code"></i>keygen.py</a>
-<a class="lab-file" href="/assets/labs/3.6/src/keygenme.c" download><i class="fa-solid fa-file-code"></i>src/keygenme.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

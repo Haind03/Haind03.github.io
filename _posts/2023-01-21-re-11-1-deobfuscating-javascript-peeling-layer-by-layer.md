@@ -95,6 +95,18 @@ webcrack is the strongest and synchrony is plan B, and you don't need a full cle
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 11.1</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/11.1.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/11.1/src/after-synchrony.js" download><i class="fa-solid fa-download"></i>src/after-synchrony.js</a>
+<a class="lab-file" href="/assets/labs/11.1/src/minified.js" download><i class="fa-solid fa-download"></i>src/minified.js</a>
+<a class="lab-file" href="/assets/labs/11.1/src/obfuscated.beautified.js" download><i class="fa-solid fa-download"></i>src/obfuscated.beautified.js</a>
+<a class="lab-file" href="/assets/labs/11.1/src/obfuscated.js" download><i class="fa-solid fa-download"></i>src/obfuscated.js</a>
+<a class="lab-file" href="/assets/labs/11.1/src/original.js" download><i class="fa-solid fa-download"></i>src/original.js</a>
+</div>
+</div>
+
 The task is to take a JavaScript license checker from its obfuscated form back to readable logic, and then find a valid license key. There are five versions of the checker. `original.js` is the original, which you should only open to check your work after solving it yourself. `minified.js` has only been minified (level 1). `obfuscated.js` was obfuscated with `javascript-obfuscator` (obfuscator.io) using a string array and control flow flattening. `obfuscated.beautified.js` is the previous file after `js-beautify`, so you can see the structure of the string array and the rotate function. `after-synchrony.js` is the result of running `npx deobfuscator`, with hex converted to decimal and partly simplified.
 
 Start by beautifying `minified.js` and reading the logic, and work out what a valid license key looks like. Then open `obfuscated.js` and identify the string array, the rotate function and the control flow flattening, and which signs tell you this is obfuscator.io. Run `npx js-beautify obfuscated.js` and then `npx deobfuscator obfuscated.js`, and compare the result with `after-synchrony.js`.
@@ -102,17 +114,6 @@ Start by beautifying `minified.js` and reading the logic, and work out what a va
 After deobfuscation there is still a messy `switch`-case. Read each case and put the original logic back together. Using the recovered logic, build a valid license key and run it with `node` to confirm.
 
 Two hints. The sum of the `charCodeAt` values of the first part must equal one specific constant, so work out what that sum is for the sample key `ABCD-...`. The middle part and the length of the last part are checked as well. Try it yourself before opening the solution.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 11.1</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/11.1/src/after-synchrony.js" download><i class="fa-solid fa-file-code"></i>src/after-synchrony.js</a>
-<a class="lab-file" href="/assets/labs/11.1/src/minified.js" download><i class="fa-solid fa-file-code"></i>src/minified.js</a>
-<a class="lab-file" href="/assets/labs/11.1/src/obfuscated.beautified.js" download><i class="fa-solid fa-file-code"></i>src/obfuscated.beautified.js</a>
-<a class="lab-file" href="/assets/labs/11.1/src/obfuscated.js" download><i class="fa-solid fa-file-code"></i>src/obfuscated.js</a>
-<a class="lab-file" href="/assets/labs/11.1/src/original.js" download><i class="fa-solid fa-file-code"></i>src/original.js</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

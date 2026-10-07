@@ -135,6 +135,14 @@ On older devices and a lot of firmware, you'll meet 32-bit ARM (AArch32), where 
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 1.9</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/1.9.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/1.9/src/arm_demo.c" download><i class="fa-solid fa-download"></i>src/arm_demo.c</a>
+</div>
+</div>
+
 The goal is to see the ideas from this lesson in real assembly, such as parameters arriving in `x0..x7`, the result leaving in `x0`, and the `stp x29, x30` pattern in the prologue of a function that calls another function. I'd build `arm_demo.c` yourself. On Ubuntu or WSL you need an ARM64 cross-compiler, then you compile statically and disassemble:
 
 ```
@@ -158,13 +166,6 @@ If you cannot install the toolchain, there is a second route, which is to transl
   740:  sub   w0, w0, #0x20
   744:  ret
 ```
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 1.9</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/1.9/src/arm_demo.c" download><i class="fa-solid fa-file-code"></i>src/arm_demo.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

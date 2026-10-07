@@ -111,6 +111,14 @@ Both IDA and Ghidra let you declare the types `std::string` / `std::vector` and 
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 4.3</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/4.3.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/4.3/src/containers.cpp" download><i class="fa-solid fa-download"></i>src/containers.cpp</a>
+</div>
+</div>
+
 The goal is to see the layout of `std::string` and `std::vector` yourself, understand SSO (the small string optimization), and practice recognizing them in a debugger. You build `containers.cpp`, run it to see the real layout numbers on your own machine, then open it in a debugger. On Linux with libstdc++:
 
 ```
@@ -137,13 +145,6 @@ Run the program and write down `sizeof(std::string)` and `sizeof(std::vector<int
 Next, open the binary in Ghidra or IDA and set a breakpoint (x64dbg or gdb) right after `shortStr` and `longStr` are created. Look at the 32 bytes at each object's address and point out which part is the pointer, which is the size, and which is the buffer or capacity. For `std::vector<int> v`, look at the 24 bytes of the object and compute `(second pointer - first pointer) / 4`. Does it give `size()`?
 
 Two questions to think about afterwards. Why does SSO exist (think about what a heap allocation for every short string would cost)? And if you see a 24-byte object made of consecutive heap pointers, why should you suspect a `std::vector`? Try it all before opening the solution.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 4.3</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/4.3/src/containers.cpp" download><i class="fa-solid fa-file-code"></i>src/containers.cpp</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

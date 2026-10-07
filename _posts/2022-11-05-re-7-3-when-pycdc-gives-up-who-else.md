@@ -131,6 +131,14 @@ This table will go out of date as new tools come out. The approach stays the sam
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 7.3</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/7.3.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/7.3/src/secret.py" download><i class="fa-solid fa-download"></i>src/secret.py</a>
+</div>
+</div>
+
 In this lab you see why you need several decompilers, and you practice the last resort, reading bytecode directly with `dis` and `marshal`. You take a `.pyc`, try several decompilers in turn, see which one refuses which version, and then read the bytecode yourself to get the answer when the tools give up.
 
 You need Python 3 (the lab was checked on 3.11.9) and, optionally, the extra tools from `pip install uncompyle6 decompyle3 xdis`. The sample program is `secret.py`, and you can use any other `.pyc` files you have. First create a `.pyc` to experiment on by compiling `secret.py`.
@@ -157,13 +165,6 @@ for c in code.co_consts:
 Look in `co_consts` for suspicious constants, and in the bytecode for `COMPARE_OP` instructions. Then work out the rule that the `check` function enforces from the bytecode alone, without looking at the source. What conditions must a valid password satisfy?
 
 Two questions to think about. Why does uncompyle6 refuse outright rather than try and produce something wrong? And if you only had the bytecode and no decompiler worked, could you still solve the task, and why? Try it yourself before opening the solution.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 7.3</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/7.3/src/secret.py" download><i class="fa-solid fa-file-code"></i>src/secret.py</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

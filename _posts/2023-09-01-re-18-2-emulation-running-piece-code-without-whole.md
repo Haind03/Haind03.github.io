@@ -69,18 +69,19 @@ Emulation doesn't fit when the code is so tied to the OS/API/hardware that fakin
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 18.2</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/18.2.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/18.2/src/emu_xor.py" download><i class="fa-solid fa-download"></i>src/emu_xor.py</a>
+</div>
+</div>
+
 The goal is to use Unicorn Engine to run the actual bytes of a decryption routine, rather than translating the algorithm by hand. This is the skill for quickly solving the string-deobfuscation functions that show up constantly in malware and crackmes. Install Unicorn with `pip install unicorn`. The reference environment this was checked against is unicorn 2.1.2 with Python 3.11.
 
 Read `emu_xor.py` and work out where the code sits, where the encrypted data sits, and which registers hold the parameters. Run `python3 emu_xor.py` and watch the encrypted string go in and the decrypted string come out. Change the key from `0x5A` to a different value, in both the part that builds `enc` and in the byte code itself (`80 37 XX`), run it again, and confirm it still matches. Explain why a return address has to be written onto the stack before running, and why `emu_start` stops exactly at `BASE + len(CODE)`. As an extension, replace the XOR loop with a simple addition function (`add byte [rdi], 7`) and emulate that instead.
 
 Two questions to think through. If the code snippet had a `call printf` in the middle, what happens when you emulate it, and how would you handle that? And why does emulation get past anti-debug checks that trip up a real debugger?
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 18.2</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/18.2/src/emu_xor.py" download><i class="fa-solid fa-file-code"></i>src/emu_xor.py</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

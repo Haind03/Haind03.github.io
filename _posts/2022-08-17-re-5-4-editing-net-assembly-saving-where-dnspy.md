@@ -66,6 +66,14 @@ An example with dnlib is to load the module, walk to the check method, insert `l
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 5.4</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/5.4.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/5.4/src/Program.cs" download><i class="fa-solid fa-download"></i>src/Program.cs</a>
+</div>
+</div>
+
 The goal is to make the crackme always print `Correct!` whatever you type, by editing the .NET assembly rather than by finding the password. You need dnSpy and a build of `Program.cs`. With the .NET SDK, run `dotnet new console -o crackme54`, copy `Program.cs` into that folder, then build and run it:
 
 ```
@@ -78,13 +86,6 @@ With the .NET Framework instead, `csc Program.cs` produces `Program.exe`.
 Open the assembly in dnSpy and find the method `CheckPassword`. Work out where the right/wrong decision is made, which is the bool return value, and the `brtrue`/`brfalse` branch in `Main`. For the first approach, right-click `CheckPassword`, choose Edit Method (C#), change the body to `return true;`, Compile, Save Module and run again. For the second approach, undo that (or start from the original), right-click `CheckPassword`, choose Edit IL Instructions, insert `ldc.i4.1` followed by `ret` at the start of the method, save the module and run again. Then try a third way, which is to patch `Main` itself and flip the `brfalse`/`brtrue` at the branch so the "Correct!" path always runs. Compare the three, and decide which one touches the least and which one is the safest.
 
 Two questions to think about afterwards. If the assembly has a strong name, what error do you get after Save Module and how do you handle it? And why doesn't patching IL break the other methods even though you added instructions?
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 5.4</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/5.4/src/Program.cs" download><i class="fa-solid fa-file-code"></i>src/Program.cs</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

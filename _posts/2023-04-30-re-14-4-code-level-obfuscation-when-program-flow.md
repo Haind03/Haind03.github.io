@@ -87,6 +87,15 @@ Obfuscation costs you time, it doesn't make things impossible. The logic still h
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 14.4</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/14.4.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/14.4/src/flattened.c" download><i class="fa-solid fa-download"></i>src/flattened.c</a>
+<a class="lab-file" href="/assets/labs/14.4/src/original.c" download><i class="fa-solid fa-download"></i>src/original.c</a>
+</div>
+</div>
+
 The goal is to see a control-flow-flattened function yourself and practice rebuilding the original flow. There are two files, `original.c`, a `check` function written normally with a clear flow, and `flattened.c`, the same logic manually flattened into `while(1)` plus `switch(state)`. Build both:
 
 ```
@@ -97,14 +106,6 @@ gcc -O0 -o flattened flattened.c
 Run both with a few different serials and confirm they always give the same result (`Correct!` or `Nope.`), which shows that flattening doesn't change the logic. Then look only at `flattened.c`, pretending you haven't seen the original. Find the dispatcher variable (state) and build a table of what each case does and what it sets the next state to. From that table, redraw the original flow and work out the three conditions the serial must satisfy, then find a valid serial that meets all three. Open `flattened` in Ghidra or IDA, look at the graph view of the `check` function and compare its shape with `original`, noticing the spider shape. As an advanced step, build optimized versions with `gcc -O2` for both and see how much the decompiler merges back.
 
 Two questions to think about. Why does control flow flattening confuse the decompiler but not break the program? And if the function had 200 cases instead of 7, how would your strategy change (the hint is lesson 14.6, and emulation and symbolic execution in Part 18)? Try it yourself before opening the solution.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 14.4</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/14.4/src/flattened.c" download><i class="fa-solid fa-file-code"></i>src/flattened.c</a>
-<a class="lab-file" href="/assets/labs/14.4/src/original.c" download><i class="fa-solid fa-file-code"></i>src/original.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

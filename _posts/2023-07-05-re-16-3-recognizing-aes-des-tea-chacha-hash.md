@@ -88,6 +88,15 @@ From the reversing you need three things, which are the algorithm, where the key
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 16.3</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/16.3.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/16.3/src/solve_tea.py" download><i class="fa-solid fa-download"></i>src/solve_tea.py</a>
+<a class="lab-file" href="/assets/labs/16.3/src/tea_lock.c" download><i class="fa-solid fa-download"></i>src/tea_lock.c</a>
+</div>
+</div>
+
 The goal is to recognize a crypto algorithm by its structure (without findcrypt) and then reverse it in Python. The crackme is `tea_lock.c`. Build it like this.
 
 ```bash
@@ -104,14 +113,6 @@ Try it without knowing the password yet.
 Open `tea_lock` in IDA or Ghidra and find the encryption function. Look at the loop and notice which constant stands out, and work out what algorithm it points to. Confirm there are exactly 32 rounds, and that there is a `shl 4` and a `shr 5`, which is the signature of a specific algorithm. Extract where the key (4 dwords) lives and what the expected ciphertext value is. Then write, or read, a Python script that reverses the algorithm to recover the password. The algorithm is symmetric, so decrypting means running the 32 rounds backward, subtracting the delta instead of adding it. Run `./tea_lock <password>` to confirm you get `Correct! CTF{...}`. Finally check whether the password shows up in `strings tea_lock`, and think about why it doesn't.
 
 Two questions to think about. If this had been AES instead of TEA, what other sign would have told you? And why should you avoid hand-translating an algorithm into Python when it's AES or DES, while doing it by hand for TEA is reasonable? The solution and the verification script are in the collapsed section below and in `solve_tea.py`.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 16.3</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/16.3/src/solve_tea.py" download><i class="fa-solid fa-file-code"></i>src/solve_tea.py</a>
-<a class="lab-file" href="/assets/labs/16.3/src/tea_lock.c" download><i class="fa-solid fa-file-code"></i>src/tea_lock.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

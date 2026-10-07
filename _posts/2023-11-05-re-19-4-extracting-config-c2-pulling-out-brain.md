@@ -71,6 +71,15 @@ Same spirit as responsible disclosure in Lesson 0.2, where you share to protect,
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 19.4</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/19.4.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/19.4/src/build_sample.py" download><i class="fa-solid fa-download"></i>src/build_sample.py</a>
+<a class="lab-file" href="/assets/labs/19.4/src/extractor.py" download><i class="fa-solid fa-download"></i>src/extractor.py</a>
+</div>
+</div>
+
 This lab practices extracting a C2 config from an encrypted blob using a fake and harmless sample. There is no real malware and no network connection, and the domains come from the non-routable TEST-NET range. There are two files. `build_sample.py` creates `config_blob.bin`, a fake C2 config blob that is XORed with one byte and then RC4-encrypted, packed with the marker `CFG0` and a length. `extractor.py` is a reference config extractor that reverses it and prints the IOCs. You only need `python3`.
 
 Run `python3 -I build_sample.py` to create `config_blob.bin`. Open it in a hex editor and find the `CFG0` marker and the 4-byte little-endian length field right after it. Pretend you don't know the algorithm yet. The blob has high entropy and no readable strings, which is the real situation when you meet malware. Then read `build_sample.py` as if it were what you just reversed out of the sample's decryptor, with two layers (RC4 with a string key and then a one-byte XOR) plus the two keys.
@@ -78,14 +87,6 @@ Run `python3 -I build_sample.py` to create `config_blob.bin`. Open it in a hex e
 Now rewrite the extractor from scratch (don't copy `extractor.py`). Read the file, find `CFG0`, take the length, cut out the blob, undo the RC4 and then remove the XOR, parse the JSON and print the C2, port, mutex and campaign. Finally, compare your result with `extractor.py`.
 
 Some questions to think about. Why must you do the RC4 first and only then remove the XOR, and not the other way around? If you can't find the RC4 key in the code (for example the key is computed from another string at runtime), which route do you switch to? And why can a config extractor written once be used for many different samples of the same family?
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 19.4</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/19.4/src/build_sample.py" download><i class="fa-solid fa-file-code"></i>src/build_sample.py</a>
-<a class="lab-file" href="/assets/labs/19.4/src/extractor.py" download><i class="fa-solid fa-file-code"></i>src/extractor.py</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

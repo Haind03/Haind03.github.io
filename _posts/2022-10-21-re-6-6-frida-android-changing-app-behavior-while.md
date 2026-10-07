@@ -121,6 +121,14 @@ The first is a version mismatch between frida-server and frida-tools, which give
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 6.6</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/6.6.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/6.6/src/hook.js" download><i class="fa-solid fa-download"></i>src/hook.js</a>
+</div>
+</div>
+
 The goal is to use Frida to change the return value of a method while the app is running, and see the app change its behavior, without patching and repackaging the APK. Only do this on your own practice app, an app you're authorized to test, or a public app meant for learning such as OWASP UnCrackable (see Lesson 0.2 on legal and ethical limits).
 
 You need a rooted Android emulator (Genymotion, or an AVD with a rooted image) or a rooted device, and `frida-tools` on the host.
@@ -140,13 +148,6 @@ frida -U -f <package> -l hook.js
 For an extra step, hook the string verification function and log its argument and real return value to understand what it compares. You can also try the quick route with objection by running `objection -g <package> explore` and then `android root disable`.
 
 Two questions to think about afterwards. Why is a runtime hook more convenient than patching smali while exploring, and why is a patch better when you want a permanent change? And if the app detects Frida and quits, how would you deal with it? Try it yourself before opening the solution.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 6.6</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/6.6/src/hook.js" download><i class="fa-solid fa-file-code"></i>src/hook.js</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

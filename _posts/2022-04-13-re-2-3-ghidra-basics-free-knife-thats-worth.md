@@ -62,6 +62,14 @@ IDA's decompiler (Hex-Rays) usually produces slightly smoother code, especially 
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 2.3</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/2.3.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/2.3/src/crackme01.c" download><i class="fa-solid fa-download"></i>src/crackme01.c</a>
+</div>
+</div>
+
 The goal is to do a full round in Ghidra, from import to finding the password, and compare the experience with IDA from [Lesson 2.2](/posts/re-2-2-ida-beginners-master-tool-before-binary/). The binary reuses the idea of the lesson 2.2 lab (a crackme that compares a password), so you can reuse the file you built there or build `crackme01.c` on its own. Pick the build command for your system:
 
 ```
@@ -75,13 +83,6 @@ I use `-O0` so the decompiler output stays close to the source, which suits a fi
 Create a Non-Shared Project in Ghidra, import `crackme01`, answer Yes when asked to analyze, and let auto-analysis finish. Open Window > Defined Strings and find the two result messages. Which one hints that this is where the right/wrong decision is made? Double-click the success string to jump to the Listing, then press Ctrl+Shift+F (Find References To) to find the function that references it, and check whether it is `main` or some other function that calls into it. Open the check function in the Decompiler, rename it (L) to `check_password`, and rename the parameter to `input` for readability. Then read the pseudocode. What does the function compare `input` against? Find the correct password, run the binary, type it in, and confirm you get "Access granted". Finally, if you did the lesson 2.2 lab, open the same binary in IDA and compare. Which job was faster, which keys differed, and which decompiler reads better to you?
 
 A few hints. If Defined Strings doesn't show the string you expect, check that auto-analysis has actually finished (the bar at the bottom). The password sits in the pseudocode as a string constant being compared, so you don't need to debug, reading is enough. If the decompiler shows variables of type `undefined`, try retyping them (Ctrl+L) to `char *` or `int` to make them clearer.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 2.3</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/2.3/src/crackme01.c" download><i class="fa-solid fa-file-code"></i>src/crackme01.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

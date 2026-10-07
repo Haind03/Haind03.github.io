@@ -71,18 +71,19 @@ In practice the two work together. Hardening gets you past most automated sample
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 15.5</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/15.5.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/15.5/src/antivm.c" download><i class="fa-solid fa-download"></i>src/antivm.c</a>
+</div>
+</div>
+
 The goal is to see a program recognize that it's running inside a VM, and to practice getting past that check. The file is `antivm.c`, a program that checks a few VM indicators (the CPUID hypervisor bit, the vendor string, and a registry artifact on Windows) and prints a conclusion. Build it with `cl antivm.c` on Windows with MSVC, or `x86_64-w64-mingw32-gcc antivm.c -o antivm.exe` with MinGW. On Linux or WSL, only the CPUID part works, using `gcc antivm.c -o antivm -DLINUX_BUILD`.
 
 Run `antivm` on a real machine if you have one and check that the hypervisor bit reads 0. Then run it inside VMware, VirtualBox or WSL and check that the bit reads 1 and a vendor string shows up. Open `antivm.exe` in IDA or Ghidra, find the `cpuid` calls and the constant `0x40000000`, and identify the branch that decides "running in a VM". In x64dbg, set a breakpoint on `cpuid`, run to it, and once it returns, change `ecx` to clear bit 31 (AND with `0x7FFFFFFF`), then continue and confirm the program now reports it looks like a real machine. Finally try a static patch instead, changing the branch that checks bit 31 so it never treats the machine as a VM.
 
 Two questions to think about. Why is a single bit (ECX[31]) enough to give away a VM, while registry artifacts aren't nearly as reliable? And if a piece of malware combines five anti-VM checks, is patching each one in the debugger really the fastest approach, or is hardening the VM itself better?
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 15.5</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/15.5/src/antivm.c" download><i class="fa-solid fa-file-code"></i>src/antivm.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

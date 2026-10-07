@@ -72,6 +72,14 @@ Strings and constants are in the data section of linear memory, so look them up 
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 11.3</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/11.3.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/11.3/src/check.wat" download><i class="fa-solid fa-download"></i>src/check.wat</a>
+</div>
+</div>
+
 In this lab you take a WASM module, turn it into a readable form, find the function that checks the key, and work out the correct key. The source is `check.wat`, the WAT text of a small keygenme. Its exported function `check(ptr, len)` returns 1 if the key at `ptr` (of length `len`) is valid.
 
 You need wabt (the WebAssembly Binary Toolkit). Download a release from the wabt page, or use `apt install wabt` or `brew install wabt`, and check it with `wasm2wat --version`. First compile the WAT into a binary so you have a `.wasm` file like the real thing.
@@ -91,13 +99,6 @@ wasm-decompile check.wasm -o out.dcmp
 Find the exported function (the name is `check`) and read its logic in `out.wat` or `out.dcmp`. Find the target constant array in the data section (use `wasm-objdump -x`), placed at offset 256. Work out the transformation applied to each key byte and then reverse it to compute the correct key, which is 8 characters long. For an extra step, write a few lines of Python that rebuild the key from the target array.
 
 Two questions to think about. Why start reading from the exported function rather than the first function? And if the target array isn't in an instruction but in the data section, where do you look it up? Try it yourself before opening the solution.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 11.3</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/11.3/src/check.wat" download><i class="fa-solid fa-file-code"></i>src/check.wat</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

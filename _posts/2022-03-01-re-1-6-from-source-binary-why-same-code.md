@@ -72,6 +72,14 @@ During triage, knowing whether the file is stripped tells you how hard it will b
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 1.6</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/1.6.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/1.6/src/optdemo.c" download><i class="fa-solid fa-download"></i>src/optdemo.c</a>
+</div>
+</div>
+
 In this lab you take one small C program and build it several ways, then open each build in Ghidra (or IDA) to watch the optimizer work. The goal is to see inlining, loop unrolling and strength reduction yourself, and to feel the difference between a binary that still has symbols and one that has been stripped. The program is `optdemo.c`. It has a few deliberate baits for the optimizer, such as a tiny function that is easy to inline, a loop with a fixed trip count, and a multiplication and a division by constants.
 
 On Linux, gcc or clang both work. Build four variants to compare, namely an unoptimized build with symbols (the easiest to read), an `-O2` build with symbols (inlining and strength reduction show up), an `-O2` build that is then stripped (internal function names are gone), and optionally an `-O3` build to see even more aggressive optimization.
@@ -94,13 +102,6 @@ cl /O2 optdemo.c /Fe:optdemo_O2.exe
 Start by opening `optdemo_O0` and finding the four functions `square`, `sum_fixed`, `scale` and `compute`. They should all be there and call each other in a clear way. Then open `optdemo_O2` and answer a few questions. Do you still see `call square`, and where did `square` go? Is the loop in `sum_fixed` still a loop, or has it turned into a constant? What does `x * 8` become inside `scale`, and what does `x / 3` look like? Next open `optdemo_O2_stripped` and check what the functions are called now and what information you lost compared with the build that kept its symbols. Finally, work out how the optimization level and stripping change the difficulty of reversing the same logic.
 
 Two hints. `sum_fixed()` always returns 0+1+2+3 = 6, and the optimizer knows that at compile time, so ask yourself whether it still computes anything. And at `-O2` a division by 3 usually becomes an `imul` with a strange 32-bit constant (a reciprocal) followed by `shr` or `sar`, so don't mistake it for a real multiplication.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 1.6</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/1.6/src/optdemo.c" download><i class="fa-solid fa-file-code"></i>src/optdemo.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

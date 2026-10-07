@@ -77,6 +77,14 @@ The principle is the same as for every kind of packer, which is to find where th
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 13.4</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/13.4.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/13.4/src/guard.lua" download><i class="fa-solid fa-download"></i>src/guard.lua</a>
+</div>
+</div>
+
 The goal is to go through the full text to bytecode to decompiled cycle yourself, recognize the magic bytes, and recover the logic straight from bytecode. You need `lua` and `luac` (Lua 5.3 or 5.4, installable on Ubuntu with `apt install lua5.4`, or a prebuilt Windows binary), `unluac.jar` (needs Java, downloadable from the unluac repo), and a hex editor such as HxD or ImHex, or just `xxd`.
 
 The file to work with is `guard.lua`, a Lua script that checks a license key. The valid key gets transformed with `(byte + position) % 256` and compared against an array called `EXPECTED`, so the key itself doesn't sit plainly in the bytecode.
@@ -97,13 +105,6 @@ java -jar unluac.jar guard.luac > guard_out.lua
 Compare `guard_out.lua` with the original `guard.lua`. How much survives? Are the local variable names still there? Repeat the decompile on `guard_strip.luac`, the stripped build, and see what differs, and whether the logic is still readable. Finally, using only the `EXPECTED` array and the transform, work out the valid license key yourself by inverting the transform in a few lines of Python, then run `lua guard.lua` and type it in to confirm.
 
 Two questions to think about. Why does stripping remove local variable names but not the logic? And if the file turned out to be LuaJIT (`\x1bLJ` instead), would unluac read it, and which tool would you need instead?
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 13.4</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/13.4/src/guard.lua" download><i class="fa-solid fa-file-code"></i>src/guard.lua</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

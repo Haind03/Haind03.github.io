@@ -83,6 +83,14 @@ They all read the same thing, the IL and metadata in the assembly. They differ i
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 5.1</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/5.1.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/5.1/src/Program.cs" download><i class="fa-solid fa-download"></i>src/Program.cs</a>
+</div>
+</div>
+
 The goal is to confirm by hand what this lesson says, which is that a .NET file contains IL and metadata that keeps names, so it decompiles to something very close to the source. You don't strictly need the dotnet SDK. If you don't have it, use any .NET files you already have as samples. The tools are DIE (Detect It Easy), ILSpy and dnSpy.
 
 First recognize .NET with DIE. Drag `ILSpy.dll` (or `dnSpy.exe`) into DIE and confirm it reports a PE with an extra .NET / CLR label, and note which runtime it names (.NET Framework or modern .NET). Why is it still a PE, yet the code isn't in the `.text` section the way it would be in a plain C exe?
@@ -104,13 +112,6 @@ dotnet build -c Debug
 Open the resulting DLL (in `bin/Debug/netX/Hello5x.dll`) in ILSpy, find the method `Calculator.Add`, look at its IL and compare. Switch `SumTo` to IL and see how the `for` loop turns into a conditional jump.
 
 Two questions to think about. If an assembly is obfuscated so that every name becomes `a`, `b`, `c`, which part of the file is touched, the IL or the metadata (the hint is that both kinds of names live in the metadata)? And why can dnSpy edit code while ILSpy can't (see Lessons 5.2 and 5.4)?
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 5.1</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/5.1/src/Program.cs" download><i class="fa-solid fa-file-code"></i>src/Program.cs</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

@@ -76,6 +76,14 @@ I usually try ScyllaHide first because it covers almost the whole PEB group in o
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 15.2</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/15.2.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/15.2/src/peb_check.c" download><i class="fa-solid fa-download"></i>src/peb_check.c</a>
+</div>
+</div>
+
 The goal is to see an anti-debug check that calls no API, and to practice recognizing it in the disassembly and getting past it. The platform is Windows x64, since the file uses the PEB and so won't run on Linux. You need x64dbg, and optionally IDA or Ghidra and ScyllaHide. Build `peb_check.c` with MSVC:
 
 ```
@@ -93,13 +101,6 @@ Run `peb_check.exe` normally (double-click or in cmd), write down the output and
 In x64dbg, before the check code runs, set `BeingDebugged` to 0 and clear the three bits of `NtGlobalFlag`, then continue and see whether it still reports a detection. After that install ScyllaHide for x64dbg, turn it on and run again from the start without editing anything by hand, and compare the result.
 
 A few questions to think about. Why is a breakpoint at `IsDebuggerPresent` useless in this lab? Is patching `BeingDebugged` alone enough, or does `NtGlobalFlag` still give you away? And if you were writing a protector, what other sensitive offsets in the PEB could you read?
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 15.2</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/15.2/src/peb_check.c" download><i class="fa-solid fa-file-code"></i>src/peb_check.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

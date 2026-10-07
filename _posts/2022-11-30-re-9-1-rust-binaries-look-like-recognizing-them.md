@@ -53,6 +53,14 @@ My usual rhythm is to triage with DIE, confirm it's Rust, and note the rustc ver
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 9.1</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/9.1.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/9.1/src/main.rs" download><i class="fa-solid fa-download"></i>src/main.rs</a>
+</div>
+</div>
+
 The task is to see the traits of a Rust binary this lesson describes, namely name mangling, panic strings, and the effect of the optimization level. You need `rustc`, and optionally `rustfilt` (install it with `cargo install rustfilt`). Check with `rustc --version`. If your machine has no Rust toolchain, read the solution to see the described results and you can still follow the lesson.
 
 Build three variants from `main.rs`. The debug build is `rustc main.rs -o rust_demo_dbg`, the release build is `rustc -O main.rs -o rust_demo_rel`, and the v0 mangling build is `rustc -O -C symbol-mangling-version=v0 main.rs -o rust_demo_v0`. Compare the sizes of the three files and think about why they are all large even though the program is tiny. Then look for panic strings:
@@ -71,13 +79,6 @@ nm rust_demo_v0 | grep '_R' | rustfilt | head -40
 Compare the legacy mangled names (`_ZN...`) with v0 (`_R...`), and work out what the `h...` hash at the end of a legacy name is. Finally compare debug and release in Ghidra or IDA by opening the function `transform`. In release, does the iterator chain `.bytes().enumerate().map().fold()` keep its function boundaries, or has it been inlined into one flat loop?
 
 Two questions to think about. If the binary is stripped of all symbols, what anchors do you still have to locate the author's functions? And why does experience reading C++ (Part 4) carry over to Rust while Go experience (Part 8) carries over less?
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 9.1</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/9.1/src/main.rs" download><i class="fa-solid fa-file-code"></i>src/main.rs</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

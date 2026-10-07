@@ -110,6 +110,17 @@ Set a time limit as well. If you're stuck on one for more than two evenings, rea
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 20.1</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/20.1.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/20.1/src/keygen_level3.py" download><i class="fa-solid fa-download"></i>src/keygen_level3.py</a>
+<a class="lab-file" href="/assets/labs/20.1/src/level1.c" download><i class="fa-solid fa-download"></i>src/level1.c</a>
+<a class="lab-file" href="/assets/labs/20.1/src/level2.c" download><i class="fa-solid fa-download"></i>src/level2.c</a>
+<a class="lab-file" href="/assets/labs/20.1/src/level3.c" download><i class="fa-solid fa-download"></i>src/level3.c</a>
+</div>
+</div>
+
 The goal is to practice on real challenges and use everything you've learned. The main task has two parts. In Part A, go to crackmes.one and create an account (you need one to download, and the archive password is always `crackmes.one`). Filter for Difficulty = 1, high Quality, Language = C/C++ and a Platform that fits your machine. Solve at least 3 level-1 challenges, then 3 level-2 ones, inside a VM, and write a writeup for each, covering what triage showed, where the check function is, how you solved it, and what the password or serial is. When you're comfortable, move up to level 3 (keygen) and then level 4 (with anti-reverse). Use the loop from Lesson 0.4, which is triage, static, dynamic, notes.
 
 Part B is three crackmes that come with the lab, `level1.c`, `level2.c` and `level3.c`, representing levels 1 to 3. Build them on Linux (or with MinGW on Windows):
@@ -123,16 +134,6 @@ gcc -O0 -o level3 level3.c
 For level1 (tier 1), find the password or patch it. Running `strings level1 | grep -i flag` shows the password right away, or you can open a decompiler, find `strcmp`, and patch the `jne` after `test eax,eax` into `nop nop` so the check always passes. For level2 (tier 2), the serial is transformed. `strings` doesn't show the password, so open a decompiler and recognize the loop that compares `(c ^ 0x2A) + 3` against the `TARGET` array in `.rodata`, then reverse it by subtracting 3 and XORing back to get the serial. For level3 (tier 3), write a keygen. Reverse the function that computes the serial from the username (a linear hash that multiplies by 33, XORs with a constant and prints 8 hex characters), copy the algorithm to Python (`keygen_level3.py`), and generate a serial for any username. Run `python3 keygen_level3.py <username>` and then enter the username/serial pair into level3.
 
 For an extra challenge, try Z3 or angr on level3 instead of writing the keygen by hand, to get used to solver thinking for more complex challenges. You can also add an XOR layer to the "Correct!" string of one level yourself and practice solving it dynamically in a debugger. Do it yourself before opening the solution.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 20.1</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/20.1/src/keygen_level3.py" download><i class="fa-solid fa-file-code"></i>src/keygen_level3.py</a>
-<a class="lab-file" href="/assets/labs/20.1/src/level1.c" download><i class="fa-solid fa-file-code"></i>src/level1.c</a>
-<a class="lab-file" href="/assets/labs/20.1/src/level2.c" download><i class="fa-solid fa-file-code"></i>src/level2.c</a>
-<a class="lab-file" href="/assets/labs/20.1/src/level3.c" download><i class="fa-solid fa-file-code"></i>src/level3.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

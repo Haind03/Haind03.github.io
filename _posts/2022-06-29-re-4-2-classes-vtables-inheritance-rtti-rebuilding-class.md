@@ -90,6 +90,14 @@ A binary compiled with `-fno-rtti` won't have these strings. The vtables are sti
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 4.2</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/4.2.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/4.2/src/shapes.cpp" download><i class="fa-solid fa-download"></i>src/shapes.cpp</a>
+</div>
+</div>
+
 The goal is to find a vtable yourself in a C++ binary, recognize the vptr at the start of an object, and rebuild the inheritance relationships between classes. The source is `shapes.cpp`, with a base class `Shape` (which has virtual functions) and two derived classes, `Circle` and `Rectangle`. Build it in one of these ways. On Linux, easiest to read:
 
 ```sh
@@ -119,13 +127,6 @@ Open the binary in IDA or Ghidra and run auto-analysis. Start by finding the vta
 Next recognize the vptr in an object. Find the `report` function and spot the asm that loads the vptr from offset 0 of the object and then calls indirectly. This is the "two dereferences then `call [reg]`" pattern. In the same function find where `s->id` is read. At which offset in the object is it, and why isn't it offset 0? After that, find the constructors, the functions that write a vtable address into offset 0 of a new object. Which vtable does the constructor of `Circle` write, and which does that of `Rectangle`? Using the vtables and constructors, draw the relationships, meaning which class is the parent and which are the children.
 
 Finally compare builds with and without RTTI. Open both `shapes` and `shapes_nortti`. In the RTTI build, look for the class name strings (`Circle`, `Rectangle`) in the strings. Does the `-fno-rtti` build still have them, and does it still have the vtables? There are two questions to think about. If you change `Shape*` to a pointer to a concrete derived class and call the function, is the call still indirect through the vtable, and why can the compiler call directly (devirtualization)? And why is the destructor usually in the vtable?
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 4.2</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/4.2/src/shapes.cpp" download><i class="fa-solid fa-file-code"></i>src/shapes.cpp</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

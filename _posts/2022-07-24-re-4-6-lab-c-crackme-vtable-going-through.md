@@ -81,6 +81,14 @@ Names with `::` and parameters after demangling, plus class name strings from RT
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 4.6</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/4.6.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/4.6/src/crackme.cpp" download><i class="fa-solid fa-download"></i>src/crackme.cpp</a>
+</div>
+</div>
+
 The file `crackme.cpp` is a C++ crackme whose check function is called through a virtual function (the vtable) rather than a direct call. The goal is to find the password. The source contains the build commands as well. On Linux or macOS:
 
 ```
@@ -102,13 +110,6 @@ g++ -O0 -std=c++17 -o crackme.exe crackme.cpp
 Run it as `./crackme <password>`. Start with triage. Use DIE to confirm the compiler, use `nm -C` (or let IDA/Ghidra demangle) to see the class and method names, and look for the RTTI strings (`SerialValidator`, `Validator`) in the Strings view. Then open the binary in IDA or Ghidra, find `main`, and identify where the object is created (`new`) and where `check` is called. Point out the asm that makes the virtual call, recognizing the two dereferences (object to vtable to function pointer) and the `call reg` instruction. Trace to the real `check` function in one of two ways, either read the vtable through RTTI, or set a breakpoint at the `call reg` and read the register. Read the logic in `check` to find the required length, the transform applied to each character, and the array of constants it compares against. Invert the transform to compute the password, writing a few lines of Python if you need to, and finally run `./crackme <your_password>` to confirm it prints "Correct!".
 
 Some questions to think about. Why does the `check` call site have no arrow to the target function in IDA's graph? If the class has many virtual functions, how do you know which vtable slot is `check`? And this check algorithm is invertible, so what if it used a one-way hash instead? Do it yourself before opening the solution.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 4.6</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/4.6/src/crackme.cpp" download><i class="fa-solid fa-file-code"></i>src/crackme.cpp</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

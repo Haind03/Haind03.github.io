@@ -65,6 +65,18 @@ The same technique is used for extracting configs and understanding malware C2 p
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 18.7</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/18.7.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/18.7/src/make_savefile.py" download><i class="fa-solid fa-download"></i>src/make_savefile.py</a>
+<a class="lab-file" href="/assets/labs/18.7/src/parse_savefile.py" download><i class="fa-solid fa-download"></i>src/parse_savefile.py</a>
+<a class="lab-file" href="/assets/labs/18.7/src/save_alice.sav" download><i class="fa-solid fa-download"></i>src/save_alice.sav</a>
+<a class="lab-file" href="/assets/labs/18.7/src/save_bob.sav" download><i class="fa-solid fa-download"></i>src/save_bob.sav</a>
+<a class="lab-file" href="/assets/labs/18.7/src/save_rich.sav" download><i class="fa-solid fa-download"></i>src/save_rich.sav</a>
+</div>
+</div>
+
 The goal is to take a few data samples, work out the structure of a proprietary file format yourself, and write a parser, without reading the spec first. You need `python3` (for the generator and the parser) and a hex editor (ImHex, 010 Editor, or the `xxd` command). Run the generator, which produces `save_alice.sav`, `save_bob.sav` and `save_rich.sav`:
 
 ```
@@ -78,17 +90,6 @@ Hexdump all three files (`xxd save_alice.sav` and so on) and find the common mag
 As an extension, write an ImHex pattern (`.hexpat`) that describes this format, so the tool colors each field when you open a `.sav` file (see Lesson 2.7 again). You can also edit the gold amount in a `.sav` file with a hex editor and then recompute the checksum so the file stays valid. That step is what turns "can read" into "can create".
 
 Three questions to think about. Why is differential analysis (comparing several samples that differ in one detail) faster than guessing byte by byte? What if you have no generator to produce samples at will (the hint is to work inside the program that produces the file, changing one value each time)? And when are you forced to open the binary and read the parse function instead of just looking at the data?
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 18.7</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/18.7/src/make_savefile.py" download><i class="fa-solid fa-file-code"></i>src/make_savefile.py</a>
-<a class="lab-file" href="/assets/labs/18.7/src/parse_savefile.py" download><i class="fa-solid fa-file-code"></i>src/parse_savefile.py</a>
-<a class="lab-file" href="/assets/labs/18.7/src/save_alice.sav" download><i class="fa-solid fa-file"></i>src/save_alice.sav</a>
-<a class="lab-file" href="/assets/labs/18.7/src/save_bob.sav" download><i class="fa-solid fa-file"></i>src/save_bob.sav</a>
-<a class="lab-file" href="/assets/labs/18.7/src/save_rich.sav" download><i class="fa-solid fa-file"></i>src/save_rich.sav</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

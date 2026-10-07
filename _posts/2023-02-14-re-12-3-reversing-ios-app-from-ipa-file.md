@@ -91,6 +91,14 @@ A common mistake is forgetting that App Store apps are still FairPlay encrypted,
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 12.3</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/12.3.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/12.3/src/hook.js" download><i class="fa-solid fa-download"></i>src/hook.js</a>
+</div>
+</div>
+
 The task is to dump, analyze and hook an iOS app. You need a jailbroken iOS device (or an equivalent virtual device), because that is required to dump the decrypted binary and hook the runtime. On the device `frida-server` must be running, along with OpenSSH. On the host you need Python, `frida`, `frida-tools`, `objection` and `frida-ios-dump`. Use an app you made yourself or one you have permission to test, never someone else's app. Set up the host with:
 
 ```
@@ -125,13 +133,6 @@ frida -U -f com.example.myapp -l hook.js
 ```
 
 A few questions to think about. Why can't you skip the dump step and analyze the App Store binary directly? What is `args[1]` in an ObjC hook, and why do the real parameters start at `args[2]`? And if you don't have a jailbroken device, what other ways are there to learn iOS RE?
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 12.3</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/12.3/src/hook.js" download><i class="fa-solid fa-file-code"></i>src/hook.js</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

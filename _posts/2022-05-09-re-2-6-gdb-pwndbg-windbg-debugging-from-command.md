@@ -121,6 +121,14 @@ People who've been at it a long time use all three. Tools are just tools.
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 2.6</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/2.6.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/2.6/src/login.c" download><i class="fa-solid fa-download"></i>src/login.c</a>
+</div>
+</div>
+
 The file `login.c` is a small, harmless C program with a password check function, and it runs fine on an ordinary Linux machine. The goal is to get used to the rhythm of setting breakpoints, reading arguments through registers, and changing state at runtime to alter the flow, all from the command line. You need Linux (or WSL), gcc, gdb, and ideally pwndbg installed.
 
 Build it and try one run to see the behavior:
@@ -135,13 +143,6 @@ Wrong password.
 The rules are simple. Don't open `login.c`, and don't guess the password by eye. Use only GDB. Load the program into GDB and set the Intel syntax with `set disassembly-flavor intel`. Set a breakpoint at the function `check_password`, run, type any password, and let the program stop at the start of the function. The function receives the string you typed, so work out which register holds the first parameter on Linux x86-64 and read it with the `x` command. Inside the function there's a call to `strcmp`. Set a breakpoint there, run to it, and read both arguments of `strcmp`. One of them is the correct password, so write it down. Then quit and run again, this time typing a wrong password, but use GDB to change the return value of `check_password` (which register holds it?) so the program still prints "Correct!". For an extra challenge, rebuild without `-no-pie`, watch the addresses change on each run (ASLR), and use `vmmap` to see the real base.
 
 Some hints. For the first parameter on System V x86-64, see [Lesson 1.4](/posts/re-1-4-x86-x64-assembly-2-stack-frames/). To read a string at the address in a register, use `x/s $reg`. The return value is in `rax`, and to change it at the right moment, break where the function is about to `ret`, or use `finish` and then `set $rax=1` before `main` checks it. Try it yourself before opening the solution.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 2.6</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/2.6/src/login.c" download><i class="fa-solid fa-file-code"></i>src/login.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

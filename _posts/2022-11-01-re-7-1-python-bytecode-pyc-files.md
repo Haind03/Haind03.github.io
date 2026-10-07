@@ -111,6 +111,14 @@ This lesson is the foundation, meaning knowing what a `.pyc` contains and how to
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 7.1</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/7.1.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/7.1/src/checker.py" download><i class="fa-solid fa-download"></i>src/checker.py</a>
+</div>
+</div>
+
 In this lab you check what the lesson describes, using the `python3` on your own machine. All you need is Python 3 (`python3 --version`). The lab was checked on Python 3.11.9. On another version the magic number and a few opcodes will differ, which is what you're meant to observe.
 
 The program is `checker.py`, a tiny crackme whose `check` function adds up the ASCII codes of the characters and compares the sum with `0x29A`. In the folder that holds it, run the following to disassemble `check` and read the bytecode, and find which instruction carries the secret constant `0x29A`.
@@ -138,13 +146,6 @@ PY
 Compare the first 4 bytes (the magic) with the table in the lesson to confirm your Python version. For an extra step, use `marshal` to load the code object from the `.pyc` (skipping the 16-byte header) and print `co_consts` and `co_varnames`. Do you see the secret `666` in `co_consts`?
 
 Two questions to think about. Why is reading `co_consts` enough to give away this crackme's secret, before you even understand the bytecode? And if you switched to Python 3.8, which bytes in the header would change?
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 7.1</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/7.1/src/checker.py" download><i class="fa-solid fa-file-code"></i>src/checker.py</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

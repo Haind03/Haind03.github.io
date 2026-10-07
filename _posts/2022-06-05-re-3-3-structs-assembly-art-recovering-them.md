@@ -111,6 +111,14 @@ Same code, but you can read the second one in two seconds. Multiply that by hund
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 3.3</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/3.3.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/3.3/src/inventory.c" download><i class="fa-solid fa-download"></i>src/inventory.c</a>
+</div>
+</div>
+
 The goal is to recognize a struct in a binary and rebuild it in IDA or Ghidra, watching the pseudocode change from `*(a1 + N)` to `player->field`. Build `inventory.c` unoptimized so it stays readable, with one of these commands:
 
 ```
@@ -127,13 +135,6 @@ gcc -O0 -g -o inventory.exe inventory.c
 Open the binary in your tool and run auto-analysis. Find the two functions `update_player` and `print_player`. If the binary is stripped, start from the format string in `print_player` (the one containing `id=`, `score=` and so on) and follow the xref back. Read the pseudocode of `update_player` before assigning any struct and write down every offset accessed on the first pointer parameter. Then rebuild `struct Player` in the tool, inferring each field's type from how it is used. A 4-byte read is an int, a 1-byte access is a char, and use with a double instruction means a double. Assign `Player *` to the parameter of both `update_player` and `print_player` and read the pseudocode again. Finally, check `sizeof` and the offsets against your layout, paying attention to the padding.
 
 Some questions to think about. Why does `score` sit at offset 8 and not 5, even though `rank` takes only 1 byte? Why is `sizeof(struct Player)` 48 and not the sum of the fields (4+1+4+16+8+4 = 37)? And which field gets the most padding in front of it, and why?
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 3.3</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/3.3/src/inventory.c" download><i class="fa-solid fa-file-code"></i>src/inventory.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

@@ -91,13 +91,13 @@ Two questions to think about. Why can't you pull the flag out of this binary wit
 Do it yourself first. The reference solution is `solve_z3.py`, and the full write-up with real run results is below.
 
 <div class="lab-box">
-<div class="lab-head"><b>LAB 16.4</b>source files</div>
+<div class="lab-head"><b>LAB 16.4</b>Download the source files for this lab</div>
 <div class="lab-files">
-<a class="lab-file" href="/assets/labs/16.4/solve_z3.py" download><i class="fa-solid fa-file-code"></i>solve_z3.py</a>
-<a class="lab-file" href="/assets/labs/16.4/src/crackme.c" download><i class="fa-solid fa-file-code"></i>src/crackme.c</a>
+<a class="lab-file lab-all" href="/assets/labs/16.4.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/16.4/solve_z3.py" download><i class="fa-solid fa-download"></i>solve_z3.py</a>
+<a class="lab-file" href="/assets/labs/16.4/src/crackme.c" download><i class="fa-solid fa-download"></i>src/crackme.c</a>
 </div>
 </div>
-
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>
 

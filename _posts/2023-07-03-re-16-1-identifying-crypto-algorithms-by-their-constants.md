@@ -53,18 +53,19 @@ Sophisticated malware sometimes doesn't leave constants in the open. It may buil
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 16.1</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/16.1.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/16.1/src/hashdemo.c" download><i class="fa-solid fa-download"></i>src/hashdemo.c</a>
+</div>
+</div>
+
 The task is to see the magic constants of crypto algorithms in a binary, and to use automatic tools to narrow down the region. The file `hashdemo.c` is a program that embeds the MD5 init values, MD5's T table, and the TEA delta. Build it on Linux with `gcc -O0 -o hashdemo hashdemo.c`, or on Windows with `gcc -O0 -o hashdemo.exe hashdemo.c` or `cl hashdemo.c`. For tools you can use Detect It Easy, IDA with FindCrypt, Ghidra with FindCrypt-Ghidra, or capa.
 
 Build `hashdemo` and open it in IDA or Ghidra, then run FindCrypt (IDA) or FindCrypt-Ghidra and see which region it marks and which algorithm it names. Next search by hand, using a byte-sequence search for `01 23 45 67` (which is `0x67452301` in little-endian) and note which section it lands in. If you have capa, run `capa hashdemo` and see which capabilities it reports. Then open `tea_round` in the disassembly and check whether the constant `0x9E3779B9` appears intact, and if not, what the compiler turned it into. Finally, confirm that each constant you found matches an algorithm in the table of this lesson.
 
 Two questions to think about. Why does `0x67452301` appear in the binary as the bytes `01 23 45 67` (the hint is little-endian, Lesson 1.1)? And if a programmer changed the MD5 init values to other numbers (a "custom" MD5), could FindCrypt still catch it, and how else would you recognize it? Do it yourself before opening the solution.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 16.1</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/16.1/src/hashdemo.c" download><i class="fa-solid fa-file-code"></i>src/hashdemo.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

@@ -64,6 +64,14 @@ One reminder is that when the target is real malware, everything in this lesson 
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 2.8</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/2.8.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/2.8/src/watchme.c" download><i class="fa-solid fa-download"></i>src/watchme.c</a>
+</div>
+</div>
+
 This lab builds a behavior profile with monitoring tools only, no debugger. The target is `watchme.c`, a harmless program I wrote, so it's fine to run on a normal machine. When you use the same workflow on real malware, do it in an isolated VM as described in [Lesson 0.3](/posts/re-0-3-set-up-safe-lab-before-touching/).
 
 On Windows with an MSVC Developer Command Prompt, build it with:
@@ -93,13 +101,6 @@ strace -f -e trace=open,openat,read,write ./watchme
 ```
 
 Two questions to think about. If `watchme` wrote the file and then ran it, which malware technique would that Procmon pattern resemble? And why is filtering by process name almost always the first step?
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 2.8</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/2.8/src/watchme.c" download><i class="fa-solid fa-file-code"></i>src/watchme.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

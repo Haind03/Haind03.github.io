@@ -82,6 +82,14 @@ Every JNI function has two hidden leading parameters, `JNIEnv* env` (x0) and `jo
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 6.7</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/6.7.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/6.7/src/native-lib.c" download><i class="fa-solid fa-download"></i>src/native-lib.c</a>
+</div>
+</div>
+
 The goal is to practice bridging from a `native` method in Java to the exact function in the `.so` library, using both naming schemes (the convention and dynamic registration). You need an APK that has a native library (most games and banking apps do), either your own app or a legal practice APK, plus Ghidra (or IDA) and JADX.
 
 Open the APK in JADX and find a class with a method declared `native`. Write down the package, the class name, the method name and the parameter and return types. Unpack the APK (rename it to .zip or use `unzip`), go to `lib/arm64-v8a/` and take the `.so` whose name matches the string in `System.loadLibrary`. Drag that `.so` into Ghidra and run auto-analysis.
@@ -91,13 +99,6 @@ For the first way, in the Symbol Tree or the Functions list, filter on the strin
 Then open the native function you found in the decompiler. Work out which register your string parameter is in (remember to skip the first two JNI parameters), and find the call to `GetStringUTFChars` to see where it starts processing the input. To compare, `native-lib.c` is a small JNI example in C that shows both naming schemes, with build instructions for the Android NDK in its header comment. Read it to see what pattern the original code produces before you go looking in someone else's `.so`.
 
 Two questions to think about. Why is `RegisterNatives` harder to trace than the conventional name, yet it always leaves a trail in `JNI_OnLoad`? And if an app uses Java but pushes the core check down into a `.so`, should you start from Java or from native, and why?
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 6.7</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/6.7/src/native-lib.c" download><i class="fa-solid fa-file-code"></i>src/native-lib.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

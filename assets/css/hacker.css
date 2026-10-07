@@ -508,3 +508,17 @@ details.lab-solution[open] > :not(summary) { animation: cp-line .3s ease-out bot
 .content img:not(.no-popup) { max-height: 520px; width: auto !important; max-width: 100%; height: auto !important; object-fit: contain; }
 .content a.img-link, .content a.popup { display: block; text-align: center; }
 @media (max-width: 767px) { .content img:not(.no-popup) { max-height: 420px; } }
+
+/* lab download box: make it obvious */
+.lab-box { border-color: rgb(252 238 10 / 45%) !important; }
+.lab-box .lab-head { font-size: .78rem; color: var(--cp-text); }
+.content .lab-box a.lab-file.lab-all { background: var(--cp-yellow); color: #07090f !important; border-color: var(--cp-yellow) !important; font-weight: 700; }
+.content .lab-box a.lab-file.lab-all i { color: #07090f; }
+.content .lab-box a.lab-file.lab-all:hover { background: var(--cp-cyan); border-color: var(--cp-cyan) !important; }
+
+/* categories: whole row is clickable, the expand arrow stays on top */
+.categories .card-header, .categories .list-group-item { position: relative; }
+.categories .card-header > span a::after,
+.categories .list-group-item a::after { content: ''; position: absolute; inset: 0; z-index: 1; }
+.categories .category-trigger { position: relative; z-index: 2; }
+.categories .card-header:hover, .categories .list-group-item:hover { background: rgb(0 240 255 / 6%) !important; cursor: pointer; }

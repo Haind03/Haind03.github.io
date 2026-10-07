@@ -74,6 +74,15 @@ Same spirit as lesson 0.2. Analyzing a driver to understand what it does, testin
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 18.6</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/18.6.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/18.6/src/Makefile" download><i class="fa-solid fa-download"></i>src/Makefile</a>
+<a class="lab-file" href="/assets/labs/18.6/src/hello_ioctl.c" download><i class="fa-solid fa-download"></i>src/hello_ioctl.c</a>
+</div>
+</div>
+
 The goal is to get familiar with the structure of a `.ko` kernel module, find its entry point and how it talks to user mode, and then compare the disassembly with the source. A safety warning first, only `insmod` the module in a Linux VM you use for learning, never on your main machine. This lab doesn't require loading the module into a kernel. You only need to build the `.ko` and open it in Ghidra to read it, and if you do want to load it, do it in a VM with a snapshot.
 
 To build the module you need the kernel headers:
@@ -93,14 +102,6 @@ The result is `hello_ioctl.ko`. If it won't build (missing headers, or a WSL env
 Run `modinfo hello_ioctl.ko` and read the `.modinfo` section. What are the license, description and author? Open `hello_ioctl.ko` in Ghidra (import it as an ELF) and find the function that `module_init` points to. A hint is to look at the symbol `init_module` or the `.init.text` section. Find the module's `file_operations` struct and see which functions the `.open` and `.unlocked_ioctl` pointers lead to. Go into the ioctl handler and rebuild the table of IOCTL codes (the commands user mode sends down) and what each one does. Finally, compare what you found with `hello_ioctl.c` and see how much of it was right.
 
 Two questions to think about. Why is a kernel module often easier to read than a stripped Windows driver? And if this module hooked `sys_call_table` instead of creating a character device, where would you look for that sign?
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 18.6</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/18.6/src/Makefile" download><i class="fa-solid fa-file"></i>src/Makefile</a>
-<a class="lab-file" href="/assets/labs/18.6/src/hello_ioctl.c" download><i class="fa-solid fa-file-code"></i>src/hello_ioctl.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

@@ -127,6 +127,15 @@ The Frida host and frida-server (on Android/iOS) must be the same version, and a
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 17.2</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/17.2.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/17.2/src/hook.js" download><i class="fa-solid fa-download"></i>src/hook.js</a>
+<a class="lab-file" href="/assets/labs/17.2/src/target.c" download><i class="fa-solid fa-download"></i>src/target.c</a>
+</div>
+</div>
+
 The goal is to use Frida to hook the compare function of a program so that you (1) see the correct string it compares your input against, and (2) force the return value to pass the check without knowing the password. Install Frida with `pip install frida-tools` (you need `frida` and `frida-trace` on your PATH). Then build the target, `target.c`. On Linux:
 
 ```
@@ -149,14 +158,6 @@ frida -l hook.js -f ./target
 Enter any string and watch the line `[strcmp] '...' vs '...'`. One side is your input and the other is the correct password. Enter the password that was just revealed and confirm you get `Correct!`. Then open `hook.js` and uncomment the line `retval.replace(0);` in `onLeave`. Run again, enter any wrong string, and this time it still prints `Correct!` because every `strcmp` is forced to return 0.
 
 Some questions to think about. Why does hooking `strcmp` in libc catch the password comparison without your needing to know where `main` is? If the program wrote its own byte-by-byte comparison loop instead of calling `strcmp`, would this still work, and where would you hook then? And does forcing `retval` past the check reveal the real password? When do you need the real password and when is passing the check enough?
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 17.2</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/17.2/src/hook.js" download><i class="fa-solid fa-file-code"></i>src/hook.js</a>
-<a class="lab-file" href="/assets/labs/17.2/src/target.c" download><i class="fa-solid fa-file-code"></i>src/target.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

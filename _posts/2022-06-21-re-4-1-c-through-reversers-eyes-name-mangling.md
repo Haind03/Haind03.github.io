@@ -83,6 +83,14 @@ When you see all three, stop thinking "standalone C function" and think in objec
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 4.1</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/4.1.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/4.1/src/counter.cpp" download><i class="fa-solid fa-download"></i>src/counter.cpp</a>
+</div>
+</div>
+
 The goal is to see how C++ mangles function names and where the this pointer gets passed. You'll build a small class from `counter.cpp`, look at the mangled names in the binary, demangle them, and point out the this pointer in rdi/rcx in a method call. Build it with one of these:
 
 ```
@@ -96,13 +104,6 @@ First look at the mangled names. On Linux run `nm counter | grep -i counter` and
 Then find the this pointer. Open the binary in IDA or Ghidra (or use `objdump -d -M intel counter`), find `main` and look at the code that calls `c.add(5)`. Which argument is loaded into rdi (Linux) or rcx (Windows) just before the `call`, and what is that value? In the call `c.add(1, 2)`, three things are loaded before the call, this and the two numbers. Which registers do they go into, and in what order?
 
 If you have MSVC, build with it too and compare its `?...@@` style of mangled names with the `_ZN...` style of GCC, using `undname` to demangle. Two more questions to think about. If the binary is stripped of symbols, can you still demangle, and how would you tell which class a function is a method of? And if a function's pseudocode is full of `a1->field`, what is `a1` most likely to be?
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 4.1</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/4.1/src/counter.cpp" download><i class="fa-solid fa-file-code"></i>src/counter.cpp</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

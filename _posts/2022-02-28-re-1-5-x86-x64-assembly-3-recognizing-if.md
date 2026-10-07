@@ -173,6 +173,14 @@ Don't just memorize these. The best way is to write your own C code, build it, a
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 1.5</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/1.5.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/1.5/src/structures.c" download><i class="fa-solid fa-download"></i>src/structures.c</a>
+</div>
+</div>
+
 The file `structures.c` has all five constructs above, one function each. `sum_array` is a loop plus access to an int array, `classify` is a multi-level nested if/else, `action_name` is a switch with five consecutive cases (a jump table candidate), and `level_up` accesses a struct through offsets. The goal is to point out the loop, the nested if, the switch jump table, the array access and the struct access by hand in a real binary, and match the asm against source you already know.
 
 Build it at both optimization levels. The `-O0` build follows the templates closely and is easy to read, while the `-O2` build shows how much harder real-world code is.
@@ -194,13 +202,6 @@ cl /O2 structures.c
 Open the binary in Ghidra (import, then auto-analyze) or IDA, go through each function in turn and answer a few questions. In `sum_array`, find the instruction that jumps backward to mark the loop, and work out the scale factor used for the array access and how it matches the `int` type. In `classify`, count the `cmp` plus conditional jump pairs and redraw the if/else tree from the jump labels. In `action_name`, decide whether the compiler built a jump table or translated the switch into an if/else chain, and if there is a table, find its address and entries. In `level_up`, list which offsets are added to the struct pointer and match them to the fields of `struct Player`. Finally compare `sum_array` between `-O0` and `-O2`. Does the counter `i` still live on the stack at `-O2` or does the compiler keep it in a register, and is the loop distorted by unrolling or a changed condition form?
 
 A few hints. Use the graph view (the `Space` key in IDA) to see the branching blocks instead of reading text. In Ghidra the decompiler window (double-click a function) gives an approximate C version to compare with, but try reading the asm yourself first and only then open the decompiler to check. If you can't spot a jump table, look for a `jmp` to a register (an indirect jump) with a `*8` (x64) or `*4` (x86) computation right before it. Compare on your own first and open the solution when you're finished.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 1.5</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/1.5/src/structures.c" download><i class="fa-solid fa-file-code"></i>src/structures.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

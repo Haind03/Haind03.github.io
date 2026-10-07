@@ -98,6 +98,14 @@ When I open a C binary, before reading any function I check whether the file is 
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 3.4</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/3.4.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/3.4/src/greet.c" download><i class="fa-solid fa-download"></i>src/greet.c</a>
+</div>
+</div>
+
 In this lab you look at the many functions in a static binary, then use FLIRT to clear it away so only the author's code is left. The source is `greet.c`. The program has only two functions written by the author (`make_tag` and `main`), and everything else in a static binary is libc and CRT.
 
 Build two variants on Linux:
@@ -113,13 +121,6 @@ ls -l greet_dyn greet_static
 Now apply FLIRT. In IDA, press `Shift+F5` (Signatures), press `Ins`, and pick the libc set matching the GCC on your machine. When the scan finishes, count how many functions got real names (`strlen`, `snprintf`, `printf`, `malloc` and so on). The "Applied" column gives the number. Filter the Functions table to drop the functions that already have library names. The remaining `sub_` entries are the author's code, so confirm that `main` and `make_tag` are in that small group. Optionally, open the same `greet_static` in Ghidra, try `Tools > Function ID`, and compare its coverage with IDA's FLIRT.
 
 Two questions to think about. Why is the static build harder for an analyst even though it's more convenient to run? And if FLIRT names no function at all, what does that say about the signature set you chose?
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 3.4</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/3.4/src/greet.c" download><i class="fa-solid fa-file-code"></i>src/greet.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

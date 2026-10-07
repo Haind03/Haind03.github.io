@@ -98,6 +98,14 @@ All three are the compiler generating extra code around the author's real logic.
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 4.4</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/4.4.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/4.4/src/modern.cpp" download><i class="fa-solid fa-download"></i>src/modern.cpp</a>
+</div>
+</div>
+
 The file `modern.cpp` shows what three pieces of modern C++ turn into at the binary level, so you aren't thrown off when you meet them in a decompiler later. The task is to build it, then find the two instantiations `add_one<int>` and `add_one<double>` in the symbols and compare their asm, find the lambda's `operator()` and identify which is `this` and which is the capture field, and mark out the try/catch block by finding the throw call and the handler that sits apart from it.
 
 On Linux:
@@ -132,13 +140,6 @@ Start with the template. List the symbols and look for the two copies of `add_on
 For the exceptions, find the throw call in `main` or `safe_div`. On Linux look for `__cxa_throw` and `__cxa_allocate_exception`, and with MSVC look for `_CxxThrowException`. Work out where the catch block sits. On Linux, watch for blocks of code after the function's `ret` that the main flow never jumps to, which are landing pads. With MSVC you can also open the binary in PE-bear and find the `.pdata` and `.xdata` sections, which hold the unwind data for exceptions.
 
 Two questions to think about. If a program uses both `std::vector<int>` and `std::vector<std::string>`, how many sets of vector functions do you expect in the binary? And why would capture by value and capture by reference give different field layouts in the closure? Do it yourself before opening the solution.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 4.4</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/4.4/src/modern.cpp" download><i class="fa-solid fa-file-code"></i>src/modern.cpp</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

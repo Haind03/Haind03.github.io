@@ -75,6 +75,14 @@ Most beginners avoid Rust because the decompiler gives confusing inlined code. T
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 9.3</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/9.3.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/9.3/src/main.rs" download><i class="fa-solid fa-download"></i>src/main.rs</a>
+</div>
+</div>
+
 The goal is to recognize a Rust binary, work your way to the check function through panic strings and symbols, read the algorithm that transforms the password, and then reverse it to find a valid key. You don't patch anything, you understand it and write a keygen. The source is `main.rs`, and the optimized build, which looks more like a real binary (inlined iterators, merged functions), is:
 
 ```
@@ -92,13 +100,6 @@ Try a wrong password first with `./crackme WRONG_PASSWORD`, which prints `Nope.`
 Use Detect It Easy or `strings` to confirm it's a Rust binary (look for strings related to rustc, panic, and `.rs` paths). Open it in Ghidra or IDA and use the panic strings and symbol names (if not stripped) to find the `check` function. Find the 12-byte constant array in `.rodata` (the `EXPECTED` array), then read the transformation applied to each input character before the comparison. Write a snippet of Python (or Rust) that reverses it to recover the password from the constant array, run `./crackme <password>`, and confirm you get the `Correct!` line.
 
 Some hints. A Rust `String`/`&str` stores a pointer plus a length and isn't null-terminated, and the constant array is also a contiguous block of bytes in `.rodata`. The password length is the length of the `EXPECTED` array, which is the first thing to find. The transformation is reversible (add the index, then XOR), so reversing it means XOR first, then subtract the index. Do it yourself before opening the solution.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 9.3</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/9.3/src/main.rs" download><i class="fa-solid fa-file-code"></i>src/main.rs</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

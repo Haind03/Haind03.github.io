@@ -93,6 +93,15 @@ A compiler version or optimization flag change between the two builds drops simi
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 18.4</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/18.4.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/18.4/src/login_v1.c" download><i class="fa-solid fa-download"></i>src/login_v1.c</a>
+<a class="lab-file" href="/assets/labs/18.4/src/login_v2.c" download><i class="fa-solid fa-download"></i>src/login_v2.c</a>
+</div>
+</div>
+
 The goal is to compare two versions of the same program, find the function that was changed and work out which vulnerability the patch fixed. There are two files. `login_v1.c` is the vulnerable version, with a stack buffer overflow in `copy_name`. `login_v2.c` is the patched version, which differs from v1 only in `copy_name`. Build both, keeping the functions separate so the per-function diff stays clean:
 
 ```sh
@@ -103,14 +112,6 @@ gcc -O1 -fno-stack-protector -o login_v2 login_v2.c
 Use `objdump -d login_v1` and `objdump -d login_v2` to list the three functions `main`, `copy_name` and `check_pin` in each build. Compare `main` and `check_pin` between the two and decide whether they differ structurally, ignoring address shifts. Then compare `copy_name`, point out the instructions that appear only in v2 and say what that new group does. From the difference, work out what v1's vulnerability is and which input triggers it. If you have the tools, run one of the following and compare, using `radiff2 -A -C login_v1 login_v2`, BinDiff (analyze both files in IDA or Ghidra, export BinExport and compare), or `ghidriff login_v1 login_v2` and read the markdown report. To confirm the bug, run `./login_v1 AAAAAAAAAAAAAAAAAAAAAAAAAAAA 0000` (a name longer than 16 characters) and `./login_v2` with the same input and see which one crashes.
 
 Some questions to think about. Why does diffing compare function structure better than raw bytes when only one function changed? If the patched version were built with a very different compiler from the old one, what would the diff look like and how would you reduce the noise? And in a real patch that changes 50 functions, how do you filter down to the ones related to the vulnerability?
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 18.4</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/18.4/src/login_v1.c" download><i class="fa-solid fa-file-code"></i>src/login_v1.c</a>
-<a class="lab-file" href="/assets/labs/18.4/src/login_v2.c" download><i class="fa-solid fa-file-code"></i>src/login_v2.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

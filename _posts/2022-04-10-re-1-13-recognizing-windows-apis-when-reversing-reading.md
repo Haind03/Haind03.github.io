@@ -102,6 +102,14 @@ You don't need to master these tricks right now. If you think "this program touc
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 1.13</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/1.13.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/1.13/src/apitarget.c" download><i class="fa-solid fa-download"></i>src/apitarget.c</a>
+</div>
+</div>
+
 The target is a small C program, `apitarget.c`, that does two clear things. It opens (or creates) a file with `CreateFileW`, writes a line and closes it, then it opens a registry key with `RegOpenKeyExW`. The goal is to practice reading the parameters of an API call in the right Win64 register order, both by hand in x64dbg and with an automatic tool (API Monitor), and then compare the two. The program is harmless and fine to run on a normal machine.
 
 Build a 64-bit version so it matches the Win64 register order from the lesson. With MSVC, from a Developer Command Prompt:
@@ -121,13 +129,6 @@ If you build 32-bit instead, the parameters live on the stack under stdcall, so 
 Open `apitarget.exe` in x64dbg and run to the entry point. In the Command box type `bp CreateFileW` and then `bp RegOpenKeyExW`, and press Run (F9). When it stops at `CreateFileW`, read the parameters. `rcx` points to the file name, so right-click it, choose Follow in Dump, and read the Unicode string. `rdx` is the desired access, so look the value up on MSDN and work out what GENERIC_WRITE is. `r8` is the share mode. The fifth parameter, `dwCreationDisposition`, is at `[rsp+0x20]`, so read it and look up its meaning. Then keep running to `RegOpenKeyExW` and read `rcx` (the root HKEY, to compare against HKEY_CURRENT_USER) and `rdx` (a pointer to the subkey name, again via Follow in Dump). Finally, run the program under API Monitor (filtering on the advapi32 and kernel32 modules) and compare its automatic output with what you read by hand.
 
 Along the way, answer these questions. What is the full name of the file the program opens? Does it open it for reading or writing, and which parameter tells you? Which registry key is opened, under which root HKEY? And where does the return value (`rax`) land after each call, and what does it mean? Answer them all before opening the solution.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 1.13</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/1.13/src/apitarget.c" download><i class="fa-solid fa-file-code"></i>src/apitarget.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

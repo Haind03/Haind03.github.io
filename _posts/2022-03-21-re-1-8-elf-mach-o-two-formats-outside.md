@@ -99,6 +99,14 @@ All three tell the same story with different vocabulary. Learn ELF well and read
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 1.8</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/1.8.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/1.8/src/hello.c" download><i class="fa-solid fa-download"></i>src/hello.c</a>
+</div>
+</div>
+
 In this lab you dissect an ELF binary by hand with `readelf`, `objdump`, `nm` and `file`. You identify the file, find the entry point, list the segments and look at the PLT/GOT, then compare a stripped and a non-stripped build. You need a Linux environment. On Windows, WSL (`wsl --install`) or a light Linux VM is enough.
 
 The sample program is `hello.c`. It calls a couple of library functions (`printf` and `strlen`) so you can see the PLT/GOT at work, and it has one internal function so the stripped and non-stripped builds differ in something visible. Build a normal copy and a stripped copy. If you can't build, a system binary such as `/bin/ls` answers most of the questions.
@@ -116,13 +124,6 @@ Then compare segments and sections. `readelf -l hello` shows the program headers
 For the PLT/GOT, use `objdump -d -j .plt hello` to see the PLT stubs. Then run `objdump -d hello | grep -A3 '<main>:'` and look for the calls to `printf@plt` and `strlen@plt`. Notice that `main` doesn't call libc directly but goes through `@plt`. `readelf -r hello` prints the relocation table, which is the list of GOT slots that get filled with real addresses at run time.
 
 For symbols, run `nm hello` and find `main` and `secret_len`. Then see what `nm hello_stripped` reports now, whether `secret_len` is still visible, and what happens to `printf` (try `nm -D hello_stripped` for the dynamic symbols). Finally, go back to the PE lesson (Lesson 1.7) and match things up by asking which PE field corresponds to the ELF entry point, and which PE mechanism corresponds to the PLT/GOT? Answer everything yourself before opening the solution.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 1.8</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/1.8/src/hello.c" download><i class="fa-solid fa-file-code"></i>src/hello.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

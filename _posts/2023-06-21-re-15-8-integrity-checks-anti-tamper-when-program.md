@@ -67,6 +67,14 @@ A dynamic tip is to set a read memory breakpoint on the code section, so you sto
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 15.8</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/15.8.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/15.8/src/selfcheck.c" download><i class="fa-solid fa-download"></i>src/selfcheck.c</a>
+</div>
+</div>
+
 The goal is to see an integrity check catch a patch, then get past it by disabling the check function itself instead of patching the protected code more cleverly. The file `selfcheck.c` is a program that computes a CRC32 checksum over the byte range of `check_license` and compares it against an embedded value, refusing to run (exit 3) if they don't match.
 
 The checksum depends on exactly what your compiler produces, so first capture the real value on your machine:
@@ -95,13 +103,6 @@ Finally, think about what happens if the author adds a second function that chec
 A helper for finding the file offset is to use `nm <binary>` for the function's address, `objdump -h <binary>` for the VMA and file offset of `.text`, then `file_offset = addr - text_vma + text_file_offset`.
 
 Do it yourself first, then check the full write-up with real run results below.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 15.8</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/15.8/src/selfcheck.c" download><i class="fa-solid fa-file-code"></i>src/selfcheck.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

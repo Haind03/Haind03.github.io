@@ -81,6 +81,14 @@ Static draws the map and dynamic confirms it. x64dbg is the second half of that 
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 2.5</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/2.5.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/2.5/src/serial_check.c" download><i class="fa-solid fa-download"></i>src/serial_check.c</a>
+</div>
+</div>
+
 Here you practice setting breakpoints, reading comparison operands to find the correct serial, and patching a jump. You'll build a small crackme from `serial_check.c`, enter a wrong serial, let x64dbg show you the correct serial in a register, and finally patch the program to accept any serial. You need `x64dbg.exe` (the 64-bit build, since we build 64-bit) and a compiler, either MSVC or MinGW-w64, on Windows.
 
 ```
@@ -100,13 +108,6 @@ For the dynamic approach, which is the fastest, open `serial_check.exe` in x64db
 Then cross-check statically. Open the same file in IDA or Ghidra, find the `make_serial` function, read how the serial is computed and work it out by hand. The result must match what the debugger gave you. If `bp strcmp` doesn't stop, the function may be inlined or static. In that case put a breakpoint at the start of `main` and `F8` your way to the comparison, or use Search for > String references to find "Wrong serial" and place a breakpoint before it. The correct serial depends on the fixed `name` in the code, so it doesn't change between runs.
 
 Last, patch the program so it accepts any serial. After `check` returns, look for a `test eax, eax` followed by a `je`/`jne` that branches to the "Wrong serial" path. Use `Space` to change the jump (for example turn `jne` into `je`, or `nop` the jump, or force `rax = 1` before the branch). Run it with any serial and it should print "Correct! Welcome." Press `Ctrl+P`, choose Patch File to save `serial_check_patched.exe`, and run it again outside the debugger to be sure.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 2.5</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/2.5/src/serial_check.c" download><i class="fa-solid fa-file-code"></i>src/serial_check.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

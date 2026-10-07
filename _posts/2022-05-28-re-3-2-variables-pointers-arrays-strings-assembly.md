@@ -102,6 +102,14 @@ Every time you change a variable to `char *` or `int[5]`, the decompiler updates
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 3.2</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/3.2.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/3.2/src/datatypes.c" download><i class="fa-solid fa-download"></i>src/datatypes.c</a>
+</div>
+</div>
+
 This lab trains your eye to tell four basic C data kinds apart when reading assembly or pseudocode, without leaning on symbol names. Build `datatypes.c` unoptimized so it stays readable. On Linux or WSL:
 
 ```
@@ -123,13 +131,6 @@ cl /Od /Zi datatypes.c
 Open the binary in IDA or Ghidra, run auto-analysis, and answer the following function by function. In `main`, which instructions read and write the globals `g_initialized` and `g_zero`, what kind of addressing do they use (the hint is RIP-relative), and where does the local variable `local` sit relative to `rbp`? In `my_strlen`, find the two instructions that dereference the pointer `*s` and explain why it takes two steps, then mark the loop that walks the string and the instruction that checks for the null terminator. In `sum_array`, find the formula that computes the address of `arr[i]`, read off the scale, and say what element size it implies. In `retarget`, find the instruction that performs `*pp = newtarget` and explain why this is a pointer to a pointer. Finally, rename and retype a few variables in the decompiler (`N` and `Y` in IDA, `L` and `Ctrl+L` in Ghidra) and watch how the pseudocode changes.
 
 Two things to think about afterwards. If the binary were stripped, could you still tell globals from locals, and based on what? And if you rebuild with `-O2`, does the compiler keep the dereference steps separate?
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 3.2</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/3.2/src/datatypes.c" download><i class="fa-solid fa-file-code"></i>src/datatypes.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

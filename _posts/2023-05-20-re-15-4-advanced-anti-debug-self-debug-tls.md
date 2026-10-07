@@ -92,6 +92,14 @@ You can read it right away. This callback checks `BeingDebugged`, and if it sees
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 15.4</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/15.4.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/15.4/src/tls_antidebug.c" download><i class="fa-solid fa-download"></i>src/tls_antidebug.c</a>
+</div>
+</div>
+
 The goal is to see for yourself why a check placed in a TLS callback runs before `main`, and how to catch it with x64dbg. You need Windows (or a Windows VM, see Lesson 0.3), x64dbg, PE-bear or CFF Explorer, and a compiler, either MSVC (`cl`) or MinGW-w64 (`gcc`). The program is `tls_antidebug.c`, and you build it with one of these:
 
 ```
@@ -104,13 +112,6 @@ First run `tls_antidebug.exe` directly, with no debugger, and observe that it pr
 Now go to Options > Preferences > Events and turn on TLS Callbacks, then restart the debug session. This time the debugger stops just as the TLS callback is about to run, before the entry point. Work your way to the code that reads `gs:[0x60]` and checks the `BeingDebugged` byte, and set a breakpoint there. Get past it in one of three ways, namely set `BeingDebugged` to 0 in memory while stopped, patch the jump so it always goes on to `main`, or use the ScyllaHide plugin (Lesson 15.9). Confirm that after getting past it, the program runs to `main` and prints its message normally.
 
 Three questions to reflect on. Why is enabling the TLS Callbacks breakpoint more important than just setting a breakpoint at main? If the program has several TLS callbacks, in what order are they called? And why might fixing `BeingDebugged` just once not be enough if the callback runs again?
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 15.4</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/15.4/src/tls_antidebug.c" download><i class="fa-solid fa-file-code"></i>src/tls_antidebug.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

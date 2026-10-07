@@ -91,6 +91,14 @@ A few patterns show up a lot and are covered in detail in [Lesson 8.3](/posts/re
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 8.1</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/8.1.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/8.1/src/main.go" download><i class="fa-solid fa-download"></i>src/main.go</a>
+</div>
+</div>
+
 In this lab you recognize and dissect a Go binary yourself, and check the points from this lesson, which are size, build info, pclntab and the register ABI. You need the Go toolchain (check with `go version`). The source is `main.go`, which defines a small non-inlined `add` function and prints a greeting.
 
 Start by building `hello` from `main.go`, then build a C hello world with gcc and compare the two sizes. Explain why the Go binary is hundreds of times bigger. Next read the build info with `go version hello` and `go version -m hello`, and note the Go version, GOARCH and GOOS. Try again with `strings hello | grep '^go1\.'` to see how you would do it without a toolchain.
@@ -106,13 +114,6 @@ go build -gcflags="-N -l" -o hello2 main.go
 ```
 
 Two questions to think about. Why is a "stripped" Go binary still easier to reverse than a stripped C binary? And if you meet a Go binary without the usual symbols, how else can you get the function names back? Try it yourself before opening the solution.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 8.1</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/8.1/src/main.go" download><i class="fa-solid fa-file-code"></i>src/main.go</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

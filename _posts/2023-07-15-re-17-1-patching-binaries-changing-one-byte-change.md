@@ -94,6 +94,14 @@ Beginners tend to patch everything. I'd pick whichever fits the challenge.
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 17.1</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/17.1.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/17.1/src/patchme.c" download><i class="fa-solid fa-download"></i>src/patchme.c</a>
+</div>
+</div>
+
 The goal is to turn `patchme`, which rejects every wrong password, into a program that accepts every password, by patching exactly one jump instruction. Do it both ways, on disk with a hex editor, and at runtime in x64dbg. Build it with one of these:
 
 ```
@@ -119,13 +127,6 @@ Open the binary in IDA or Ghidra (or use `objdump -d -M intel patchme`). Find `m
 To patch on disk, use a hex editor (HxD or ImHex) or Python to find the byte sequence `85 c0 74` (test eax,eax; je) and change `74 xx` into `90 90`. Save to a new file, run it with a wrong password and confirm it prints "Correct". To patch at runtime, open the binary in x64dbg, set a breakpoint on the `je`, run to it, press Space to change the `je` into `nop nop` (or into a `jmp` to the Correct branch), continue and confirm. Then try something different and, instead of a NOP, change the `je` (`74`) into `jne` (`75`) and watch the behavior invert, so the right password is rejected, and work out why.
 
 Three questions to think about. Why does NOPing the `je` make the program always say Correct while switching to `jne` inverts it? If `patchme` computed a checksum of `main` and compared it (an integrity check), would an on-disk patch still work, and what would you do differently? And can this kind of patch produce a valid serial, and when are you forced to write a keygen instead of patching?
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 17.1</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/17.1/src/patchme.c" download><i class="fa-solid fa-file-code"></i>src/patchme.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

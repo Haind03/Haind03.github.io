@@ -60,6 +60,14 @@ More important than which tool you choose is not to keep jumping between tools w
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 2.4</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/2.4.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/2.4/src/crackme_r2.c" download><i class="fa-solid fa-download"></i>src/crackme_r2.c</a>
+</div>
+</div>
+
 The goal is to take apart one binary with command-line radare2, then reopen it in Cutter, to see how the same data looks in a CLI and a GUI. If you can, also try the Binary Ninja cloud version. Build the sample binary `crackme_r2.c` first:
 
 ```
@@ -75,13 +83,6 @@ Open the binary in radare2 with `r2 crackme_r2`. At the prompt, run `aaa` and th
 Then open the same binary in Cutter. Find `main` in the Functions panel, look at the graph, and click the Decompiler tab (jsdec) to read the pseudocode. Compare that with what you read by eye in radare2 and note which was faster for you. Optionally, if you have a Binary Ninja cloud account, upload the binary and look at the HLIL of `main`, then compare the three views, r2 disassembly, Cutter pseudocode and Binary Ninja HLIL.
 
 Two questions to think about. What is the correct password, and which tool found it fastest? And which tool do you find more comfortable for this exercise, and why? Do all of it before opening the solution.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 2.4</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/2.4/src/crackme_r2.c" download><i class="fa-solid fa-file-code"></i>src/crackme_r2.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

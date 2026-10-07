@@ -56,6 +56,14 @@ Most entry-level .NET crackmes fall to these steps. Obfuscated samples are harde
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 5.3</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/5.3.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/5.3/src/Program.cs" download><i class="fa-solid fa-download"></i>src/Program.cs</a>
+</div>
+</div>
+
 In this lab you debug a small .NET crackme with dnSpy, without any source code. You set a breakpoint at the comparison, read the variables while the program runs, and then edit the condition variable to get past the check without knowing the serial. The crackme is `Program.cs`. You need dnSpy (run `dnSpy.exe`) and the dotnet SDK to build it.
 
 Create a console project, replace its default `Program.cs` with the provided one, and build in Debug configuration, which lets dnSpy map lines more accurately.
@@ -74,13 +82,6 @@ Open the crackme assembly in dnSpy and find the `CheckSerial` function, either w
 There is a second way that does not require knowing the serial. Put a breakpoint on `return isValid`, enter a wrong serial, and when execution stops change `isValid` from `false` to `true` in Locals, then press F5. The program now reports success. As a last step, try a conditional breakpoint inside the loop of `MakeSerial`, for example one that stops when the last character is being processed, so you can watch `acc` change.
 
 Two questions to think about. Why does the correct serial differ for every username? And between reading `expected` and editing `isValid`, which one is suitable if you want to write a keygen, and which only gets you through a single run? Try it yourself before opening the solution.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 5.3</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/5.3/src/Program.cs" download><i class="fa-solid fa-file-code"></i>src/Program.cs</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

@@ -70,6 +70,15 @@ Next, write a YARA rule based on a combination of distinctive strings and byte p
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 19.2</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/19.2.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/19.2/src/fakebot.yar" download><i class="fa-solid fa-download"></i>src/fakebot.yar</a>
+<a class="lab-file" href="/assets/labs/19.2/src/sample_benign.bin" download><i class="fa-solid fa-download"></i>src/sample_benign.bin</a>
+</div>
+</div>
+
 The goal is to write a YARA rule that recognizes a "sample" through a combination of characteristic strings, then run a scan to see which string matches at which offset. Everything in this lab is harmless. `sample_benign.bin` is not malware, it's a file containing a few marker strings for the rule to match against, so you can practice the syntax and workflow without a real malicious sample.
 
 Install either the YARA CLI (`apt install yara` on Linux, or a Windows build from the official site) or yara-python (`pip install yara-python`). The lab has two files, `fakebot.yar`, a sample rule that recognizes a simulated FakeBot sample through its mutex, C2 URL, and the byte pattern of an RC4 key, and `sample_benign.bin`, the harmless file with the marker strings the rule matches against (it starts with a fake "MZ" so it passes the `uint16(0) == 0x5A4D` condition).
@@ -79,14 +88,6 @@ Read `fakebot.yar` and understand its `strings` section (text versus byte patter
 Then change the condition to `5 of (...)` and run again. Does it still match? Why, given that the sample file only contains 3 of the 5 strings? Add a string of your own to both the rule and the sample file, and run again to see it match. Finally write a new rule based on only one very generic string (for example "http"), scan a few harmless files on your machine, and watch for false positives. Work out why a rule should rely on a combination of signals rather than one.
 
 Two questions to think about. Why is a byte pattern (`{ 52 43 34 ... }`) more durable than a text string when malware changes its character encoding but keeps the same binary key? And when do you use `wide` instead of `ascii` in a rule for Windows malware? The answer and the real run output are in the collapsed section below.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 19.2</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/19.2/src/fakebot.yar" download><i class="fa-solid fa-file-shield"></i>src/fakebot.yar</a>
-<a class="lab-file" href="/assets/labs/19.2/src/sample_benign.bin" download><i class="fa-solid fa-file"></i>src/sample_benign.bin</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

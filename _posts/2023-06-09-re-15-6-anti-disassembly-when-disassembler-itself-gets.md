@@ -81,6 +81,14 @@ When pseudocode looks abnormally chaotic in the middle of an otherwise normal fu
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 15.6</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/15.6.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/15.6/src/overlap_demo.asm" download><i class="fa-solid fa-download"></i>src/overlap_demo.asm</a>
+</div>
+</div>
+
 The goal is to train your eye to spot junk bytes and overlapping instructions, and to work out the real CPU flow instead of trusting the disassembler's first pass. The file `overlap_demo.asm` holds two byte sequences with comments. This is a hand-reading exercise, nothing to build. If you want to try it in a real tool, you can paste the bytes into a binary file and open it in IDA or Ghidra, or use an online disassembler.
 
 For the first sequence, `EB 01 E8 B8 2A 00 00 00 C3`, decode it by hand the way a linear sweep would, and write down the wrong instruction sequence you get. Then compute the target of `jmp short +1` and write out the real CPU flow. What value does this function return? Which byte is junk, meaning the CPU never touches it, and if you patch it to `0x90` (nop), does the disassembler now decode it correctly?
@@ -90,13 +98,6 @@ For the second sequence, `31 C0 EB FF C0 48 FF C0 C3`, decode it from the start 
 In IDA, describe the steps you'd take to fix the display, including which key undefines the wrong decoding and which key makes code at the correct offset.
 
 Two questions to think about. Why does running it dynamically (single-stepping in x64dbg) always give the correct flow even when IDA draws it wrong? And between linear sweep and recursive descent, which is more easily fooled by an overlapping instruction, and why?
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 15.6</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/15.6/src/overlap_demo.asm" download><i class="fa-solid fa-file-code"></i>src/overlap_demo.asm</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

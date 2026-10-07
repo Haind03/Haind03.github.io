@@ -81,6 +81,15 @@ My advice is to install HxD for quick patches and ImHex as your main tool. You o
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 2.7</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/2.7.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/2.7/pe_header.hexpat" download><i class="fa-solid fa-download"></i>pe_header.hexpat</a>
+<a class="lab-file" href="/assets/labs/2.7/target.c" download><i class="fa-solid fa-download"></i>target.c</a>
+</div>
+</div>
+
 This lab gets you used to working at the byte level, parsing a file structure with a pattern, and patching one byte on purpose. The tool is ImHex (preferred, free) or 010 Editor, and HxD works for the byte patching task. You need any PE file to look at, for example a small exe you already have, or one you build yourself from `target.c`. The second task also needs a file called `mini.bin`, which you create yourself. To build the target with MinGW on Windows:
 
 ```
@@ -109,14 +118,6 @@ offset 8: an array of count elements, each consisting of:
 ```
 
 Write an ImHex pattern that describes it, using `pe_header.hexpat` as a reference for the `struct` and `@` syntax. Then create a sample file with exactly this layout and run the pattern to check that it splits the file correctly.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 2.7</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/2.7/pe_header.hexpat" download><i class="fa-solid fa-file-code"></i>pe_header.hexpat</a>
-<a class="lab-file" href="/assets/labs/2.7/target.c" download><i class="fa-solid fa-file-code"></i>target.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

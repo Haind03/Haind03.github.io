@@ -96,6 +96,14 @@ For all of group 3, don't defeat each measurement one by one. Find the final poi
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 15.3</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/15.3.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/15.3/src/timing_check.c" download><i class="fa-solid fa-download"></i>src/timing_check.c</a>
+</div>
+</div>
+
 The goal is to see a timing check (RDTSC) and a trap check (INT 3) detect a debugger, and then get past both. The program is `timing_check.c`. It's harmless and only prints a verdict on whether it sees a debugger. Use it for learning.
 
 On Windows both checks run. Build with MinGW or MSVC.
@@ -116,13 +124,6 @@ First run it freely (double-click or from a terminal). You should see a small RD
 Now get past it without stepping. Put a breakpoint right after the second `rdtsc` and press F9 to run straight to it. The measured section runs at full speed, the delta is small again, and the check doesn't fire. You can also patch it. Find the conditional jump after the `cmp` of the timing check and invert or nop it. For the INT 3 check, go to Options > Exceptions in x64dbg and configure it to pass the exception breakpoint (0x80000003) on to the program, then watch the program's `__except` handler catch it just as it did when running freely.
 
 Some questions to think about. Why does running straight through with F9 not trigger the timing check while single-stepping does? In the INT 3 check, why does "my own handler ran" mean you're not being debugged? And if you patch the jump, do you still need to care about the delta value? Try it yourself before opening the solution.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 15.3</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/15.3/src/timing_check.c" download><i class="fa-solid fa-file-code"></i>src/timing_check.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

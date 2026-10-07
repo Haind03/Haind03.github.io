@@ -96,6 +96,14 @@ Start with triage. `strings`/DIE showing `_MEIPASS`, `pyi`, `python3xx` means Py
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 7.4</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/7.4.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/7.4/src/secretapp.py" download><i class="fa-solid fa-download"></i>src/secretapp.py</a>
+</div>
+</div>
+
 The task is to package a Python script into an exe yourself and then extract it back, to see that the logic is still intact in bytecode form. You need Python 3 and PyInstaller (`pip install pyinstaller`), plus pyinstxtractor or pyinstxtractor-ng. For the first, download the single file with `curl -LO https://raw.githubusercontent.com/extremecoders-re/pyinstxtractor/master/pyinstxtractor.py`. For the ng version run `pip install pyinstxtractor-ng` and use the `pyinstxtractor-ng` command. You also need a .pyc decompiler, either pycdc from Lesson 7.2 or a version-matched decompiler from Lesson 7.3. The sample file is `secretapp.py`, a simple license key checker.
 
 First, package it into an exe:
@@ -113,13 +121,6 @@ python3 pyinstxtractor.py dist/secretapp
 Read the output. Which Python version does the tool report, and which file is the Possible entry point? Go into the `secretapp_extracted/` folder. Among the many `.pyc` files, which one is the original script and which are PyInstaller's support files (think about names starting with `pyi`)? Check the magic header of `secretapp.pyc` (the first 16 bytes). Is the header complete? If it's missing, copy the header from a standard module such as `struct.pyc` in the same folder. Finally decompile `secretapp.pyc`, find the license key, and see whether anything hides it.
 
 Two questions to think about. Why does packaging into an exe barely protect secrets in the code? And if the author really wanted to hide the license key, what would they have to use (see Lesson 7.5)? Do it yourself before opening the solution.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 7.4</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/7.4/src/secretapp.py" download><i class="fa-solid fa-file-code"></i>src/secretapp.py</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

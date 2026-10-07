@@ -132,6 +132,16 @@ It depends. If you live in IDA, use IDAPython. If you need something free that d
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 18.1</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/18.1.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/18.1/src/decrypt_strings_ghidra.py" download><i class="fa-solid fa-download"></i>src/decrypt_strings_ghidra.py</a>
+<a class="lab-file" href="/assets/labs/18.1/src/decrypt_strings_ida.py" download><i class="fa-solid fa-download"></i>src/decrypt_strings_ida.py</a>
+<a class="lab-file" href="/assets/labs/18.1/src/strcrypt_demo.c" download><i class="fa-solid fa-download"></i>src/strcrypt_demo.c</a>
+</div>
+</div>
+
 The task is to write a script that makes the decompiler decrypt a batch of encrypted strings automatically instead of by hand. Three files go with it. `strcrypt_demo.c` is a sample program with 3 strings XORed with a single byte (key `0x5A`) and decrypted at run time, which you build into a real binary to dissect. `decrypt_strings_ida.py` is a sample IDAPython script that decrypts the XOR and sets a comment at each call, and `decrypt_strings_ghidra.py` is the sample Ghidra (Jython) script. Build and run the program:
 
 ```
@@ -142,15 +152,6 @@ gcc -O0 -o strcrypt_demo strcrypt_demo.c
 Open `strcrypt_demo` in IDA or Ghidra and find the `decrypt` function and the arrays `enc_1`, `enc_2` and `enc_3`. Work out the XOR key and the structure of the encrypted strings, in particular which byte terminates them. Then write (or adapt from the samples) a script that decrypts every string and puts the result as a comment right next to where it's used, and reopen the pseudocode to check that the string comments appear. For a harder variant, change the key to a multi-byte one and generalize the script.
 
 One hint is that every real binary differs in how it passes the pointer into the decryption function, so the part of the sample script that fetches `ptr` needs adjusting to your binary. The approach stays the same, which is to find an anchor, walk the locations, apply the transform, write the comment. Try it yourself before opening the solution.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 18.1</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/18.1/src/decrypt_strings_ghidra.py" download><i class="fa-solid fa-file-code"></i>src/decrypt_strings_ghidra.py</a>
-<a class="lab-file" href="/assets/labs/18.1/src/decrypt_strings_ida.py" download><i class="fa-solid fa-file-code"></i>src/decrypt_strings_ida.py</a>
-<a class="lab-file" href="/assets/labs/18.1/src/strcrypt_demo.c" download><i class="fa-solid fa-file-code"></i>src/strcrypt_demo.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

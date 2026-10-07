@@ -78,6 +78,14 @@ This is how I deal with real Rust binaries. Demangle and recover symbols first (
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 9.2</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/9.2.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/9.2/src/main.rs" download><i class="fa-solid fa-download"></i>src/main.rs</a>
+</div>
+</div>
+
 In this lab you see how Rust represents familiar structures in a binary, and why iterator chains disappear. You build a small Rust program that uses `String`, `Vec`, an iterator chain and a trait object, then look at it in Ghidra or IDA to see the glued-together strings, the three-field structure of `Vec`, and the iterator inlined into a flat loop. Install Rust through rustup (https://rustup.rs) and check it with `rustc --version`. The program is `main.rs`. Build an optimized copy and a plain copy, and compare them to see the effect of optimization.
 
 ```
@@ -90,13 +98,6 @@ Open `rust_demo` in Ghidra and run auto-analysis. In Defined Strings, look for `
 Next find the place where `greet()` is called through the trait object. Identify the data and vtable pointer pair and the `call [reg+offset]` instruction. Compare `rust_demo` with `rust_demo_debug` and decide in which one the iterators are easier to recognize. If there's a panic path string, find it to see the source path leaking.
 
 Two questions to think about. Why can't you find a single string ending in a `0` byte for the literals above? And if a large program used the `serde` crate, where would you look for its traces? Try it yourself before opening the solution.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 9.2</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/9.2/src/main.rs" download><i class="fa-solid fa-file-code"></i>src/main.rs</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

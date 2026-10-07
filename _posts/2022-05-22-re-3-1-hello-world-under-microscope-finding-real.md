@@ -86,6 +86,14 @@ IDA Pro has FLIRT signature libraries that recognize CRT and standard library fu
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 3.1</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/3.1.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/3.1/src/hello.c" download><i class="fa-solid fa-download"></i>src/hello.c</a>
+</div>
+</div>
+
 Build the same `hello.c` with `gcc` on Linux and with MSVC on Windows, open the results in Ghidra or IDA Free, and start from the entry point. From there you trace to the real `main` yourself, in two different ways, on both the Linux and Windows binaries. Finally you compare how much CRT code sits before `main` in each build.
 
 On Linux, build a normal dynamic binary and a static one. The static one pulls the whole CRT in and makes the difference easy to see.
@@ -112,13 +120,6 @@ Open `hello_gcc` in Ghidra, find the entry point (`_start`), find the call to `_
 Next, still in the MSVC binary, find `main` the second way. Follow the CRT wrapper functions down to the last function that is called with three arguments (`rcx`, `rdx` and `r8` holding `argc`, `argv` and `envp`). Do the two approaches land on the same function? After that, compare the number of functions (or the amount of code before `main`) between `hello_gcc` and `hello_gcc_static`, and see how much static linking adds. Open the Strings view of all three files and decide which one shows the most CRT strings, and why.
 
 Two questions to think about afterwards. If the binary is stripped, which of these methods still work and which break? And why is starting from a string faster than reading sequentially from the entry point? Try it yourself before opening the solution.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 3.1</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/3.1/src/hello.c" download><i class="fa-solid fa-file-code"></i>src/hello.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

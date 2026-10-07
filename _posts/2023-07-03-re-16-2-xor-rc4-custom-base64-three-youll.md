@@ -65,6 +65,15 @@ For all three, the fastest approach is not to debug byte by byte in the binary. 
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 16.2</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/16.2.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/16.2/src/make_data.py" download><i class="fa-solid fa-download"></i>src/make_data.py</a>
+<a class="lab-file" href="/assets/labs/16.2/src/solve.py" download><i class="fa-solid fa-download"></i>src/solve.py</a>
+</div>
+</div>
+
 Here are three ciphertexts, each produced with a different technique. Recognize which is which and write Python to decrypt them before you open the solution. The data comes from `make_data.py` and was actually run:
 
 ```
@@ -81,14 +90,6 @@ For the XOR sample, use `flag{` as known plaintext, find the key and decrypt the
 python3 -I make_data.py   # regenerate the three ciphertexts
 python3 -I solve.py       # the reference solution
 ```
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 16.2</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/16.2/src/make_data.py" download><i class="fa-solid fa-file-code"></i>src/make_data.py</a>
-<a class="lab-file" href="/assets/labs/16.2/src/solve.py" download><i class="fa-solid fa-file-code"></i>src/solve.py</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

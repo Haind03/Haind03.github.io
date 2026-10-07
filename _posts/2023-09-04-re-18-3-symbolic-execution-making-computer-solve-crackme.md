@@ -65,6 +65,15 @@ My rule is to try angr first because it's cheap, and if it hangs or explodes, na
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 18.3</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/18.3.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/18.3/solve_angr.py" download><i class="fa-solid fa-download"></i>solve_angr.py</a>
+<a class="lab-file" href="/assets/labs/18.3/src/crackme.c" download><i class="fa-solid fa-download"></i>src/crackme.c</a>
+</div>
+</div>
+
 The goal is to let symbolic execution find the serial by itself, without reading the `check` function by hand. `crackme.c` checks an 8-character serial through a chain of constraints on the bytes. Install angr and build the crackme:
 
 ```bash
@@ -81,14 +90,6 @@ python3 solve_angr.py ./crackme
 Feed the serial angr found into `./crackme <serial>` and confirm you get `Correct!`. Only now open `crackme.c`, read the `check` function, solve it by hand and compare with angr's result.
 
 Three questions to think about. Why does angr find the serial without you copying a single constraint? If `check` hashed the serial with SHA-256 and compared it to a constant, could angr still solve it, and why? And `find` and `avoid` here match on stdout, so what other way is there to point angr at a target? Try it yourself first.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 18.3</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/18.3/solve_angr.py" download><i class="fa-solid fa-file-code"></i>solve_angr.py</a>
-<a class="lab-file" href="/assets/labs/18.3/src/crackme.c" download><i class="fa-solid fa-file-code"></i>src/crackme.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

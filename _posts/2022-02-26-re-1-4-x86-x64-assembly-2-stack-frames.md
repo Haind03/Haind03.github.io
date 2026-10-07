@@ -121,6 +121,14 @@ That's two things done, since you recognized three parameters from rcx/rdx/r8 (s
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 1.4</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/1.4.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/1.4/src/params.c" download><i class="fa-solid fa-download"></i>src/params.c</a>
+</div>
+</div>
+
 The file `params.c` has three functions that differ in the number and type of their parameters. `sum3(a, b, c)` takes three parameters, which fit in registers under both conventions. `sum6(a..f)` takes six, enough to show Win64 spilling parameters 5 and 6 onto the stack. `mix(char, int, long, int*)` mixes types so you can see whether the compiler picks 32-bit or 64-bit registers. The goal is to check what this lesson says yourself, by building the same C file on both systems and comparing how parameters are passed.
 
 Build without optimization so the stack frame stays readable. With optimization on, the compiler inlines everything and there's nothing left to look at. If `sum3` and `sum6` still get inlined at `-O0`, add `__attribute__((noinline))` (GCC) or move them into a separate file.
@@ -145,13 +153,6 @@ dumpbin /disasm params.exe        # Windows MSVC
 ```
 
 For `sum3`, find which registers the parameters a, b and c are loaded from, comparing the Win64 list (`rcx, rdx, r8`) with System V (`rdi, rsi, rdx`), and where the local `total` sits relative to `rbp`. For `sum6`, find the registers of the first four parameters and where parameters 5 and 6 are read from on the stack, with the exact offsets. For `mix`, check whether `char x` goes through an 8-bit register or gets extended, and which 64-bit register holds the pointer `int *p`. In the Win64 build, look for the `sub rsp, 0x??` at the start of `main` before the run of calls, and identify the 0x20 part of it as the shadow space. Finally, after each `call` in `main`, note which register the return value is read from before it goes to `printf`. On Win64, don't worry when you see stack space reserved but apparently unused, that's the shadow space. Compare on your own first, then open the solution.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 1.4</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/1.4/src/params.c" download><i class="fa-solid fa-file-code"></i>src/params.c</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>

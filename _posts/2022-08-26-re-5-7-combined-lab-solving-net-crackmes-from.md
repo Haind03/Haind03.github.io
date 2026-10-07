@@ -76,6 +76,17 @@ Managed code is much harder to hide than native code, because the runtime has to
 
 ## Lab
 
+<div class="lab-box">
+<div class="lab-head"><b>LAB 5.7</b>Download the source files for this lab</div>
+<div class="lab-files">
+<a class="lab-file lab-all" href="/assets/labs/5.7.zip" download><i class="fa-solid fa-file-zipper"></i>Download all (.zip)</a>
+<a class="lab-file" href="/assets/labs/5.7/src/level1/Program.cs" download><i class="fa-solid fa-download"></i>src/level1/Program.cs</a>
+<a class="lab-file" href="/assets/labs/5.7/src/level2/Program.cs" download><i class="fa-solid fa-download"></i>src/level2/Program.cs</a>
+<a class="lab-file" href="/assets/labs/5.7/src/level2/keygen.py" download><i class="fa-solid fa-download"></i>src/level2/keygen.py</a>
+<a class="lab-file" href="/assets/labs/5.7/src/level3/Program.cs" download><i class="fa-solid fa-download"></i>src/level3/Program.cs</a>
+</div>
+</div>
+
 This lab applies everything from Part 5. You decompile with ILSpy or dnSpy, read the logic, write a keygen and strip obfuscation. It's a .NET crackme in three levels. You need the .NET SDK (`dotnet`) to build it, which you can install from dotnet.microsoft.com. Each level is its own console app. A quick way to build one:
 
 ```
@@ -94,16 +105,6 @@ Level 2 is an algorithm, so you write a keygen. Open `level2.dll`, read the meth
 Level 3 adds obfuscation and a hidden string. Open `level3.dll` and notice that the password isn't in plaintext. Read `Check` and see that it compares `input[i] ^ 0x3C` against a constant array. Reverse the array (XOR it again with 0x3C) to get the key and confirm "Unlocked!". As an advanced step, if you have ConfuserEx, obfuscate `level3.dll`, reopen it to see the scrambled names, then run `de4dot -f level3.dll` and compare before and after.
 
 Do all of it before opening the solution.
-
-<div class="lab-box">
-<div class="lab-head"><b>LAB 5.7</b>source files</div>
-<div class="lab-files">
-<a class="lab-file" href="/assets/labs/5.7/src/level1/Program.cs" download><i class="fa-solid fa-file-code"></i>src/level1/Program.cs</a>
-<a class="lab-file" href="/assets/labs/5.7/src/level2/Program.cs" download><i class="fa-solid fa-file-code"></i>src/level2/Program.cs</a>
-<a class="lab-file" href="/assets/labs/5.7/src/level2/keygen.py" download><i class="fa-solid fa-file-code"></i>src/level2/keygen.py</a>
-<a class="lab-file" href="/assets/labs/5.7/src/level3/Program.cs" download><i class="fa-solid fa-file-code"></i>src/level3/Program.cs</a>
-</div>
-</div>
 
 <details class="lab-solution" markdown="1">
 <summary>Show solution</summary>
