@@ -1,0 +1,33 @@
+# Shown on the landing page, in this order.
+# badge: gold | silver | bronze | acc | (empty)
+# post: optional URL of a blog post about it, e.g. /posts/mctf-2025/
+- date: Dec 2025
+  name: M*CTF 2025, international Attack-Defense CTF, Russia
+  result: CHAMPION
+  badge: gold
+- date: Nov 2025
+  name: CSCV 2025, Vietnam Student Cyber Security Contest, Bracket B (Jeopardy)
+  result: RUNNER-UP
+  badge: silver
+- date: "2025"
+  name: Flare-On 12, Mandiant's reverse engineering challenge
+  result: FINISHER
+  badge: acc
+- date: Nov 2024
+  name: Flare-On 11, every challenge solved
+  result: FINISHER
+  badge: acc
+- date: Nov 2024
+  name: ASEAN Student Contest on Information Security, Attack-Defense final
+  result: 3RD PRIZE
+  badge: bronze
+- date: Nov 2023
+  name: ASEAN Student Contest on Information Security, Attack-Defense final
+  result: CONSOLATION
+- date: Aug 2023
+  name: PTIT Student Information Security Competition, individual Jeopardy
+  result: 2ND PRIZE
+  badge: silver
+- date: Aug 2022
+  name: PTIT Student Information Security Competition, individual Jeopardy
+  result: CONSOLATION

@@ -29,7 +29,7 @@ title: About
   @keyframes blink { 50% { opacity: 0; } }
 
   .avatar-wrap { position: relative; width: 180px; height: 180px; }
-  .avatar-wrap img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; filter: saturate(.9) contrast(1.05); border: 2px solid var(--line); }
+  .avatar-wrap img { width: 100%; height: 100%; border-radius: 50% !important; display: block; object-fit: cover; filter: saturate(.9) contrast(1.05); border: 2px solid var(--line); }
   .avatar-wrap::before { content: ''; position: absolute; inset: -10px; border-radius: 50%; border: 1px dashed rgb(55 230 192 / 45%); animation: spin 24s linear infinite; }
   .avatar-wrap::after { content: ''; position: absolute; inset: -4px; border-radius: 50%; background: conic-gradient(var(--acc) 0 18%, transparent 18% 100%); -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 0); mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 0); animation: spin 4s linear infinite; }
   @keyframes spin { to { transform: rotate(1turn); } }
@@ -75,6 +75,17 @@ title: About
   .badge-hk.silver { color: #0a1114; background: #c9d6df; border-color: #c9d6df; }
   .badge-hk.bronze { color: #0a1114; background: #d9935b; border-color: #d9935b; }
   .badge-hk.acc { color: #0a1114; background: var(--acc); border-color: var(--acc); }
+
+
+  /* cves */
+  .cves { width: 100%; border-collapse: collapse; font-size: .9rem; margin-top: 1rem; }
+  .cves th { font: 500 .72rem var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--mute); text-align: left; padding: .5rem; border-bottom: 1px solid var(--acc-dim); background: transparent !important; }
+  .cves td { padding: .65rem .5rem; border-bottom: 1px solid var(--line); vertical-align: top; background: transparent !important; }
+  .cves .cid { font: .82rem var(--mono); white-space: nowrap; }
+  .cves .ctype { color: var(--mute); }
+  .cvss { display: inline-block; min-width: 2.6rem; text-align: center; font: 700 .78rem var(--mono); padding: .2rem .4rem; border-radius: 4px; color: #0a1114; }
+  .cvss.crit { background: #ff5c7a; } .cvss.high { background: #ff9f43; } .cvss.med { background: #f2c94c; } .cvss.low { background: #7fd1ae; }
+  @media (max-width: 767px) { .cves .ctype { display: none; } }
 
   /* cards */
   .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
@@ -189,20 +200,32 @@ threat hunting · vulnerability research
   <section class="sec">
     <div class="sec-h"><span class="n">0x03</span><h2>vuln research</h2></div>
     <p>I hunt for security bugs in WordPress plugins and disclose them responsibly through the Wordfence bug bounty program. Everything I've reported, with CVE IDs and advisories, is listed on my <a href="https://www.wordfence.com/threat-intel/vulnerabilities/researchers/nguyen-dinh-hai-haind" target="_blank" rel="noopener">Wordfence researcher profile</a>.</p>
+    {% assign cves = site.data.cves | sort: "cvss" | reverse %}
+    {% if cves.size > 0 %}
+    <table class="cves">
+      <thead><tr><th>CVSS</th><th>CVE</th><th>Affected</th><th>Type</th></tr></thead>
+      <tbody>
+        {% for c in cves %}
+        {% assign sev = "low" %}{% if c.cvss >= 9 %}{% assign sev = "crit" %}{% elsif c.cvss >= 7 %}{% assign sev = "high" %}{% elsif c.cvss >= 4 %}{% assign sev = "med" %}{% endif %}
+        <tr>
+          <td><span class="cvss {{ sev }}">{{ c.cvss }}</span></td>
+          <td class="cid">{% if c.url %}<a href="{{ c.url }}" target="_blank" rel="noopener">{{ c.id }}</a>{% else %}{{ c.id }}{% endif %}</td>
+          <td>{{ c.plugin }}</td>
+          <td class="ctype">{{ c.type }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
   </section>
 
   <section class="sec">
     <div class="sec-h"><span class="n">0x04</span><h2>honors</h2></div>
     <table class="honors">
       <tbody>
-        <tr><td>Dec 2025</td><td>M*CTF 2025, international Attack-Defense CTF, Russia</td><td><span class="badge-hk gold">CHAMPION</span></td></tr>
-        <tr><td>Nov 2025</td><td>CSCV 2025, Vietnam Student Cyber Security Contest, Bracket B (Jeopardy)</td><td><span class="badge-hk silver">RUNNER-UP</span></td></tr>
-        <tr><td>2025</td><td>Flare-On 12, Mandiant's reverse engineering challenge</td><td><span class="badge-hk acc">FINISHER</span></td></tr>
-        <tr><td>Nov 2024</td><td>Flare-On 11, every challenge solved</td><td><span class="badge-hk acc">FINISHER</span></td></tr>
-        <tr><td>Nov 2024</td><td>ASEAN Student Contest on Information Security, Attack-Defense final</td><td><span class="badge-hk bronze">3RD PRIZE</span></td></tr>
-        <tr><td>Nov 2023</td><td>ASEAN Student Contest on Information Security, Attack-Defense final</td><td><span class="badge-hk">CONSOLATION</span></td></tr>
-        <tr><td>Aug 2023</td><td>PTIT Student Information Security Competition, individual Jeopardy</td><td><span class="badge-hk silver">2ND PRIZE</span></td></tr>
-        <tr><td>Aug 2022</td><td>PTIT Student Information Security Competition, individual Jeopardy</td><td><span class="badge-hk">CONSOLATION</span></td></tr>
+        {% for h in site.data.honors %}
+        <tr><td>{{ h.date }}</td><td>{% if h.post %}<a href="{{ h.post | relative_url }}">{{ h.name }}</a>{% else %}{{ h.name }}{% endif %}</td><td><span class="badge-hk {{ h.badge }}">{{ h.result }}</span></td></tr>
+        {% endfor %}
       </tbody>
     </table>
   </section>
