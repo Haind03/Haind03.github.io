@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 390" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="390" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">How an LLM generates text</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">one token at a time, chosen by probability</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- text -->
+  <rect x="24" y="110" width="110" height="80" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="79" y="144" text-anchor="middle" font-size="12.5" fill="#e3fffa">Text</text>
+  <text x="79" y="166" text-anchor="middle" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">prompt injection</text>
+
+  <!-- tokens -->
+  <rect x="160" y="110" width="160" height="80" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="240" y="130" text-anchor="middle" font-size="12.5" fill="#e3fffa">Tokens</text>
+  <g font-size="10.5" font-family="'JetBrains Mono',monospace" text-anchor="middle" fill="#00f0ff">
+    <rect x="166" y="144" width="46" height="24" rx="4" fill="#0b1518" stroke="#00f0ff"/>
+    <text x="189" y="160">prompt</text>
+    <rect x="218" y="144" width="34" height="24" rx="4" fill="#0b1518" stroke="#00f0ff"/>
+    <text x="235" y="160">inj</text>
+    <rect x="258" y="144" width="56" height="24" rx="4" fill="#0b1518" stroke="#00f0ff"/>
+    <text x="286" y="160">ection</text>
+  </g>
+  <text x="240" y="182" text-anchor="middle" font-size="10.5" fill="#6c7b93">filters see text, model sees these</text>
+
+  <!-- model -->
+  <rect x="346" y="110" width="110" height="80" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="401" y="144" text-anchor="middle" font-size="14" font-weight="700" fill="#ff2a6d">Model</text>
+  <text x="401" y="164" text-anchor="middle" font-size="10.5" fill="#9fb0c8">predicts the</text>
+  <text x="401" y="178" text-anchor="middle" font-size="10.5" fill="#9fb0c8">next token</text>
+
+  <!-- distribution -->
+  <rect x="482" y="110" width="140" height="80" rx="7" fill="#111827" stroke="#263451"/>
+  <text x="552" y="128" text-anchor="middle" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">P(next token)</text>
+  <g>
+    <rect x="496" y="148" width="18" height="34" fill="#ff2a6d"/>
+    <rect x="522" y="160" width="18" height="22" fill="#ff2a6d" opacity="0.6"/>
+    <rect x="548" y="168" width="18" height="14" fill="#ff2a6d" opacity="0.6"/>
+    <rect x="574" y="174" width="18" height="8" fill="#ff2a6d" opacity="0.6"/>
+    <rect x="600" y="178" width="18" height="4" fill="#ff2a6d" opacity="0.6"/>
+  </g>
+
+  <!-- pick -->
+  <rect x="648" y="110" width="128" height="80" rx="7" fill="#111827" stroke="#fcee0a"/>
+  <text x="712" y="130" text-anchor="middle" font-size="12.5" fill="#e3fffa">Pick one</text>
+  <text x="712" y="150" text-anchor="middle" font-size="11" fill="#fcee0a" font-family="'JetBrains Mono',monospace">temperature</text>
+  <text x="712" y="168" text-anchor="middle" font-size="10.5" fill="#9fb0c8">low: stable</text>
+  <text x="712" y="182" text-anchor="middle" font-size="10.5" fill="#9fb0c8">high: varied</text>
+
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="134" y1="150" x2="156" y2="150"/>
+    <line x1="320" y1="150" x2="342" y2="150"/>
+    <line x1="456" y1="150" x2="478" y2="150"/>
+    <line x1="622" y1="150" x2="644" y2="150"/>
+    <path d="M712,190 L712,250 L240,250 L240,194"/>
+  </g>
+  <text x="476" y="242" text-anchor="middle" font-size="11.5" fill="#9fb0c8">append the chosen token to the sequence and repeat</text>
+
+  <!-- context window -->
+  <rect x="24" y="290" width="752" height="52" rx="7" fill="#0b1518" stroke="#00f0ff" stroke-dasharray="5 4"/>
+  <text x="400" y="312" text-anchor="middle" font-size="12.5" fill="#e3fffa">Context window</text>
+  <text x="400" y="330" text-anchor="middle" font-size="11" fill="#9fb0c8">Everything the model knows in one call is the token sequence it receives.</text>
+  <text x="400" y="368" text-anchor="middle" font-size="11" fill="#6c7b93">No memory between calls. The application resends the history every turn.</text>
+</svg>

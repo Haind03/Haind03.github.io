@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="420" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Three roles, one token sequence</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">roles are formatting, not separate channels</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <g font-size="11" fill="#6c7b93" font-family="'JetBrains Mono',monospace" text-anchor="middle">
+    <text x="133" y="84">messages with roles</text>
+    <text x="623" y="84">what the model receives</text>
+  </g>
+
+  <!-- roles -->
+  <g text-anchor="middle">
+    <rect x="28" y="96" width="210" height="50" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="133" y="118" font-size="13" font-weight="700" fill="#fcee0a">system</text>
+    <text x="133" y="135" font-size="10.5" fill="#9fb0c8">developer rules and persona</text>
+
+    <rect x="28" y="166" width="210" height="50" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="133" y="188" font-size="13" font-weight="700" fill="#00f0ff">user</text>
+    <text x="133" y="205" font-size="10.5" fill="#9fb0c8">text typed by the person</text>
+
+    <rect x="28" y="236" width="210" height="50" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="133" y="258" font-size="13" font-weight="700" fill="#ff2a6d">assistant</text>
+    <text x="133" y="275" font-size="10.5" fill="#9fb0c8">earlier replies from the model</text>
+  </g>
+
+  <!-- template -->
+  <rect x="290" y="96" width="130" height="190" rx="7" fill="#111827" stroke="#263451"/>
+  <text x="355" y="184" text-anchor="middle" font-size="12.5" fill="#e3fffa">Chat template</text>
+  <text x="355" y="202" text-anchor="middle" font-size="10.5" fill="#9fb0c8">joins the messages</text>
+  <text x="355" y="216" text-anchor="middle" font-size="10.5" fill="#9fb0c8">with boundary tokens</text>
+
+  <!-- stream -->
+  <rect x="470" y="96" width="306" height="190" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="486" y="116" font-size="10.5" fill="#6c7b93" font-family="'JetBrains Mono',monospace">one flat sequence</text>
+  <g font-size="10.5" font-family="'JetBrains Mono',monospace" fill="#e3fffa">
+    <text x="486" y="138"><tspan fill="#fcee0a">&lt;|im_start|&gt;</tspan>system</text>
+    <text x="486" y="156">You are a bank assistant...<tspan fill="#fcee0a">&lt;|im_end|&gt;</tspan></text>
+    <text x="486" y="174"><tspan fill="#fcee0a">&lt;|im_start|&gt;</tspan>user</text>
+    <text x="486" y="192">What is my balance?<tspan fill="#fcee0a">&lt;|im_end|&gt;</tspan></text>
+    <text x="486" y="210"><tspan fill="#fcee0a">&lt;|im_start|&gt;</tspan>assistant</text>
+    <text x="486" y="228">Please give me your account...<tspan fill="#fcee0a">&lt;|im_end|&gt;</tspan></text>
+    <text x="486" y="246"><tspan fill="#fcee0a">&lt;|im_start|&gt;</tspan>user</text>
+    <text x="486" y="264">(new user message)<tspan fill="#fcee0a">&lt;|im_end|&gt;</tspan></text>
+  </g>
+
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="238" y1="121" x2="286" y2="121"/>
+    <line x1="238" y1="191" x2="286" y2="191"/>
+    <line x1="238" y1="261" x2="286" y2="261"/>
+    <line x1="420" y1="191" x2="466" y2="191"/>
+  </g>
+
+  <text x="400" y="316" text-anchor="middle" font-size="12" fill="#9fb0c8">The model was trained to favor system text, but that is a statistical habit, not an access control.</text>
+
+  <rect x="110" y="340" width="580" height="50" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+  <text x="400" y="361" text-anchor="middle" font-size="11.5" fill="#e3fffa">Unfiltered user text that contains boundary markers</text>
+  <text x="400" y="378" text-anchor="middle" font-size="11.5" fill="#e3fffa">can imitate a system or assistant turn.</text>
+</svg>

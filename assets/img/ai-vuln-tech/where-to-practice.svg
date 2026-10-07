@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 380" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+<rect x="0" y="0" width="800" height="380" rx="12" fill="#0d121d" stroke="#263451"/>
+<text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Where you may practice</text>
+<text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">own it, or have written permission within the stated scope</text>
+<rect x="24" y="76" width="360" height="240" rx="7" fill="#111827" stroke="#5fe3b0"/>
+<text x="204" y="104" text-anchor="middle" font-size="15" font-weight="700" fill="#5fe3b0">Allowed to practice on</text>
+<line x1="40" y1="118" x2="368" y2="118" stroke="#263451"/>
+<text x="46" y="150" font-size="13" font-weight="700" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">+</text>
+<text x="68" y="150" font-size="13" fill="#e3fffa">Your own labs (local app, local model)</text>
+<text x="46" y="192" font-size="13" font-weight="700" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">+</text>
+<text x="68" y="192" font-size="13" fill="#e3fffa">Systems with written authorization</text>
+<text x="46" y="234" font-size="13" font-weight="700" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">+</text>
+<text x="68" y="234" font-size="13" fill="#e3fffa">Bug bounty programs with AI/LLM scope</text>
+<text x="46" y="276" font-size="13" font-weight="700" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">+</text>
+<text x="68" y="276" font-size="13" fill="#e3fffa">CTFs and wargames</text>
+<rect x="416" y="76" width="360" height="240" rx="7" fill="#111827" stroke="#ff2a6d"/>
+<text x="596" y="104" text-anchor="middle" font-size="15" font-weight="700" fill="#ff2a6d">Not a playground</text>
+<line x1="432" y1="118" x2="760" y2="118" stroke="#263451"/>
+<text x="438" y="150" font-size="13" font-weight="700" fill="#ff2a6d" font-family="'JetBrains Mono',monospace">x</text>
+<text x="460" y="150" font-size="13" fill="#e3fffa">Other people's public chatbots</text>
+<text x="438" y="192" font-size="13" font-weight="700" fill="#ff2a6d" font-family="'JetBrains Mono',monospace">x</text>
+<text x="460" y="192" font-size="13" fill="#e3fffa">Production services</text>
+<text x="438" y="234" font-size="13" font-weight="700" fill="#ff2a6d" font-family="'JetBrains Mono',monospace">x</text>
+<text x="460" y="234" font-size="13" fill="#e3fffa">Other users' data</text>
+<text x="400" y="352" text-anchor="middle" font-size="11.5" fill="#9fb0c8">A public chatbot is still someone else's system.</text>
+</svg>

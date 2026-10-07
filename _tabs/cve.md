@@ -1,7 +1,7 @@
 ---
 title: CVE Archive
 icon: fas fa-bug
-order: 2
+order: 3
 ---
 
 {% assign cves = site.data.cves %}
