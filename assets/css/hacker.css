@@ -1,0 +1,69 @@
+/* Site-wide terminal palette on top of Chirpy's dark scheme */
+html,
+html[data-mode='dark'] {
+  --hk-accent: #37e6c0;
+  --hk-accent-dim: #1f8f78;
+  --hk-bg: #0a1114;
+  --hk-panel: #0e181c;
+  --hk-line: #18292f;
+  --hk-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --main-bg: var(--hk-bg);
+  --mask-bg: #10232a;
+  --main-border-color: var(--hk-line);
+  --text-color: #b9c8c5;
+  --text-muted-color: #6f8a86;
+  --text-muted-highlight-color: #a7c2bd;
+  --heading-color: #e3fffa;
+  --link-color: var(--hk-accent);
+  --link-underline-color: #1d5c52;
+  --button-bg: var(--hk-panel);
+  --btn-border-color: var(--hk-line);
+  --card-bg: var(--hk-panel);
+  --card-hover-bg: #13252a;
+  --card-header-bg: #112027;
+  --site-title-color: #e3fffa;
+  --site-subtitle-color: #6f8a86;
+  --sidebar-bg: #070d10;
+  --sidebar-border-color: var(--hk-line);
+  --sidebar-muted-color: #6f8a86;
+  --sidebar-active-color: var(--hk-accent);
+  --sidebar-hover-bg: #0f1d22;
+  --sidebar-btn-bg: #0f1d22;
+  --sidebar-btn-color: #6f8a86;
+  --avatar-border-color: var(--hk-accent);
+  --topbar-bg: rgb(10 17 20 / 72%);
+  --search-border-color: var(--hk-line);
+  --toc-highlight: var(--hk-accent);
+  --tag-hover: #12302c;
+  --tb-odd-bg: #0f1b1f;
+  --tb-even-bg: #0b1518;
+  --tb-border-color: var(--hk-line);
+  --btn-paginator-hover-color: #13252a;
+  --inline-code-bg: #10232a;
+}
+
+h1, h2, h3, h4, h5,
+#sidebar .site-title,
+#sidebar .nav-link,
+#topbar-title,
+.post-meta, .post-tail-wrapper,
+code, pre, kbd {
+  font-family: var(--hk-mono) !important;
+}
+
+#sidebar .site-title { letter-spacing: -.02em; }
+#sidebar .site-title::before { content: '~/'; color: var(--hk-accent); }
+#sidebar .site-subtitle { font-family: var(--hk-mono); font-style: normal; font-size: .8rem; }
+#sidebar .nav-item.active .nav-link,
+#sidebar .nav-link:hover { color: var(--hk-accent) !important; }
+
+.content h2::before { content: '# '; color: var(--hk-accent-dim); }
+.about .content h2::before { content: none; }
+
+::selection { background: #1d5c52; color: #e3fffa; }
+
+#main-wrapper {
+  background-image: radial-gradient(rgb(55 230 192 / 4%) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
