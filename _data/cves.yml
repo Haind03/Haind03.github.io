@@ -7,6 +7,12 @@
   type: "Unauthenticated Remote Code Execution"
   date: 2026-06-01
   url: https://www.cve.org/CVERecord?id=CVE-2026-48836
+- id: CVE-2026-32579
+  cvss: 10.0
+  plugin: "Kognetiks Chatbot for WordPress <= 2.4.9"
+  type: "Unauthenticated Arbitrary File Upload"
+  date: 2026-10-06
+  url: https://www.cve.org/CVERecord?id=CVE-2026-32579
 - id: CVE-2026-61950
   cvss: 9.3
   plugin: "TrueBooker Appointment Booking and Scheduler System <= 1.2.3"
@@ -97,6 +103,12 @@
   type: "Unauthenticated Stored Cross-Site Scripting"
   date: 2026-05-23
   url: https://www.cve.org/CVERecord?id=CVE-2026-42729
+- id: CVE-2026-32574
+  cvss: 7.1
+  plugin: "Smart Forms <= 2.6.104"
+  type: "Unauthenticated Cross Site Scripting (XSS)"
+  date: 2026-10-06
+  url: https://www.cve.org/CVERecord?id=CVE-2026-32574
 - id: CVE-2026-78536
   cvss: 6.5
   plugin: "Robokassa payment gateway for WooCommerce <= 1.8.9"
