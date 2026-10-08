@@ -15,6 +15,8 @@ This is not a dated competition. It is a practice set of reverse engineering cha
 
 ### Rev - 666
 
+**Files:** [666.zip](/assets/ctf-files/adworld-reversing/666.zip)
+
 The binary compares the input against an encoded string. The encoder works on groups of three bytes with a key of 18, and each byte of the group gets a different operation. Because every step is invertible, I applied the inverse to the stored string `izwhroz""w"v.K".Ni`.
 
 ```cpp
@@ -34,6 +36,8 @@ string encode(){
 Flag: `unctf{b66_6b6_66b}`
 
 ### Rev - xxxorrr
+
+**Files:** [xxxorrr.zip](/assets/ctf-files/adworld-reversing/xxxorrr.zip)
 
 The program XORs a constant string with `2 * i + 65` for each index, and then XORs the result with a stored byte array. Running the same two operations on the constant string produces the flag, since XOR is its own inverse.
 
@@ -58,6 +62,8 @@ cout << s1;
 Flag: `flag{c0n5truct0r5_functi0n_in_41f}`
 
 ### Rev - IgniteMe
+
+**Files:** [igniteme.zip](/assets/ctf-files/adworld-reversing/igniteme.zip)
 
 The check XORs the input with a table, applies `(x - 72) ^ 0x55`, and then shifts the case of letters. I extracted the 32 byte table from IDA (export result), XORed it with the 24 byte constant `GONDPHyGjPEKruv{{pj]X@rF`, reversed the arithmetic, and then lowercased the uppercase letters to match the case shift. The `EIS{...}` wrapper is added around the result.
 
@@ -86,6 +92,8 @@ Flag: `EIS{wadx_tdgk_aihc_ihkn_pjlm}`
 
 ### Rev - crypt
 
+**Files:** [crypt.zip](/assets/ctf-files/adworld-reversing/crypt.zip)
+
 The binary XORs a 22 byte array with `0x22` before comparing. My `sol.cpp` applies that XOR to the array extracted from IDA.
 
 ```cpp
@@ -104,6 +112,8 @@ Status: flag not recorded. When I applied only this XOR to the array, the output
 
 ### Rev - Reversing-x64Elf-100
 
+**Files:** [reversing-x64elf-100.zip](/assets/ctf-files/adworld-reversing/reversing-x64elf-100.zip)
+
 The check builds 12 characters by reading from three strings in turn, taking every second character of each string, and subtracting 1. The index into the strings is `2 * (i / 3)` and the string is chosen by `i % 3`.
 
 ```cpp
@@ -118,6 +128,8 @@ for (i = 0; i <= 11; ++i)
 Flag: `Code_Talkers`
 
 ### Rev - game
+
+**Files:** [game.zip](/assets/ctf-files/adworld-reversing/game.zip)
 
 The flag is stored in the binary as two encoded arrays, and a third array of 57 bytes is used as a keystream. The first 22 bytes are XORed with the first 22 keystream bytes and with `0x13`. The next 34 bytes continue through the keystream and are XORed the same way. I copied the arrays from the decompiler and ran the same loops.
 
@@ -142,6 +154,8 @@ The full byte arrays are in the script, they are long so I only show the decodin
 Flag: `zsctf{T9is_tOpic_1s_v5ry_int7resting_b6t_others_are_n0t}`
 
 ### Rev - srm-50
+
+**Files:** [srm-50.zip](/assets/ctf-files/adworld-reversing/srm-50.zip)
 
 The program rebuilds a 26 character key in a buffer by assigning individual bytes (`v11[0]`, `v11[1]`, and so on). I reproduced the assignments in Python to see the key.
 
@@ -172,6 +186,8 @@ Status: the script only reconstructs the first 16 bytes of the key and I did not
 
 ### Rev - open-source
 
+**Files:** [open-source.zip](/assets/ctf-files/adworld-reversing/open-source.zip)
+
 This one comes with C source. The program requires `first == 0xcafe`, a `second` value with `second % 5 != 3` and `second % 17 == 8`, and the third argument must be `h4cky0u`. Then it prints a hash. I did not need a valid `second` beyond its modulus, because only `second % 17` enters the hash and that is fixed to 8. Reproducing the formula gives the key. Using `25` as the second value satisfies the checks since `25 % 17 == 8` and `25 % 5 == 0`.
 
 ```cpp
@@ -186,6 +202,8 @@ printf("%x\n", hash);
 Flag: `c0ffee`
 
 ### Rev - parallel-comparator-200
+
+**Files:** [parallel-comparator-200.zip](/assets/ctf-files/adworld-reversing/parallel-comparator-200.zip)
 
 The program takes 20 characters and compares them in parallel threads. Each thread checks that one character equals a base letter plus a delta from a table. The base is a single lowercase letter shared by all positions, so I brute forced the 26 possible bases and applied the delta table to each. I also kept a small `thread.c` test program to confirm how pthread creates a thread that runs alongside the main one.
 
@@ -206,6 +224,8 @@ Flag: `lucky_hacker_you_are`
 ## Runtime decoded code
 
 ### Rev - BABYRE
+
+**Files:** [babyre.zip](/assets/ctf-files/adworld-reversing/babyre.zip)
 
 The main function reads 14 bytes of input and calls `judge(s)`. In IDA, `judge` showed up as an array of values and not as code. The call is written as `(*(unsigned int (__fastcall **)(char *))judge)(input_flag)`, which means `judge` is data that is called as a function with a `char *` argument, returning `unsigned int`.
 
@@ -265,6 +285,8 @@ Flag: `flag{n1c3_j0b}`
 
 ### Rev - simple-unpack
 
+**Files:** [simple-unpack.zip](/assets/ctf-files/adworld-reversing/simple-unpack.zip)
+
 The binary is packed with UPX. Running `upx -d <file>` restores the original executable, and the flag then shows up in the unpacked binary.
 
 Flag: `flag{Upx_1s_n0t_a_d3liv3r_c0mp4ny}`
@@ -275,17 +297,25 @@ These four have a recorded flag but no solve script in my notes, so I only list 
 
 ### Rev - easyRE1
 
+**Files:** [easyre1.zip](/assets/ctf-files/adworld-reversing/easyre1.zip)
+
 Flag: `flag{db2f62a36a018bce28e46d976e3f9864}`
 
 ### Rev - lucknum
+
+**Files:** [lucknum.zip](/assets/ctf-files/adworld-reversing/lucknum.zip)
 
 Flag: `flag{c0ngr@tul@ti0n_f0r_luck_numb3r}`
 
 ### Rev - Shuffle
 
+**Files:** [shuffle.zip](/assets/ctf-files/adworld-reversing/shuffle.zip)
+
 Flag: `SECCON{Welcome to the SECCON 2014 CTF!}`
 
 ### Rev - insanity
+
+**Files:** [insanity.zip](/assets/ctf-files/adworld-reversing/insanity.zip)
 
 Flag: `9447{This_is_a_flag}`
 

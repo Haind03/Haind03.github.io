@@ -19,6 +19,8 @@ Flag: `PTITCTF{n3fq44jbke2yihc70x8e}`
 
 ## Crypto - crypto2
 
+**Files:** [crypto2.zip](/assets/ctf-files/ptit-ctf-2023-finals/crypto2.zip)
+
 The challenge source, `crypto1.py`, encrypts two messages with AES in CTR mode, reusing the same key and the same counter object for both calls.
 
 ```python
@@ -61,6 +63,8 @@ Running this against the two ciphertexts in `out.txt` gives the flag directly.
 Flag: `PTITCTF{https://www.youtube.com/watch?v=rxBsiVhK2Aw}`
 
 ## Crypto - crypto3
+
+**Files:** [crypto3.zip](/assets/ctf-files/ptit-ctf-2023-finals/crypto3.zip)
 
 The server, `server.py`, uses Python's `random` module (Mersenne Twister, MT19937) as if it were a secure stream cipher: it either hands out raw 32 bit outputs of `random.getrandbits(32)`, or encrypts each character of the flag by adding a fresh `getrandbits(32)` output to its ord value.
 
@@ -108,6 +112,8 @@ Flag: `PTITCTF{n0w_y0u_kn0wn_mt19937pr3djct0r_43f3924f9f09}`
 
 ## Pwn - pwn3
 
+**Files:** [pwn3.zip](/assets/ctf-files/ptit-ctf-2023-finals/pwn3.zip)
+
 The binary is a small, not-stripped x86-64 ELF with a `vuln` function and a `win` function. Disassembling `vuln`:
 
 ```
@@ -143,6 +149,8 @@ p.interactive()
 Status: unsolved. The challenge server is no longer reachable, and no recorded output or flag was kept from the original run. The format string primitive and the exact payload are confirmed by static analysis of the binary, but the flag string itself was never saved locally.
 
 ## Rev - re1
+
+**Files:** [re1.zip](/assets/ctf-files/ptit-ctf-2023-finals/re1.zip)
 
 A small ELF that `check`s a hardcoded, encoded array of DWORDs against a `decode` function applied to each byte of the user's input. The disassembly of `decode`:
 
@@ -181,6 +189,8 @@ print(b"".join(long_to_bytes(x) for x in fl))
 Flag: `PTITCTF{tk3_4ss3mbly_f0r_b3qjnn3r_r3}`
 
 ## Rev - re2
+
+**Files:** [re2.zip](/assets/ctf-files/ptit-ctf-2023-finals/re2.zip)
 
 This challenge is a Python script that obfuscates itself heavily, using the classic `()`.__class__.__base__.__subclasses__() sandbox-escape trick to reach `__builtins__` at runtime and reconstructing string literals from hex-encoded bytes. Underneath that noise, the real check is a sequence of statements of the form `inp[i]**k == N`, meaning each byte of the input, raised to some power `k`, equals a fixed number `N`.
 
@@ -232,6 +242,8 @@ Running `solveok.py` end to end (recover the power-check bytes, then forward thr
 Flag: `PTITCTF{pYthOn_obFuScAtION_iS_N0_M4TCH_f0r_U_H3h3!}`
 
 ## Rev - re3
+
+**Files:** [re3.zip](/assets/ctf-files/ptit-ctf-2023-finals/re3.zip)
 
 A larger (~200 KB), stripped-of-symbols Windows PE32 executable named `RE_Hard.pdb` internally, with essentially no readable strings beyond the PE loader stub and a Winsock error string, suggesting it talks over a socket and does its checking without any helpful plaintext.
 

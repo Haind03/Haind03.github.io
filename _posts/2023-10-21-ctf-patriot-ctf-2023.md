@@ -13,6 +13,8 @@ PatriotCTF 2023 was an online CTF held in autumn 2023. These are my notes for th
 
 ## Rev - python xor
 
+**Files:** [python-xor.zip](/assets/ctf-files/patriot-ctf-2023/python-xor.zip)
+
 The challenge gives a short ciphertext string and a stub `XOR.py` where the key is left blank. The key is a single character from `string.punctuation`. The ciphertext starts with `b`, and the flag is expected to start with `F`, so the key is `ord('b') ^ ord('F')`, which is 36. XOR-ing every byte with 36 gives the plaintext.
 
 ```python
@@ -36,6 +38,8 @@ Flag: `Flag{python_is_e@sy}`
 
 ## Rev - suboptimal
 
+**Files:** [suboptimal.zip](/assets/ctf-files/patriot-ctf-2023/suboptimal.zip)
+
 This is an ELF that reads input and runs each character through helper functions (`complex`, `complex2`) in a loop. My script takes the encoded string and subtracts 8 from every byte.
 
 ```python
@@ -57,6 +61,8 @@ Status: unsolved. The first four characters match the `pctf` prefix, but the fif
 
 ## Rev - GoLmoL
 
+**Files:** [golmol.zip](/assets/ctf-files/patriot-ctf-2023/golmol.zip)
+
 A Go binary that builds a secret and compares it with the input. The source in `main.go` shows the whole logic. The secret is every fifth ASCII character from 33 up to 122:
 
 ```go
@@ -71,6 +77,8 @@ The input must equal this secret. For each matching character, the program appen
 Flag: `PCTF{(-27<AFKPUZ_dinsx}`
 
 ## Rev - reduced_reduced_instruction_set
+
+**Files:** [reduced-reduced-instruction-set.zip](/assets/ctf-files/patriot-ctf-2023/reduced-reduced-instruction-set.zip)
 
 The challenge gives a small custom VM (`vm`) and a program file `password_checker.smol`. The file starts with the magic `SMOL` followed by 4-byte instructions (opcode, destination register, source register, immediate). `programmer.py` shows how the program was generated: it has instructions for mov, movi, push, pop, mul, addi, cmp, jz, reading a number and printing.
 
@@ -93,6 +101,8 @@ Decoding the seven chunks as 4-byte big-endian ASCII gives the flag. I did not r
 Flag: `pctf{vm_r3vers3inG_1s_tr1cky}`
 
 ## Rev - reduced_reduced_instruction_set_2
+
+**Files:** [reduced-reduced-instruction-set-2.zip](/assets/ctf-files/patriot-ctf-2023/reduced-reduced-instruction-set-2.zip)
 
 The same VM with more instructions, and a much bigger program (about 300 KB). The password checker program encodes an 840 character message, with the flag inside it, using a running XOR cipher:
 
@@ -127,11 +137,15 @@ Flag: `pctf{vM_r3v3rs1ng_g0t_a_l1ttl3_harder}`
 
 ## Rev - patchwork
 
+**Files:** [patchwork.zip](/assets/ctf-files/patriot-ctf-2023/patchwork.zip)
+
 The challenge is an ELF named `patchwork`. The only thing I kept for it is the flag file, I do not have a script or notes on the method.
 
 Flag: `PCTF{JuMp_uP_4nd_g3t_d0Wn}`
 
 ## Rev - garbage
+
+**Files:** [garbage.zip](/assets/ctf-files/patriot-ctf-2023/garbage.zip)
 
 `garbage.py` is a Python script whose source is full of Brainfuck comments after every line (noise). The real logic is three stages that are applied to the flag, and the challenge output is the result:
 
@@ -169,11 +183,15 @@ Flag: `PCTF{H0w_D1d_y0U_br34k_my_1337_c0de?}`
 
 ## Rev - Coffee shop
 
+**Files:** [coffee-shop.zip](/assets/ctf-files/patriot-ctf-2023/coffee-shop.zip)
+
 This one is a Java program (`CoffeeShop.jar`) with a decompiled `CoffeeShop.java` from Procyon.
 
 Status: unsolved. I did not work through the decompiled source for this write up, and there is no flag or solve script in my files, so I am not reporting a flag.
 
 ## Crypto - ReReCaptcha
+
+**Files:** [rerecaptcha.zip](/assets/ctf-files/patriot-ctf-2023/rerecaptcha.zip)
 
 The challenge gives RSA material as images and text: the ciphertext `c`, and the two primes `p` and `q` (stored as text in `P.txt`, `Q.txt` and `CT.txt`, with matching PNG screenshots). With both primes known, RSA is trivial to break. Compute `phi = (p-1)(q-1)`, the private exponent `d = e^-1 mod phi` (with `e = 65537`), and decrypt.
 
@@ -200,11 +218,15 @@ Flag: `PCTF{I_H0P3_U_U53D_0CR!}`
 
 ## Crypto - binary
 
+**Files:** [binary.zip](/assets/ctf-files/patriot-ctf-2023/binary.zip)
+
 The challenge file `Binary.txt` is a long string of 1444 zeros and ones. My script `s.py` is a helper that turns a binary string into hex by grouping 4 bits at a time with a lookup table.
 
 Status: unsolved. Reading the bits as 7-bit or 8-bit ASCII (also inverted) does not give readable text, and 1444 is 38 squared but the data does not form a valid QR code when I render it as a 38 by 38 grid. I did not find the right encoding, so no flag.
 
 ## Forensics - wpa
+
+**Files:** [wpa.zip](/assets/ctf-files/patriot-ctf-2023/wpa.zip)
 
 The challenge is a packet capture (`savedcap.cap`) with a WPA handshake for the network `Pctf wifi challenge`. The standard approach is to run a dictionary attack against the handshake with `aircrack-ng` and the rockyou wordlist:
 
@@ -219,6 +241,8 @@ The cracked Wi-Fi password is `qazwsxedc`. My notes only keep the aircrack outpu
 Status: partially done. The key is recovered, the flag string itself is not recorded in my files.
 
 ## Misc - ML_Pyjail
+
+**Files:** [ml-pyjail.zip](/assets/ctf-files/patriot-ctf-2023/ml-pyjail.zip)
 
 A Python jail challenge with a tflearn model and training data (`good_code.txt`, `bad_code.txt`). The `flag.txt` in the folder is a placeholder, not the real flag.
 

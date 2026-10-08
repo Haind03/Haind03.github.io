@@ -13,6 +13,8 @@ These are my writeups for the qualifying round of PTIT CTF 2023, a Vietnamese un
 
 ## Crypto - cr1
 
+**Files:** [cr1.zip](/assets/ctf-files/ptit-ctf-2023-quals/cr1.zip)
+
 An easy challenge. The binary `chall.c` reads a password from stdin and checks it against a few conditions.
 
 ```c
@@ -62,6 +64,8 @@ int main(){
 Flag: `PTITCTF{Xor_eXcit1ng}`
 
 ## Crypto - cr2
+
+**Files:** [cr2.zip](/assets/ctf-files/ptit-ctf-2023-quals/cr2.zip)
 
 A substitution cipher dressed up as emoji. `gen.py` takes the hex representation of a plaintext and replaces each hex nibble (`0` to `f`) with one of 16 shuffled emoji, so the mapping changes every run.
 
@@ -157,6 +161,8 @@ Status: unsolved. The target, `128.199.247.205:6989`, is no longer reachable, so
 
 ## Pwn - pwn1
 
+**Files:** [pwn1.zip](/assets/ctf-files/ptit-ctf-2023-quals/pwn1.zip)
+
 A stack buffer overflow challenge. The vulnerable function reads input with `gets()` into a 0x60-byte stack buffer, and a 4-byte integer check variable sits immediately after it on the stack.
 
 ```c
@@ -189,6 +195,8 @@ Status: unsolved as far as the final flag goes. The exploit logic is confirmed b
 
 ## Pwn - pwn2
 
+**Files:** [pwn2.zip](/assets/ctf-files/ptit-ctf-2023-quals/pwn2.zip)
+
 A format string challenge. The binary reads a string with `read()` and passes it straight to `printf()`, twice, which is a textbook format string bug, then checks a global `secret_number` against `0xab` (171) to decide whether to call `Get_flag()`.
 
 ```python
@@ -217,6 +225,8 @@ Status: unsolved as far as the final flag goes, for the same reason as pwn1. The
 
 ## Pwn - pwn3
 
+**Files:** [pwn3.zip](/assets/ctf-files/ptit-ctf-2023-quals/pwn3.zip)
+
 No solve script was kept for this challenge, so I reconstructed the mechanism from static analysis of the ELF (`objdump`, `strings`).
 
 The binary mallocs a buffer, reads a line with `fgets()`, and rejects it outright if it contains the string `no hacking pls!!!1111!` (an anti-cheese check). Then it searches the input for a fixed secret phrase with `strstr()`.
@@ -230,6 +240,8 @@ If that phrase is present, it opens `flag.txt`, reads a line from it, and prints
 Status: unsolved. The challenge mechanism (send a line containing `giveMeTheFlagPLS`) is fully recovered from static analysis, but the `flag.txt` shipped with these files is a local placeholder, not the real flag, so there is nothing further to recover without the original server.
 
 ## Rev - re1
+
+**Files:** [re1.zip](/assets/ctf-files/ptit-ctf-2023-quals/re1.zip)
 
 A time-seeded substitution cipher. The binary builds a shuffled 26-letter alphabet from `rand()`, seeded from the system clock, then uses that alphabet as a substitution key to decrypt a fixed, embedded ciphertext. It loops over candidate seeds near the current time until the decrypted text starts with `PTITCTF{`.
 
@@ -268,6 +280,8 @@ The actual attack the author's own `solve.cpp` runs is to replay the exact same 
 Status: unsolved. The decryption method (time-seeded Fisher-Yates shuffle used as a substitution alphabet, brute-forced against `time(0)`) is fully understood and reproduced, but recovering the exact seed used in the original run needs either the original machine's clock at solve time or a much longer brute-force window than was practical here, so I am not reporting a guessed flag.
 
 ## Rev - re2
+
+**Files:** [re2.zip](/assets/ctf-files/ptit-ctf-2023-quals/re2.zip)
 
 A packed, obfuscated Windows binary (`re2.rar` containing `re2.exe`, a 32-bit MinGW-compiled PE). The included `s.py` is an unfinished attempt at tracing the password check logic rather than a working solver, and the binary itself has anti-debug code (`IsDebuggerPresent`-style calls such as `BlockInput` turned up in the strings).
 
@@ -315,6 +329,8 @@ Status: unsolved, but close. I recovered a long, readable candidate body, `PTITC
 
 ## Rev - re3
 
+**Files:** [re3.zip](/assets/ctf-files/ptit-ctf-2023-quals/re3.zip)
+
 A 32-bit Windows PE (`re3.exe`), small and not packed. Dumping its `.data` section directly shows the flag stored as a plain string, used by a `reverse`/`Success!` message pair guarded by a simple length and content check.
 
 ```
@@ -328,6 +344,8 @@ No execution or dynamic analysis was needed, the flag is simply present in the b
 Flag: `PTITCTF{w3LLc0me_t0_r3veRse_eNg1neeR1nG!}`
 
 ## Rev - re4
+
+**Files:** [re4.zip](/assets/ctf-files/ptit-ctf-2023-quals/re4.zip)
 
 An XOR challenge against a fixed prefix. `solve.py` takes an array of encoded bytes and recovers the XOR key by XORing the first 7 bytes against the known prefix `PTITCTF`, since XOR with the correct key at those positions must produce exactly that prefix.
 
@@ -357,6 +375,8 @@ print(full)
 Flag: `PTITCTF{x0r_1s_us3d_by_Halston_and_vstxckr}`
 
 ## Web - web02
+
+**Files:** [web02.zip](/assets/ctf-files/ptit-ctf-2023-quals/web02.zip)
 
 An SQL injection challenge on the `search` parameter of a login-style form. The captured request shows a plain `POST` to `index.php` with a `search` field.
 

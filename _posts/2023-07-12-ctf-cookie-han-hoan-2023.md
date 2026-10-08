@@ -13,6 +13,8 @@ Cookie Han Hoan was a Vietnamese CTF held in the summer of 2023. These are my no
 
 ## Rev - jump
 
+**Files:** [reverse-jump.zip](/assets/ctf-files/cookie-han-hoan-2023/reverse-jump.zip)
+
 The challenge is a 32-bit Windows console program, `jump.exe`. It prints `jump jump jump: ` and reads a number with `scanf`. The binary also contains a function named `_flag` at `0x00401500` that prints `flag: %s`, but nothing in the normal flow calls it.
 
 The input is read into a stack buffer without a length check, so the saved return address can be overwritten. The program treats the number as a target for the jump, and the only useful target is the address of the flag function. The address has to be entered in decimal because it is read with `scanf` as a number, so I converted it first:
@@ -35,6 +37,8 @@ A quick disassembly confirms the target. `_flag` starts at `0x401500` with a nor
 Flag: `CHH{JUMP_T0_TH3_M00N}`
 
 ## Rev - pyreverser
+
+**Files:** [reverse-pyrevese.zip](/assets/ctf-files/cookie-han-hoan-2023/reverse-pyrevese.zip)
 
 The challenge gives `pyreverser.exe`, which is a Python program packed into an executable (PyInstaller style), plus a `pyreverser.pyc` and a `log.log` from my earlier run.
 
@@ -60,6 +64,8 @@ CHH{python2Exi_Reverse_ENginering}
 Flag: `CHH{python2Exi_Reverse_ENginering}`
 
 ## Rev - rev1
+
+**Files:** [reverse-rev1.zip](/assets/ctf-files/cookie-han-hoan-2023/reverse-rev1.zip)
 
 The challenge is a zip archive containing a single Windows executable, `rev.exe` (about 390 KB). The archive is password protected, and the password is not in the files I have, so I could not extract or analyze the executable.
 
