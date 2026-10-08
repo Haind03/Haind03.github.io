@@ -1,7 +1,7 @@
 ---
 title: LLM Security
 icon: fas fa-robot
-order: 4
+order: 2
 render_with_liquid: false
 ---
 

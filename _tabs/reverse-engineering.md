@@ -1,7 +1,7 @@
 ---
 title: Reverse Engineering
 icon: fas fa-microchip
-order: 1
+order: 5
 render_with_liquid: false
 ---
 

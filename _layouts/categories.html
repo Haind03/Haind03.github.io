@@ -22,7 +22,7 @@ layout: page
 {% endfor %}
 
 <!-- Preferred chronological order; any others follow -->
-{% assign preferred = 'Reverse Engineering,Binary Exploitation,Cryptography,Malware Analysis,CTF Journey,LLM Security' | split: ',' %}
+{% assign preferred = 'LLM Security,CTF Journey,Malware Analysis,Cryptography,Binary Exploitation,Reverse Engineering' | split: ',' %}
 {% assign extras = '' | split: '' %}
 {% for cn in all_top %}
   {% unless preferred contains cn %}
