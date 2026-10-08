@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-11-2-dissecting-electron-app-from-app-asar.webp
   alt: "Lesson 11.2: Dissecting an Electron app"
 date: 2023-01-27 15:53:00 +0700
-categories: ["Technique Reverse", "Part 11 · JavaScript, Electron, WebAssembly"]
+categories: ["Reverse Engineering", "Part 11 · JavaScript, Electron, WebAssembly"]
 tags: [reverse-engineering, javascript, wasm]
 render_with_liquid: false
 ---

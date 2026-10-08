@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-2-5-x64dbg-reversers-dynamic-scalpel-windows.webp
   alt: "Lesson 2.5: x64dbg basics"
 date: 2022-05-03 10:03:00 +0700
-categories: ["Technique Reverse", "Part 02 · The Toolkit"]
+categories: ["Reverse Engineering", "Part 02 · The Toolkit"]
 tags: [reverse-engineering, tools]
 render_with_liquid: false
 ---

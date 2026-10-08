@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-2-7-hex-editors-templates-when-you-need.webp
   alt: "Lesson 2.7: Hex editors and templates"
 date: 2022-05-19 09:48:00 +0700
-categories: ["Technique Reverse", "Part 02 · The Toolkit"]
+categories: ["Reverse Engineering", "Part 02 · The Toolkit"]
 tags: [reverse-engineering, tools]
 render_with_liquid: false
 ---
@@ -16,7 +16,7 @@ This lesson doesn't go through every button of the three programs. It covers whe
 
 Most of the time you won't open one, because IDA and x64dbg already have hex windows. But in a few situations a standalone hex editor is faster and tidier.
 
-One is patching bytes directly in a file. You found in the debugger that a `jne` (opcode `75`) needs to become `je` (opcode `74`), and you want to edit the file on disk so the patch stays. Open the hex editor, jump to the offset, type over it, save. Patch details are in [Lesson 17.1](/technique-reverse/).
+One is patching bytes directly in a file. You found in the debugger that a `jne` (opcode `75`) needs to become `je` (opcode `74`), and you want to edit the file on disk so the patch stays. Open the hex editor, jump to the offset, type over it, save. Patch details are in [Lesson 17.1](/reverse-engineering/).
 
 Another is fixing a magic number or header, when a file has a few corrupted bytes at the start or someone changed the magic on purpose to hide the file type. A third is reading a format nobody documents, like a binary config file, a save game, or a homemade container. With no parser, you work out the structure yourself from the hex. The last is a quick check of the first four bytes. `4D 5A` is PE, `7F 45 4C 46` is ELF, `50 4B` is ZIP. Often a glance at the start of the file is all you need.
 
@@ -64,7 +64,7 @@ NtHeaders nt  @ dos.e_lfanew;      // place NtHeaders at the offset that e_lfane
 
 Run this on an `.exe` and ImHex shows `dos.magic = "MZ"`, `dos.e_lfanew = 0x100` (say), then jumps there and reads `nt.signature = "PE"`, `nt.machine = 0x8664`. You get the architecture and the number of sections without counting bytes by hand. The `@ address` syntax is the handy part, because you place a struct at an exact offset, even one taken from another field.
 
-Once you get this, it works for any format. Write a pattern for a save game or a binary config file and the tool takes it apart for you. This is the first step of reversing file formats, covered in [Lesson 18.7](/technique-reverse/).
+Once you get this, it works for any format. Write a pattern for a save game or a binary config file and the tool takes it apart for you. This is the first step of reversing file formats, covered in [Lesson 18.7](/reverse-engineering/).
 
 ## Comparison
 

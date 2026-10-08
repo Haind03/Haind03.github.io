@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-2-4-binary-ninja-cutter-radare2-when-ida.webp
   alt: "Lesson 2.4: Binary Ninja, Cutter and radare2"
 date: 2022-04-22 22:33:00 +0700
-categories: ["Technique Reverse", "Part 02 · The Toolkit"]
+categories: ["Reverse Engineering", "Part 02 · The Toolkit"]
 tags: [reverse-engineering, tools]
 render_with_liquid: false
 ---

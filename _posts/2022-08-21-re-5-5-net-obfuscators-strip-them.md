@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-5-5-net-obfuscators-strip-them.webp
   alt: "Lesson 5.5: .NET obfuscators and how to strip them"
 date: 2022-08-21 15:13:00 +0700
-categories: ["Technique Reverse", "Part 05 · C# and .NET"]
+categories: ["Reverse Engineering", "Part 05 · C# and .NET"]
 tags: [reverse-engineering, dotnet]
 render_with_liquid: false
 ---

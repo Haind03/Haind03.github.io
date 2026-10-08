@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-6-6-frida-android-changing-app-behavior-while.webp
   alt: "Lesson 6.6: Frida on Android"
 date: 2022-10-21 21:39:00 +0700
-categories: ["Technique Reverse", "Part 06 · Java, Kotlin and Android"]
+categories: ["Reverse Engineering", "Part 06 · Java, Kotlin and Android"]
 tags: [reverse-engineering, android, java]
 render_with_liquid: false
 ---

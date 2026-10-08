@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-17-6-ld-preload-ptrace-dyld-insert-libraries.webp
   alt: "Lesson 17.6: LD_PRELOAD, ptrace and DYLD_INSERT_LIBRARIES"
 date: 2023-08-08 14:54:00 +0700
-categories: ["Technique Reverse", "Part 17 · Patching, Hooking, Injection"]
+categories: ["Reverse Engineering", "Part 17 · Patching, Hooking, Injection"]
 tags: [reverse-engineering, frida, hooking]
 render_with_liquid: false
 ---

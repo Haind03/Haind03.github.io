@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-1-10-windows-internals-1-win32-api-dlls.webp
   alt: "Lesson 1.10: Windows internals (1), Win32 API and DLLs"
 date: 2022-03-26 21:45:00 +0700
-categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
+categories: ["Reverse Engineering", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---

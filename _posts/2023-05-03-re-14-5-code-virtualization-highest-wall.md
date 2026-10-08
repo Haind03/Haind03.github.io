@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-14-5-code-virtualization-highest-wall.webp
   alt: "Lesson 14.5: Code virtualization"
 date: 2023-05-03 23:42:00 +0700
-categories: ["Technique Reverse", "Part 14 · Packers and Obfuscation"]
+categories: ["Reverse Engineering", "Part 14 · Packers and Obfuscation"]
 tags: [reverse-engineering, packer, obfuscation]
 render_with_liquid: false
 ---
@@ -50,11 +50,11 @@ Nobody reads a whole VM by eye. You pick the level of abstraction that suits the
 
 The first piece of advice is don't solve the VM, solve the problem. Often you don't need to understand the entire VM, you only need to know what the function takes and what it returns. If the virtualized function is the serial check, treat it as a black box. Feed it input and watch the output, or set a breakpoint where it returns its result and patch that result, instead of reversing the whole virtual machine. A lot of "cracking VMProtect" is just bypassing the VM part by attacking input and output.
 
-The second direction is dynamic trace. Run the binary and record every instruction executed (using Pin, DynamoRIO, or the x64dbg trace, see [Lesson 17.7](/technique-reverse/)). The trace shows the real execution flow across the handlers, and you infer behavior from it without understanding each handler statically.
+The second direction is dynamic trace. Run the binary and record every instruction executed (using Pin, DynamoRIO, or the x64dbg trace, see [Lesson 17.7](/reverse-engineering/)). The trace shows the real execution flow across the handlers, and you infer behavior from it without understanding each handler statically.
 
 The third is rebuilding the VM dictionary (devirtualization). When you really have to understand it, you analyze the dispatcher, list the handler table, then map each VM opcode to a meaning (this handler pushes a constant, that one adds two values on the virtual stack). With the dictionary you translate the VM bytecode back into a readable form. Tools for this are VTIL (VMProtect devirtualization), IL frameworks like Miasm and Triton, and dedicated lifters for each protector.
 
-The fourth is symbolic execution. Use angr or Triton (see [Lesson 18.3](/technique-reverse/)) to express the output as a formula of the input, then let a solver find an input that satisfies the condition. This ignores how the VM works and only cares about the mathematical relationship between input and output.
+The fourth is symbolic execution. Use angr or Triton (see [Lesson 18.3](/reverse-engineering/)) to express the output as a formula of the input, then let a solver find an input that satisfies the condition. This ignores how the VM works and only cares about the mathematical relationship between input and output.
 
 In general, pick the lowest level of abstraction that gets you to the goal. Understanding the whole VM is the most expensive job, so do it only when you really need to.
 

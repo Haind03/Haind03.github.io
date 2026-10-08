@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-14-2-unpacking-upx-automatic-manual.webp
   alt: "Lesson 14.2: Unpacking UPX, automatic and manual"
 date: 2023-04-11 22:33:00 +0700
-categories: ["Technique Reverse", "Part 14 · Packers and Obfuscation"]
+categories: ["Reverse Engineering", "Part 14 · Packers and Obfuscation"]
 tags: [reverse-engineering, packer, obfuscation]
 render_with_liquid: false
 ---

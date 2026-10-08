@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-5-7-combined-lab-solving-net-crackmes-from.webp
   alt: "Lesson 5.7: Combined lab, solving .NET crackmes"
 date: 2022-08-26 14:27:00 +0700
-categories: ["Technique Reverse", "Part 05 · C# and .NET"]
+categories: ["Reverse Engineering", "Part 05 · C# and .NET"]
 tags: [reverse-engineering, dotnet]
 render_with_liquid: false
 ---

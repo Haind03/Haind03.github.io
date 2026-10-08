@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-11-3-webassembly-reading-bytecode-that-runs-browser.webp
   alt: "Lesson 11.3: WebAssembly"
 date: 2023-01-29 09:03:00 +0700
-categories: ["Technique Reverse", "Part 11 · JavaScript, Electron, WebAssembly"]
+categories: ["Reverse Engineering", "Part 11 · JavaScript, Electron, WebAssembly"]
 tags: [reverse-engineering, javascript, wasm]
 render_with_liquid: false
 ---

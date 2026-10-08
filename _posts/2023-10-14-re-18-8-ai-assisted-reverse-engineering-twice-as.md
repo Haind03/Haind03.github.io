@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-18-8-ai-assisted-reverse-engineering-twice-as.webp
   alt: "Lesson 18.8: AI-assisted reverse engineering"
 date: 2023-10-14 15:46:00 +0700
-categories: ["Technique Reverse", "Part 18 · Advanced Topics"]
+categories: ["Reverse Engineering", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
 render_with_liquid: false
 ---

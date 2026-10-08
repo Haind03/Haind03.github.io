@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-14-3-dumping-process-rebuilding-iat-scylla.webp
   alt: "Lesson 14.3: Dumping a process and rebuilding the IAT with Scylla"
 date: 2023-04-18 23:54:00 +0700
-categories: ["Technique Reverse", "Part 14 · Packers and Obfuscation"]
+categories: ["Reverse Engineering", "Part 14 · Packers and Obfuscation"]
 tags: [reverse-engineering, packer, obfuscation]
 render_with_liquid: false
 ---

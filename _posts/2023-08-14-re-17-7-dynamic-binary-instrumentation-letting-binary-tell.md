@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-17-7-dynamic-binary-instrumentation-letting-binary-tell.webp
   alt: "Lesson 17.7: Dynamic Binary Instrumentation"
 date: 2023-08-14 14:53:00 +0700
-categories: ["Technique Reverse", "Part 17 · Patching, Hooking, Injection"]
+categories: ["Reverse Engineering", "Part 17 · Patching, Hooking, Injection"]
 tags: [reverse-engineering, frida, hooking]
 render_with_liquid: false
 ---

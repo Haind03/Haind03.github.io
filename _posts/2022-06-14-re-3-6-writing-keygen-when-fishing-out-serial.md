@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-3-6-writing-keygen-when-fishing-out-serial.webp
   alt: "Lesson 3.6: Writing a keygen"
 date: 2022-06-14 10:24:00 +0700
-categories: ["Technique Reverse", "Part 03 · C"]
+categories: ["Reverse Engineering", "Part 03 · C"]
 tags: [reverse-engineering, c]
 render_with_liquid: false
 ---

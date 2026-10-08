@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-10-3-scripts-packed-into-exes-easier-open.webp
   alt: "Lesson 10.3: Scripts packed into exes"
 date: 2023-01-13 11:38:00 +0700
-categories: ["Technique Reverse", "Part 10 · Legacy: Delphi, VB6, AutoIt, AHK"]
+categories: ["Reverse Engineering", "Part 10 · Legacy: Delphi, VB6, AutoIt, AHK"]
 tags: [reverse-engineering, legacy]
 render_with_liquid: false
 ---

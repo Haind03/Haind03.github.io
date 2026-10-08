@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-0-2-legal-ethics-part-everyone-wants-skip.webp
   alt: "Lesson 0.2: Legal and ethics"
 date: 2022-01-19 14:56:00 +0700
-categories: ["Technique Reverse", "Part 00 · Getting Started"]
+categories: ["Reverse Engineering", "Part 00 · Getting Started"]
 tags: [reverse-engineering, basics]
 render_with_liquid: false
 ---

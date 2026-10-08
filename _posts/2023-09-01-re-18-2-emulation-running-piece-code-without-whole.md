@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-18-2-emulation-running-piece-code-without-whole.webp
   alt: "Lesson 18.2: Emulation, running a piece of code on its own"
 date: 2023-09-01 15:06:00 +0700
-categories: ["Technique Reverse", "Part 18 · Advanced Topics"]
+categories: ["Reverse Engineering", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
 render_with_liquid: false
 ---

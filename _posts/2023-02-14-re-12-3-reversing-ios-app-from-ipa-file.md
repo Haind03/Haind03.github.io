@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-12-3-reversing-ios-app-from-ipa-file.webp
   alt: "Lesson 12.3: Reversing an iOS app from the IPA file"
 date: 2023-02-14 10:47:00 +0700
-categories: ["Technique Reverse", "Part 12 · Swift and Objective-C"]
+categories: ["Reverse Engineering", "Part 12 · Swift and Objective-C"]
 tags: [reverse-engineering, ios, swift]
 render_with_liquid: false
 ---
@@ -44,7 +44,7 @@ All of them need a jailbroken device (or an equivalent environment) because they
 
 Once you have the decrypted binary (`cryptid` = 0), the rest is what you've already learned.
 
-It's a Mach-O, so recall [Lesson 1.8](/posts/re-1-8-elf-mach-o-two-formats-outside/) and remember to check for fat binaries and the arm64 architecture. If the app is written in Objective-C, read it by `objc_msgSend` and selectors like in [Lesson 12.1](/posts/re-12-1-objective-c-where-every-call-goes/) and run class-dump to get the headers. If it's written in Swift, demangle and read the metadata like in [Lesson 12.2](/technique-reverse/). The code is ARM64, so see [Lesson 1.9](/posts/re-1-9-arm-arm64-basics-people-who-already/) again.
+It's a Mach-O, so recall [Lesson 1.8](/posts/re-1-8-elf-mach-o-two-formats-outside/) and remember to check for fat binaries and the arm64 architecture. If the app is written in Objective-C, read it by `objc_msgSend` and selectors like in [Lesson 12.1](/posts/re-12-1-objective-c-where-every-call-goes/) and run class-dump to get the headers. If it's written in Swift, demangle and read the metadata like in [Lesson 12.2](/reverse-engineering/). The code is ARM64, so see [Lesson 1.9](/posts/re-1-9-arm-arm64-basics-people-who-already/) again.
 
 So FairPlay is just one obstacle. Once you're past it, the tools and approach are the same as for a normal Mach-O.
 

@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-resources-reverse-engineering-tool-repository-roundup.webp
   alt: "Reverse Engineering tool repository (roundup)"
 date: 2023-12-09 22:22:00 +0700
-categories: ["Technique Reverse", "Resources"]
+categories: ["Reverse Engineering", "Resources"]
 tags: [reverse-engineering, resources]
 render_with_liquid: false
 ---
@@ -218,7 +218,7 @@ The sections are [1. Triage & file identification](#1-triage--file-identificatio
 | **TinyInst** | X | free | Light instrumentation for fuzzing/coverage |
 | **QBDI** (QuarksLab) | X | free | Embeddable DBI with a clean API |
 
-> Injection techniques (CreateRemoteThread, APC, manual mapping, process hollowing, reflective loading...) are covered in [Lessons 17.4 & 17.5](/technique-reverse/) from the angle of the mechanism and how to detect/defend against it. LD_PRELOAD / DYLD_INSERT_LIBRARIES are built-in OS mechanisms, not tools.
+> Injection techniques (CreateRemoteThread, APC, manual mapping, process hollowing, reflective loading...) are covered in [Lessons 17.4 & 17.5](/reverse-engineering/) from the angle of the mechanism and how to detect/defend against it. LD_PRELOAD / DYLD_INSERT_LIBRARIES are built-in OS mechanisms, not tools.
 
 ## 17. Emulation & symbolic execution
 
@@ -317,7 +317,7 @@ MCP (Model Context Protocol) lets an LLM drive RE tools directly, for example to
 | **capa-mcp / YARA MCP** | capa, YARA | Classify capabilities & scan rules on demand |
 | **unblob / binwalk MCP** | firmware tools | Extract firmware conversationally |
 
-> MCP gives an LLM permission to run tools on your machine. When analyzing malware, run the client and MCP in an isolated VM (see [Lesson 0.3](/posts/re-0-3-set-up-safe-lab-before-touching/)), and don't let the agent execute samples on its own. A separate lesson on setting up MCP for RE is at [Lesson 18.8](/technique-reverse/).
+> MCP gives an LLM permission to run tools on your machine. When analyzing malware, run the client and MCP in an isolated VM (see [Lesson 0.3](/posts/re-0-3-set-up-safe-lab-before-touching/)), and don't let the agent execute samples on its own. A separate lesson on setting up MCP for RE is at [Lesson 18.8](/reverse-engineering/).
 
 ---
 

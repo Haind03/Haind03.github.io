@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-18-3-symbolic-execution-making-computer-solve-crackme.webp
   alt: "Lesson 18.3: Symbolic execution"
 date: 2023-09-04 11:00:00 +0700
-categories: ["Technique Reverse", "Part 18 · Advanced Topics"]
+categories: ["Reverse Engineering", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
 render_with_liquid: false
 ---

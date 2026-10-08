@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-5-3-debugging-net-without-source-using-dnspy.webp
   alt: "Lesson 5.3: Debugging .NET without source using dnSpy"
 date: 2022-08-16 09:08:00 +0700
-categories: ["Technique Reverse", "Part 05 · C# and .NET"]
+categories: ["Reverse Engineering", "Part 05 · C# and .NET"]
 tags: [reverse-engineering, dotnet]
 render_with_liquid: false
 ---

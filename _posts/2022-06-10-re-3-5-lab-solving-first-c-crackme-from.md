@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-3-5-lab-solving-first-c-crackme-from.webp
   alt: "Lesson 3.5: Lab, solving your first C crackme"
 date: 2022-06-10 09:41:00 +0700
-categories: ["Technique Reverse", "Part 03 · C"]
+categories: ["Reverse Engineering", "Part 03 · C"]
 tags: [reverse-engineering, c]
 render_with_liquid: false
 ---

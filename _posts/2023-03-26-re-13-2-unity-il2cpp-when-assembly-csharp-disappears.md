@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-13-2-unity-il2cpp-when-assembly-csharp-disappears.webp
   alt: "Lesson 13.2: Unity IL2CPP"
 date: 2023-03-26 15:39:00 +0700
-categories: ["Technique Reverse", "Part 13 · Games: Unity, Unreal, Lua"]
+categories: ["Reverse Engineering", "Part 13 · Games: Unity, Unreal, Lua"]
 tags: [reverse-engineering, game-hacking]
 render_with_liquid: false
 ---

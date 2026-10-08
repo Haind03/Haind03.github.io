@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-10-1-reversing-delphi-c-builder-programs.webp
   alt: "Lesson 10.1: Reversing Delphi and C++Builder programs"
 date: 2022-12-28 10:34:00 +0700
-categories: ["Technique Reverse", "Part 10 · Legacy: Delphi, VB6, AutoIt, AHK"]
+categories: ["Reverse Engineering", "Part 10 · Legacy: Delphi, VB6, AutoIt, AHK"]
 tags: [reverse-engineering, legacy]
 render_with_liquid: false
 ---

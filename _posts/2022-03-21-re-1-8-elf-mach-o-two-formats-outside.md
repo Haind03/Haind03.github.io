@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-1-8-elf-mach-o-two-formats-outside.webp
   alt: "Lesson 1.8: ELF and Mach-O"
 date: 2022-03-21 22:18:00 +0700
-categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
+categories: ["Reverse Engineering", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---

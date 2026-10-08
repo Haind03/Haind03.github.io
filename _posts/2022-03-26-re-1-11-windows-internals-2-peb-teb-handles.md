@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-1-11-windows-internals-2-peb-teb-handles.webp
   alt: "Lesson 1.11: Windows internals (2), PEB, TEB, handles and tokens"
 date: 2022-03-26 20:50:00 +0700
-categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
+categories: ["Reverse Engineering", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
@@ -43,7 +43,7 @@ test eax, eax
 jne  found_debugger       ; non-zero: being debugged
 ```
 
-If you can read this snippet, you've recognized a classic anti-debug trick, covered in [Lesson 15.2](/technique-reverse/). The easy bypass while debugging is to set that byte to 0.
+If you can read this snippet, you've recognized a classic anti-debug trick, covered in [Lesson 15.2](/reverse-engineering/). The easy bypass while debugging is to set that byte to 0.
 
 ### Ldr, the list of loaded modules
 

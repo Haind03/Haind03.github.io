@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-15-8-integrity-checks-anti-tamper-when-program.webp
   alt: "Lesson 15.8: Integrity checks and anti-tamper"
 date: 2023-06-21 10:25:00 +0700
-categories: ["Technique Reverse", "Part 15 · Anti-Reversing and Bypasses"]
+categories: ["Reverse Engineering", "Part 15 · Anti-Reversing and Bypasses"]
 tags: [reverse-engineering, anti-debug]
 render_with_liquid: false
 ---
@@ -55,13 +55,13 @@ The check function sits outside the self-checked region, so editing it doesn't b
 
 The second is to patch the checksum comparison branch. If you don't want to touch the whole function, find the `cmp got, EXPECTED` followed by `jne fail` and invert or NOP that branch. The idea is the same, which is to make the comparison always "match".
 
-The third is to patch in memory after the check has run. Let the program self-check at startup (the code on disk is intact so it passes), then use a debugger to edit the code in RAM after that point. The checksum has already run and nobody checks again. That's why runtime patching is sometimes easier than patching on disk, see [Lesson 17.1](/technique-reverse/).
+The third is to patch in memory after the check has run. Let the program self-check at startup (the code on disk is intact so it passes), then use a debugger to edit the code in RAM after that point. The checksum has already run and nobody checks again. That's why runtime patching is sometimes easier than patching on disk, see [Lesson 17.1](/reverse-engineering/).
 
 There's a fourth way that's rarely used, which is to recompute `EXPECTED` to match the patched code and overwrite the embedded value. It only works when you understand the checksum algorithm well and can find where the value is stored, and multiple cross-checking layers make it a pain.
 
 ## Where to find the integrity-check function
 
-During static analysis, look for a function that reads its own code section, meaning a pointer into the `.text` region (the address of another function, or the image base) and then a loop over every byte. Look for a CRC loop too, with `xor`, `shr`, and a characteristic constant. CRC32 often exposes the polynomial `0xEDB88320`, see how to spot constants in [Lesson 16.1](/technique-reverse/). Other signs are comparing the result against a hard-coded 32-bit constant and then branching to exit, and the function being called very early (in initialization, or a TLS callback, see [Lesson 15.4](/posts/re-15-4-advanced-anti-debug-self-debug-tls/)) or called repeatedly.
+During static analysis, look for a function that reads its own code section, meaning a pointer into the `.text` region (the address of another function, or the image base) and then a loop over every byte. Look for a CRC loop too, with `xor`, `shr`, and a characteristic constant. CRC32 often exposes the polynomial `0xEDB88320`, see how to spot constants in [Lesson 16.1](/reverse-engineering/). Other signs are comparing the result against a hard-coded 32-bit constant and then branching to exit, and the function being called very early (in initialization, or a TLS callback, see [Lesson 15.4](/posts/re-15-4-advanced-anti-debug-self-debug-tls/)) or called repeatedly.
 
 A dynamic tip is to set a read memory breakpoint on the code section, so you stop when some code reads memory inside its own `.text` region. A function that touches code for any reason other than executing it is very suspicious.
 

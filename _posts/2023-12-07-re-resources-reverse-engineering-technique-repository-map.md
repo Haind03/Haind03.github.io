@@ -4,12 +4,12 @@ image:
   path: /assets/img/covers/re-resources-reverse-engineering-technique-repository-map.webp
   alt: "Reverse Engineering technique repository (map)"
 date: 2023-12-07 23:48:00 +0700
-categories: ["Technique Reverse", "Resources"]
+categories: ["Reverse Engineering", "Resources"]
 tags: [reverse-engineering, resources]
 render_with_liquid: false
 ---
 > Every technique in the series, grouped by topic, with when to use it and the matching lesson.
-> In the lesson notation, `15.5` = Part 15, Lesson 5 (see the [README](/technique-reverse/)).
+> In the lesson notation, `15.5` = Part 15, Lesson 5 (see the [README](/reverse-engineering/)).
 
 ## A. Static analysis
 Don't run the file, just read.

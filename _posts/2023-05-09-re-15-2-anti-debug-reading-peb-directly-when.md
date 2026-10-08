@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-15-2-anti-debug-reading-peb-directly-when.webp
   alt: "Lesson 15.2: Anti-debug by reading the PEB"
 date: 2023-05-09 22:59:00 +0700
-categories: ["Technique Reverse", "Part 15 · Anti-Reversing and Bypasses"]
+categories: ["Reverse Engineering", "Part 15 · Anti-Reversing and Bypasses"]
 tags: [reverse-engineering, anti-debug]
 render_with_liquid: false
 ---

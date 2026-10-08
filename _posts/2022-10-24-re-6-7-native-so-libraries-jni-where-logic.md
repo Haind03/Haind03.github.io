@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-6-7-native-so-libraries-jni-where-logic.webp
   alt: "Lesson 6.7: Native .so libraries and JNI"
 date: 2022-10-24 10:01:00 +0700
-categories: ["Technique Reverse", "Part 06 · Java, Kotlin and Android"]
+categories: ["Reverse Engineering", "Part 06 · Java, Kotlin and Android"]
 tags: [reverse-engineering, android, java]
 render_with_liquid: false
 ---

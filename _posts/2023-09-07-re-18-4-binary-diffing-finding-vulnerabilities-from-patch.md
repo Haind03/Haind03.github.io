@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-18-4-binary-diffing-finding-vulnerabilities-from-patch.webp
   alt: "Lesson 18.4: Binary diffing"
 date: 2023-09-07 09:55:00 +0700
-categories: ["Technique Reverse", "Part 18 · Advanced Topics"]
+categories: ["Reverse Engineering", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
 render_with_liquid: false
 ---

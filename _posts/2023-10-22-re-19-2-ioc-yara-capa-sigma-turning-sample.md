@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-19-2-ioc-yara-capa-sigma-turning-sample.webp
   alt: "Lesson 19.2: IOC, YARA, capa and Sigma"
 date: 2023-10-22 10:09:00 +0700
-categories: ["Technique Reverse", "Part 19 · Malware Analysis Basics"]
+categories: ["Reverse Engineering", "Part 19 · Malware Analysis Basics"]
 tags: [reverse-engineering, malware]
 render_with_liquid: false
 ---
@@ -58,7 +58,7 @@ capa is very useful at the triage step. Without reading any code yet, you alread
 
 YARA and capa look at files. Sigma looks at logs. It's a common rule format for SIEMs and system logs (Windows Event Log, Sysmon, EDR), and it describes a suspicious behavior in a way that doesn't depend on any SIEM vendor, then converts to queries for Splunk, Elastic, Sentinel...
 
-An example Sigma idea is that "process `winword.exe` spawns `powershell.exe`" is the typical malicious macro pattern. Or "a process writes into another process's memory and then creates a remote thread" (see the injection signs in [Lesson 17.4/17.5](/technique-reverse/)). Sigma catches things YARA doesn't see, because it tracks runtime behavior rather than file contents.
+An example Sigma idea is that "process `winword.exe` spawns `powershell.exe`" is the typical malicious macro pattern. Or "a process writes into another process's memory and then creates a remote thread" (see the injection signs in [Lesson 17.4/17.5](/reverse-engineering/)). Sigma catches things YARA doesn't see, because it tracks runtime behavior rather than file contents.
 
 So there are four tools at four layers, IOC (concrete data, easy to evade), YARA (file/memory contents), capa (capabilities), Sigma (behavior). The further down the list, the harder it is to evade. Attackers can change a domain easily, but changing how they behave takes real work.
 

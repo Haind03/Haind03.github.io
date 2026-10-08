@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-19-4-extracting-config-c2-pulling-out-brain.webp
   alt: "Lesson 19.4: Extracting config and C2"
 date: 2023-11-05 20:43:00 +0700
-categories: ["Technique Reverse", "Part 19 · Malware Analysis Basics"]
+categories: ["Reverse Engineering", "Part 19 · Malware Analysis Basics"]
 tags: [reverse-engineering, malware]
 render_with_liquid: false
 ---

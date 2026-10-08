@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-8-4-lab-solving-go-crackme-from-start.webp
   alt: "Lesson 8.4: Lab, solving a Go crackme"
 date: 2022-11-19 16:19:00 +0700
-categories: ["Technique Reverse", "Part 08 · Go"]
+categories: ["Reverse Engineering", "Part 08 · Go"]
 tags: [reverse-engineering, golang]
 render_with_liquid: false
 ---

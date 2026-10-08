@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-17-1-patching-binaries-changing-one-byte-change.webp
   alt: "Lesson 17.1: Patching binaries"
 date: 2023-07-15 23:12:00 +0700
-categories: ["Technique Reverse", "Part 17 · Patching, Hooking, Injection"]
+categories: ["Reverse Engineering", "Part 17 · Patching, Hooking, Injection"]
 tags: [reverse-engineering, frida, hooking]
 render_with_liquid: false
 ---

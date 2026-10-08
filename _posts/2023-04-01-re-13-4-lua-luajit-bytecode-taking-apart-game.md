@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-13-4-lua-luajit-bytecode-taking-apart-game.webp
   alt: "Lesson 13.4: Lua and LuaJIT bytecode"
 date: 2023-04-01 22:36:00 +0700
-categories: ["Technique Reverse", "Part 13 · Games: Unity, Unreal, Lua"]
+categories: ["Reverse Engineering", "Part 13 · Games: Unity, Unreal, Lua"]
 tags: [reverse-engineering, game-hacking]
 render_with_liquid: false
 ---

@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-15-6-anti-disassembly-when-disassembler-itself-gets.webp
   alt: "Lesson 15.6: Anti-disassembly"
 date: 2023-06-09 14:05:00 +0700
-categories: ["Technique Reverse", "Part 15 · Anti-Reversing and Bypasses"]
+categories: ["Reverse Engineering", "Part 15 · Anti-Reversing and Bypasses"]
 tags: [reverse-engineering, anti-debug]
 render_with_liquid: false
 ---

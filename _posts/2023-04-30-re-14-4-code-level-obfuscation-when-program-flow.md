@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-14-4-code-level-obfuscation-when-program-flow.webp
   alt: "Lesson 14.4: Code-level obfuscation"
 date: 2023-04-30 10:27:00 +0700
-categories: ["Technique Reverse", "Part 14 · Packers and Obfuscation"]
+categories: ["Reverse Engineering", "Part 14 · Packers and Obfuscation"]
 tags: [reverse-engineering, packer, obfuscation]
 render_with_liquid: false
 ---

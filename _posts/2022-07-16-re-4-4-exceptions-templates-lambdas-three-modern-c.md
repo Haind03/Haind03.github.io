@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-4-4-exceptions-templates-lambdas-three-modern-c.webp
   alt: "Lesson 4.4: Exceptions, templates and lambdas"
 date: 2022-07-16 14:52:00 +0700
-categories: ["Technique Reverse", "Part 04 · C++"]
+categories: ["Reverse Engineering", "Part 04 · C++"]
 tags: [reverse-engineering, cpp]
 render_with_liquid: false
 ---

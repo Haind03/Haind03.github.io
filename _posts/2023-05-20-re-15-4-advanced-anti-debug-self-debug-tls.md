@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-15-4-advanced-anti-debug-self-debug-tls.webp
   alt: "Lesson 15.4: Advanced anti-debug, self-debug and TLS callbacks"
 date: 2023-05-20 20:16:00 +0700
-categories: ["Technique Reverse", "Part 15 · Anti-Reversing and Bypasses"]
+categories: ["Reverse Engineering", "Part 15 · Anti-Reversing and Bypasses"]
 tags: [reverse-engineering, anti-debug]
 render_with_liquid: false
 ---

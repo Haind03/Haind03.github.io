@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-3-3-structs-assembly-art-recovering-them.webp
   alt: "Lesson 3.3: Structs in assembly and how to recover them"
 date: 2022-06-05 14:55:00 +0700
-categories: ["Technique Reverse", "Part 03 · C"]
+categories: ["Reverse Engineering", "Part 03 · C"]
 tags: [reverse-engineering, c]
 render_with_liquid: false
 ---

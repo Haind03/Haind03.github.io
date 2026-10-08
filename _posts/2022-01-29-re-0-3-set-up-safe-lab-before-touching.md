@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-0-3-set-up-safe-lab-before-touching.webp
   alt: "Lesson 0.3: Setting up a safe lab"
 date: 2022-01-29 21:43:00 +0700
-categories: ["Technique Reverse", "Part 00 · Getting Started"]
+categories: ["Reverse Engineering", "Part 00 · Getting Started"]
 tags: [reverse-engineering, basics]
 render_with_liquid: false
 ---
@@ -34,7 +34,7 @@ The classic two-VM model is one Windows VM that runs the sample (the victim mach
 
 Take a clean snapshot right after installing your tools, before running any sample, and give it a clear name like `clean-base`. Turn off shared folders and the shared clipboard when analyzing real malware. They're two escape routes that people often forget (turn them back on for crackmes). Turn off USB auto-mount too.
 
-For sophisticated samples, consider not installing VM Guest Additions or VMware Tools, since a lot of malware checks for them to see if it's being watched (anti-VM, covered in [Lesson 15.5](/technique-reverse/)). Keep your tools on the host or on a read-only shared drive, away from the folder that holds samples.
+For sophisticated samples, consider not installing VM Guest Additions or VMware Tools, since a lot of malware checks for them to see if it's being watched (anti-VM, covered in [Lesson 15.5](/reverse-engineering/)). Keep your tools on the host or on a read-only shared drive, away from the folder that holds samples.
 
 ## Pre-built tools: FLARE-VM and REMnux
 

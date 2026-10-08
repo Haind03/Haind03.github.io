@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-5-4-editing-net-assembly-saving-where-dnspy.webp
   alt: "Lesson 5.4: Editing a .NET assembly and saving it"
 date: 2022-08-17 15:56:00 +0700
-categories: ["Technique Reverse", "Part 05 · C# and .NET"]
+categories: ["Reverse Engineering", "Part 05 · C# and .NET"]
 tags: [reverse-engineering, dotnet]
 render_with_liquid: false
 ---

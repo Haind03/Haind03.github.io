@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-15-3-anti-debug-group-3-timing-traps.webp
   alt: "Lesson 15.3: Anti-debug group 3, timing and traps"
 date: 2023-05-12 11:29:00 +0700
-categories: ["Technique Reverse", "Part 15 · Anti-Reversing and Bypasses"]
+categories: ["Reverse Engineering", "Part 15 · Anti-Reversing and Bypasses"]
 tags: [reverse-engineering, anti-debug]
 render_with_liquid: false
 ---

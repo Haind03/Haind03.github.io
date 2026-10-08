@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-1-12-windows-internals-re-3-seh-tls.webp
   alt: "Lesson 1.12: Windows internals for RE (3): SEH, TLS callbacks and syscalls"
 date: 2022-04-01 16:44:00 +0700
-categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
+categories: ["Reverse Engineering", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
@@ -31,7 +31,7 @@ VEH (Vectored Exception Handling) is an add-on. The handler is registered throug
 
 Malware abuses SEH/VEH to hide control flow and to resist analysis. One way is steering the flow with deliberate faults. The code triggers an exception (for example writing to a null address, or running `int 3`), and the real logic is in the handler. If you read statically and follow the straight-line flow, you'll miss the handler, because it looks like dead code.
 
-The other way is debugger detection. When a debugger is attached, some exceptions (like the `int 3` breakpoint) get swallowed by the debugger and never reach the handler. The program registers a handler, throws an exception itself, then checks whether the handler ran. If it didn't, a debugger is attached. Details of this trick are in [Lesson 15.3](/technique-reverse/).
+The other way is debugger detection. When a debugger is attached, some exceptions (like the `int 3` breakpoint) get swallowed by the debugger and never reach the handler. The program registers a handler, throws an exception itself, then checks whether the handler ran. If it didn't, a debugger is attached. Details of this trick are in [Lesson 15.3](/reverse-engineering/).
 
 If you see an `AddVectoredExceptionHandler` or a manual SEH registration pattern, put a breakpoint on that handler, because the logic you're after is probably in there and not in the main flow. In x64dbg, turn on the option to pass exceptions to the application instead of swallowing them, otherwise you'll never see the handler run.
 
@@ -81,7 +81,7 @@ NtCreateFile:
 
 Two things matter here. First, syscall numbers are not fixed. The `0x55` above is only right for one specific Windows version. Microsoft changes these numbers between versions, even between updates. Don't memorize numbers, look them up for the Windows build you're analyzing (there are public lookup tables per build).
 
-Second, direct syscalls are how malware dodges hooks. Many EDRs and monitoring tools install hooks at the start of the `Nt*` functions in ntdll (inline hooks, [Lesson 17.3](/technique-reverse/)) to catch every call. Malware gets around that by embedding `mov eax, <number>; syscall` in its own code and not going through ntdll, so the hook never triggers. This is called a direct syscall. Variants like "indirect syscall" jump to the `syscall` instruction that already sits inside ntdll so it looks more natural.
+Second, direct syscalls are how malware dodges hooks. Many EDRs and monitoring tools install hooks at the start of the `Nt*` functions in ntdll (inline hooks, [Lesson 17.3](/reverse-engineering/)) to catch every call. Malware gets around that by embedding `mov eax, <number>; syscall` in its own code and not going through ntdll, so the hook never triggers. This is called a direct syscall. Variants like "indirect syscall" jump to the `syscall` instruction that already sits inside ntdll so it looks more natural.
 
 We learn the mechanism here to detect and analyze it, not to write it. When reversing, the sign is a `syscall` instruction in the code of the module you're analyzing (not in ntdll), or a snippet that loads a number into `eax` and then does `syscall` without an import. That means the program is trying to avoid the usual monitoring layer, and you have to observe at a lower level (kernel callbacks, ETW, or a hardware breakpoint on the syscall instruction itself).
 

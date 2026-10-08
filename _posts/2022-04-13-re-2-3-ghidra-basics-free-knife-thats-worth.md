@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-2-3-ghidra-basics-free-knife-thats-worth.webp
   alt: "Lesson 2.3: Ghidra basics"
 date: 2022-04-13 09:56:00 +0700
-categories: ["Technique Reverse", "Part 02 · The Toolkit"]
+categories: ["Reverse Engineering", "Part 02 · The Toolkit"]
 tags: [reverse-engineering, tools]
 render_with_liquid: false
 ---
@@ -58,7 +58,7 @@ If you come from IDA, most concepts are the same but the names and shortcuts dif
 
 IDA people often trip on a few things. Ghidra doesn't open the decompiler with F5, since the decompiler is a panel that's always showing and you just click the function. Undo/Redo in Ghidra is Ctrl+Z/Ctrl+Y and it remembers analysis operations too, which is better than IDA here. Ghidra saves automatically into the project, but I still press File > Save (Ctrl+S) before closing to be safe.
 
-IDA's decompiler (Hex-Rays) usually produces slightly smoother code, especially on heavily optimized code. Ghidra is free and the quality is very close, and scripting (Java or Python) for automation is very good, covered in [Lesson 18.1](/technique-reverse/). For a learner, Ghidra loses nothing significant.
+IDA's decompiler (Hex-Rays) usually produces slightly smoother code, especially on heavily optimized code. Ghidra is free and the quality is very close, and scripting (Java or Python) for automation is very good, covered in [Lesson 18.1](/reverse-engineering/). For a learner, Ghidra loses nothing significant.
 
 ## Lab
 

@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-16-3-recognizing-aes-des-tea-chacha-hash.webp
   alt: "Lesson 16.3: Recognizing AES, DES, TEA, ChaCha and hash functions"
 date: 2023-07-05 22:39:00 +0700
-categories: ["Technique Reverse", "Part 16 · Crypto and Algorithms"]
+categories: ["Reverse Engineering", "Part 16 · Crypto and Algorithms"]
 tags: [reverse-engineering, crypto]
 render_with_liquid: false
 ---

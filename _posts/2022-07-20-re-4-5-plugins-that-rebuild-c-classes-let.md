@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-4-5-plugins-that-rebuild-c-classes-let.webp
   alt: "Lesson 4.5: Plugins that rebuild C++ classes"
 date: 2022-07-20 11:16:00 +0700
-categories: ["Technique Reverse", "Part 04 · C++"]
+categories: ["Reverse Engineering", "Part 04 · C++"]
 tags: [reverse-engineering, cpp]
 render_with_liquid: false
 ---

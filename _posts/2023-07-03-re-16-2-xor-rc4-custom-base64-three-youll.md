@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-16-2-xor-rc4-custom-base64-three-youll.webp
   alt: "Lesson 16.2: XOR, RC4 and custom Base64"
 date: 2023-07-03 21:27:00 +0700
-categories: ["Technique Reverse", "Part 16 · Crypto and Algorithms"]
+categories: ["Reverse Engineering", "Part 16 · Crypto and Algorithms"]
 tags: [reverse-engineering, crypto]
 render_with_liquid: false
 ---

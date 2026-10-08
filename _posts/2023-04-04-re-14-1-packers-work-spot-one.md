@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-14-1-packers-work-spot-one.webp
   alt: "Lesson 14.1: How packers work and how to spot one"
 date: 2023-04-04 11:06:00 +0700
-categories: ["Technique Reverse", "Part 14 · Packers and Obfuscation"]
+categories: ["Reverse Engineering", "Part 14 · Packers and Obfuscation"]
 tags: [reverse-engineering, packer, obfuscation]
 render_with_liquid: false
 ---
@@ -76,7 +76,7 @@ The strings in the original code (messages, URLs, paths) are compressed/encrypte
 
 These two words get mixed up a lot. A packer is mainly for compression (reducing size) or hiding code at a basic level. UPX is the classic example, originally made to compress exes, and a plain packer is relatively easy to remove. A protector aims at anti-analysis. Besides compressing/encrypting, it adds anti-debug, anti-VM, anti-dump, integrity checks, and the heaviest of all, virtualization (turning code into the bytecode of a private VM). Themida, VMProtect and Enigma belong to this group, and removing a protector is many levels harder.
 
-The line isn't absolute (many modern packers come with some protection), but knowing which kind you're up against decides whether you spend an hour or a week. Anti-debug and anti-VM are in Part 15, virtualization is [Lesson 14.5](/technique-reverse/).
+The line isn't absolute (many modern packers come with some protection), but knowing which kind you're up against decides whether you spend an hour or a week. Anti-debug and anti-VM are in Part 15, virtualization is [Lesson 14.5](/reverse-engineering/).
 
 ## Packer triage workflow
 

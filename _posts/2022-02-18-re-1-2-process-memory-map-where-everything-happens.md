@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-1-2-process-memory-map-where-everything-happens.webp
   alt: "Lesson 1.2: Process memory map"
 date: 2022-02-18 21:03:00 +0700
-categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
+categories: ["Reverse Engineering", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---

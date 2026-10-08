@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-9-2-recognizing-rusts-string-vec-iterators-trait.webp
   alt: "Lesson 9.2: Rust's String, Vec, iterators and trait objects"
 date: 2022-12-03 09:21:00 +0700
-categories: ["Technique Reverse", "Part 09 · Rust"]
+categories: ["Reverse Engineering", "Part 09 · Rust"]
 tags: [reverse-engineering, rust]
 render_with_liquid: false
 ---

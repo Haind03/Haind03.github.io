@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-8-3-gos-string-slice-interface-goroutine-assembly.webp
   alt: "Lesson 8.3: Go's string, slice, interface and goroutine in assembly"
 date: 2022-11-19 11:53:00 +0700
-categories: ["Technique Reverse", "Part 08 · Go"]
+categories: ["Reverse Engineering", "Part 08 · Go"]
 tags: [reverse-engineering, golang]
 render_with_liquid: false
 ---

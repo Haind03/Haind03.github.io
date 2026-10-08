@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-7-2-pycdc-pycdas-two-scalpels-pyc-files.webp
   alt: "Lesson 7.2: pycdc and pycdas"
 date: 2022-11-04 23:28:00 +0700
-categories: ["Technique Reverse", "Part 07 · Python"]
+categories: ["Reverse Engineering", "Part 07 · Python"]
 tags: [reverse-engineering, python]
 render_with_liquid: false
 ---

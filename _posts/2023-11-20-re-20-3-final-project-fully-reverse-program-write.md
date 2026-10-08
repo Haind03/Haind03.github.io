@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-20-3-final-project-fully-reverse-program-write.webp
   alt: "Lesson 20.3: Final project, reverse a program and write the report"
 date: 2023-11-20 22:22:00 +0700
-categories: ["Technique Reverse", "Part 20 · Real-World Practice"]
+categories: ["Reverse Engineering", "Part 20 · Real-World Practice"]
 tags: [reverse-engineering, ctf]
 render_with_liquid: false
 ---
@@ -42,7 +42,7 @@ A simple block diagram drawn by hand or in a notes file, one line per block, hel
 
 ### 4. Deep analysis of the main components
 
-Now you dig. For each question from step 1, go into the block you carved out and apply the right technique. For a check algorithm or crypto, identify constants ([Lesson 16.1](/posts/re-16-1-identifying-crypto-algorithms-by-their-constants/)) and rewrite in Python or solve with Z3 ([Lesson 16.4](/posts/re-16-4-rewriting-algorithm-python-letting-z3-solve/)). For a protection layer, unpack ([Part 14](/technique-reverse/)) and get past anti-debug ([Part 15](/technique-reverse/)). For a data format or protocol, rebuild the spec ([Lesson 18.7](/posts/re-18-7-reversing-network-protocols-proprietary-file-formats/)). And confirm hypotheses dynamically by setting breakpoints, looking at real values, or hooking with Frida ([Lesson 17.2](/posts/re-17-2-frida-full-inspecting-modifying-program-while/)).
+Now you dig. For each question from step 1, go into the block you carved out and apply the right technique. For a check algorithm or crypto, identify constants ([Lesson 16.1](/posts/re-16-1-identifying-crypto-algorithms-by-their-constants/)) and rewrite in Python or solve with Z3 ([Lesson 16.4](/posts/re-16-4-rewriting-algorithm-python-letting-z3-solve/)). For a protection layer, unpack ([Part 14](/reverse-engineering/)) and get past anti-debug ([Part 15](/reverse-engineering/)). For a data format or protocol, rebuild the spec ([Lesson 18.7](/posts/re-18-7-reversing-network-protocols-proprietary-file-formats/)). And confirm hypotheses dynamically by setting breakpoints, looking at real values, or hooking with Frida ([Lesson 17.2](/posts/re-17-2-frida-full-inspecting-modifying-program-while/)).
 
 Keep repeating static, then dynamic, then notes, until you've answered all the questions.
 

@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-5-2-ilspy-dnspy-when-decompiling-gives-back.webp
   alt: "Lesson 5.2: ILSpy and dnSpy"
 date: 2022-08-06 14:52:00 +0700
-categories: ["Technique Reverse", "Part 05 · C# and .NET"]
+categories: ["Reverse Engineering", "Part 05 · C# and .NET"]
 tags: [reverse-engineering, dotnet]
 render_with_liquid: false
 ---

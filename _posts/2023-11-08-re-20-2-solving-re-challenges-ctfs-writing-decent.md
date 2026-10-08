@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-20-2-solving-re-challenges-ctfs-writing-decent.webp
   alt: "Lesson 20.2: Solving RE challenges in CTFs and writing a write-up"
 date: 2023-11-08 22:17:00 +0700
-categories: ["Technique Reverse", "Part 20 · Real-World Practice"]
+categories: ["Reverse Engineering", "Part 20 · Real-World Practice"]
 tags: [reverse-engineering, ctf]
 render_with_liquid: false
 ---
@@ -28,11 +28,11 @@ Every rev challenge asks one question, which is what input makes the program acc
 
 First, read the prompt and list the files. It sounds obvious but many people skip it. Does the prompt say "enter the correct flag", "find the password", or "decrypt the file"? Is there an attached file other than the binary (an encrypted file, a network capture)? The flag format is usually given (`flag{...}`, `CTF{...}`), so know it and you'll recognize it when you're close.
 
-Second, triage. Drag it into Detect It Easy and note the file type, language, whether it is packed, and whether it is 32 or 64-bit. Run `strings`. This step decides which way you go, and it's where the language parts of the series pay off. See `.NET` and open dnSpy ([Part 5](/technique-reverse/)), see Go and get GoReSym ready ([Part 8](/technique-reverse/)), see `.pyc` and use pycdc ([Part 7](/technique-reverse/)), see high entropy and unpack first ([Part 14](/technique-reverse/)).
+Second, triage. Drag it into Detect It Easy and note the file type, language, whether it is packed, and whether it is 32 or 64-bit. Run `strings`. This step decides which way you go, and it's where the language parts of the series pay off. See `.NET` and open dnSpy ([Part 5](/reverse-engineering/)), see Go and get GoReSym ready ([Part 8](/reverse-engineering/)), see `.pyc` and use pycdc ([Part 7](/reverse-engineering/)), see high entropy and unpack first ([Part 14](/reverse-engineering/)).
 
 Third, find the win condition. Go backward from the "Correct" or "Wrong" string to the comparison function, or from the function that prints the flag. This is the string-first technique from [Lesson 0.4](/posts/re-0-4-reverse-engineering-workflow-not-get-lost/), and it solves most easy challenges on its own.
 
-Fourth, pick the technique by the shape of the challenge. If the check logic can be read directly, read it statically and then invert it by hand or with Python ([Lesson 16.4](/posts/re-16-4-rewriting-algorithm-python-letting-z3-solve/)). With many constraints on the input bytes, throw it at Z3 or angr ([Lesson 18.3](/posts/re-18-3-symbolic-execution-making-computer-solve-crackme/)). For a complicated transform function that can be isolated, emulate it with Unicorn ([Lesson 18.2](/posts/re-18-2-emulation-running-piece-code-without-whole/)) instead of understanding it. If anti-debug blocks the way, redirect per [Part 15](/technique-reverse/), or emulate to avoid a real debugger. And when you're totally stuck, run it dynamically and set a breakpoint at the final comparison, since often the correct flag shows up in plain view in a register.
+Fourth, pick the technique by the shape of the challenge. If the check logic can be read directly, read it statically and then invert it by hand or with Python ([Lesson 16.4](/posts/re-16-4-rewriting-algorithm-python-letting-z3-solve/)). With many constraints on the input bytes, throw it at Z3 or angr ([Lesson 18.3](/posts/re-18-3-symbolic-execution-making-computer-solve-crackme/)). For a complicated transform function that can be isolated, emulate it with Unicorn ([Lesson 18.2](/posts/re-18-2-emulation-running-piece-code-without-whole/)) instead of understanding it. If anti-debug blocks the way, redirect per [Part 15](/reverse-engineering/), or emulate to avoid a real debugger. And when you're totally stuck, run it dynamically and set a breakpoint at the final comparison, since often the correct flag shows up in plain view in a register.
 
 Fifth, know when to drop a direction. If you're stuck 30 minutes on one approach, switch. The fast solver isn't smarter, he just abandons the wrong direction sooner.
 

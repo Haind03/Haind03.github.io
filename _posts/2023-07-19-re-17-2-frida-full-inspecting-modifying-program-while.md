@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-17-2-frida-full-inspecting-modifying-program-while.webp
   alt: "Lesson 17.2: Frida, inspecting and modifying a running program"
 date: 2023-07-19 23:03:00 +0700
-categories: ["Technique Reverse", "Part 17 · Patching, Hooking, Injection"]
+categories: ["Reverse Engineering", "Part 17 · Patching, Hooking, Injection"]
 tags: [reverse-engineering, frida, hooking]
 render_with_liquid: false
 ---

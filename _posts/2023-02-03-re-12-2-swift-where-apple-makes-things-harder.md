@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-12-2-swift-where-apple-makes-things-harder.webp
   alt: "Lesson 12.2: Swift reverse engineering"
 date: 2023-02-03 20:08:00 +0700
-categories: ["Technique Reverse", "Part 12 · Swift and Objective-C"]
+categories: ["Reverse Engineering", "Part 12 · Swift and Objective-C"]
 tags: [reverse-engineering, ios, swift]
 render_with_liquid: false
 ---

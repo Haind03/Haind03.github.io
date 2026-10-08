@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-17-3-hooking-windows-iat-hooks-inline-hooks.webp
   alt: "Lesson 17.3: Hooking on Windows, IAT hooks and inline hooks"
 date: 2023-07-29 22:22:00 +0700
-categories: ["Technique Reverse", "Part 17 · Patching, Hooking, Injection"]
+categories: ["Reverse Engineering", "Part 17 · Patching, Hooking, Injection"]
 tags: [reverse-engineering, frida, hooking]
 render_with_liquid: false
 ---

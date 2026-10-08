@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-1-1-reading-hexdump-like-text.webp
   alt: "Lesson 1.1: Reading a hexdump like text"
 date: 2022-02-05 14:27:00 +0700
-categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
+categories: ["Reverse Engineering", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---

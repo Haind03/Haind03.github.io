@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-7-6-lab-decompiling-sample-pyc-files-pycdc.webp
   alt: "Lesson 7.6: Lab, decompiling sample .pyc files with pycdc"
 date: 2022-11-14 21:48:00 +0700
-categories: ["Technique Reverse", "Part 07 · Python"]
+categories: ["Reverse Engineering", "Part 07 · Python"]
 tags: [reverse-engineering, python]
 render_with_liquid: false
 ---

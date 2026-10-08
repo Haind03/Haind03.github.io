@@ -1,5 +1,5 @@
 ---
-title: Technique Reverse
+title: Reverse Engineering
 icon: fas fa-microchip
 order: 1
 render_with_liquid: false

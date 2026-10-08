@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-3-1-hello-world-under-microscope-finding-real.webp
   alt: "Lesson 3.1: Hello world and finding the real main"
 date: 2022-05-22 09:13:00 +0700
-categories: ["Technique Reverse", "Part 03 · C"]
+categories: ["Reverse Engineering", "Part 03 · C"]
 tags: [reverse-engineering, c]
 render_with_liquid: false
 ---
@@ -153,4 +153,4 @@ The entry point in the header points to CRT startup, not your `main`. The CRT se
 `printf`/`puts`/`cout` only exist in user code, so use them to narrow down the region. Recognizing the CRT so you can skip it matters more than reading everything.
 
 ---
-Previous: [Toolkit](/posts/re-2-8-system-monitoring-watching-behavior-without-opening/) · [Back to index](/technique-reverse/) · Next: 3.2 Variables, pointers, arrays, strings in assembly
+Previous: [Toolkit](/posts/re-2-8-system-monitoring-watching-behavior-without-opening/) · [Back to index](/reverse-engineering/) · Next: 3.2 Variables, pointers, arrays, strings in assembly

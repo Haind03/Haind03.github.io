@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-1-7-pe-format-anatomy-windows-exe.webp
   alt: "Lesson 1.7: The PE format"
 date: 2022-03-16 14:18:00 +0700
-categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
+categories: ["Reverse Engineering", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---

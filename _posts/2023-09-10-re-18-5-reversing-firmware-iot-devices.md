@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-18-5-reversing-firmware-iot-devices.webp
   alt: "Lesson 18.5: Reversing firmware and IoT devices"
 date: 2023-09-10 11:09:00 +0700
-categories: ["Technique Reverse", "Part 18 · Advanced Topics"]
+categories: ["Reverse Engineering", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
 render_with_liquid: false
 ---

@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-1-13-recognizing-windows-apis-when-reversing-reading.webp
   alt: "Lesson 1.13: Recognizing Windows APIs when reversing"
 date: 2022-04-10 15:08:00 +0700
-categories: ["Technique Reverse", "Part 01 · Computer Fundamentals for RE"]
+categories: ["Reverse Engineering", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---

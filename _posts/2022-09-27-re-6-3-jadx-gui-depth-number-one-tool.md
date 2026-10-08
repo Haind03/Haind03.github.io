@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-6-3-jadx-gui-depth-number-one-tool.webp
   alt: "Lesson 6.3: JADX-GUI in depth"
 date: 2022-09-27 15:29:00 +0700
-categories: ["Technique Reverse", "Part 06 · Java, Kotlin and Android"]
+categories: ["Reverse Engineering", "Part 06 · Java, Kotlin and Android"]
 tags: [reverse-engineering, android, java]
 render_with_liquid: false
 ---
@@ -42,7 +42,7 @@ Finding a string like "Wrong password" or "Premium activated" gets you almost ex
 
 Real apps almost always go through R8/ProGuard, which turns names into `a`, `b`, `c`. JADX has an automatic renaming feature. Go to Preferences, turn on Deobfuscation, and set the minimum/maximum name length thresholds. JADX generates consistent fake names (like `C0001a`) in place of colliding one-character names, so you can tell them apart. It doesn't restore the original names (they were lost at build time), but it makes the code less chaotic and lets you rename gradually.
 
-For heavier obfuscation (string encryption, control flow) JADX gives up on that part, and you have to go dynamic (Frida, see [Lesson 6.6](/technique-reverse/)) or use other tools. Details on the types of obfuscation are in [Lesson 6.8](/technique-reverse/).
+For heavier obfuscation (string encryption, control flow) JADX gives up on that part, and you have to go dynamic (Frida, see [Lesson 6.6](/reverse-engineering/)) or use other tools. Details on the types of obfuscation are in [Lesson 6.8](/reverse-engineering/).
 
 ## Copy as Frida snippet
 

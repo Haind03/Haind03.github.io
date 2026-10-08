@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-15-5-anti-vm-anti-sandbox-when-sample.webp
   alt: "Lesson 15.5: Anti-VM and anti-sandbox"
 date: 2023-05-23 14:29:00 +0700
-categories: ["Technique Reverse", "Part 15 · Anti-Reversing and Bypasses"]
+categories: ["Reverse Engineering", "Part 15 · Anti-Reversing and Bypasses"]
 tags: [reverse-engineering, anti-debug]
 render_with_liquid: false
 ---

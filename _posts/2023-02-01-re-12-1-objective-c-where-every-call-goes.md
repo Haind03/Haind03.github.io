@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-12-1-objective-c-where-every-call-goes.webp
   alt: "Lesson 12.1: Objective-C and objc_msgSend"
 date: 2023-02-01 14:30:00 +0700
-categories: ["Technique Reverse", "Part 12 · Swift and Objective-C"]
+categories: ["Reverse Engineering", "Part 12 · Swift and Objective-C"]
 tags: [reverse-engineering, ios, swift]
 render_with_liquid: false
 ---

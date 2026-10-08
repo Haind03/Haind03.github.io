@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-6-9-big-lab-solving-owasp-uncrackable-level.webp
   alt: "Lesson 6.9: Big lab, solving OWASP UnCrackable Level 1 to 3"
 date: 2022-10-30 21:23:00 +0700
-categories: ["Technique Reverse", "Part 06 · Java, Kotlin and Android"]
+categories: ["Reverse Engineering", "Part 06 · Java, Kotlin and Android"]
 tags: [reverse-engineering, android, java]
 render_with_liquid: false
 ---
@@ -61,7 +61,7 @@ Level 3 is Level 2 plus active defenses, like in [Lesson 6.8](/posts/re-6-8-obfu
 ### The approach
 You remove the layers one at a time, in order. Get past anti-Frida first. Hook early (use `frida -f` to spawn the app rather than attaching late) the Frida-detection functions and make them return negative, or use a renamed frida-server on a different port to dodge naive detection. Then get past anti-tampering by hooking the signature-check function to return the original app's value, or hooking the checksum comparison function. Only then do verify, handled just like Level 2 (analyze the .so or hook the comparison).
 
-The order matters. You can't hook verify if the app has already exited after detecting Frida. Remove the outermost defense first and work inward. [Lesson 15.10](/technique-reverse/) covers handling combined layers of anti in detail.
+The order matters. You can't hook verify if the app has already exited after detecting Frida. Remove the outermost defense first and work inward. [Lesson 15.10](/reverse-engineering/) covers handling combined layers of anti in detail.
 
 When the app resists your tools, it turns into layer removal. Be patient, go one layer at a time, and keep the final comparison as your hook point.
 

@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-10-2-visual-basic-6-two-worlds-inside.webp
   alt: "Lesson 10.2: Visual Basic 6"
 date: 2022-12-30 14:23:00 +0700
-categories: ["Technique Reverse", "Part 10 · Legacy: Delphi, VB6, AutoIt, AHK"]
+categories: ["Reverse Engineering", "Part 10 · Legacy: Delphi, VB6, AutoIt, AHK"]
 tags: [reverse-engineering, legacy]
 render_with_liquid: false
 ---

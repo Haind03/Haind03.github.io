@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-5-1-net-internals-why-decompiling-gives-back.webp
   alt: "Lesson 5.1: .NET internals"
 date: 2022-07-31 15:25:00 +0700
-categories: ["Technique Reverse", "Part 05 · C# and .NET"]
+categories: ["Reverse Engineering", "Part 05 · C# and .NET"]
 tags: [reverse-engineering, dotnet]
 render_with_liquid: false
 ---

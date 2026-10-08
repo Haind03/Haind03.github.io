@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-0-4-reverse-engineering-workflow-not-get-lost.webp
   alt: "Lesson 0.4: The reverse engineering workflow"
 date: 2022-02-01 16:57:00 +0700
-categories: ["Technique Reverse", "Part 00 · Getting Started"]
+categories: ["Reverse Engineering", "Part 00 · Getting Started"]
 tags: [reverse-engineering, basics]
 render_with_liquid: false
 ---

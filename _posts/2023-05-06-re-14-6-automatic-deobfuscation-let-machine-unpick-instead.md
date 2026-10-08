@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-14-6-automatic-deobfuscation-let-machine-unpick-instead.webp
   alt: "Lesson 14.6: Automatic deobfuscation"
 date: 2023-05-06 20:49:00 +0700
-categories: ["Technique Reverse", "Part 14 · Packers and Obfuscation"]
+categories: ["Reverse Engineering", "Part 14 · Packers and Obfuscation"]
 tags: [reverse-engineering, packer, obfuscation]
 render_with_liquid: false
 ---
@@ -44,11 +44,11 @@ A few other directions are worth knowing by name, namely gtirb (GrammaTech's rew
 
 ## Symbolic execution
 
-This is the most general approach, and also the bridge to [Part 18](/technique-reverse/). Tools like Triton or angr treat the input as symbolic variables, run through the code, and instead of computing a number they compute a formula. There are two direct uses for deobfuscation.
+This is the most general approach, and also the bridge to [Part 18](/reverse-engineering/). Tools like Triton or angr treat the input as symbolic variables, run through the code, and instead of computing a number they compute a formula. There are two direct uses for deobfuscation.
 
 One is simplifying MBA, where you have Triton build the symbolic expression of an MBA chunk, then use the simplifier or Z3 to prove it's equivalent to a short expression. In practice an MBA expression of thirty bit operations often reduces to `a ^ b` or `a + b`. The other is undoing flattening, where symbolic/concolic execution follows the real execution flow, joining the original blocks in the order they actually run, skipping the dispatcher, and from that trace you rebuild a clean CFG.
 
-Triton is compact and can be embedded in other tools. angr is heavier but comes with CFG recovery and lots of utilities. Symbolic execution itself is covered in [Lesson 18.3](/technique-reverse/).
+Triton is compact and can be embedded in other tools. angr is heavier but comes with CFG recovery and lots of utilities. Symbolic execution itself is covered in [Lesson 18.3](/reverse-engineering/).
 
 ## Automatic or by hand
 

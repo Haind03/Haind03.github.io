@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-7-1-python-bytecode-pyc-files.webp
   alt: "Lesson 7.1: Python bytecode and .pyc files"
 date: 2022-11-01 16:42:00 +0700
-categories: ["Technique Reverse", "Part 07 · Python"]
+categories: ["Reverse Engineering", "Part 07 · Python"]
 tags: [reverse-engineering, python]
 render_with_liquid: false
 ---

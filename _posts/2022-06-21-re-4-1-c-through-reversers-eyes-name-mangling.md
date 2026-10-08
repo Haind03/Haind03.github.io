@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-4-1-c-through-reversers-eyes-name-mangling.webp
   alt: "Lesson 4.1: C++ for reversers, name mangling and the this pointer"
 date: 2022-06-21 10:01:00 +0700
-categories: ["Technique Reverse", "Part 04 · C++"]
+categories: ["Reverse Engineering", "Part 04 · C++"]
 tags: [reverse-engineering, cpp]
 render_with_liquid: false
 ---
@@ -171,4 +171,4 @@ C++ at the binary level is C plus a few conventions. Name mangling puts class, m
 Every method has a hidden parameter this, in rdi on Linux and rcx on Windows x64. A call that loads an object pointer into rdi/rcx and then accesses fields by offset is a method call.
 
 ---
-Previous: Part 3 C · [Back to index](/technique-reverse/) · Next: 4.2 Classes, vtables, inheritance, RTTI
+Previous: Part 3 C · [Back to index](/reverse-engineering/) · Next: 4.2 Classes, vtables, inheritance, RTTI

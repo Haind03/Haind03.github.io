@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-4-6-lab-c-crackme-vtable-going-through.webp
   alt: "Lesson 4.6: Lab, a C++ crackme with a vtable"
 date: 2022-07-24 20:03:00 +0700
-categories: ["Technique Reverse", "Part 04 · C++"]
+categories: ["Reverse Engineering", "Part 04 · C++"]
 tags: [reverse-engineering, cpp]
 render_with_liquid: false
 ---

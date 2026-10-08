@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-18-7-reversing-network-protocols-proprietary-file-formats.webp
   alt: "Lesson 18.7: Reversing network protocols and proprietary file formats"
 date: 2023-09-22 10:37:00 +0700
-categories: ["Technique Reverse", "Part 18 · Advanced Topics"]
+categories: ["Reverse Engineering", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
 render_with_liquid: false
 ---

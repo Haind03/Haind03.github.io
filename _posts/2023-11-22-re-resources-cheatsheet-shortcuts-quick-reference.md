@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-resources-cheatsheet-shortcuts-quick-reference.webp
   alt: "Cheatsheet: shortcuts and quick reference"
 date: 2023-11-22 20:17:00 +0700
-categories: ["Technique Reverse", "Resources"]
+categories: ["Reverse Engineering", "Resources"]
 tags: [reverse-engineering, resources]
 render_with_liquid: false
 ---
@@ -170,4 +170,4 @@ A `cmp` or `test` right before a `j*` instruction is an `if` statement in the so
 | `rbp` | Stack frame base pointer |
 | `rip` | Instruction pointer (the next instruction to run) |
 
-If you know where parameters go and where the return value comes back, you can follow most function calls. Calling conventions are covered in [Lesson 1.4](/technique-reverse/).
+If you know where parameters go and where the return value comes back, you can follow most function calls. Calling conventions are covered in [Lesson 1.4](/reverse-engineering/).

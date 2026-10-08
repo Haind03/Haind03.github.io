@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-9-3-rust-crackme-lab-taking-apart-not.webp
   alt: "Lesson 9.3: Rust crackme lab"
 date: 2022-12-18 15:51:00 +0700
-categories: ["Technique Reverse", "Part 09 · Rust"]
+categories: ["Reverse Engineering", "Part 09 · Rust"]
 tags: [reverse-engineering, rust]
 render_with_liquid: false
 ---

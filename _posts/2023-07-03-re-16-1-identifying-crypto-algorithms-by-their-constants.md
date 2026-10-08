@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-16-1-identifying-crypto-algorithms-by-their-constants.webp
   alt: "Lesson 16.1: Identifying crypto algorithms by their constants"
 date: 2023-07-03 21:32:00 +0700
-categories: ["Technique Reverse", "Part 16 · Crypto and Algorithms"]
+categories: ["Reverse Engineering", "Part 16 · Crypto and Algorithms"]
 tags: [reverse-engineering, crypto]
 render_with_liquid: false
 ---

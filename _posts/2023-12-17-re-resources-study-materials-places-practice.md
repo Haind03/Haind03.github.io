@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-resources-study-materials-places-practice.webp
   alt: "Study materials and places to practice"
 date: 2023-12-17 11:51:00 +0700
-categories: ["Technique Reverse", "Resources"]
+categories: ["Reverse Engineering", "Resources"]
 tags: [reverse-engineering, resources]
 render_with_liquid: false
 ---

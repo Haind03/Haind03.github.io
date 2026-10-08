@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-19-3-analyzing-maldocs-loaders-where-attack-begins.webp
   alt: "Lesson 19.3: Analyzing maldocs and loaders"
 date: 2023-10-27 16:21:00 +0700
-categories: ["Technique Reverse", "Part 19 · Malware Analysis Basics"]
+categories: ["Reverse Engineering", "Part 19 · Malware Analysis Basics"]
 tags: [reverse-engineering, malware]
 render_with_liquid: false
 ---

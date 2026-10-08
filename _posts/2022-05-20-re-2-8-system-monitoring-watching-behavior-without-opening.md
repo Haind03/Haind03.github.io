@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-2-8-system-monitoring-watching-behavior-without-opening.webp
   alt: "Lesson 2.8: System monitoring"
 date: 2022-05-20 23:23:00 +0700
-categories: ["Technique Reverse", "Part 02 · The Toolkit"]
+categories: ["Reverse Engineering", "Part 02 · The Toolkit"]
 tags: [reverse-engineering, tools]
 render_with_liquid: false
 ---

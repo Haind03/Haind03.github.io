@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-16-4-rewriting-algorithm-python-letting-z3-solve.webp
   alt: "Lesson 16.4: Rewriting the algorithm in Python and solving with Z3"
 date: 2023-07-14 11:28:00 +0700
-categories: ["Technique Reverse", "Part 16 · Crypto and Algorithms"]
+categories: ["Reverse Engineering", "Part 16 · Crypto and Algorithms"]
 tags: [reverse-engineering, crypto]
 render_with_liquid: false
 ---

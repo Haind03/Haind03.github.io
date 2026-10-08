@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-17-4-recognizing-dll-injection-techniques.webp
   alt: "Lesson 17.4: Recognizing DLL injection techniques"
 date: 2023-08-03 23:30:00 +0700
-categories: ["Technique Reverse", "Part 17 · Patching, Hooking, Injection"]
+categories: ["Reverse Engineering", "Part 17 · Patching, Hooking, Injection"]
 tags: [reverse-engineering, frida, hooking]
 render_with_liquid: false
 ---
@@ -73,7 +73,7 @@ Start by triaging the live process. In Process Hacker, look at Modules (strange 
 
 If you have the injector sample, set breakpoints at the API chain in each item above and read the parameters (see [Lesson 1.13](/posts/re-1-13-recognizing-windows-apis-when-reversing-reading/)) to know where it injects and how. Finally, dump the injected payload and analyze it as a standalone module.
 
-Shellcode injection, APC injection, thread hijacking and process hollowing (variants of step 3) are in [Lesson 17.5](/technique-reverse/).
+Shellcode injection, APC injection, thread hijacking and process hollowing (variants of step 3) are in [Lesson 17.5](/reverse-engineering/).
 
 ## Lab
 

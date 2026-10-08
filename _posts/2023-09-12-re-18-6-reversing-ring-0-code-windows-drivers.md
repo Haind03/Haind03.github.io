@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-18-6-reversing-ring-0-code-windows-drivers.webp
   alt: "Lesson 18.6: Reversing Windows drivers and Linux kernel modules"
 date: 2023-09-12 11:45:00 +0700
-categories: ["Technique Reverse", "Part 18 · Advanced Topics"]
+categories: ["Reverse Engineering", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
 render_with_liquid: false
 ---

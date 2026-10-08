@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-8-2-recovering-function-names-types-go-binaries.webp
   alt: "Lesson 8.2: Recovering function names and types in Go binaries"
 date: 2022-11-18 15:57:00 +0700
-categories: ["Technique Reverse", "Part 08 · Go"]
+categories: ["Reverse Engineering", "Part 08 · Go"]
 tags: [reverse-engineering, golang]
 render_with_liquid: false
 ---

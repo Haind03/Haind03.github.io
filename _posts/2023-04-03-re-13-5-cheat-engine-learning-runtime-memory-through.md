@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-13-5-cheat-engine-learning-runtime-memory-through.webp
   alt: "Lesson 13.5: Cheat Engine and runtime memory"
 date: 2023-04-03 20:01:00 +0700
-categories: ["Technique Reverse", "Part 13 · Games: Unity, Unreal, Lua"]
+categories: ["Reverse Engineering", "Part 13 · Games: Unity, Unreal, Lua"]
 tags: [reverse-engineering, game-hacking]
 render_with_liquid: false
 ---

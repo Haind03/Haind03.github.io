@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-15-10-when-several-anti-layers-are-stacked.webp
   alt: "Lesson 15.10: Handling stacked anti-analysis layers"
 date: 2023-07-01 23:10:00 +0700
-categories: ["Technique Reverse", "Part 15 · Anti-Reversing and Bypasses"]
+categories: ["Reverse Engineering", "Part 15 · Anti-Reversing and Bypasses"]
 tags: [reverse-engineering, anti-debug]
 render_with_liquid: false
 ---

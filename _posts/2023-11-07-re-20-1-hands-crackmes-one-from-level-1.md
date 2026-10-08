@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-20-1-hands-crackmes-one-from-level-1.webp
   alt: "Lesson 20.1: Hands-on with crackmes.one, level 1 to level 4"
 date: 2023-11-07 09:28:00 +0700
-categories: ["Technique Reverse", "Part 20 · Real-World Practice"]
+categories: ["Reverse Engineering", "Part 20 · Real-World Practice"]
 tags: [reverse-engineering, ctf]
 render_with_liquid: false
 ---

@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-6-4-smali-apktool-modifying-android-app-repacking.webp
   alt: "Lesson 6.4: Smali and apktool, patching and repacking an Android app"
 date: 2022-10-13 22:35:00 +0700
-categories: ["Technique Reverse", "Part 06 · Java, Kotlin and Android"]
+categories: ["Reverse Engineering", "Part 06 · Java, Kotlin and Android"]
 tags: [reverse-engineering, android, java]
 render_with_liquid: false
 ---

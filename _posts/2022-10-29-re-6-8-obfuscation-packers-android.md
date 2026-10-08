@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-6-8-obfuscation-packers-android.webp
   alt: "Lesson 6.8: Obfuscation and packers on Android"
 date: 2022-10-29 23:05:00 +0700
-categories: ["Technique Reverse", "Part 06 · Java, Kotlin and Android"]
+categories: ["Reverse Engineering", "Part 06 · Java, Kotlin and Android"]
 tags: [reverse-engineering, android, java]
 render_with_liquid: false
 ---
@@ -34,7 +34,7 @@ Packers confuse beginners the most. A packer (or "app shielding", "DEX protectio
 
 Common packers (mostly from China because of the app market there) are Bangcle (SecShell), Qihoo Jiagu, Tencent Legu, Ali (Alibaba) protection, and Baidu. Many are free so malware uses them too.
 
-A packed app looks like this. JADX shows almost nothing, only an odd Application class and a few class loaders, with no business logic anywhere. In `AndroidManifest.xml`, the `application` tag points to an odd packer `android:name` class (for example `com.secshell.shellwrapper...`, `com.stub.StubApp`, `com.qihoo...`), which is the loader that runs first. There's an oddly named `.so` file in `lib/`, and a large unexplained file in `assets/` (the encrypted DEX itself). The `classes.dex` is abnormally small for the complexity of the app, and the entropy of the file in assets is very high (a sign of compression/encryption, like PE packers in [Lesson 14.1](/technique-reverse/)).
+A packed app looks like this. JADX shows almost nothing, only an odd Application class and a few class loaders, with no business logic anywhere. In `AndroidManifest.xml`, the `application` tag points to an odd packer `android:name` class (for example `com.secshell.shellwrapper...`, `com.stub.StubApp`, `com.qihoo...`), which is the loader that runs first. There's an oddly named `.so` file in `lib/`, and a large unexplained file in `assets/` (the encrypted DEX itself). The `classes.dex` is abnormally small for the complexity of the app, and the entropy of the file in assets is very high (a sign of compression/encryption, like PE packers in [Lesson 14.1](/reverse-engineering/)).
 
 ## Removing a packer: dump the DEX at runtime
 
@@ -51,7 +51,7 @@ frida-dexdump -U -n app_name
 
 The result is one or more `.dex` files. Drag them into JADX and you see the real code. For stubborn packers that decrypt piece by piece (lazy), you may need to use the app for a while so the parts all load before dumping, or use more specialized tools (the upgraded FRIDA-DEXDUMP, or dedicated unpackers for each packer family).
 
-This is the general idea in unpacking, which is to let the program decrypt itself and take the result instead of decrypting manually. It comes back with PE packers in [Lesson 14.2](/technique-reverse/).
+This is the general idea in unpacking, which is to let the program decrypt itself and take the result instead of decrypting manually. It comes back with PE packers in [Lesson 14.2](/reverse-engineering/).
 
 ## When you meet an unfamiliar app
 

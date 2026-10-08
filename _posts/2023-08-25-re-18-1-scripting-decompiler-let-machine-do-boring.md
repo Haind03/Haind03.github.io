@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-18-1-scripting-decompiler-let-machine-do-boring.webp
   alt: "Lesson 18.1: Scripting the decompiler"
 date: 2023-08-25 21:24:00 +0700
-categories: ["Technique Reverse", "Part 18 · Advanced Topics"]
+categories: ["Reverse Engineering", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
 render_with_liquid: false
 ---
@@ -197,4 +197,4 @@ Script when an operation repeats more than a dozen times or applies to many loca
 Ghidra headless processes binaries in bulk without opening the GUI, and the Binary Ninja API works on BNIL so scripts are architecture-independent.
 
 ---
-Previous: [17.7 DBI](/posts/re-17-7-dynamic-binary-instrumentation-letting-binary-tell/) · [Back to index](/technique-reverse/) · Next: 18.2 Emulation (Unicorn, Qiling, Speakeasy)
+Previous: [17.7 DBI](/posts/re-17-7-dynamic-binary-instrumentation-letting-binary-tell/) · [Back to index](/reverse-engineering/) · Next: 18.2 Emulation (Unicorn, Qiling, Speakeasy)

@@ -4,7 +4,7 @@ image:
   path: /assets/img/covers/re-2-1-five-minute-triage-die-strings-pe.webp
   alt: "Lesson 2.1: Five-minute triage with DIE, strings and PE-bear"
 date: 2022-04-10 15:52:00 +0700
-categories: ["Technique Reverse", "Part 02 · The Toolkit"]
+categories: ["Reverse Engineering", "Part 02 · The Toolkit"]
 tags: [reverse-engineering, tools]
 render_with_liquid: false
 ---

@@ -4,12 +4,12 @@ image:
   path: /assets/img/covers/re-resources-reading-list-windows-internals-books.webp
   alt: "Reading list: the books behind these notes"
 date: 2023-07-29 10:20:00 +0700
-categories: ["Technique Reverse", "Resources"]
+categories: ["Reverse Engineering", "Resources"]
 tags: [reverse-engineering, resources, windows-internals]
 render_with_liquid: false
 ---
 
-A lot of the Technique Reverse series came from a small stack of books I kept going back to. None of them are light reading, but if you only pick up a few RE books, these are the ones I'd point you at. I've linked the publisher or author pages so you can get a proper copy.
+A lot of the Reverse Engineering series came from a small stack of books I kept going back to. None of them are light reading, but if you only pick up a few RE books, these are the ones I'd point you at. I've linked the publisher or author pages so you can get a proper copy.
 
 ## Windows Internals (6th edition, Part 1 and Part 2)
 
