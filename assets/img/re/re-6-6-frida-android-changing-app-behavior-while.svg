@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 230" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="230" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">How Frida hooks an Android app</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">host side on the left, device side on the right</text>
+  <defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+  <rect x="28.0" y="88" width="126.4" height="88" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="91.2" y="120.0" text-anchor="middle" font-size="12" fill="#e3fffa" font-weight="700">Your JS</text>
+  <text x="91.2" y="136.0" text-anchor="middle" font-size="10.5" fill="#9fb0c8">script</text>
+  <text x="91.2" y="152.0" text-anchor="middle" font-size="10.5" fill="#9fb0c8">Java.perform</text>
+  <rect x="182.4" y="88" width="126.4" height="88" rx="7" fill="#111827" stroke="#263451"/>
+  <text x="245.6" y="120.0" text-anchor="middle" font-size="12" fill="#e3fffa" font-weight="700">frida-tools</text>
+  <text x="245.6" y="136.0" text-anchor="middle" font-size="10.5" fill="#9fb0c8">on the host</text>
+  <text x="245.6" y="152.0" text-anchor="middle" font-size="10.5" fill="#9fb0c8">matching version</text>
+  <rect x="336.8" y="88" width="126.4" height="88" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="400.0" y="120.0" text-anchor="middle" font-size="12" fill="#e3fffa" font-weight="700">frida-server</text>
+  <text x="400.0" y="136.0" text-anchor="middle" font-size="10.5" fill="#9fb0c8">on the device</text>
+  <text x="400.0" y="152.0" text-anchor="middle" font-size="10.5" fill="#9fb0c8">root or emulator</text>
+  <rect x="491.2" y="88" width="126.4" height="88" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="554.4" y="120.0" text-anchor="middle" font-size="12" fill="#e3fffa" font-weight="700">App process</text>
+  <text x="554.4" y="136.0" text-anchor="middle" font-size="10.5" fill="#9fb0c8">JS engine</text>
+  <text x="554.4" y="152.0" text-anchor="middle" font-size="10.5" fill="#9fb0c8">injected</text>
+  <rect x="645.6" y="88" width="126.4" height="88" rx="7" fill="#111827" stroke="#fcee0a"/>
+  <text x="708.8" y="120.0" text-anchor="middle" font-size="12" fill="#e3fffa" font-weight="700">Hooked</text>
+  <text x="708.8" y="136.0" text-anchor="middle" font-size="10.5" fill="#9fb0c8">method</text>
+  <text x="708.8" y="152.0" text-anchor="middle" font-size="10.5" fill="#9fb0c8">.implementation</text>
+  <path d="M154.4,132.0 L179.4,132.0" stroke="#6c7b93" stroke-width="2" fill="none" marker-end="url(#a)"/>
+  <path d="M308.8,132.0 L333.8,132.0" stroke="#6c7b93" stroke-width="2" fill="none" marker-end="url(#a)"/>
+  <path d="M463.2,132.0 L488.2,132.0" stroke="#6c7b93" stroke-width="2" fill="none" marker-end="url(#a)"/>
+  <path d="M617.6,132.0 L642.6,132.0" stroke="#6c7b93" stroke-width="2" fill="none" marker-end="url(#a)"/>
+  <text x="400" y="210" text-anchor="middle" font-size="12" fill="#9fb0c8">The hook changes the return value or logs arguments without repackaging the APK</text>
+</svg>

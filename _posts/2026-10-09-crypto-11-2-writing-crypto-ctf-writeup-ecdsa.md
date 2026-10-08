@@ -3,7 +3,7 @@ title: "Lesson 11.2: Writing a Crypto CTF Writeup for ECDSA Nonce Reuse"
 image:
   path: /assets/img/covers/crypto-11-2-writing-crypto-ctf-writeup-ecdsa.webp
   alt: "Writing a Crypto CTF Writeup for ECDSA Nonce Reuse"
-date: 2026-10-09 19:10:00 +0700
+date: 2023-12-19 04:38:00 +0700
 categories: ["Cryptography", "Crypto · Real-World Practice"]
 tags: [cryptography, ecdsa, nonce-reuse, ctf-writeup]
 render_with_liquid: false

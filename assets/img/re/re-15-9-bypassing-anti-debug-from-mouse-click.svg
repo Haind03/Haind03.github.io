@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 340" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+  <rect x="0" y="0" width="800" height="340" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Four levels of bypass, try them in order</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">go one level deeper only when the lower one is detected</text>
+  <rect x="20" y="110" width="160" height="110" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="100.0" y="145.0" text-anchor="middle" font-size="13" fill="#e3fffa">1  User-mode</text>
+  <text x="100.0" y="161.0" text-anchor="middle" font-size="11" fill="#9fb0c8">ScyllaHide</text>
+  <text x="100.0" y="177.0" text-anchor="middle" font-size="11" fill="#9fb0c8">hooks ntdll in the</text>
+  <text x="100.0" y="193.0" text-anchor="middle" font-size="11" fill="#9fb0c8">debugged process</text>
+  <line x1="180" y1="165" x2="216" y2="165" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="220" y="110" width="160" height="110" rx="7" fill="#111827" stroke="#fcee0a"/>
+  <text x="300.0" y="145.0" text-anchor="middle" font-size="13" fill="#e3fffa">2  Kernel</text>
+  <text x="300.0" y="161.0" text-anchor="middle" font-size="11" fill="#9fb0c8">TitanHide</text>
+  <text x="300.0" y="177.0" text-anchor="middle" font-size="11" fill="#9fb0c8">driver, for checks</text>
+  <text x="300.0" y="193.0" text-anchor="middle" font-size="11" fill="#9fb0c8">that reach the kernel</text>
+  <line x1="380" y1="165" x2="416" y2="165" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="420" y="110" width="160" height="110" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="500.0" y="145.0" text-anchor="middle" font-size="13" fill="#e3fffa">3  Hypervisor</text>
+  <text x="500.0" y="161.0" text-anchor="middle" font-size="11" fill="#9fb0c8">HyperHide</text>
+  <text x="500.0" y="177.0" text-anchor="middle" font-size="11" fill="#9fb0c8">when the protector</text>
+  <text x="500.0" y="193.0" text-anchor="middle" font-size="11" fill="#9fb0c8">detects the driver</text>
+  <line x1="580" y1="165" x2="616" y2="165" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="620" y="110" width="160" height="110" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="700.0" y="145.0" text-anchor="middle" font-size="13" fill="#e3fffa">4  Manual</text>
+  <text x="700.0" y="161.0" text-anchor="middle" font-size="11" fill="#9fb0c8">script, HW breakpoint</text>
+  <text x="700.0" y="177.0" text-anchor="middle" font-size="11" fill="#9fb0c8">weird check no</text>
+  <text x="700.0" y="193.0" text-anchor="middle" font-size="11" fill="#9fb0c8">tool covers</text>
+  <text x="100" y="258" text-anchor="middle" font-size="11" fill="#6c7b93">default, gets past most</text>
+  <text x="400" y="300" text-anchor="middle" font-size="11" fill="#6c7b93">Deeper levels are harder to set up and riskier, so a crackme rarely needs more than level 1.</text>
+</svg>

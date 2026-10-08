@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 340" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+<defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+<rect x="0" y="0" width="800" height="340" rx="12" fill="#0d121d" stroke="#263451"/>
+<text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">From API call to kernel</text>
+<text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">most kernel32 functions are thin wrappers over ntdll</text>
+<rect x="24" y="110" width="112" height="60" rx="7" fill="#111827" stroke="#00f0ff"/>
+<text x="80.0" y="135.6" text-anchor="middle" font-size="12.5" fill="#e3fffa">Program</text>
+<text x="80.0" y="153.1" text-anchor="middle" font-size="10.5" fill="#9fb0c8">your exe</text>
+<line x1="136" y1="140" x2="174" y2="140" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="178" y="110" width="112" height="60" rx="7" fill="#111827" stroke="#263451"/>
+<text x="234.0" y="135.6" text-anchor="middle" font-size="12.5" fill="#e3fffa">kernel32.dll</text>
+<text x="234.0" y="153.1" text-anchor="middle" font-size="10.5" fill="#9fb0c8">CreateFileW</text>
+<line x1="290" y1="140" x2="328" y2="140" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="332" y="110" width="112" height="60" rx="7" fill="#111827" stroke="#263451"/>
+<text x="388.0" y="135.6" text-anchor="middle" font-size="12.5" fill="#e3fffa">ntdll.dll</text>
+<text x="388.0" y="153.1" text-anchor="middle" font-size="10.5" fill="#9fb0c8">NtCreateFile</text>
+<line x1="444" y1="140" x2="482" y2="140" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="486" y="110" width="112" height="60" rx="7" fill="#111827" stroke="#fcee0a"/>
+<text x="542.0" y="135.6" text-anchor="middle" font-size="12.5" fill="#e3fffa">syscall</text>
+<text x="542.0" y="153.1" text-anchor="middle" font-size="10.5" fill="#9fb0c8">mode switch</text>
+<line x1="598" y1="140" x2="636" y2="140" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="640" y="110" width="112" height="60" rx="7" fill="#111827" stroke="#ff2a6d"/>
+<text x="696.0" y="135.6" text-anchor="middle" font-size="12.5" fill="#e3fffa">Kernel</text>
+<text x="696.0" y="153.1" text-anchor="middle" font-size="10.5" fill="#9fb0c8">does the work</text>
+<rect x="178" y="240" width="300" height="44" rx="7" fill="#111827" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+<text x="328.0" y="266.0" text-anchor="middle" font-size="11.5" fill="#ff2a6d">Malware shortcut: call Nt* or syscall directly</text>
+<line x1="330" y1="238" x2="330" y2="172" stroke="#ff2a6d" stroke-width="2" marker-end="url(#a)" stroke-dasharray="5 4"/>
+<line x1="478" y1="262" x2="640" y2="262" stroke="#ff2a6d" stroke-width="2" marker-end="url(#a)" stroke-dasharray="5 4"/>
+<line x1="640" y1="262" x2="640" y2="172" stroke="#ff2a6d" stroke-width="2" marker-end="url(#a)" stroke-dasharray="5 4"/>
+<text x="400" y="318" text-anchor="middle" font-size="11" fill="#6c7b93">Hooks usually sit at kernel32 or the start of Nt*; skipping a layer skips the hook.</text>
+</svg>

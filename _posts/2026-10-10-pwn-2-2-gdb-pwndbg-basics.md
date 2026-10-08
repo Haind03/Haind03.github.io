@@ -3,7 +3,7 @@ title: "Lesson 2.2: gdb and pwndbg, Looking Inside a Running Program"
 image:
   path: /assets/img/covers/pwn-2-2-gdb-pwndbg-basics.webp
   alt: "gdb and pwndbg, Looking Inside a Running Program"
-date: 2026-10-10 09:30:00 +0700
+date: 2022-11-01 14:20:00 +0700
 categories: ["Binary Exploitation", "Pwn · Tooling"]
 tags: [pwn, gdb, pwndbg]
 render_with_liquid: false

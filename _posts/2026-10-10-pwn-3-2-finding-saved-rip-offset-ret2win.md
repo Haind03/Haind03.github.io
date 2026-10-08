@@ -3,7 +3,7 @@ title: "Lesson 3.2: Finding the Saved RIP Offset and ret2win"
 image:
   path: /assets/img/covers/pwn-3-2-finding-saved-rip-offset-ret2win.webp
   alt: "Finding the Saved RIP Offset and ret2win"
-date: 2026-10-10 11:10:00 +0700
+date: 2022-11-08 08:03:00 +0700
 categories: ["Binary Exploitation", "Pwn · Buffer Overflow"]
 tags: [pwn, buffer-overflow, ret2win, saved-rip]
 render_with_liquid: false

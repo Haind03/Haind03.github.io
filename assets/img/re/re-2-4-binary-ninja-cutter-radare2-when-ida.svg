@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="360" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Picking an alternative to IDA</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">choose by what you need, not by brand</text>
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+  <rect x="30" y="150" width="170" height="70" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="115.0" y="180.5" text-anchor="middle" font-size="13" fill="#e3fffa" font-weight="700">What do you need?</text>
+  <text x="115.0" y="197.5" text-anchor="middle" font-size="11" fill="#9fb0c8">budget, UI, scripting</text>
+  <rect x="330" y="80" width="300" height="54" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="480.0" y="94.0" text-anchor="middle" font-size="13" fill="#e3fffa" font-weight="700">Binary Ninja</text>
+  <text x="480.0" y="111.0" text-anchor="middle" font-size="11" fill="#9fb0c8">BNIL: LLIL, MLIL, HLIL</text>
+  <text x="480.0" y="128.0" text-anchor="middle" font-size="11" fill="#9fb0c8">clean UI, scripting</text>
+  <path d="M200,185 L265,185 L265,107 L326,107" fill="none" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="330" y="142" width="300" height="54" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="480.0" y="156.0" text-anchor="middle" font-size="13" fill="#e3fffa" font-weight="700">Cutter</text>
+  <text x="480.0" y="173.0" text-anchor="middle" font-size="11" fill="#9fb0c8">free GUI on rizin</text>
+  <text x="480.0" y="190.0" text-anchor="middle" font-size="11" fill="#9fb0c8">built-in decompiler</text>
+  <path d="M200,185 L265,185 L265,169 L326,169" fill="none" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="330" y="204" width="300" height="54" rx="7" fill="#111827" stroke="#fcee0a"/>
+  <text x="480.0" y="218.0" text-anchor="middle" font-size="13" fill="#e3fffa" font-weight="700">radare2 / rizin</text>
+  <text x="480.0" y="235.0" text-anchor="middle" font-size="11" fill="#9fb0c8">command line</text>
+  <text x="480.0" y="252.0" text-anchor="middle" font-size="11" fill="#9fb0c8">aaa, afl, pdf @ main</text>
+  <path d="M200,185 L265,185 L265,231 L326,231" fill="none" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="330" y="266" width="300" height="54" rx="7" fill="#111827" stroke="#263451"/>
+  <text x="480.0" y="280.0" text-anchor="middle" font-size="13" fill="#e3fffa" font-weight="700">IDA Pro</text>
+  <text x="480.0" y="297.0" text-anchor="middle" font-size="11" fill="#9fb0c8">strongest Hex-Rays</text>
+  <text x="480.0" y="314.0" text-anchor="middle" font-size="11" fill="#9fb0c8">pro work</text>
+  <path d="M200,185 L265,185 L265,293 L326,293" fill="none" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <text x="400" y="342" text-anchor="middle" font-size="11" fill="#6c7b93">Pick one, learn its shortcuts until automatic, then try another.</text>
+</svg>

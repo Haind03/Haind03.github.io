@@ -3,12 +3,15 @@ title: "Lesson 6.5: Kotlin in bytecode"
 image:
   path: /assets/img/covers/re-6-5-kotlin-bytecode-why-jadx-gives-you.webp
   alt: "Lesson 6.5: Kotlin in bytecode"
-date: 2022-10-20 20:46:00 +0700
+date: 2022-04-20 04:30:00 +0700
 categories: ["Reverse Engineering", "Part 06 · Java, Kotlin and Android"]
 tags: [reverse-engineering, android, java]
 render_with_liquid: false
 ---
 Open a recent Android app in JADX and you almost certainly see Java. Aren't most apps written in Kotlin these days? Yes, but Kotlin compiles to the same DEX bytecode as Java, so the decompiler reads the bytecode and rebuilds it as Java, the only language it knows how to output. The original Kotlin is gone.
+
+![Coroutine state machine](/assets/img/re/re-6-5-kotlin-bytecode-why-jadx-gives-you.svg)
+_A suspend function compiled into a switch on a label variable._
 
 The Kotlin compiler does leave a lot of characteristic traces. Once you recognize them, you know the code was Kotlin and you can read the intent faster instead of wading through machine-generated Java. This lesson is a list of those traces.
 

@@ -3,7 +3,7 @@ title: "Lesson 7.1: Format String Bugs, Leaking the Stack and Memory"
 image:
   path: /assets/img/covers/pwn-7-1-format-string-leak.webp
   alt: "Format String Bugs, Leaking the Stack and Memory"
-date: 2026-10-10 15:05:00 +0700
+date: 2022-12-05 06:56:00 +0700
 categories: ["Binary Exploitation", "Pwn · Format String"]
 tags: [pwn, format-string, aslr, canary]
 render_with_liquid: false

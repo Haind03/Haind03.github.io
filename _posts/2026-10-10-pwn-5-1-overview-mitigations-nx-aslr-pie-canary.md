@@ -3,7 +3,7 @@ title: "Lesson 5.1: Overview of mitigations, NX, ASLR, PIE, canary, RELRO"
 image:
   path: /assets/img/covers/pwn-5-1-overview-mitigations-nx-aslr-pie-canary.webp
   alt: "Overview of mitigations, NX, ASLR, PIE, canary, RELRO"
-date: 2026-10-10 13:05:00 +0700
+date: 2022-11-19 13:35:00 +0700
 categories: ["Binary Exploitation", "Pwn · Mitigations"]
 tags: [pwn, mitigations, checksec]
 render_with_liquid: false

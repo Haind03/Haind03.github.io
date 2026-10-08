@@ -3,7 +3,7 @@ title: "Lesson 4.2: Classes, vtables, inheritance and RTTI"
 image:
   path: /assets/img/covers/re-4-2-classes-vtables-inheritance-rtti-rebuilding-class.webp
   alt: "Lesson 4.2: Classes, vtables, inheritance and RTTI"
-date: 2022-06-29 21:45:00 +0700
+date: 2022-03-15 06:00:00 +0700
 categories: ["Reverse Engineering", "Part 04 · C++"]
 tags: [reverse-engineering, cpp]
 render_with_liquid: false

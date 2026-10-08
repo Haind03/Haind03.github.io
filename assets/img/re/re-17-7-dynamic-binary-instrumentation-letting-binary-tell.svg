@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 350" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+<defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+<rect x="0" y="0" width="800" height="350" rx="12" fill="#0d121d" stroke="#263451"/>
+<text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Coverage diffing with a DBI tool</text>
+<text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">run twice, subtract, land on the check function</text>
+<rect x="28" y="130" width="130" height="70" rx="7" fill="#111827" stroke="#00f0ff"/>
+<text x="93.0" y="160.5" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-weight="700">Target binary</text>
+<text x="93.0" y="177.5" text-anchor="middle" font-size="11" fill="#9fb0c8">unmodified</text>
+<rect x="200" y="130" width="170" height="70" rx="7" fill="#111827" stroke="#ff2a6d"/>
+<text x="285.0" y="152.0" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-weight="700">DBI engine</text>
+<text x="285.0" y="169.0" text-anchor="middle" font-size="11" fill="#9fb0c8">DynamoRIO / Pin</text>
+<text x="285.0" y="186.0" text-anchor="middle" font-size="11" fill="#9fb0c8">re-translates blocks</text>
+<rect x="412" y="76" width="160" height="56" rx="7" fill="#111827" stroke="#fcee0a"/>
+<text x="492.0" y="99.5" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-weight="700">Run A</text>
+<text x="492.0" y="116.5" text-anchor="middle" font-size="11" fill="#9fb0c8">wrong input</text>
+<rect x="412" y="198" width="160" height="56" rx="7" fill="#111827" stroke="#5fe3b0"/>
+<text x="492.0" y="221.5" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-weight="700">Run B</text>
+<text x="492.0" y="238.5" text-anchor="middle" font-size="11" fill="#9fb0c8">correct input</text>
+<rect x="614" y="130" width="158" height="70" rx="7" fill="#111827" stroke="#00f0ff"/>
+<text x="693.0" y="160.5" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-weight="700">Diff block lists</text>
+<text x="693.0" y="177.5" text-anchor="middle" font-size="11" fill="#9fb0c8">only in B</text>
+<line x1="158" y1="165" x2="196" y2="165" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<line x1="370" y1="150" x2="408" y2="108" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<line x1="370" y1="180" x2="408" y2="226" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<line x1="572" y1="104" x2="640" y2="130" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<line x1="572" y1="226" x2="640" y2="200" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<text x="400" y="296" text-anchor="middle" font-size="11" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">Blocks that run only on the right path point at the check logic.</text>
+<text x="400" y="320" text-anchor="middle" font-size="11" fill="#6c7b93" font-family="'JetBrains Mono',monospace">No source code and no change to the file on disk.</text>
+</svg>

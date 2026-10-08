@@ -3,12 +3,15 @@ title: "Lesson 14.5: Code virtualization"
 image:
   path: /assets/img/covers/re-14-5-code-virtualization-highest-wall.webp
   alt: "Lesson 14.5: Code virtualization"
-date: 2023-05-03 23:42:00 +0700
+date: 2022-07-10 01:07:00 +0700
 categories: ["Reverse Engineering", "Part 14 · Packers and Obfuscation"]
 tags: [reverse-engineering, packer, obfuscation]
 render_with_liquid: false
 ---
 By now you can unpack packers and strip ordinary obfuscation. Code virtualization is the hardest kind of software protection. When a function has been virtualized by VMProtect, Themida or Code Virtualizer, you open it in IDA and don't see any of the original logic in x86. There's only a strange loop that keeps running. This lesson doesn't teach you to fully solve a VMProtect binary, that takes weeks and several dedicated lessons. It explains how it works so you know which way to go.
+
+![The dispatcher loop of a virtualization protector](/assets/img/re/re-14-5-code-virtualization-highest-wall.svg)
+_Bytecode is fetched by the dispatcher and run through a handler table, and every handler returns to the loop._
 
 ## What virtualization is and how it differs
 

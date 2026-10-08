@@ -3,12 +3,15 @@ title: "Lesson 1.10: Windows internals (1), Win32 API and DLLs"
 image:
   path: /assets/img/covers/re-1-10-windows-internals-1-win32-api-dlls.webp
   alt: "Lesson 1.10: Windows internals (1), Win32 API and DLLs"
-date: 2022-03-26 21:45:00 +0700
+date: 2022-01-31 13:46:00 +0700
 categories: ["Reverse Engineering", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
 A Windows program can hardly do anything on its own. To open a file, get memory, create a thread, write to the registry or send a network packet, it has to ask Windows, and it does that by calling APIs. For RE this is useful because the list of APIs a program calls tells you most of what it's trying to do, before you read a single line of assembly.
+
+![Win32 call chain to the kernel](/assets/img/re/re-1-10-windows-internals-1-win32-api-dlls.svg)
+_CreateFileW in kernel32 calls NtCreateFile in ntdll, which issues a syscall._
 
 This lesson is about reading that list.
 

@@ -3,7 +3,7 @@ title: "Lesson 6.5: RSA Padding, PKCS#1 v1.5, Bleichenbacher and OAEP"
 image:
   path: /assets/img/covers/crypto-6-5-rsa-padding-pkcs1-bleichenbacher-oaep.webp
   alt: "RSA Padding, PKCS#1 v1.5, Bleichenbacher and OAEP"
-date: 2026-10-09 14:25:00 +0700
+date: 2023-08-29 23:00:00 +0700
 categories: ["Cryptography", "Crypto · RSA"]
 tags: [cryptography, rsa, padding-oracle, bleichenbacher]
 render_with_liquid: false

@@ -3,12 +3,15 @@ title: "Lesson 20.1: Hands-on with crackmes.one, level 1 to level 4"
 image:
   path: /assets/img/covers/re-20-1-hands-crackmes-one-from-level-1.webp
   alt: "Lesson 20.1: Hands-on with crackmes.one, level 1 to level 4"
-date: 2023-11-07 09:28:00 +0700
+date: 2022-09-26 15:50:00 +0700
 categories: ["Reverse Engineering", "Part 20 · Real-World Practice"]
 tags: [reverse-engineering, ctf]
 render_with_liquid: false
 ---
 After 19 parts, you have the tools and the theory. Now sit down and take apart real binaries until your hands know the moves. crackmes.one is a good place for this, with thousands of challenges made by the community for learning, sorted by difficulty, language and platform, and legal to pick apart. This lesson covers how to use that collection and gives sample writeups for four levels, each using a crackme I built myself to represent the kind of challenge you'll meet.
+
+![Level 1 crackme loop](/assets/img/re/re-20-1-hands-crackmes-one-from-level-1.svg)
+_The level 1 loop: triage, strings, find the check, then read or patch._
 
 ## How to use crackmes.one
 

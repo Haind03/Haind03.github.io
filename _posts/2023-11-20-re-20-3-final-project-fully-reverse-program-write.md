@@ -3,12 +3,15 @@ title: "Lesson 20.3: Final project, reverse a program and write the report"
 image:
   path: /assets/img/covers/re-20-3-final-project-fully-reverse-program-write.webp
   alt: "Lesson 20.3: Final project, reverse a program and write the report"
-date: 2023-11-20 22:22:00 +0700
+date: 2022-10-01 03:39:00 +0700
 categories: ["Reverse Engineering", "Part 20 · Real-World Practice"]
 tags: [reverse-engineering, ctf]
 render_with_liquid: false
 ---
 This is the last lesson of the series. Everything from Part 0 until now, reading assembly, rebuilding structs, unpacking, getting past anti-debug, writing keygens, extracting configs, comes together in one job, which is to take a program you've never seen the inside of, and explain to other people how it works. It's not a ten-minute crackme. It's a target big enough that you have to plan, keep notes over several days, and then write it up as a report others can follow.
+
+![Final project workflow](/assets/img/re/re-20-3-final-project-fully-reverse-program-write.svg)
+_The five-step project workflow from scope to report._
 
 Solving crackmes is a sprint. This project is a long run. They're different skills, and the real RE job is the long run.
 

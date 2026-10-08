@@ -3,7 +3,7 @@ title: "Lesson 1.1: Modular Arithmetic"
 image:
   path: /assets/img/covers/crypto-1-1-modular-arithmetic.webp
   alt: "Modular Arithmetic"
-date: 2026-10-09 09:05:00 +0700
+date: 2023-01-28 01:04:00 +0700
 categories: ["Cryptography", "Crypto · Math Foundations"]
 tags: [cryptography, modular-arithmetic, extended-euclid, math]
 render_with_liquid: false

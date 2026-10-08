@@ -3,7 +3,7 @@ title: "Lesson 2.1: pwntools Basics, the Skeleton of Every Exploit"
 image:
   path: /assets/img/covers/pwn-2-1-pwntools-basics.webp
   alt: "pwntools Basics, the Skeleton of Every Exploit"
-date: 2026-10-10 09:25:00 +0700
+date: 2022-10-30 08:26:00 +0700
 categories: ["Binary Exploitation", "Pwn · Tooling"]
 tags: [pwn, pwntools, python]
 render_with_liquid: false

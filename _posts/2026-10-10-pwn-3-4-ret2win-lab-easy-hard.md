@@ -3,7 +3,7 @@ title: "Lesson 3.4: A ret2win Lab, Three Challenges From Easy to Hard"
 image:
   path: /assets/img/covers/pwn-3-4-ret2win-lab-easy-hard.webp
   alt: "A ret2win Lab, Three Challenges From Easy to Hard"
-date: 2026-10-10 11:20:00 +0700
+date: 2022-11-12 19:52:00 +0700
 categories: ["Binary Exploitation", "Pwn · Buffer Overflow"]
 tags: [pwn, ret2win, rop, lab]
 render_with_liquid: false

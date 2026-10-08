@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+<rect x="0" y="0" width="800" height="400" rx="12" fill="#0d121d" stroke="#263451"/>
+<text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Two fronts on an Unreal game</text>
+<text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">identify the engine first, then pick assets or logic</text>
+<defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+<rect x="290" y="78" width="220" height="50" rx="7" fill="#111827" stroke="#00f0ff"/>
+<text x="400.0" y="98.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">Identify UE</text>
+<text x="400.0" y="115.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">exe name, Content/Paks</text>
+<path d="M340,128 L340,150 L190,150 L190,172" fill="none" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<path d="M460,128 L460,150 L610,150 L610,172" fill="none" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<text x="190" y="146" text-anchor="middle" font-size="11.5" fill="#00f0ff">assets</text>
+<text x="610" y="146" text-anchor="middle" font-size="11.5" fill="#ff2a6d">logic</text>
+<rect x="90" y="174" width="200" height="56" rx="7" fill="#111827" stroke="#00f0ff"/>
+<text x="190.0" y="197.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">FModel / UModel</text>
+<text x="190.0" y="214.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">AES key if .pak is encrypted</text>
+<rect x="510" y="174" width="200" height="56" rx="7" fill="#111827" stroke="#ff2a6d"/>
+<text x="610.0" y="197.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">UE4SS inject</text>
+<text x="610.0" y="214.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">SDK dump + live viewer</text>
+<line x1="190" y1="230" x2="190" y2="262" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="90" y="264" width="200" height="56" rx="7" fill="#111827" stroke="#263451"/>
+<text x="190.0" y="287.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">DataTable, Blueprint,</text>
+<text x="190.0" y="304.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">textures, models</text>
+<rect x="470" y="264" width="140" height="56" rx="7" fill="#111827" stroke="#263451"/>
+<text x="540.0" y="287.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">Lua script</text>
+<text x="540.0" y="304.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">edit live values</text>
+<rect x="630" y="264" width="140" height="56" rx="7" fill="#111827" stroke="#fcee0a"/>
+<text x="700.0" y="287.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">IDA / Ghidra</text>
+<text x="700.0" y="304.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">offsets, native C++</text>
+<line x1="590" y1="230" x2="540" y2="262" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" stroke-dasharray="5 4"/>
+<line x1="630" y1="230" x2="700" y2="262" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" stroke-dasharray="5 4"/>
+<text x="400" y="368" text-anchor="middle" font-size="11" fill="#6c7b93">Assets and logic are separate jobs: read content with FModel, read behavior through the SDK.</text>
+</svg>

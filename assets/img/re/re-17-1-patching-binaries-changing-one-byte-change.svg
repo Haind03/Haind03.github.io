@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 330" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+<defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+<rect x="0" y="0" width="800" height="330" rx="12" fill="#0d121d" stroke="#263451"/>
+<text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Patching a binary: find the check, edit the bytes</text>
+<text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">a conditional jump is usually the whole decision</text>
+<rect x="28" y="130" width="150" height="70" rx="7" fill="#111827" stroke="#00f0ff"/>
+<text x="103.0" y="160.5" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-weight="700">Find the check</text>
+<text x="103.0" y="177.5" text-anchor="middle" font-size="11" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">cmp / test + jcc</text>
+<rect x="300" y="84" width="190" height="56" rx="7" fill="#111827" stroke="#5fe3b0"/>
+<text x="395.0" y="107.5" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-weight="700">Flip the jump</text>
+<text x="395.0" y="124.5" text-anchor="middle" font-size="11" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">74 je  &lt;-&gt;  75 jne</text>
+<rect x="300" y="152" width="190" height="56" rx="7" fill="#111827" stroke="#fcee0a"/>
+<text x="395.0" y="175.5" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-weight="700">NOP it out</text>
+<text x="395.0" y="192.5" text-anchor="middle" font-size="11" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">90 90 (same length)</text>
+<rect x="290" y="220" width="210" height="56" rx="7" fill="#111827" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+<text x="395.0" y="243.5" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-weight="700">Code cave</text>
+<text x="395.0" y="260.5" text-anchor="middle" font-size="11" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">jmp out, new code, jmp back</text>
+<rect x="620" y="130" width="152" height="70" rx="7" fill="#111827" stroke="#5fe3b0"/>
+<text x="696.0" y="160.5" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-weight="700">Save and test</text>
+<text x="696.0" y="177.5" text-anchor="middle" font-size="11" fill="#9fb0c8">file offset, not RVA</text>
+<line x1="178" y1="165" x2="296" y2="112" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<line x1="178" y1="165" x2="296" y2="180" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<line x1="178" y1="165" x2="296" y2="248" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<line x1="490" y1="112" x2="616" y2="155" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<line x1="490" y1="180" x2="616" y2="165" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<line x1="490" y1="248" x2="616" y2="178" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<text x="400" y="308" text-anchor="middle" font-size="11" fill="#6c7b93" font-family="'JetBrains Mono',monospace">Keep the patch the same size, or the code after it shifts.</text>
+</svg>

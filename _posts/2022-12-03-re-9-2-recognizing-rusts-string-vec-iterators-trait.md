@@ -3,12 +3,15 @@ title: "Lesson 9.2: Rust's String, Vec, iterators and trait objects"
 image:
   path: /assets/img/covers/re-9-2-recognizing-rusts-string-vec-iterators-trait.webp
   alt: "Lesson 9.2: Rust's String, Vec, iterators and trait objects"
-date: 2022-12-03 09:21:00 +0700
+date: 2022-05-26 03:00:00 +0700
 categories: ["Reverse Engineering", "Part 09 · Rust"]
 tags: [reverse-engineering, rust]
 render_with_liquid: false
 ---
 Last lesson you learned how to recognize a Rust binary and demangle its function names. Now the harder part, reading the code inside. Rust follows "zero-cost abstraction", which means the nice things you write in source, iterators, closures, Option, get flattened by the compiler into plain loops and branches with no trace of their original shape. The code runs fast, but the disassembly is hard to read.
+
+![Rust data layouts](/assets/img/re/re-9-2-recognizing-rusts-string-vec-iterators-trait.svg)
+_Layouts of &str, String or Vec, and a trait object fat pointer on x64._
 
 This lesson covers a few of Rust's core data structures, so you can still tell what you're looking at in a lot of inlined code.
 

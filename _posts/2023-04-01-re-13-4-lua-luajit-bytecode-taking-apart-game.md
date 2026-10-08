@@ -3,12 +3,15 @@ title: "Lesson 13.4: Lua and LuaJIT bytecode"
 image:
   path: /assets/img/covers/re-13-4-lua-luajit-bytecode-taking-apart-game.webp
   alt: "Lesson 13.4: Lua and LuaJIT bytecode"
-date: 2023-04-01 22:36:00 +0700
+date: 2022-06-26 13:41:00 +0700
 categories: ["Reverse Engineering", "Part 13 · Games: Unity, Unreal, Lua"]
 tags: [reverse-engineering, game-hacking]
 render_with_liquid: false
 ---
 A lot of games don't write gameplay logic in C++ but in Lua, because Lua is light, easy to embed, and can be edited without rebuilding the whole engine. Roblox, Garry's Mod, World of Warcraft (addons), and many mobile games all run Lua scripts. For a reverser that's good news. Lua keeps almost all its information, and decompiling gets you something close to the source. The catches are that there are two different Lua lines (standard Lua and LuaJIT), the bytecode changes with the version, and games often encrypt scripts. This lesson goes through each piece.
+
+![Choosing a Lua decompiler from the magic bytes](/assets/img/re/re-13-4-lua-luajit-bytecode-taking-apart-game.svg)
+_The first bytes of the file pick the tool: unluac for standard Lua, ljd for LuaJIT._
 
 ## Lua runs on bytecode, like Python
 

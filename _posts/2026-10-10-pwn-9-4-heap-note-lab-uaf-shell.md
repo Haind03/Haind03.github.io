@@ -3,7 +3,7 @@ title: "Lesson 9.4: Heap Note Lab, From UAF to Shell"
 image:
   path: /assets/img/covers/pwn-9-4-heap-note-lab-uaf-shell.webp
   alt: "Heap Note Lab, From UAF to Shell"
-date: 2026-10-10 17:20:00 +0700
+date: 2022-12-21 00:16:00 +0700
 categories: ["Binary Exploitation", "Pwn · Heap Basics"]
 tags: [pwn, heap, tcache-poisoning, got-overwrite]
 render_with_liquid: false

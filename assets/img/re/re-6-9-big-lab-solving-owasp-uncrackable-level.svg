@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 340" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="340" rx="12" fill="#0d121d" stroke="#263451"/>
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">OWASP UnCrackable: three levels, one hook point</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">each level adds a layer; the final comparison stays the target</text>
+  <rect x="50.0" y="92" width="200" height="78" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="150.0" y="118.0" text-anchor="middle" font-size="13" fill="#e3fffa">Level 1</text>
+  <text x="150.0" y="135.0" text-anchor="middle" font-size="13" fill="#e3fffa">Java code</text>
+  <text x="150.0" y="152.0" text-anchor="middle" font-size="11.5" fill="#6c7b93">AES key in the app</text>
+  <rect x="300.0" y="92" width="200" height="78" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="400.0" y="118.0" text-anchor="middle" font-size="13" fill="#e3fffa">Level 2</text>
+  <text x="400.0" y="135.0" text-anchor="middle" font-size="13" fill="#e3fffa">Native libfoo.so</text>
+  <text x="400.0" y="152.0" text-anchor="middle" font-size="11.5" fill="#6c7b93">JNI bar() is native</text>
+  <rect x="550.0" y="92" width="200" height="78" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="650.0" y="118.0" text-anchor="middle" font-size="13" fill="#e3fffa">Level 3</text>
+  <text x="650.0" y="135.0" text-anchor="middle" font-size="13" fill="#e3fffa">Level 2 plus defenses</text>
+  <text x="650.0" y="152.0" text-anchor="middle" font-size="11.5" fill="#6c7b93">anti-tamper, anti-Frida</text>
+  <line x1="253.0" y1="131.0" x2="296.0" y2="131.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="503.0" y1="131.0" x2="546.0" y2="131.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <text x="130" y="196" text-anchor="middle" font-size="11.5" fill="#9fb0c8">Static: redo AES in Python</text>
+  <text x="130" y="214" text-anchor="middle" font-size="11.5" fill="#9fb0c8">Dynamic: Frida bypasses root check</text>
+  <text x="380" y="196" text-anchor="middle" font-size="11.5" fill="#9fb0c8">Static: Ghidra on the AArch64 .so</text>
+  <text x="380" y="214" text-anchor="middle" font-size="11.5" fill="#9fb0c8">Dynamic: hook strcmp / memcmp</text>
+  <text x="630" y="196" text-anchor="middle" font-size="11.5" fill="#9fb0c8">Spawn with frida -f, peel layers</text>
+  <text x="630" y="214" text-anchor="middle" font-size="11.5" fill="#9fb0c8">outermost first, then hook verify</text>
+  <rect x="200" y="252" width="400" height="48" rx="7" fill="#0b1518" stroke="#fcee0a" stroke-dasharray="5 4"/>
+  <text x="400.0" y="271.5" text-anchor="middle" font-size="12.5" fill="#e3fffa">Hook the final comparison</text>
+  <text x="400.0" y="288.5" text-anchor="middle" font-size="12.5" fill="#e3fffa">where the secret meets your input</text>
+  <text x="400" y="326" text-anchor="middle" font-size="11" fill="#6c7b93">Pushing the secret deeper slows static reading, not the runtime compare.</text>
+</svg>

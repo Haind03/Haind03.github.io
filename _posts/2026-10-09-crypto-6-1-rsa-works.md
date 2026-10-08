@@ -3,7 +3,7 @@ title: "Lesson 6.1: How RSA Works"
 image:
   path: /assets/img/covers/crypto-6-1-rsa-works.webp
   alt: "How RSA Works"
-date: 2026-10-09 14:05:00 +0700
+date: 2023-07-26 17:34:00 +0700
 categories: ["Cryptography", "Crypto · RSA"]
 tags: [cryptography, rsa, public-key, factoring]
 render_with_liquid: false

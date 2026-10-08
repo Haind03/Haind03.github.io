@@ -3,7 +3,7 @@ title: "Lesson 9.2: Use-After-Free and Type Confusion"
 image:
   path: /assets/img/covers/pwn-9-2-use-after-free-type-confusion.webp
   alt: "Use-After-Free and Type Confusion"
-date: 2026-10-10 17:10:00 +0700
+date: 2022-12-16 12:28:00 +0700
 categories: ["Binary Exploitation", "Pwn · Heap Basics"]
 tags: [pwn, heap, use-after-free, type-confusion]
 render_with_liquid: false

@@ -3,12 +3,15 @@ title: "Lesson 12.1: Objective-C and objc_msgSend"
 image:
   path: /assets/img/covers/re-12-1-objective-c-where-every-call-goes.webp
   alt: "Lesson 12.1: Objective-C and objc_msgSend"
-date: 2023-02-01 14:30:00 +0700
+date: 2022-06-13 02:15:00 +0700
 categories: ["Reverse Engineering", "Part 12 · Swift and Objective-C"]
 tags: [reverse-engineering, ios, swift]
 render_with_liquid: false
 ---
 Open a macOS or iOS app written in Objective-C in IDA for the first time and it looks strange because there are almost no direct function calls. Instead there's `call objc_msgSend` repeated thousands of times. If you don't know what's going on, you'd think the whole program calls a single function. This lesson explains the mechanism and why it actually helps the reverser.
+
+![Objective-C message sending](/assets/img/re/re-12-1-objective-c-where-every-call-goes.svg)
+_Objective-C: every call becomes objc_msgSend with the selector in rsi or x1._
 
 ## Objective-C sends messages
 

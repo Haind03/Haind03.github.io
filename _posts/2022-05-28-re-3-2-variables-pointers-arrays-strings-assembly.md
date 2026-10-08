@@ -3,7 +3,7 @@ title: "Lesson 3.2: Variables, pointers, arrays and strings in assembly"
 image:
   path: /assets/img/covers/re-3-2-variables-pointers-arrays-strings-assembly.webp
   alt: "Lesson 3.2: Variables, pointers, arrays and strings in assembly"
-date: 2022-05-28 21:14:00 +0700
+date: 2022-03-01 18:33:00 +0700
 categories: ["Reverse Engineering", "Part 03 · C"]
 tags: [reverse-engineering, c]
 render_with_liquid: false

@@ -3,7 +3,7 @@ title: "Cheatsheet: shortcuts and quick reference"
 image:
   path: /assets/img/covers/re-resources-cheatsheet-shortcuts-quick-reference.webp
   alt: "Cheatsheet: shortcuts and quick reference"
-date: 2023-11-22 20:17:00 +0700
+date: 2022-10-05 15:28:00 +0700
 categories: ["Reverse Engineering", "Resources"]
 tags: [reverse-engineering, resources]
 render_with_liquid: false

@@ -3,12 +3,15 @@ title: "Lesson 5.7: Combined lab, solving .NET crackmes"
 image:
   path: /assets/img/covers/re-5-7-combined-lab-solving-net-crackmes-from.webp
   alt: "Lesson 5.7: Combined lab, solving .NET crackmes"
-date: 2022-08-26 14:27:00 +0700
+date: 2022-04-08 22:58:00 +0700
 categories: ["Reverse Engineering", "Part 05 · C# and .NET"]
 tags: [reverse-engineering, dotnet]
 render_with_liquid: false
 ---
 The last five lessons covered theory and single operations. This one puts them together in a full .NET reversing session with three crackmes of increasing difficulty. If you can do all three, you've got the basics of .NET.
+
+![The three crackme levels](/assets/img/re/re-5-7-combined-lab-solving-net-crackmes-from.svg)
+_Each level asks for a different technique: read, keygen, undo the XOR._
 
 The source code and detailed tasks are in the Lab section below. Here I go through the thinking, and you should do the lab yourself before opening the solution.
 

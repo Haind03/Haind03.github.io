@@ -3,7 +3,7 @@ title: "Lesson 1.3: CRT and the Chinese Remainder Theorem"
 image:
   path: /assets/img/covers/crypto-1-3-crt-chinese-remainder-theorem.webp
   alt: "CRT and the Chinese Remainder Theorem"
-date: 2026-10-09 09:15:00 +0700
+date: 2023-02-14 03:47:00 +0700
 categories: ["Cryptography", "Crypto · Math Foundations"]
 tags: [cryptography, crt, rsa, hastad]
 render_with_liquid: false

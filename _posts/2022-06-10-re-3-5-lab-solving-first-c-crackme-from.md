@@ -3,12 +3,15 @@ title: "Lesson 3.5: Lab, solving your first C crackme"
 image:
   path: /assets/img/covers/re-3-5-lab-solving-first-c-crackme-from.webp
   alt: "Lesson 3.5: Lab, solving your first C crackme"
-date: 2022-06-10 09:41:00 +0700
+date: 2022-03-08 12:16:00 +0700
 categories: ["Reverse Engineering", "Part 03 · C"]
 tags: [reverse-engineering, c]
 render_with_liquid: false
 ---
 By now you have the separate pieces, reading assembly (1.3), the stack and parameters (1.4), recognizing if/loop (1.5), IDA/Ghidra (2.2, 2.3) and x64dbg (2.5). This lesson uses all of them on a small crackme written in C. There's no new theory, we just sit down and solve it.
+
+![Crackme solving steps](/assets/img/re/re-3-5-lab-solving-first-c-crackme-from.svg)
+_Solving order: triage, strings, xref, expected data, dynamic confirmation._
 
 The crackme is `crackme.c`, in the Lab section at the end. I suggest you stop here, try it yourself, and come back to compare. Below I walk through the whole solution, so it's a spoiler.
 

@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+<rect x="0" y="0" width="800" height="420" rx="12" fill="#0d121d" stroke="#263451"/>
+<text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">What a packer does to a program</text>
+<text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">only after the stub runs is the real code readable</text>
+<defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+<rect x="40" y="84" width="230" height="110" rx="7" fill="#111827" stroke="#ff2a6d"/>
+<text x="155.0" y="117.5" text-anchor="middle" font-size="13" fill="#e3fffa">On disk</text>
+<text x="155.0" y="134.5" text-anchor="middle" font-size="11" fill="#9fb0c8">unpacking stub</text>
+<text x="155.0" y="151.5" text-anchor="middle" font-size="11" fill="#9fb0c8">original code</text>
+<text x="155.0" y="168.5" text-anchor="middle" font-size="11" fill="#9fb0c8">compressed or encrypted</text>
+<rect x="530" y="84" width="230" height="110" rx="7" fill="#111827" stroke="#5fe3b0"/>
+<text x="645.0" y="126.0" text-anchor="middle" font-size="13" fill="#e3fffa">In memory, later</text>
+<text x="645.0" y="143.0" text-anchor="middle" font-size="11" fill="#9fb0c8">stub (already ran)</text>
+<text x="645.0" y="160.0" text-anchor="middle" font-size="11" fill="#9fb0c8">original code in the clear</text>
+<line x1="272" y1="139" x2="376" y2="139" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<line x1="424" y1="139" x2="528" y2="139" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="300" y="112" width="100" height="54" rx="7" fill="#111827" stroke="#263451"/>
+<text x="350.0" y="135.2" text-anchor="middle" font-size="11.5" fill="#e3fffa">stub runs</text>
+<text x="350.0" y="150.8" text-anchor="middle" font-size="9.5" fill="#9fb0c8">decompress</text>
+<text x="400" y="186" text-anchor="middle" font-size="10.5" fill="#6c7b93">jump to OEP</text>
+<text x="400" y="226" text-anchor="middle" font-size="13" fill="#e3fffa">Spot it in a minute</text>
+<rect x="28" y="246" width="172" height="60" rx="7" fill="#111827" stroke="#00f0ff"/>
+<text x="114.0" y="272.0" text-anchor="middle" font-size="12" fill="#e3fffa">High entropy</text>
+<text x="114.0" y="288.0" text-anchor="middle" font-size="10" fill="#9fb0c8">flat block near 8.0</text>
+<rect x="218" y="246" width="172" height="60" rx="7" fill="#111827" stroke="#fcee0a"/>
+<text x="304.0" y="272.0" text-anchor="middle" font-size="12" fill="#e3fffa">Poor imports</text>
+<text x="304.0" y="288.0" text-anchor="middle" font-size="10" fill="#9fb0c8">LoadLibrary + GetProcAddress</text>
+<rect x="408" y="246" width="172" height="60" rx="7" fill="#111827" stroke="#ff2a6d"/>
+<text x="494.0" y="272.0" text-anchor="middle" font-size="12" fill="#e3fffa">Odd sections</text>
+<text x="494.0" y="288.0" text-anchor="middle" font-size="10" fill="#9fb0c8">UPX0, .vmp0, .themida</text>
+<rect x="598" y="246" width="172" height="60" rx="7" fill="#111827" stroke="#5fe3b0"/>
+<text x="684.0" y="272.0" text-anchor="middle" font-size="12" fill="#e3fffa">Writable + executable</text>
+<text x="684.0" y="288.0" text-anchor="middle" font-size="10" fill="#9fb0c8">section with both flags</text>
+<line x1="400" y1="310" x2="400" y2="338" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="250" y="340" width="300" height="48" rx="7" fill="#111827" stroke="#00f0ff"/>
+<text x="400.0" y="359.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">Triage with DIE</text>
+<text x="400.0" y="376.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">then choose a tactic</text>
+</svg>

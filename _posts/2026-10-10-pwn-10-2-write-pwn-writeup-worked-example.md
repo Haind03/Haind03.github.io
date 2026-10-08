@@ -3,7 +3,7 @@ title: "Lesson 10.2: How to write a pwn writeup, with a full worked example"
 image:
   path: /assets/img/covers/pwn-10-2-write-pwn-writeup-worked-example.webp
   alt: "How to write a pwn writeup, with a full worked example"
-date: 2026-10-10 18:10:00 +0700
+date: 2022-12-25 12:05:00 +0700
 categories: ["Binary Exploitation", "Pwn · Real-World Practice"]
 tags: [pwn, writeup, ret2libc, leak]
 render_with_liquid: false

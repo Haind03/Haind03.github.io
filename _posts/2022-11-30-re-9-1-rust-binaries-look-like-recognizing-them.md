@@ -3,7 +3,7 @@ title: "Lesson 9.1: What Rust binaries look like"
 image:
   path: /assets/img/covers/re-9-1-rust-binaries-look-like-recognizing-them.webp
   alt: "Lesson 9.1: What Rust binaries look like"
-date: 2022-11-30 16:18:00 +0700
+date: 2022-05-23 21:05:00 +0700
 categories: ["Reverse Engineering", "Part 09 · Rust"]
 tags: [reverse-engineering, rust]
 render_with_liquid: false

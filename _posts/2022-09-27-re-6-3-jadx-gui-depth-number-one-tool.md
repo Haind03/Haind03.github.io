@@ -3,12 +3,15 @@ title: "Lesson 6.3: JADX-GUI in depth"
 image:
   path: /assets/img/covers/re-6-3-jadx-gui-depth-number-one-tool.webp
   alt: "Lesson 6.3: JADX-GUI in depth"
-date: 2022-09-27 15:29:00 +0700
+date: 2022-04-15 16:41:00 +0700
 categories: ["Reverse Engineering", "Part 06 · Java, Kotlin and Android"]
 tags: [reverse-engineering, android, java]
 render_with_liquid: false
 ---
 .NET reversing has dnSpy, Android reversing has JADX. Open an APK, wait a few seconds, and almost the whole Java source shows up. But most beginners only use it as "open it and scroll", and miss the features that turn a whole session into ten minutes. This lesson covers those features.
+
+![A JADX working session](/assets/img/re/re-6-3-jadx-gui-depth-number-one-tool.svg)
+_From opening the APK to exporting source for grep._
 
 JADX comes as a portable download. Just run `jadx-gui.exe`, no installation needed.
 

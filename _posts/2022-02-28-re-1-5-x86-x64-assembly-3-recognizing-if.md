@@ -3,12 +3,15 @@ title: "Lesson 1.5: x86/x64 Assembly (3), if, loops, switch, arrays and structs"
 image:
   path: /assets/img/covers/re-1-5-x86-x64-assembly-3-recognizing-if.webp
   alt: "Lesson 1.5: x86/x64 Assembly (3), if, loops, switch, arrays and structs"
-date: 2022-02-28 23:13:00 +0700
+date: 2022-01-20 08:15:00 +0700
 categories: ["Reverse Engineering", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
 Lesson 1.3 covered the instruction set and lesson 1.4 the stack frame. Now we put them together to read high-level structure. A compiler takes your `for` statement and turns it into a series of `cmp`, `jmp`, `inc`. Reversing means going the other way, which is to look at the pile and recognize "this is a loop".
+
+![Assembly patterns and the C they map to](/assets/img/re/re-1-5-x86-x64-assembly-3-recognizing-if.svg)
+_Common compiler templates and the C construct each one comes from._
 
 Compilers are very mechanical. They translate each construct with a few fixed templates, so once you know the templates you can read the code. This lesson is that set of templates.
 

@@ -3,7 +3,7 @@ title: "Lesson 10.1: The approach workflow for an unknown pwn binary, from triag
 image:
   path: /assets/img/covers/pwn-10-1-approach-workflow-unknown-pwn-binary.webp
   alt: "The approach workflow for an unknown pwn binary, from triage to exploit"
-date: 2026-10-10 18:05:00 +0700
+date: 2022-12-23 06:11:00 +0700
 categories: ["Binary Exploitation", "Pwn · Real-World Practice"]
 tags: [pwn, ctf, methodology, triage]
 render_with_liquid: false

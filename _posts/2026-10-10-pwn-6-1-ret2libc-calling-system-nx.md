@@ -3,7 +3,7 @@ title: "Lesson 6.1: ret2libc, calling system when NX is on"
 image:
   path: /assets/img/covers/pwn-6-1-ret2libc-calling-system-nx.webp
   alt: "ret2libc, calling system when NX is on"
-date: 2026-10-10 14:05:00 +0700
+date: 2022-11-26 07:18:00 +0700
 categories: ["Binary Exploitation", "Pwn · ret2libc and ROP"]
 tags: [pwn, ret2libc, rop]
 render_with_liquid: false

@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+<defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+<rect x="0" y="0" width="800" height="400" rx="12" fill="#0d121d" stroke="#263451"/>
+<text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Reading CreateFileW from the registers</text>
+<text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">Windows x64: four register args, the rest on the stack</text>
+<rect x="40" y="76" width="150" height="30" rx="7" fill="#111827" stroke="#00f0ff"/>
+<text x="115.0" y="95.2" text-anchor="middle" font-size="12" fill="#e3fffa" font-family="'JetBrains Mono',monospace">rcx</text>
+<line x1="194" y1="91" x2="236" y2="91" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="240" y="76" width="260" height="30" rx="7" fill="#111827" stroke="#263451"/>
+<text x="370.0" y="95.0" text-anchor="middle" font-size="11.5" fill="#e3fffa" font-family="'JetBrains Mono',monospace">lpFileName</text>
+<line x1="504" y1="91" x2="546" y2="91" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="550" y="76" width="210" height="30" rx="7" fill="#111827" stroke="#263451"/>
+<text x="655.0" y="95.0" text-anchor="middle" font-size="11.5" fill="#5fe3b0">ptr to config.ini</text>
+<rect x="40" y="114" width="150" height="30" rx="7" fill="#111827" stroke="#00f0ff"/>
+<text x="115.0" y="133.2" text-anchor="middle" font-size="12" fill="#e3fffa" font-family="'JetBrains Mono',monospace">rdx</text>
+<line x1="194" y1="129" x2="236" y2="129" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="240" y="114" width="260" height="30" rx="7" fill="#111827" stroke="#263451"/>
+<text x="370.0" y="133.0" text-anchor="middle" font-size="11.5" fill="#e3fffa" font-family="'JetBrains Mono',monospace">dwDesiredAccess</text>
+<line x1="504" y1="129" x2="546" y2="129" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="550" y="114" width="210" height="30" rx="7" fill="#111827" stroke="#263451"/>
+<text x="655.0" y="133.0" text-anchor="middle" font-size="11.5" fill="#5fe3b0">GENERIC_READ</text>
+<rect x="40" y="152" width="150" height="30" rx="7" fill="#111827" stroke="#00f0ff"/>
+<text x="115.0" y="171.2" text-anchor="middle" font-size="12" fill="#e3fffa" font-family="'JetBrains Mono',monospace">r8</text>
+<line x1="194" y1="167" x2="236" y2="167" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="240" y="152" width="260" height="30" rx="7" fill="#111827" stroke="#263451"/>
+<text x="370.0" y="171.0" text-anchor="middle" font-size="11.5" fill="#e3fffa" font-family="'JetBrains Mono',monospace">dwShareMode</text>
+<line x1="504" y1="167" x2="546" y2="167" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="550" y="152" width="210" height="30" rx="7" fill="#111827" stroke="#263451"/>
+<text x="655.0" y="171.0" text-anchor="middle" font-size="11.5" fill="#5fe3b0">FILE_SHARE_READ</text>
+<rect x="40" y="190" width="150" height="30" rx="7" fill="#111827" stroke="#00f0ff"/>
+<text x="115.0" y="209.2" text-anchor="middle" font-size="12" fill="#e3fffa" font-family="'JetBrains Mono',monospace">r9</text>
+<line x1="194" y1="205" x2="236" y2="205" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="240" y="190" width="260" height="30" rx="7" fill="#111827" stroke="#263451"/>
+<text x="370.0" y="209.0" text-anchor="middle" font-size="11.5" fill="#e3fffa" font-family="'JetBrains Mono',monospace">lpSecurityAttributes</text>
+<line x1="504" y1="205" x2="546" y2="205" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="550" y="190" width="210" height="30" rx="7" fill="#111827" stroke="#263451"/>
+<text x="655.0" y="209.0" text-anchor="middle" font-size="11.5" fill="#5fe3b0">NULL</text>
+<rect x="40" y="228" width="150" height="30" rx="7" fill="#111827" stroke="#fcee0a"/>
+<text x="115.0" y="247.2" text-anchor="middle" font-size="12" fill="#e3fffa" font-family="'JetBrains Mono',monospace">[rsp+0x20]</text>
+<line x1="194" y1="243" x2="236" y2="243" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="240" y="228" width="260" height="30" rx="7" fill="#111827" stroke="#263451"/>
+<text x="370.0" y="247.0" text-anchor="middle" font-size="11.5" fill="#e3fffa" font-family="'JetBrains Mono',monospace">dwCreationDisposition</text>
+<line x1="504" y1="243" x2="546" y2="243" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="550" y="228" width="210" height="30" rx="7" fill="#111827" stroke="#263451"/>
+<text x="655.0" y="247.0" text-anchor="middle" font-size="11.5" fill="#5fe3b0">OPEN_EXISTING</text>
+<rect x="40" y="266" width="150" height="30" rx="7" fill="#111827" stroke="#fcee0a"/>
+<text x="115.0" y="285.2" text-anchor="middle" font-size="12" fill="#e3fffa" font-family="'JetBrains Mono',monospace">[rsp+0x28]</text>
+<line x1="194" y1="281" x2="236" y2="281" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="240" y="266" width="260" height="30" rx="7" fill="#111827" stroke="#263451"/>
+<text x="370.0" y="285.0" text-anchor="middle" font-size="11.5" fill="#e3fffa" font-family="'JetBrains Mono',monospace">dwFlagsAndAttributes</text>
+<line x1="504" y1="281" x2="546" y2="281" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="550" y="266" width="210" height="30" rx="7" fill="#111827" stroke="#263451"/>
+<text x="655.0" y="285.0" text-anchor="middle" font-size="11.5" fill="#5fe3b0">FILE_ATTRIBUTE_NORMAL</text>
+<rect x="40" y="304" width="150" height="30" rx="7" fill="#111827" stroke="#fcee0a"/>
+<text x="115.0" y="323.2" text-anchor="middle" font-size="12" fill="#e3fffa" font-family="'JetBrains Mono',monospace">[rsp+0x30]</text>
+<line x1="194" y1="319" x2="236" y2="319" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="240" y="304" width="260" height="30" rx="7" fill="#111827" stroke="#263451"/>
+<text x="370.0" y="323.0" text-anchor="middle" font-size="11.5" fill="#e3fffa" font-family="'JetBrains Mono',monospace">hTemplateFile</text>
+<line x1="504" y1="319" x2="546" y2="319" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="550" y="304" width="210" height="30" rx="7" fill="#111827" stroke="#263451"/>
+<text x="655.0" y="323.0" text-anchor="middle" font-size="11.5" fill="#5fe3b0">NULL</text>
+<text x="400" y="372" text-anchor="middle" font-size="11" fill="#6c7b93">Result: the program opens config.ini for reading; the HANDLE comes back in rax.</text>
+</svg>

@@ -3,7 +3,7 @@ title: "Lesson 8.1: ECC Basics, ECDH and ECDSA"
 image:
   path: /assets/img/covers/crypto-8-1-ecc-basics-ecdh-ecdsa.webp
   alt: "ECC Basics, ECDH and ECDSA"
-date: 2026-10-09 16:05:00 +0700
+date: 2023-10-03 04:25:00 +0700
 categories: ["Cryptography", "Crypto · Elliptic Curves"]
 tags: [cryptography, ecc, ecdh, ecdsa]
 render_with_liquid: false

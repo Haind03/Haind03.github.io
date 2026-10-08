@@ -3,12 +3,15 @@ title: "Lesson 4.4: Exceptions, templates and lambdas"
 image:
   path: /assets/img/covers/re-4-4-exceptions-templates-lambdas-three-modern-c.webp
   alt: "Lesson 4.4: Exceptions, templates and lambdas"
-date: 2022-07-16 14:52:00 +0700
+date: 2022-03-19 17:48:00 +0700
 categories: ["Reverse Engineering", "Part 04 · C++"]
 tags: [reverse-engineering, cpp]
 render_with_liquid: false
 ---
 By now you can read classes, vtables, and so on. But real C++ code has three more things that make beginners panic in the decompiler, namely a try/catch block that turns into a mess of tables, a small function that shows up in five or six near-identical copies, and a simple lambda that turns into a whole hidden class. Once you know the mechanism behind them, they're just noise you know how to skip.
+
+![Templates, lambdas, exceptions](/assets/img/re/re-4-4-exceptions-templates-lambdas-three-modern-c.svg)
+_What templates, lambdas and exceptions each look like in a binary._
 
 ## Templates: one source function, many binary functions
 

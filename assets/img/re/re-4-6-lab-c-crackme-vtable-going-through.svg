@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 230" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="230" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">A virtual call is two dereferences</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">how call rcx reaches SerialValidator::check</text>
+  <defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+  <rect x="28.0" y="88" width="156.0" height="88" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="106.0" y="128.0" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-weight="700">Object</text>
+  <text x="106.0" y="144.0" text-anchor="middle" font-size="10.5" fill="#9fb0c8">this = [rbp-0x18]</text>
+  <rect x="224.0" y="88" width="156.0" height="88" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="302.0" y="120.0" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-weight="700">vtable_ptr</text>
+  <text x="302.0" y="136.0" text-anchor="middle" font-size="10.5" fill="#9fb0c8">first 8 bytes</text>
+  <text x="302.0" y="152.0" text-anchor="middle" font-size="10" fill="#fcee0a" font-family="'JetBrains Mono',monospace">mov rax,[rax]</text>
+  <rect x="420.0" y="88" width="156.0" height="88" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="498.0" y="120.0" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-weight="700">vtable</text>
+  <text x="498.0" y="136.0" text-anchor="middle" font-size="10.5" fill="#9fb0c8">slot 0 = &amp;check</text>
+  <text x="498.0" y="152.0" text-anchor="middle" font-size="10" fill="#fcee0a" font-family="'JetBrains Mono',monospace">mov rcx,[rax]</text>
+  <rect x="616.0" y="88" width="156.0" height="88" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="694.0" y="120.0" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-weight="700">check()</text>
+  <text x="694.0" y="136.0" text-anchor="middle" font-size="10.5" fill="#9fb0c8">rdi = this</text>
+  <text x="694.0" y="152.0" text-anchor="middle" font-size="10.5" fill="#9fb0c8">rsi = input</text>
+  <path d="M184.0,132.0 L221.0,132.0" stroke="#6c7b93" stroke-width="2" fill="none" marker-end="url(#a)"/>
+  <path d="M380.0,132.0 L417.0,132.0" stroke="#6c7b93" stroke-width="2" fill="none" marker-end="url(#a)"/>
+  <path d="M576.0,132.0 L613.0,132.0" stroke="#6c7b93" stroke-width="2" fill="none" marker-end="url(#a)"/>
+  <text x="400" y="210" text-anchor="middle" font-size="12" fill="#9fb0c8">The graph shows no arrow at call rcx; break there and read rcx to confirm the target</text>
+</svg>

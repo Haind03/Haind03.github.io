@@ -3,12 +3,15 @@ title: "Lesson 18.8: AI-assisted reverse engineering"
 image:
   path: /assets/img/covers/re-18-8-ai-assisted-reverse-engineering-twice-as.webp
   alt: "Lesson 18.8: AI-assisted reverse engineering"
-date: 2023-10-14 15:46:00 +0700
+date: 2022-09-15 10:18:00 +0700
 categories: ["Reverse Engineering", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
 render_with_liquid: false
 ---
 Reversing is a lot of reading, such as reading pseudocode, guessing what a function does, renaming many `sub_401000` and `v7`. Most of it is repetitive and eats time. An LLM can help here, since it reads a function, guesses the purpose, suggests variable names, explains a confusing chunk. It doesn't reverse for you, but it speeds up the boring parts. This lesson covers two ways to use AI in RE, and when not to trust it.
+
+![LLM plugin versus MCP server workflows](/assets/img/re/re-18-8-ai-assisted-reverse-engineering-twice-as.svg)
+_Plugins answer one question at a time; MCP lets an agent drive the decompiler._
 
 ## Two kinds of AI integration
 

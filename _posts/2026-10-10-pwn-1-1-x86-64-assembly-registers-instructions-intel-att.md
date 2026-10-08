@@ -3,7 +3,7 @@ title: "Lesson 1.1: x86-64 Assembly Review for Pwn, Registers, Instructions, Int
 image:
   path: /assets/img/covers/pwn-1-1-x86-64-assembly-registers-instructions-intel-att.webp
   alt: "x86-64 Assembly Review for Pwn, Registers, Instructions, Intel vs AT&T"
-date: 2026-10-10 09:05:00 +0700
+date: 2022-10-21 08:48:00 +0700
 categories: ["Binary Exploitation", "Pwn · Foundations"]
 tags: [pwn, assembly, x86-64, gdb]
 render_with_liquid: false

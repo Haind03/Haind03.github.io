@@ -3,7 +3,7 @@ title: "Lesson 3.4: FLIRT and recognizing library functions"
 image:
   path: /assets/img/covers/re-3-4-flirt-recognizing-library-functions-dont-read.webp
   alt: "Lesson 3.4: FLIRT and recognizing library functions"
-date: 2022-06-08 21:00:00 +0700
+date: 2022-03-06 06:22:00 +0700
 categories: ["Reverse Engineering", "Part 03 · C"]
 tags: [reverse-engineering, c]
 render_with_liquid: false

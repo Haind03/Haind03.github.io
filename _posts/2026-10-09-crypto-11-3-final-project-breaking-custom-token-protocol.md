@@ -3,7 +3,7 @@ title: "Lesson 11.3: Final Project Breaking a Custom Token Protocol"
 image:
   path: /assets/img/covers/crypto-11-3-final-project-breaking-custom-token-protocol.webp
   alt: "Final Project Breaking a Custom Token Protocol"
-date: 2026-10-09 19:15:00 +0700
+date: 2023-12-27 18:00:00 +0700
 categories: ["Cryptography", "Crypto · Real-World Practice"]
 tags: [cryptography, aes-ctr, bit-flipping, malleability]
 render_with_liquid: false

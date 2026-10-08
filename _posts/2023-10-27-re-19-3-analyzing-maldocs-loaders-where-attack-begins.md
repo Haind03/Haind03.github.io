@@ -3,12 +3,15 @@ title: "Lesson 19.3: Analyzing maldocs and loaders"
 image:
   path: /assets/img/covers/re-19-3-analyzing-maldocs-loaders-where-attack-begins.webp
   alt: "Lesson 19.3: Analyzing maldocs and loaders"
-date: 2023-10-27 16:21:00 +0700
+date: 2022-09-22 04:01:00 +0700
 categories: ["Reverse Engineering", "Part 19 · Malware Analysis Basics"]
 tags: [reverse-engineering, malware]
 render_with_liquid: false
 ---
 Most infections don't start with an `.exe` thrown at the victim. They start with something that looks harmless, such as a Word file attached to an email, a PDF invoice, a `.lnk` shortcut pretending to be a folder. These aren't the real malware, they're loaders, and their only job is to pull down the next-stage payload and run it. If you can reverse this step you stop the attack at the start, so the blue team does this every day.
+
+![Loader chain from lure to payload](/assets/img/re/re-19-3-analyzing-maldocs-loaders-where-attack-begins.svg)
+_A typical loader chain: lure, trigger, script, encoded layers, payload URL._
 
 The whole lesson is from the defensive side. We analyze to understand and detect, every example is benign and runs in an isolated lab (see [Lesson 0.3](/posts/re-0-3-set-up-safe-lab-before-touching/)).
 

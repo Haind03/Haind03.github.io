@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 380" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="380" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">A GDB session from start to finish</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">the core command set in order</text>
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+  <rect x="30" y="90" width="210" height="70" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="135.0" y="120.5" text-anchor="middle" font-size="13" fill="#e3fffa" font-weight="700">1. Load</text>
+  <text x="135.0" y="137.5" text-anchor="middle" font-size="11" fill="#9fb0c8">gdb ./program  or  gdb -p PID</text>
+  <rect x="295" y="90" width="210" height="70" rx="7" fill="#111827" stroke="#263451"/>
+  <text x="400.0" y="120.5" text-anchor="middle" font-size="13" fill="#e3fffa" font-weight="700">2. Set syntax</text>
+  <text x="400.0" y="137.5" text-anchor="middle" font-size="11" fill="#9fb0c8">set disassembly-flavor intel</text>
+  <rect x="560" y="90" width="210" height="70" rx="7" fill="#111827" stroke="#fcee0a"/>
+  <text x="665.0" y="120.5" text-anchor="middle" font-size="13" fill="#e3fffa" font-weight="700">3. Breakpoint</text>
+  <text x="665.0" y="137.5" text-anchor="middle" font-size="11" fill="#9fb0c8">break main  /  break *ADDR</text>
+  <rect x="30" y="200" width="210" height="70" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="135.0" y="230.5" text-anchor="middle" font-size="13" fill="#e3fffa" font-weight="700">4. Run</text>
+  <text x="135.0" y="247.5" text-anchor="middle" font-size="11" fill="#9fb0c8">run, then stops at the break</text>
+  <rect x="295" y="200" width="210" height="70" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="400.0" y="230.5" text-anchor="middle" font-size="13" fill="#e3fffa" font-weight="700">5. Step</text>
+  <text x="400.0" y="247.5" text-anchor="middle" font-size="11" fill="#9fb0c8">si, ni, finish</text>
+  <rect x="560" y="200" width="210" height="70" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="665.0" y="230.5" text-anchor="middle" font-size="13" fill="#e3fffa" font-weight="700">6. Inspect</text>
+  <text x="665.0" y="247.5" text-anchor="middle" font-size="11" fill="#9fb0c8">x/s, x/20x, info registers</text>
+  <line x1="240" y1="125" x2="291" y2="125" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="505" y1="125" x2="556" y2="125" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <path d="M665,160 L665,180 L135,180 L135,196" fill="none" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="240" y1="235" x2="291" y2="235" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="505" y1="235" x2="556" y2="235" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <text x="400" y="362" text-anchor="middle" font-size="11" fill="#6c7b93">pwndbg or GEF adds a live context view on top of the same commands.</text>
+</svg>

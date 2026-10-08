@@ -3,12 +3,15 @@ title: "Lesson 15.5: Anti-VM and anti-sandbox"
 image:
   path: /assets/img/covers/re-15-5-anti-vm-anti-sandbox-when-sample.webp
   alt: "Lesson 15.5: Anti-VM and anti-sandbox"
-date: 2023-05-23 14:29:00 +0700
+date: 2022-07-23 12:33:00 +0700
 categories: ["Reverse Engineering", "Part 15 · Anti-Reversing and Bypasses"]
 tags: [reverse-engineering, anti-debug]
 render_with_liquid: false
 ---
 You set up a proper lab following Lesson 0.3, drag the sample into the VM, hit run, and nothing happens. No network calls, no file writes, it just exits. It's easy to think the sample is broken or harmless. Often it looked around, saw it was in a virtual machine, and decided to do nothing. This is anti-VM and anti-sandbox, and you need to understand it before dynamic analysis can work.
+
+![Diagram of anti-VM checks and outcomes](/assets/img/re/re-15-5-anti-vm-anti-sandbox-when-sample.svg)
+_Checks an anti-VM sample runs, and what it does with the verdict_
 
 Anti-debug targets whoever attached a debugger. Anti-VM targets the environment, such as VMware, VirtualBox, QEMU, or automated sandboxes like Cuckoo, CAPE and the online services. The malware's logic is simple. Researchers run me in a VM and real users run me on a real machine, so if I see a VM I stay quiet to avoid being analyzed.
 

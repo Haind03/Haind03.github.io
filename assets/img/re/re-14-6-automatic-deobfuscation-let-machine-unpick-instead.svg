@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 380" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+<rect x="0" y="0" width="800" height="380" rx="12" fill="#0d121d" stroke="#263451"/>
+<text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Lift, simplify, lower</text>
+<text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">work on IR, not on raw assembly</text>
+<defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+<rect x="28.0" y="84" width="156.0" height="56" rx="7" fill="#111827" stroke="#ff2a6d"/>
+<text x="106.0" y="107.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">Obfuscated code</text>
+<text x="106.0" y="124.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">flattening, MBA, junk</text>
+<rect x="224.0" y="84" width="156.0" height="56" rx="7" fill="#111827" stroke="#00f0ff"/>
+<text x="302.0" y="107.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">Lift to IR</text>
+<text x="302.0" y="124.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">microcode, P-Code, Miasm</text>
+<line x1="187.0" y1="112.0" x2="221.0" y2="112.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="420.0" y="84" width="156.0" height="56" rx="7" fill="#111827" stroke="#fcee0a"/>
+<text x="498.0" y="107.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">Simplify</text>
+<text x="498.0" y="124.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">rules or a solver</text>
+<line x1="383.0" y1="112.0" x2="417.0" y2="112.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="616.0" y="84" width="156.0" height="56" rx="7" fill="#111827" stroke="#5fe3b0"/>
+<text x="694.0" y="107.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">Lower</text>
+<text x="694.0" y="124.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">clean pseudocode</text>
+<line x1="579.0" y1="112.0" x2="613.0" y2="112.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<text x="400" y="176" text-anchor="middle" font-size="13" fill="#e3fffa">Which layer each tool works at</text>
+<rect x="28" y="196" width="230" height="70" rx="7" fill="#111827" stroke="#00f0ff"/>
+<text x="143.0" y="219.0" text-anchor="middle" font-size="12" fill="#e3fffa">D-810, HexRaysDeob</text>
+<text x="143.0" y="235.0" text-anchor="middle" font-size="10" fill="#9fb0c8">inside Hex-Rays microcode</text>
+<text x="143.0" y="251.0" text-anchor="middle" font-size="10" fill="#9fb0c8">press F5, get clean output</text>
+<rect x="285" y="196" width="230" height="70" rx="7" fill="#111827" stroke="#fcee0a"/>
+<text x="400.0" y="219.0" text-anchor="middle" font-size="12" fill="#e3fffa">Miasm</text>
+<text x="400.0" y="235.0" text-anchor="middle" font-size="10" fill="#9fb0c8">own IR, emulator, simplifier</text>
+<text x="400.0" y="251.0" text-anchor="middle" font-size="10" fill="#9fb0c8">scriptable in Python</text>
+<rect x="542" y="196" width="230" height="70" rx="7" fill="#111827" stroke="#5fe3b0"/>
+<text x="657.0" y="219.0" text-anchor="middle" font-size="12" fill="#e3fffa">Triton, angr</text>
+<text x="657.0" y="235.0" text-anchor="middle" font-size="10" fill="#9fb0c8">symbolic execution + Z3</text>
+<text x="657.0" y="251.0" text-anchor="middle" font-size="10" fill="#9fb0c8">formula of the output</text>
+<rect x="150" y="296" width="500" height="44" rx="7" fill="#0b1518" stroke="#263451" stroke-dasharray="5 4"/>
+<text x="400.0" y="322.0" text-anchor="middle" font-size="11.5" fill="#e3fffa">One small spot: reduce by hand. Many functions: automate. Only the result needed: emulate.</text>
+</svg>

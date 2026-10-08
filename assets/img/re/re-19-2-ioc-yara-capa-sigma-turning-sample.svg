@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 290" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+<rect x="0" y="0" width="800" height="290" rx="12" fill="#0d121d" stroke="#263451"/>
+<text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">One sample, four layers of detection</text>
+<text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">from easy to evade to hard to evade</text>
+<defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+<rect x="28.0" y="120" width="124.8" height="78" rx="7" fill="#111827" stroke="#263451"/>
+<text x="90.4" y="155.0" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-weight="700">Sample</text>
+<text x="90.4" y="172.0" text-anchor="middle" font-size="10.5" fill="#9fb0c8">analyzed</text>
+<line x1="154.8" y1="159.0" x2="179.8" y2="159.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="182.8" y="120" width="124.8" height="78" rx="7" fill="#111827" stroke="#ff2a6d"/>
+<text x="245.2" y="155.0" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-weight="700">IOC</text>
+<text x="245.2" y="172.0" text-anchor="middle" font-size="10.5" fill="#9fb0c8">hash, IP, domain</text>
+<line x1="309.6" y1="159.0" x2="334.6" y2="159.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="337.6" y="120" width="124.8" height="78" rx="7" fill="#111827" stroke="#fcee0a"/>
+<text x="400.0" y="155.0" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-weight="700">YARA</text>
+<text x="400.0" y="172.0" text-anchor="middle" font-size="10.5" fill="#9fb0c8">strings, bytes</text>
+<line x1="464.4" y1="159.0" x2="489.4" y2="159.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="492.4" y="120" width="124.8" height="78" rx="7" fill="#111827" stroke="#00f0ff"/>
+<text x="554.8" y="155.0" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-weight="700">capa</text>
+<text x="554.8" y="172.0" text-anchor="middle" font-size="10.5" fill="#9fb0c8">capabilities</text>
+<line x1="619.2" y1="159.0" x2="644.2" y2="159.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="647.2" y="120" width="124.8" height="78" rx="7" fill="#111827" stroke="#5fe3b0"/>
+<text x="709.6" y="155.0" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-weight="700">Sigma</text>
+<text x="709.6" y="172.0" text-anchor="middle" font-size="10.5" fill="#9fb0c8">log behavior</text>
+<text x="400" y="250" text-anchor="middle" font-size="12" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">left: cheap to change   |   right: costly for the attacker to change</text>
+</svg>

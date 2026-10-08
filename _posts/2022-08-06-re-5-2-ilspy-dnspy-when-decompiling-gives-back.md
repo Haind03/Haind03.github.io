@@ -3,12 +3,15 @@ title: "Lesson 5.2: ILSpy and dnSpy"
 image:
   path: /assets/img/covers/re-5-2-ilspy-dnspy-when-decompiling-gives-back.webp
   alt: "Lesson 5.2: ILSpy and dnSpy"
-date: 2022-08-06 14:52:00 +0700
+date: 2022-03-28 17:26:00 +0700
 categories: ["Reverse Engineering", "Part 05 · C# and .NET"]
 tags: [reverse-engineering, dotnet]
 render_with_liquid: false
 ---
 After two whole parts of native assembly, opening a .NET file in dnSpy is a pleasant surprise. You click a method, and instead of many `mov`/`call` lines, the window shows C# almost exactly as the author wrote it, including class names, method names, local variable names, even a `foreach` loop. The reason is in lesson [5.1](/posts/re-5-1-net-internals-why-decompiling-gives-back/). .NET compiles to IL with full metadata, so the decompiler can rebuild a lot. This lesson covers the two main tools.
+
+![ILSpy and dnSpy workflow](/assets/img/re/re-5-2-ilspy-dnspy-when-decompiling-gives-back.svg)
+_Open the assembly, browse, read C# and IL, search, then export the project to grep._
 
 Both are free portable downloads, `dnSpy.exe` and `ILSpy.exe`, so there's nothing to install.
 

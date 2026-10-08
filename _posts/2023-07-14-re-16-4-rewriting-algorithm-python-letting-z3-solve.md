@@ -3,12 +3,15 @@ title: "Lesson 16.4: Rewriting the algorithm in Python and solving with Z3"
 image:
   path: /assets/img/covers/re-16-4-rewriting-algorithm-python-letting-z3-solve.webp
   alt: "Lesson 16.4: Rewriting the algorithm in Python and solving with Z3"
-date: 2023-07-14 11:28:00 +0700
+date: 2022-08-12 17:43:00 +0700
 categories: ["Reverse Engineering", "Part 16 · Crypto and Algorithms"]
 tags: [reverse-engineering, crypto]
 render_with_liquid: false
 ---
 By now you can read the check algorithm in a binary. The next question is how to find a valid input. There are two levels. If the algorithm is simple, rewrite it in Python and then invert it or brute-force it. If the logic is a tangle of constraints between bytes that would take forever to solve by hand, give it to Z3, an SMT solver, which finds an input satisfying every condition. This lesson covers both, and the final lab is a crackme solved entirely with Z3 that actually ran.
+
+![Decision flow from check function to valid input](/assets/img/re/re-16-4-rewriting-algorithm-python-letting-z3-solve.svg)
+_Invert in Python when the transform is simple, use Z3 when constraints are tangled_
 
 ## Level one: rewrite it in Python
 

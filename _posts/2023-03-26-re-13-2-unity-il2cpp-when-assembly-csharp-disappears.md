@@ -3,12 +3,15 @@ title: "Lesson 13.2: Unity IL2CPP"
 image:
   path: /assets/img/covers/re-13-2-unity-il2cpp-when-assembly-csharp-disappears.webp
   alt: "Lesson 13.2: Unity IL2CPP"
-date: 2023-03-26 15:39:00 +0700
+date: 2022-06-22 01:52:00 +0700
 categories: ["Reverse Engineering", "Part 13 · Games: Unity, Unreal, Lua"]
 tags: [reverse-engineering, game-hacking]
 render_with_liquid: false
 ---
 In the last lesson you opened a Unity game built with Mono, found `Assembly-CSharp.dll`, dragged it into dnSpy and could read almost the source. Then you open a different game and search the whole folder, and `Assembly-CSharp.dll` isn't there. Instead there's a huge `GameAssembly.dll` and a strange file called `global-metadata.dat`. That's IL2CPP, and it changes things a lot.
+
+![IL2CPP name recovery](/assets/img/re/re-13-2-unity-il2cpp-when-assembly-csharp-disappears.svg)
+_IL2CPP: Il2CppDumper joins GameAssembly.dll with global-metadata.dat to restore names._
 
 ## What IL2CPP does to your C# code
 

@@ -3,7 +3,7 @@ title: "Lesson 4.3: STL in binaries, std::string and std::vector"
 image:
   path: /assets/img/covers/re-4-3-stl-binaries-reading-std-string-std.webp
   alt: "Lesson 4.3: STL in binaries, std::string and std::vector"
-date: 2022-07-10 10:42:00 +0700
+date: 2022-03-17 11:54:00 +0700
 categories: ["Reverse Engineering", "Part 04 · C++"]
 tags: [reverse-engineering, cpp]
 render_with_liquid: false

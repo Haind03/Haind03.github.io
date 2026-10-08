@@ -3,7 +3,7 @@ title: "Lesson 7.2: Arbitrary Memory Writes with %n"
 image:
   path: /assets/img/covers/pwn-7-2-format-string-arbitrary-write.webp
   alt: "Arbitrary Memory Writes with %n"
-date: 2026-10-10 15:10:00 +0700
+date: 2022-12-07 12:50:00 +0700
 categories: ["Binary Exploitation", "Pwn · Format String"]
 tags: [pwn, format-string, got-overwrite, relro]
 render_with_liquid: false

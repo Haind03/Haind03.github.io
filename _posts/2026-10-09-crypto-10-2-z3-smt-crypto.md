@@ -3,7 +3,7 @@ title: "Lesson 10.2: Z3 and SMT for Crypto"
 image:
   path: /assets/img/covers/crypto-10-2-z3-smt-crypto.webp
   alt: "Z3 and SMT for Crypto"
-date: 2026-10-09 18:10:00 +0700
+date: 2023-11-23 12:34:00 +0700
 categories: ["Cryptography", "Crypto · Crypto in Practice"]
 tags: [cryptography, z3, smt, prng]
 render_with_liquid: false

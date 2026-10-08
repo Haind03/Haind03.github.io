@@ -3,12 +3,15 @@ title: "Lesson 20.2: Solving RE challenges in CTFs and writing a write-up"
 image:
   path: /assets/img/covers/re-20-2-solving-re-challenges-ctfs-writing-decent.webp
   alt: "Lesson 20.2: Solving RE challenges in CTFs and writing a write-up"
-date: 2023-11-08 22:17:00 +0700
+date: 2022-09-28 21:45:00 +0700
 categories: ["Reverse Engineering", "Part 20 · Real-World Practice"]
 tags: [reverse-engineering, ctf]
 render_with_liquid: false
 ---
 After nineteen parts you have enough tools and techniques. What's missing is the rhythm of solving under pressure, when nobody tells you in advance what language the challenge uses, which packer, or where the flag is hidden. CTFs are where you practice that, and a write-up is how you keep what you learned from a solve. This lesson covers both.
+
+![Rev challenge workflow](/assets/img/re/re-20-2-solving-re-challenges-ctfs-writing-decent.svg)
+_The workflow for a rev challenge, ending in a write-up._
 
 ## Where to play
 

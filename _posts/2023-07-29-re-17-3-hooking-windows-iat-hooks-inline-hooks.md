@@ -3,12 +3,15 @@ title: "Lesson 17.3: Hooking on Windows, IAT hooks and inline hooks"
 image:
   path: /assets/img/covers/re-17-3-hooking-windows-iat-hooks-inline-hooks.webp
   alt: "Lesson 17.3: Hooking on Windows, IAT hooks and inline hooks"
-date: 2023-07-29 22:22:00 +0700
+date: 2022-08-19 11:26:00 +0700
 categories: ["Reverse Engineering", "Part 17 · Patching, Hooking, Injection"]
 tags: [reverse-engineering, frida, hooking]
 render_with_liquid: false
 ---
 A hook puts your code into a function call so the call runs through your code first. It sounds like a malware thing, but a lot of legitimate software uses it, since EDRs monitor behavior with hooks, Frida instruments with hooks, compatibility tools patch old APIs with hooks, and you'll hook to see parameters when analyzing. If you understand how hooking works you can use it and spot it when someone else does.
+
+![IAT hook compared with inline hook](/assets/img/re/re-17-3-hooking-windows-iat-hooks-inline-hooks.svg)
+_Call flow with an IAT hook and with an inline hook plus trampoline_
 
 There are two families of hooks on Windows that you'll meet all the time, IAT hooks and inline hooks. They differ in where they sit.
 

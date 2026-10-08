@@ -3,12 +3,15 @@ title: "Lesson 1.6: From source code to binary"
 image:
   path: /assets/img/covers/re-1-6-from-source-binary-why-same-code.webp
   alt: "Lesson 1.6: From source code to binary"
-date: 2022-03-01 14:05:00 +0700
+date: 2022-01-22 14:09:00 +0700
 categories: ["Reverse Engineering", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
 Beginners often ask why a clean C function they wrote becomes so much assembly in IDA that looks nothing like the original. The reason is the process from source to binary, and mostly the optimizer. Once you understand this process, weird decompiler output annoys you less, and you know ahead of time what kind of binary you're facing.
+
+![Compilation pipeline](/assets/img/re/re-1-6-from-source-binary-why-same-code.svg)
+_The four stages behind one gcc command: preprocess, compile, assemble, link._
 
 ## The compilation pipeline
 

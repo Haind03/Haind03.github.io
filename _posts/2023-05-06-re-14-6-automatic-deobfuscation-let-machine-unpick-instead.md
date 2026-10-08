@@ -3,12 +3,15 @@ title: "Lesson 14.6: Automatic deobfuscation"
 image:
   path: /assets/img/covers/re-14-6-automatic-deobfuscation-let-machine-unpick-instead.webp
   alt: "Lesson 14.6: Automatic deobfuscation"
-date: 2023-05-06 20:49:00 +0700
+date: 2022-07-12 07:01:00 +0700
 categories: ["Reverse Engineering", "Part 14 · Packers and Obfuscation"]
 tags: [reverse-engineering, packer, obfuscation]
 render_with_liquid: false
 ---
 Lesson [14.4](/posts/re-14-4-code-level-obfuscation-when-program-flow/) showed what obfuscation looks like. Control flow flattening turns a tidy function into a giant dispatcher, MBA turns `x + y` into a long bit expression, opaque predicates scatter dead branches everywhere. Undoing each one by hand is doable, but with a binary of a few thousand obfuscated functions you'll give up before finishing the third. This lesson is about getting tools to do the heavy lifting.
+
+![Lift, simplify and lower in automatic deobfuscation](/assets/img/re/re-14-6-automatic-deobfuscation-let-machine-unpick-instead.svg)
+_Tools lift code to an IR, simplify it, and lower it back, each working at a different layer._
 
 Every automatic deobfuscation tool follows the same idea, which is to lift the code to a cleaner intermediate form (IR), simplify it there with algebraic rules or a solver, then lower it back down. They differ in which layer they work at and how much they can handle.
 

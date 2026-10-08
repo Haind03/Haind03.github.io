@@ -3,7 +3,7 @@ title: "Lesson 8.2: ECDSA Private Key Recovery from Nonce Reuse"
 image:
   path: /assets/img/covers/crypto-8-2-ecdsa-nonce-reuse.webp
   alt: "ECDSA Private Key Recovery from Nonce Reuse"
-date: 2026-10-09 16:10:00 +0700
+date: 2023-10-11 17:47:00 +0700
 categories: ["Cryptography", "Crypto · Elliptic Curves"]
 tags: [cryptography, ecdsa, nonce-reuse, secp256k1]
 render_with_liquid: false

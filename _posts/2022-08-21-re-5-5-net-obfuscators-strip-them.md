@@ -3,12 +3,15 @@ title: "Lesson 5.5: .NET obfuscators and how to strip them"
 image:
   path: /assets/img/covers/re-5-5-net-obfuscators-strip-them.webp
   alt: "Lesson 5.5: .NET obfuscators and how to strip them"
-date: 2022-08-21 15:13:00 +0700
+date: 2022-04-04 11:09:00 +0700
 categories: ["Reverse Engineering", "Part 05 · C# and .NET"]
 tags: [reverse-engineering, dotnet]
 render_with_liquid: false
 ---
 In the last four lessons you saw that .NET is very easy to reverse. Decompile it and you get C# that reads like the original. Because of that, people who write .NET software use obfuscators to make it harder. Most popular obfuscators already have tools that strip them almost automatically. Some layers you still have to deal with by hand. This lesson covers how to recognize what you're facing, which tool to try first, and what to do when the tools give up.
+
+![Order for deobfuscating .NET](/assets/img/re/re-5-5-net-obfuscators-strip-them.svg)
+_Identify the protector, run a tool, then trace leftovers in the debugger._
 
 First, a reminder of the boundary from [Lesson 0.2](/posts/re-0-2-legal-ethics-part-everyone-wants-skip/), which is that the techniques below are only for your own assemblies, learning samples, crackmes, or defensive malware analysis. Stripping protection from commercial software to use it for free is a different matter.
 

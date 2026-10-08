@@ -3,7 +3,7 @@ title: "Lesson 9.1: PRNG vs CSPRNG and Mersenne Twister"
 image:
   path: /assets/img/covers/crypto-9-1-prng-csprng-mersenne-twister.webp
   alt: "PRNG vs CSPRNG and Mersenne Twister"
-date: 2026-10-09 17:05:00 +0700
+date: 2023-10-28 20:30:00 +0700
 categories: ["Cryptography", "Crypto · Randomness"]
 tags: [cryptography, prng, csprng, mersenne-twister]
 render_with_liquid: false

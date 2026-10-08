@@ -3,7 +3,7 @@ title: "Lesson 2.1: Encoding Is Not Encryption"
 image:
   path: /assets/img/covers/crypto-2-1-encoding-not-encryption.webp
   alt: "Encoding Is Not Encryption"
-date: 2026-10-09 10:05:00 +0700
+date: 2023-03-11 19:51:00 +0700
 categories: ["Cryptography", "Crypto · Classical Ciphers"]
 tags: [cryptography, encoding, base64, cyberchef]
 render_with_liquid: false

@@ -3,12 +3,15 @@ title: "Lesson 8.2: Recovering function names and types in Go binaries"
 image:
   path: /assets/img/covers/re-8-2-recovering-function-names-types-go-binaries.webp
   alt: "Lesson 8.2: Recovering function names and types in Go binaries"
-date: 2022-11-18 15:57:00 +0700
+date: 2022-05-17 03:22:00 +0700
 categories: ["Reverse Engineering", "Part 08 · Go"]
 tags: [reverse-engineering, golang]
 render_with_liquid: false
 ---
 Open a Go binary in IDA for the first time and you get many `sub_xxxxxx` functions and that familiar feeling of being lost. But even when a Go binary is stripped, most function names are still inside it. The tools just don't read them by default. This lesson shows how to pull them out.
+
+![Recovering Go symbols](/assets/img/re/re-8-2-recovering-function-names-types-go-binaries.svg)
+_A stripped Go binary still carries pclntab and moduledata, which GoReSym or a plugin turns back into names._
 
 ## Why stripped Go can still be recovered
 

@@ -3,7 +3,7 @@ title: "Lesson 7.2: Attacks on Diffie-Hellman"
 image:
   path: /assets/img/covers/crypto-7-2-attacks-diffie-hellman.webp
   alt: "Attacks on Diffie-Hellman"
-date: 2026-10-09 15:10:00 +0700
+date: 2023-09-24 15:04:00 +0700
 categories: ["Cryptography", "Crypto · Diffie-Hellman"]
 tags: [cryptography, diffie-hellman, pohlig-hellman, mitm]
 render_with_liquid: false

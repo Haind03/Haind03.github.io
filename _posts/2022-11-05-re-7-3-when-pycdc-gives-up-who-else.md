@@ -3,12 +3,15 @@ title: "Lesson 7.3: Python decompilers other than pycdc"
 image:
   path: /assets/img/covers/re-7-3-when-pycdc-gives-up-who-else.webp
   alt: "Lesson 7.3: Python decompilers other than pycdc"
-date: 2022-11-05 22:22:00 +0700
+date: 2022-05-05 21:50:00 +0700
 categories: ["Reverse Engineering", "Part 07 · Python"]
 tags: [reverse-engineering, python]
 render_with_liquid: false
 ---
 In the last lesson you used pycdc. Sooner or later pycdc will return a mess, or leave a whole function blank with a note like "unsupported opcode". That's normal. Python bytecode changes almost every version, and no decompiler keeps up with all of them.
+
+![Decompiler choice by Python version](/assets/img/re/re-7-3-when-pycdc-gives-up-who-else.svg)
+_Pick the decompiler from the Python version in the .pyc header, with xdis, dis and marshal as the fallback._
 
 This lesson covers the other decompilers and how to pick one based on the Python version. It also covers the fallback that always works, reading the bytecode directly.
 

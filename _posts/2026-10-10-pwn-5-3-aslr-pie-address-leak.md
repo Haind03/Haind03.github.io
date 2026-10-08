@@ -3,7 +3,7 @@ title: "Lesson 5.3: ASLR and PIE, why you need an address leak"
 image:
   path: /assets/img/covers/pwn-5-3-aslr-pie-address-leak.webp
   alt: "ASLR and PIE, why you need an address leak"
-date: 2026-10-10 13:15:00 +0700
+date: 2022-11-24 01:24:00 +0700
 categories: ["Binary Exploitation", "Pwn · Mitigations"]
 tags: [pwn, aslr, pie]
 render_with_liquid: false

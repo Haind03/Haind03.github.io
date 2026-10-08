@@ -3,12 +3,15 @@ title: "Lesson 7.4: Python packaged as an .exe"
 image:
   path: /assets/img/covers/re-7-4-when-python-turns-into-exe-open.webp
   alt: "Lesson 7.4: Python packaged as an .exe"
-date: 2022-11-12 09:21:00 +0700
+date: 2022-05-08 03:45:00 +0700
 categories: ["Reverse Engineering", "Part 07 · Python"]
 tags: [reverse-engineering, python]
 render_with_liquid: false
 ---
 You download a program, DIE says it's a normal Windows PE, but IDA shows only bootloader code that has nothing to do with the logic. Looking closer at the strings you see `python311.dll`, `_MEIPASS`, `pyi-`. This isn't a C program, it's a Python script packaged into an exe. The real logic is still Python bytecode inside. You just have to dig it out and decompile it like in Lesson 7.2.
+
+![PyInstaller exe to source](/assets/img/re/re-7-4-when-python-turns-into-exe-open.svg)
+_Identify the PyInstaller exe, extract the archive, patch the header if needed, then decompile._
 
 Three packaging tools you'll commonly meet are PyInstaller (the most common), py2exe, and cx_Freeze. The handling is similar and has three steps, identify, extract, decompile.
 

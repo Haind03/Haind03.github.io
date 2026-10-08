@@ -3,7 +3,7 @@ title: "Lesson 0.2: Setting Up a Pwn Lab with Ubuntu, pwntools, pwndbg and glibc
 image:
   path: /assets/img/covers/pwn-0-2-pwn-lab-setup-pwntools-pwndbg-glibc.webp
   alt: "Setting Up a Pwn Lab with Ubuntu, pwntools, pwndbg and glibc"
-date: 2026-10-10 08:10:00 +0700
+date: 2022-10-16 21:00:00 +0700
 categories: ["Binary Exploitation", "Pwn · Getting Started"]
 tags: [pwn, pwntools, gdb, glibc]
 render_with_liquid: false

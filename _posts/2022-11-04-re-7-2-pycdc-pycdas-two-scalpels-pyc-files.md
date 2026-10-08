@@ -3,12 +3,15 @@ title: "Lesson 7.2: pycdc and pycdas"
 image:
   path: /assets/img/covers/re-7-2-pycdc-pycdas-two-scalpels-pyc-files.webp
   alt: "Lesson 7.2: pycdc and pycdas"
-date: 2022-11-04 23:28:00 +0700
+date: 2022-05-03 15:56:00 +0700
 categories: ["Reverse Engineering", "Part 07 · Python"]
 tags: [reverse-engineering, python]
 render_with_liquid: false
 ---
 In the last lesson you learned what a `.pyc` file is and how to read its magic number. Now we open it up. The main toolset is Decompyle++ (the repo is called `pycdc`), made of two programs, where `pycdc` tries to rebuild the Python source, and `pycdas` dumps the bytecode in a readable form.
+
+![pycdc and pycdas flow](/assets/img/re/re-7-2-pycdc-pycdas-two-scalpels-pyc-files.svg)
+_pycdc rebuilds source when it can; when it warns, pycdas still dumps readable bytecode._
 
 It's written in C++ and doesn't depend on a Python runtime. Other decompilers like uncompyle6 run on Python itself and can usually only decompile a `.pyc` from the same version line as the interpreter running them. pycdc reads the file structure directly, so on a machine with only Python 3.11 you can still try a `.pyc` from 2.7 or 3.6. The downside is that it has to implement its own knowledge of each bytecode version, so the newest versions (3.12, 3.13) aren't fully supported. Below are real run results showing both sides.
 

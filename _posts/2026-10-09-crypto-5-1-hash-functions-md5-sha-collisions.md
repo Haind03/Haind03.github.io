@@ -3,7 +3,7 @@ title: "Lesson 5.1: Hash Functions, MD5/SHA, and Collisions"
 image:
   path: /assets/img/covers/crypto-5-1-hash-functions-md5-sha-collisions.webp
   alt: "Hash Functions, MD5/SHA, and Collisions"
-date: 2026-10-09 13:05:00 +0700
+date: 2023-06-22 12:08:00 +0700
 categories: ["Cryptography", "Crypto · Hashes and MACs"]
 tags: [cryptography, hash, md5, collision]
 render_with_liquid: false

@@ -3,7 +3,7 @@ title: "Lesson 1.4: Groups, Rings and Finite Fields"
 image:
   path: /assets/img/covers/crypto-1-4-groups-rings-finite-fields.webp
   alt: "Groups, Rings and Finite Fields"
-date: 2026-10-09 09:20:00 +0700
+date: 2023-02-22 17:08:00 +0700
 categories: ["Cryptography", "Crypto · Math Foundations"]
 tags: [cryptography, finite-fields, groups, aes]
 render_with_liquid: false

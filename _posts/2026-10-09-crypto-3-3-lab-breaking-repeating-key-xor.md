@@ -3,7 +3,7 @@ title: "Lesson 3.3: Lab on Breaking Repeating-Key XOR"
 image:
   path: /assets/img/covers/crypto-3-3-lab-breaking-repeating-key-xor.webp
   alt: "Lab on Breaking Repeating-Key XOR"
-date: 2026-10-09 11:15:00 +0700
+date: 2023-04-23 14:38:00 +0700
 categories: ["Cryptography", "Crypto · XOR and OTP"]
 tags: [cryptography, xor, cryptopals, lab]
 render_with_liquid: false

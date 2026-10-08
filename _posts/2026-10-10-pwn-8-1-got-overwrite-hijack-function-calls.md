@@ -3,7 +3,7 @@ title: "Lesson 8.1: GOT Overwrite to Hijack Function Calls"
 image:
   path: /assets/img/covers/pwn-8-1-got-overwrite-hijack-function-calls.webp
   alt: "GOT Overwrite to Hijack Function Calls"
-date: 2026-10-10 16:05:00 +0700
+date: 2022-12-09 18:45:00 +0700
 categories: ["Binary Exploitation", "Pwn · GOT and PLT"]
 tags: [pwn, got, format-string, relro]
 render_with_liquid: false

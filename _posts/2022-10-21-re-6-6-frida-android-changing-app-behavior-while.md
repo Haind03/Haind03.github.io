@@ -3,12 +3,15 @@ title: "Lesson 6.6: Frida on Android"
 image:
   path: /assets/img/covers/re-6-6-frida-android-changing-app-behavior-while.webp
   alt: "Lesson 6.6: Frida on Android"
-date: 2022-10-21 21:39:00 +0700
+date: 2022-04-22 10:24:00 +0700
 categories: ["Reverse Engineering", "Part 06 · Java, Kotlin and Android"]
 tags: [reverse-engineering, android, java]
 render_with_liquid: false
 ---
 Reading an APK statically in JADX tells you what the app intends to do. But often you want to see a value at runtime, or change a function's result to see how the app reacts, without patching and repackaging the whole APK. That's what Frida is for. It lets you step into any Java method while the app runs, read the arguments and change the return value, all in a few lines of JavaScript.
+
+![Frida architecture on Android](/assets/img/re/re-6-6-frida-android-changing-app-behavior-while.svg)
+_Host tools talk to frida-server, which injects the script into the app and hooks a method._
 
 First, the boundary. This lesson is security testing technique. Use it on your own apps, apps you're authorized to test, or practice apps like OWASP UnCrackable. Hooking to bypass the licensing checks of someone else's app, or cheating in online games, is a different matter and outside the scope of this series.
 

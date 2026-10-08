@@ -3,12 +3,15 @@ title: "Lesson 15.10: Handling stacked anti-analysis layers"
 image:
   path: /assets/img/covers/re-15-10-when-several-anti-layers-are-stacked.webp
   alt: "Lesson 15.10: Handling stacked anti-analysis layers"
-date: 2023-07-01 23:10:00 +0700
+date: 2022-08-03 18:05:00 +0700
 categories: ["Reverse Engineering", "Part 15 · Anti-Reversing and Bypasses"]
 tags: [reverse-engineering, anti-debug]
 render_with_liquid: false
 ---
 In the previous nine lessons each one covered a single anti technique. In practice a malware sample or a commercial protector never uses just one trick, it stacks layers. A typical sample might have UPX or a custom packer on the outside, anti-debug in a TLS callback that runs even before main, anti-VM calling CPUID right at the start, an integrity check that hashes its own code section, and a virtualized core. You finish removing one layer and hit the next. This lesson doesn't teach a new trick. It covers the order to work in so you don't get lost.
+
+![Diagram of the order for peeling anti layers](/assets/img/re/re-15-10-when-several-anti-layers-are-stacked.svg)
+_A sample order for peeling stacked anti layers_
 
 ## Work from the outside in
 

@@ -3,12 +3,15 @@ title: "Lesson 14.4: Code-level obfuscation"
 image:
   path: /assets/img/covers/re-14-4-code-level-obfuscation-when-program-flow.webp
   alt: "Lesson 14.4: Code-level obfuscation"
-date: 2023-04-30 10:27:00 +0700
+date: 2022-07-07 19:13:00 +0700
 categories: ["Reverse Engineering", "Part 14 · Packers and Obfuscation"]
 tags: [reverse-engineering, packer, obfuscation]
 render_with_liquid: false
 ---
 Packers hide code until runtime (lessons 14.1, 14.2). Obfuscation is different. The code is still there and you can disassemble it, but it's been rewritten on purpose to be hard to read. A ten-line function grows to five hundred lines, an addition becomes many bit operations, and a clean if/else flow becomes an infinite loop with a giant switch. The logic stays the same, only the shape changes.
+
+![Control flow flattening compared with the original flow](/assets/img/re/re-14-4-code-level-obfuscation-when-program-flow.svg)
+_A normal branching flow becomes one dispatcher with a state variable and many cases._
 
 This lesson covers the most common techniques, how to recognize each one, and a general strategy for dealing with them. Most come from OLLVM (Obfuscator-LLVM), an open-source set of LLVM passes that a lot of commercial protectors and malware reuse.
 

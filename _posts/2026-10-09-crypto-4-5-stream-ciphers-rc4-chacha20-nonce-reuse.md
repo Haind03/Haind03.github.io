@@ -3,7 +3,7 @@ title: "Lesson 4.5: Stream ciphers, RC4, ChaCha20 and nonce reuse"
 image:
   path: /assets/img/covers/crypto-4-5-stream-ciphers-rc4-chacha20-nonce-reuse.webp
   alt: "Stream ciphers, RC4, ChaCha20 and nonce reuse"
-date: 2026-10-09 12:25:00 +0700
+date: 2023-06-05 09:25:00 +0700
 categories: ["Cryptography", "Crypto · Symmetric Encryption"]
 tags: [cryptography, stream-cipher, nonce-reuse, chacha20]
 render_with_liquid: false

@@ -3,7 +3,7 @@ title: "Lesson 5.2: Stack canary mechanism, leak, and brute force"
 image:
   path: /assets/img/covers/pwn-5-2-stack-canary-mechanism-leak-brute-force.webp
   alt: "Stack canary mechanism, leak, and brute force"
-date: 2026-10-10 13:10:00 +0700
+date: 2022-11-21 19:30:00 +0700
 categories: ["Binary Exploitation", "Pwn · Mitigations"]
 tags: [pwn, canary, format-string]
 render_with_liquid: false

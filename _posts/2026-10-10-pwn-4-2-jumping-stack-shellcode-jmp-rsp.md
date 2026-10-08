@@ -3,7 +3,7 @@ title: "Lesson 4.2: Jumping into stack shellcode with jmp rsp"
 image:
   path: /assets/img/covers/pwn-4-2-jumping-stack-shellcode-jmp-rsp.webp
   alt: "Jumping into stack shellcode with jmp rsp"
-date: 2026-10-10 12:10:00 +0700
+date: 2022-11-17 07:41:00 +0700
 categories: ["Binary Exploitation", "Pwn · Shellcode"]
 tags: [pwn, nx, shellcode, jmp-rsp]
 render_with_liquid: false

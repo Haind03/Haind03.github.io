@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 330" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+<defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+<rect x="0" y="0" width="800" height="330" rx="12" fill="#0d121d" stroke="#263451"/>
+<text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">One register, four names</text>
+<text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">rax / eax / ax / al are the same storage at different widths</text>
+<text x="40" y="106" text-anchor="end" font-size="12" fill="#e3fffa" font-family="'JetBrains Mono',monospace">rax</text>
+<rect x="60" y="86" width="680" height="34" rx="7" fill="#111827" stroke="#00f0ff"/>
+<text x="400.0" y="107.4" text-anchor="middle" font-size="12.5" fill="#e3fffa">64 bit: the whole register</text>
+<text x="40" y="160" text-anchor="end" font-size="12" fill="#e3fffa" font-family="'JetBrains Mono',monospace">eax</text>
+<rect x="400.0" y="140" width="340.0" height="34" rx="7" fill="#111827" stroke="#5fe3b0"/>
+<text x="570.0" y="161.4" text-anchor="middle" font-size="12.5" fill="#e3fffa">low 32 bits</text>
+<text x="40" y="214" text-anchor="end" font-size="12" fill="#e3fffa" font-family="'JetBrains Mono',monospace">ax</text>
+<rect x="570.0" y="194" width="170.0" height="34" rx="7" fill="#111827" stroke="#fcee0a"/>
+<text x="655.0" y="215.4" text-anchor="middle" font-size="12.5" fill="#e3fffa">low 16</text>
+<text x="40" y="268" text-anchor="end" font-size="12" fill="#e3fffa" font-family="'JetBrains Mono',monospace">al</text>
+<rect x="655.0" y="248" width="85.0" height="34" rx="7" fill="#111827" stroke="#ff2a6d"/>
+<text x="697.5" y="269.4" text-anchor="middle" font-size="12.5" fill="#e3fffa">8</text>
+<text x="60" y="134" text-anchor="start" font-size="10" fill="#6c7b93" font-family="'JetBrains Mono',monospace">bit 63</text>
+<text x="740" y="134" text-anchor="end" font-size="10" fill="#6c7b93" font-family="'JetBrains Mono',monospace">bit 0</text>
+<text x="400" y="312" text-anchor="middle" font-size="11" fill="#6c7b93">Same pattern for rbx/ebx/bx/bl, rcx/ecx/cx/cl, and r8/r8d/r8w/r8b.</text>
+</svg>

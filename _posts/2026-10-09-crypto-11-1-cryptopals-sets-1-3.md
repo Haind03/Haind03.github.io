@@ -3,7 +3,7 @@ title: "Lesson 11.1: Cryptopals Sets 1 to 3"
 image:
   path: /assets/img/covers/crypto-11-1-cryptopals-sets-1-3.webp
   alt: "Cryptopals Sets 1 to 3"
-date: 2026-10-09 19:05:00 +0700
+date: 2023-12-10 15:17:00 +0700
 categories: ["Cryptography", "Crypto · Real-World Practice"]
 tags: [cryptography, cryptopals, padding-oracle, xor]
 render_with_liquid: false

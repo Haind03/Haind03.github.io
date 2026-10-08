@@ -3,12 +3,15 @@ title: "Lesson 7.6: Lab, decompiling sample .pyc files with pycdc"
 image:
   path: /assets/img/covers/re-7-6-lab-decompiling-sample-pyc-files-pycdc.webp
   alt: "Lesson 7.6: Lab, decompiling sample .pyc files with pycdc"
-date: 2022-11-14 21:48:00 +0700
+date: 2022-05-12 15:33:00 +0700
 categories: ["Reverse Engineering", "Part 07 · Python"]
 tags: [reverse-engineering, python]
 render_with_liquid: false
 ---
 Time to use the theory from Part 7. The pycdc project ships with sample `.pyc` files, and three of them (attached in the Lab section below) cover the three situations you'll hit in the wild, which are a broken file, a file with no header, and a file written for a newer Python version than pycdc supports. Each one teaches something different, so don't skip any.
+
+![Three sample pyc failure modes](/assets/img/re/re-7-6-lab-decompiling-sample-pyc-files-pycdc.svg)
+_The three lab files: an empty file, a bare code object with no header, and a newer Python version._
 
 All the output in this lesson comes from real runs on my machine. If you rerun it you'll get the same.
 

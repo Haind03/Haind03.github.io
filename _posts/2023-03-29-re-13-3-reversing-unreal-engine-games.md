@@ -3,12 +3,15 @@ title: "Lesson 13.3: Reversing Unreal Engine games"
 image:
   path: /assets/img/covers/re-13-3-reversing-unreal-engine-games.webp
   alt: "Lesson 13.3: Reversing Unreal Engine games"
-date: 2023-03-29 22:36:00 +0700
+date: 2022-06-24 07:46:00 +0700
 categories: ["Reverse Engineering", "Part 13 · Games: Unity, Unreal, Lua"]
 tags: [reverse-engineering, game-hacking]
 render_with_liquid: false
 ---
 Unity gives you DLLs that read almost like source. Unreal doesn't. Unreal Engine is written in C++ and compiled straight to native, so all the logic sits in one huge exe that you open in IDA/Ghidra like a normal C++ program (going back to Part 4 helps). On the other hand, UE has its own reflection system and a strong community tool ecosystem, so there are still plenty of ways in. This lesson is an overview.
+
+![Two fronts of an Unreal game](/assets/img/re/re-13-3-reversing-unreal-engine-games.svg)
+_Assets go through FModel or UModel, logic goes through UE4SS and the SDK dump._
 
 This is for your own offline/single-player games, for learning and research. Touching online multiplayer games involves anti-cheat and terms of service, and is outside the scope of this series.
 

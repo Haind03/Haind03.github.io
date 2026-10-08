@@ -3,12 +3,15 @@ title: "Lesson 6.8: Obfuscation and packers on Android"
 image:
   path: /assets/img/covers/re-6-8-obfuscation-packers-android.webp
   alt: "Lesson 6.8: Obfuscation and packers on Android"
-date: 2022-10-29 23:05:00 +0700
+date: 2022-04-26 22:13:00 +0700
 categories: ["Reverse Engineering", "Part 06 · Java, Kotlin and Android"]
 tags: [reverse-engineering, android, java]
 render_with_liquid: false
 ---
 So far every APK you've opened shows clean Java code in JADX. Real apps are different, since commercial apps are almost always obfuscated. You open one and it's all `a.a.a`, strings turn into meaningless characters, and sometimes JADX doesn't even find the code. This lesson helps you recognize which kind of protection you're facing and how to get through it.
+
+![Obfuscated versus packed triage](/assets/img/re/re-6-8-obfuscation-packers-android.svg)
+_What you see in JADX decides between renaming work and dumping the DEX._
 
 Beginners often lump two different things together, which are obfuscation (code is hard to read but still there) and packing (code is hidden entirely and only expanded at runtime). Each is handled differently.
 

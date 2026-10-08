@@ -1,0 +1,72 @@
+---
+layout: page
+# Archives grouped by year, showing series (top-level category) titles only
+---
+
+{% assign years = site.posts | group_by_exp: "post", "post.date | date: '%Y'" %}
+{% assign years = years | sort: "name" | reverse %}
+
+<div id="arc-series">
+  {% for year in years %}
+    <section class="arc-year">
+      <h2 class="arc-y">{{ year.name }}</h2>
+
+      {% assign series = year.items | group_by_exp: "post", "post.categories.first" %}
+      {% assign series = series | sort: "size" | reverse %}
+
+      <ul class="arc-list">
+        {% for s in series %}
+          {% capture _url %}/categories/{{ s.name | slugify | url_encode }}/{% endcapture %}
+          <li class="arc-item">
+            <a class="arc-name" href="{{ _url | relative_url }}">{{ s.name }}</a>
+            <span class="arc-count">{{ s.size }}<em>posts</em></span>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endfor %}
+</div>
+
+<style>
+  #arc-series { margin-top: 0.5rem; }
+  .arc-year { margin-bottom: 2.2rem; }
+  .arc-y {
+    font-family: var(--cp-mono);
+    color: var(--cp-cyan);
+    font-size: 1.85rem;
+    letter-spacing: 0.08em;
+    margin: 0 0 1rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--cp-line);
+  }
+  .arc-y::before { content: "// "; color: var(--cp-magenta); }
+  .arc-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.6rem;
+  }
+  .arc-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--cp-panel);
+    border: 1px solid var(--cp-line);
+    border-left: 3px solid var(--cp-cyan);
+    border-radius: 8px;
+    padding: 0.85rem 1.1rem;
+    transition: border-left-color 0.15s ease, transform 0.15s ease;
+  }
+  .arc-item:hover { border-left-color: var(--cp-magenta); transform: translateX(3px); }
+  .arc-name {
+    font-family: var(--cp-display);
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--cp-ink);
+    text-decoration: none;
+  }
+  .arc-item:hover .arc-name { color: var(--cp-cyan); }
+  .arc-count { font-family: var(--cp-mono); color: var(--cp-mute); font-size: 0.85rem; white-space: nowrap; }
+  .arc-count em { font-style: normal; margin-left: 0.35rem; opacity: 0.7; }
+</style>

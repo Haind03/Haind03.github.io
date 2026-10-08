@@ -3,7 +3,7 @@ title: "Lesson 0.2: Kerckhoffs's Principle and Ethics"
 image:
   path: /assets/img/covers/crypto-0-2-kerckhoffs-principle-ethics.webp
   alt: "Kerckhoffs's Principle and Ethics"
-date: 2026-10-09 08:10:00 +0700
+date: 2023-01-10 22:21:00 +0700
 categories: ["Cryptography", "Crypto · Getting Started"]
 tags: [cryptography, kerckhoffs, obscurity, ethics]
 render_with_liquid: false

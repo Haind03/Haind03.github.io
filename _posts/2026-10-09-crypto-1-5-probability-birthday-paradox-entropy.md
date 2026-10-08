@@ -3,7 +3,7 @@ title: "Lesson 1.5: Probability, the Birthday Paradox and Entropy"
 image:
   path: /assets/img/covers/crypto-1-5-probability-birthday-paradox-entropy.webp
   alt: "Probability, the Birthday Paradox and Entropy"
-date: 2026-10-09 09:25:00 +0700
+date: 2023-03-03 06:30:00 +0700
 categories: ["Cryptography", "Crypto · Math Foundations"]
 tags: [cryptography, birthday-attack, entropy, hash]
 render_with_liquid: false

@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 380" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="380" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Watching behavior without a disassembler</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">run the sample in an isolated VM and log what it touches</text>
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+  <rect x="300" y="78" width="200" height="50" rx="7" fill="#111827" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+  <text x="400.0" y="98.5" text-anchor="middle" font-size="13" fill="#e3fffa" font-weight="700">Sample running</text>
+  <text x="400.0" y="115.5" text-anchor="middle" font-size="11" fill="#9fb0c8">isolated VM</text>
+  <rect x="30" y="185" width="130" height="60" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="95.0" y="210.5" text-anchor="middle" font-size="13" fill="#e3fffa" font-weight="700">Procmon</text>
+  <text x="95.0" y="227.5" text-anchor="middle" font-size="11" fill="#9fb0c8">files, registry</text>
+  <path d="M400,128 L400,152 L95,152 L95,181" fill="none" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="180" y="185" width="130" height="60" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="245.0" y="210.5" text-anchor="middle" font-size="13" fill="#e3fffa" font-weight="700">Process Hacker</text>
+  <text x="245.0" y="227.5" text-anchor="middle" font-size="11" fill="#9fb0c8">memory, mutexes</text>
+  <path d="M400,128 L400,152 L245,152 L245,181" fill="none" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="330" y="185" width="130" height="60" rx="7" fill="#111827" stroke="#fcee0a"/>
+  <text x="395.0" y="210.5" text-anchor="middle" font-size="13" fill="#e3fffa" font-weight="700">API Monitor</text>
+  <text x="395.0" y="227.5" text-anchor="middle" font-size="11" fill="#9fb0c8">APIs + params</text>
+  <path d="M400,128 L400,152 L395,152 L395,181" fill="none" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="480" y="185" width="130" height="60" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="545.0" y="210.5" text-anchor="middle" font-size="13" fill="#e3fffa" font-weight="700">Autoruns</text>
+  <text x="545.0" y="227.5" text-anchor="middle" font-size="11" fill="#9fb0c8">persistence</text>
+  <path d="M400,128 L400,152 L545,152 L545,181" fill="none" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="630" y="185" width="130" height="60" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="695.0" y="210.5" text-anchor="middle" font-size="13" fill="#e3fffa" font-weight="700">Wireshark</text>
+  <text x="695.0" y="227.5" text-anchor="middle" font-size="11" fill="#9fb0c8">network peers</text>
+  <path d="M400,128 L400,152 L695,152 L695,181" fill="none" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="95" y1="245" x2="95" y2="272" stroke="#6c7b93" stroke-width="2"/>
+  <line x1="245" y1="245" x2="245" y2="272" stroke="#6c7b93" stroke-width="2"/>
+  <line x1="395" y1="245" x2="395" y2="272" stroke="#6c7b93" stroke-width="2"/>
+  <line x1="545" y1="245" x2="545" y2="272" stroke="#6c7b93" stroke-width="2"/>
+  <line x1="695" y1="245" x2="695" y2="272" stroke="#6c7b93" stroke-width="2"/>
+  <line x1="95" y1="272" x2="695" y2="272" stroke="#6c7b93" stroke-width="2"/>
+  <line x1="400" y1="272" x2="400" y2="296" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="250" y="298" width="300" height="44" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="400.0" y="315.5" text-anchor="middle" font-size="13" fill="#e3fffa" font-weight="700">Behavior profile</text>
+  <text x="400.0" y="332.5" text-anchor="middle" font-size="11" fill="#9fb0c8">decides what to debug in detail</text>
+  <text x="400" y="362" text-anchor="middle" font-size="11" fill="#6c7b93">Same triage, static, dynamic idea, done by observation.</text>
+</svg>

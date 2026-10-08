@@ -3,12 +3,15 @@ title: "Lesson 2.4: Binary Ninja, Cutter and radare2"
 image:
   path: /assets/img/covers/re-2-4-binary-ninja-cutter-radare2-when-ida.webp
   alt: "Lesson 2.4: Binary Ninja, Cutter and radare2"
-date: 2022-04-22 22:33:00 +0700
+date: 2022-02-16 07:07:00 +0700
 categories: ["Reverse Engineering", "Part 02 · The Toolkit"]
 tags: [reverse-engineering, tools]
 render_with_liquid: false
 ---
 Ask ten people who do RE what tool they use and nine will say IDA or Ghidra. There are other tools, and sometimes one of them fits your job better. This lesson covers three, which are Binary Ninja, Cutter, and radare2/rizin. I'm not suggesting you drop IDA, just that you know when to try something else.
+
+![Choosing a disassembler](/assets/img/re/re-2-4-binary-ninja-cutter-radare2-when-ida.svg)
+_Picking between Binary Ninja, Cutter, radare2 and IDA by need._
 
 I'm not going to say which one is best. The best tool is the one you're good with and that fits the problem. Try them and decide yourself.
 

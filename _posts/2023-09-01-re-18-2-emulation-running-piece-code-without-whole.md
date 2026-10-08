@@ -3,12 +3,15 @@ title: "Lesson 18.2: Emulation, running a piece of code on its own"
 image:
   path: /assets/img/covers/re-18-2-emulation-running-piece-code-without-whole.webp
   alt: "Lesson 18.2: Emulation, running a piece of code on its own"
-date: 2023-09-01 15:06:00 +0700
+date: 2022-09-01 22:52:00 +0700
 categories: ["Reverse Engineering", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
 render_with_liquid: false
 ---
 Sometimes you only need to know what a function returns, but to run it you'd have to get through a lot of anti-debug, or the function sits deep inside a binary that can't run on your machine (wrong architecture, missing libraries, needs special hardware). Debugging gets in the way, and reading statically costs a whole afternoon. Emulation is the third option, where you build a virtual CPU, load that exact piece of byte code into it, set the registers and memory as they were when it was called, run it, then read the result. There's no real debugger, so most anti-debug does nothing.
+
+![Four steps to run one function in Unicorn](/assets/img/re/re-18-2-emulation-running-piece-code-without-whole.svg)
+_The four Unicorn steps, plus the two traps to plan for._
 
 ## Unicorn: a CPU in 20 lines of Python
 

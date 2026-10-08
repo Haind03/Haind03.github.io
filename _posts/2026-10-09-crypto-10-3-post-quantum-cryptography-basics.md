@@ -3,7 +3,7 @@ title: "Lesson 10.3: Post-Quantum Cryptography Basics"
 image:
   path: /assets/img/covers/crypto-10-3-post-quantum-cryptography-basics.webp
   alt: "Post-Quantum Cryptography Basics"
-date: 2026-10-09 18:15:00 +0700
+date: 2023-12-02 01:55:00 +0700
 categories: ["Cryptography", "Crypto · Crypto in Practice"]
 tags: [cryptography, post-quantum, lattice, lwe]
 render_with_liquid: false

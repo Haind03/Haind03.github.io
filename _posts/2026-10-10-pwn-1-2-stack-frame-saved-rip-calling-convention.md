@@ -3,7 +3,7 @@ title: "Lesson 1.2: Stack Frames, call/ret, Saved RIP, and the System V AMD64 Ca
 image:
   path: /assets/img/covers/pwn-1-2-stack-frame-saved-rip-calling-convention.webp
   alt: "Stack Frames, call/ret, Saved RIP, and the System V AMD64 Calling Convention"
-date: 2026-10-10 09:10:00 +0700
+date: 2022-10-23 14:43:00 +0700
 categories: ["Binary Exploitation", "Pwn · Foundations"]
 tags: [pwn, stack-frame, calling-convention, buffer-overflow]
 render_with_liquid: false

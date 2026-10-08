@@ -3,12 +3,15 @@ title: "Lesson 15.2: Anti-debug by reading the PEB"
 image:
   path: /assets/img/covers/re-15-2-anti-debug-reading-peb-directly-when.webp
   alt: "Lesson 15.2: Anti-debug by reading the PEB"
-date: 2023-05-09 22:59:00 +0700
+date: 2022-07-16 18:50:00 +0700
 categories: ["Reverse Engineering", "Part 15 · Anti-Reversing and Bypasses"]
 tags: [reverse-engineering, anti-debug]
 render_with_liquid: false
 ---
 The previous lesson covered anti-debug that calls APIs like IsDebuggerPresent. The weakness is that if it's an API, you can set a breakpoint or hook on it and return a fake value. So smarter protector authors skip the API and read the memory structure directly, the same one the API was reading for them. There's no call left to intercept, just a few `mov` instructions reading memory, mixed in with ordinary code. This group is more annoying, and it's why you need to understand the PEB from [Lesson 1.11](/posts/re-1-11-windows-internals-2-peb-teb-handles/).
+
+![Diagram of reading the PEB through gs:[0x60] and its debug fields](/assets/img/re/re-15-2-anti-debug-reading-peb-directly-when.svg)
+_The PEB fields an anti-debug check reads directly through gs or fs_
 
 ## Where the PEB is
 

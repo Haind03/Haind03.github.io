@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+<rect x="0" y="0" width="800" height="400" rx="12" fill="#0d121d" stroke="#263451"/>
+<text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Every API check follows the same pattern</text>
+<text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">wherever it asks, you can change the answer</text>
+<defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+<rect x="28.0" y="84" width="156.0" height="56" rx="7" fill="#111827" stroke="#00f0ff"/>
+<text x="106.0" y="107.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">Call an API</text>
+<text x="106.0" y="124.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">IsDebuggerPresent</text>
+<rect x="224.0" y="84" width="156.0" height="56" rx="7" fill="#111827" stroke="#263451"/>
+<text x="302.0" y="107.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">Get the result</text>
+<text x="302.0" y="124.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">rax or a variable</text>
+<line x1="187.0" y1="112.0" x2="221.0" y2="112.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="420.0" y="84" width="156.0" height="56" rx="7" fill="#111827" stroke="#fcee0a"/>
+<text x="498.0" y="107.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">Compare</text>
+<text x="498.0" y="124.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">test / cmp</text>
+<line x1="383.0" y1="112.0" x2="417.0" y2="112.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="616.0" y="84" width="156.0" height="56" rx="7" fill="#111827" stroke="#ff2a6d"/>
+<text x="694.0" y="107.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">Branch</text>
+<text x="694.0" y="124.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">jne / je</text>
+<line x1="579.0" y1="112.0" x2="613.0" y2="112.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<text x="400" y="168" text-anchor="middle" font-size="11" fill="#ff2a6d">Detected: exit, run wrong, or act normal</text>
+<text x="400" y="206" text-anchor="middle" font-size="13" fill="#e3fffa">Three ways past it</text>
+<rect x="28" y="224" width="230" height="66" rx="7" fill="#111827" stroke="#00f0ff"/>
+<text x="143.0" y="245.0" text-anchor="middle" font-size="12" fill="#e3fffa">Change the result</text>
+<text x="143.0" y="261.0" text-anchor="middle" font-size="10" fill="#9fb0c8">breakpoint after return,</text>
+<text x="143.0" y="277.0" text-anchor="middle" font-size="10" fill="#9fb0c8">set the not-debugged value</text>
+<rect x="285" y="224" width="230" height="66" rx="7" fill="#111827" stroke="#fcee0a"/>
+<text x="400.0" y="253.0" text-anchor="middle" font-size="12" fill="#e3fffa">Patch the branch</text>
+<text x="400.0" y="269.0" text-anchor="middle" font-size="10" fill="#9fb0c8">jne to jmp, or nop it</text>
+<rect x="542" y="224" width="230" height="66" rx="7" fill="#111827" stroke="#5fe3b0"/>
+<text x="657.0" y="253.0" text-anchor="middle" font-size="12" fill="#e3fffa">Hide automatically</text>
+<text x="657.0" y="269.0" text-anchor="middle" font-size="10" fill="#9fb0c8">ScyllaHide or TitanHide</text>
+<text x="400" y="330" text-anchor="middle" font-size="11" fill="#6c7b93">Other APIs in the lesson: CheckRemoteDebuggerPresent, NtQueryInformationProcess,</text>
+<text x="400" y="350" text-anchor="middle" font-size="11" fill="#6c7b93">NtSetInformationThread, OutputDebugString, CloseHandle with a junk handle.</text>
+</svg>

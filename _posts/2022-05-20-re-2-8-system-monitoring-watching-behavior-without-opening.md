@@ -3,12 +3,15 @@ title: "Lesson 2.8: System monitoring"
 image:
   path: /assets/img/covers/re-2-8-system-monitoring-watching-behavior-without-opening.webp
   alt: "Lesson 2.8: System monitoring"
-date: 2022-05-20 23:23:00 +0700
+date: 2022-02-25 06:45:00 +0700
 categories: ["Reverse Engineering", "Part 02 · The Toolkit"]
 tags: [reverse-engineering, tools]
 render_with_liquid: false
 ---
 A lot of the time you can tell what a program is doing without reading a single line of assembly. You just watch where it touches the system, such as which files it creates, which registry keys it writes, which server it calls, what child processes it spawns. This is called behavioral analysis, and it's often the first dynamic step before you decide whether you need to sit down and debug in detail.
+
+![Monitoring toolkit](/assets/img/re/re-2-8-system-monitoring-watching-behavior-without-opening.svg)
+_Each monitoring tool covers one area; together they form a behavior profile._
 
 This lesson is the toolkit for that. None of the tools are hard to use. The hard part is reading the large number of events they log.
 

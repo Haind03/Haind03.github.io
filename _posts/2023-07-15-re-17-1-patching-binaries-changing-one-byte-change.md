@@ -3,12 +3,15 @@ title: "Lesson 17.1: Patching binaries"
 image:
   path: /assets/img/covers/re-17-1-patching-binaries-changing-one-byte-change.webp
   alt: "Lesson 17.1: Patching binaries"
-date: 2023-07-15 23:12:00 +0700
+date: 2022-08-14 23:37:00 +0700
 categories: ["Reverse Engineering", "Part 17 · Patching, Hooking, Injection"]
 tags: [reverse-engineering, frida, hooking]
 render_with_liquid: false
 ---
 Reversing to understand is one thing, but often you want the program to behave differently, such as to skip an annoying check, turn off a message, make a branch always run. Patching means editing a few bytes of the binary directly. It's usually just changing a `74` byte to `90`. This lesson shows exactly that, on a real binary.
+
+![Patching workflow](/assets/img/re/re-17-1-patching-binaries-changing-one-byte-change.svg)
+_Find the check, choose a jump flip, NOP or code cave, then save and test_
 
 A reminder of the boundary from [Lesson 0.2](/posts/re-0-2-legal-ethics-part-everyone-wants-skip/) is that patching your own crackmes, CTF binaries or software you have the right to is fine. Patching and then distributing a crack of commercial software is illegal.
 

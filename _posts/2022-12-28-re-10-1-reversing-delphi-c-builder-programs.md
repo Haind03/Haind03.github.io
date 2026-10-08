@@ -3,12 +3,15 @@ title: "Lesson 10.1: Reversing Delphi and C++Builder programs"
 image:
   path: /assets/img/covers/re-10-1-reversing-delphi-c-builder-programs.webp
   alt: "Lesson 10.1: Reversing Delphi and C++Builder programs"
-date: 2022-12-28 10:34:00 +0700
+date: 2022-05-30 14:48:00 +0700
 categories: ["Reverse Engineering", "Part 10 · Legacy: Delphi, VB6, AutoIt, AHK"]
 tags: [reverse-engineering, legacy]
 render_with_liquid: false
 ---
 Say you open an old exe in IDA. The decompiler gives pseudocode but every function is `sub_xxx`, there isn't one familiar name, the strings have a length stuck in front of them, and thousands of functions from some framework fill the screen. You probably have a Delphi binary. Delphi is old but still in use in enterprise software, POS systems, Vietnamese accounting software and a fair amount of malware. It isn't harder than C, just different, and you need the right tools.
+
+![Delphi reversing workflow](/assets/img/re/re-10-1-reversing-delphi-c-builder-programs.svg)
+_Delphi workflow: IDR recovers VCL names, then start from an event handler instead of main._
 
 ## What Delphi is and why it's different
 

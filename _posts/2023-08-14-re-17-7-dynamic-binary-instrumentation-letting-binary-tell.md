@@ -3,12 +3,15 @@ title: "Lesson 17.7: Dynamic Binary Instrumentation"
 image:
   path: /assets/img/covers/re-17-7-dynamic-binary-instrumentation-letting-binary-tell.webp
   alt: "Lesson 17.7: Dynamic Binary Instrumentation"
-date: 2023-08-14 14:53:00 +0700
+date: 2022-08-28 11:03:00 +0700
 categories: ["Reverse Engineering", "Part 17 · Patching, Hooking, Injection"]
 tags: [reverse-engineering, frida, hooking]
 render_with_liquid: false
 ---
 A debugger lets you stop and inspect point by point. Frida lets you hook a few functions. Neither helps much when you want to ask "in this run, which instructions did the program actually execute", or "where does the flow differ between a wrong input and a right one". For that you need Dynamic Binary Instrumentation (DBI).
+
+![Coverage diffing with DBI](/assets/img/re/re-17-7-dynamic-binary-instrumentation-letting-binary-tell.svg)
+_Run a wrong and a correct input under a DBI tool and diff the executed blocks_
 
 ## What DBI is
 

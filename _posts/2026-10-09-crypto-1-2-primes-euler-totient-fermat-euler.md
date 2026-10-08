@@ -3,7 +3,7 @@ title: "Lesson 1.2: Primes, Euler's Totient, and the Fermat and Euler Theorems"
 image:
   path: /assets/img/covers/crypto-1-2-primes-euler-totient-fermat-euler.webp
   alt: "Primes, Euler's Totient, and the Fermat and Euler Theorems"
-date: 2026-10-09 09:10:00 +0700
+date: 2023-02-05 14:25:00 +0700
 categories: ["Cryptography", "Crypto · Math Foundations"]
 tags: [cryptography, rsa, euler, fermat, number-theory]
 render_with_liquid: false

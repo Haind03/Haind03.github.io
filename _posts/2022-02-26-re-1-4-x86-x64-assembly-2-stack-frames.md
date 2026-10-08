@@ -3,7 +3,7 @@ title: "Lesson 1.4: x86/x64 assembly (2), stack frames and calling conventions"
 image:
   path: /assets/img/covers/re-1-4-x86-x64-assembly-2-stack-frames.webp
   alt: "Lesson 1.4: x86/x64 assembly (2), stack frames and calling conventions"
-date: 2022-02-26 21:21:00 +0700
+date: 2022-01-18 02:20:00 +0700
 categories: ["Reverse Engineering", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false

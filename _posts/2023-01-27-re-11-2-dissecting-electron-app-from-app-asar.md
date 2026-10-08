@@ -3,12 +3,15 @@ title: "Lesson 11.2: Dissecting an Electron app"
 image:
   path: /assets/img/covers/re-11-2-dissecting-electron-app-from-app-asar.webp
   alt: "Lesson 11.2: Dissecting an Electron app"
-date: 2023-01-27 15:53:00 +0700
+date: 2022-06-08 14:26:00 +0700
 categories: ["Reverse Engineering", "Part 11 · JavaScript, Electron, WebAssembly"]
 tags: [reverse-engineering, javascript, wasm]
 render_with_liquid: false
 ---
 A lot of the desktop apps you use every day (Discord, VS Code, Slack, Postman) are a Chromium browser packaged together with Node.js, which is what Electron is. That's good for reversers, since most of the logic is JavaScript, and JavaScript is readable almost as written. A few apps wrap their code in V8 bytecode to make life harder. This lesson goes from easy to hard.
+
+![Electron app.asar workflow](/assets/img/re/re-11-2-dissecting-electron-app-from-app-asar.svg)
+_Electron workflow: extract app.asar, find the entry point, edit and repack, or handle bytenode .jsc._
 
 ## What Electron is under the shell
 

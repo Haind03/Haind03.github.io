@@ -3,12 +3,15 @@ title: "Lesson 15.8: Integrity checks and anti-tamper"
 image:
   path: /assets/img/covers/re-15-8-integrity-checks-anti-tamper-when-program.webp
   alt: "Lesson 15.8: Integrity checks and anti-tamper"
-date: 2023-06-21 10:25:00 +0700
+date: 2022-07-30 06:16:00 +0700
 categories: ["Reverse Engineering", "Part 15 · Anti-Reversing and Bypasses"]
 tags: [reverse-engineering, anti-debug]
 render_with_liquid: false
 ---
 You find the license check, NOP a `jz`, save the file, run it again. Instead of "Correct!", the program quietly exits, or worse, runs wrong in some confusing way three functions later. Your patch wasn't wrong. The program checked its own code, saw that somebody had changed it, and reacted.
+
+![Diagram of an integrity check and how to bypass it](/assets/img/re/re-15-8-integrity-checks-anti-tamper-when-program.svg)
+_An integrity check compares a checksum, so patch the check and not the code_
 
 That's an integrity check, also called a self-check or anti-tamper. This lesson covers how it works and how to deal with it. Patching more carefully won't help, you have to stop the check from running.
 

@@ -3,12 +3,15 @@ title: "Lesson 18.6: Reversing Windows drivers and Linux kernel modules"
 image:
   path: /assets/img/covers/re-18-6-reversing-ring-0-code-windows-drivers.webp
   alt: "Lesson 18.6: Reversing Windows drivers and Linux kernel modules"
-date: 2023-09-12 11:45:00 +0700
+date: 2022-09-10 22:30:00 +0700
 categories: ["Reverse Engineering", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
 render_with_liquid: false
 ---
 So far everything we've taken apart ran in ring-3, user-mode, where a bug only crashes one process. Ring-0, kernel-mode, is different. Code here runs with full privileges, and a small bug crashes the whole machine (a BSOD on Windows, a kernel panic on Linux). Rootkits, anti-cheat, and many anti-debug drivers (like TitanHide in lesson 15.9) live here, so sooner or later you have to go down.
+
+![How a Windows driver serves a DeviceIoControl call](/assets/img/re/re-18-6-reversing-ring-0-code-windows-drivers.svg)
+_DriverEntry sets up the device once; every IOCTL then flows through slot 0xE._
 
 This lesson doesn't teach writing drivers. It covers reading a driver you don't have the source for, and debugging it without wrecking your machine.
 

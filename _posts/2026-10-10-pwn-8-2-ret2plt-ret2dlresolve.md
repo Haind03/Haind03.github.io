@@ -3,7 +3,7 @@ title: "Lesson 8.2: ret2plt and ret2dlresolve"
 image:
   path: /assets/img/covers/pwn-8-2-ret2plt-ret2dlresolve.webp
   alt: "ret2plt and ret2dlresolve"
-date: 2026-10-10 16:10:00 +0700
+date: 2022-12-12 00:39:00 +0700
 categories: ["Binary Exploitation", "Pwn · GOT and PLT"]
 tags: [pwn, plt, dynamic-linker, rop]
 render_with_liquid: false

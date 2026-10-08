@@ -3,12 +3,15 @@ title: "Lesson 2.5: x64dbg basics"
 image:
   path: /assets/img/covers/re-2-5-x64dbg-reversers-dynamic-scalpel-windows.webp
   alt: "Lesson 2.5: x64dbg basics"
-date: 2022-05-03 10:03:00 +0700
+date: 2022-02-18 13:01:00 +0700
 categories: ["Reverse Engineering", "Part 02 · The Toolkit"]
 tags: [reverse-engineering, tools]
 render_with_liquid: false
 ---
 IDA and Ghidra let you read code while it stands still. x64dbg lets you watch it run. It's a free, open source ring-3 (user-mode) debugger, and almost everyone doing RE on Windows opens it daily. This lesson goes from finding the interface confusing to setting breakpoints, inspecting registers, and patching a check.
+
+![x64dbg working loop](/assets/img/re/re-2-5-x64dbg-reversers-dynamic-scalpel-windows.svg)
+_The x64dbg loop: breakpoint, run, inspect, step, patch._
 
 x64dbg is two builds in one package, with `x64dbg.exe` for 64-bit binaries and `x32dbg.exe` for 32-bit. Pick the wrong one and it won't load, so check how many bits the target file is first (lesson [2.1](/posts/re-2-1-five-minute-triage-die-strings-pe/) handles that).
 

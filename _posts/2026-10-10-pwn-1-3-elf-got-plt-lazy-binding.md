@@ -3,7 +3,7 @@ title: "Lesson 1.3: ELF, GOT, PLT, and Lazy Binding"
 image:
   path: /assets/img/covers/pwn-1-3-elf-got-plt-lazy-binding.webp
   alt: "ELF, GOT, PLT, and Lazy Binding"
-date: 2026-10-10 09:15:00 +0700
+date: 2022-10-25 20:37:00 +0700
 categories: ["Binary Exploitation", "Pwn · Foundations"]
 tags: [pwn, elf, got, plt]
 render_with_liquid: false

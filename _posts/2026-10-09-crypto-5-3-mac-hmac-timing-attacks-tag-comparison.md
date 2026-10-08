@@ -3,7 +3,7 @@ title: "Lesson 5.3: MAC, HMAC, and Timing Attacks on Tag Comparison"
 image:
   path: /assets/img/covers/crypto-5-3-mac-hmac-timing-attacks-tag-comparison.webp
   alt: "MAC, HMAC, and Timing Attacks on Tag Comparison"
-date: 2026-10-09 13:15:00 +0700
+date: 2023-07-09 14:51:00 +0700
 categories: ["Cryptography", "Crypto · Hashes and MACs"]
 tags: [cryptography, hmac, mac, timing-attack]
 render_with_liquid: false

@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+<defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+<rect x="0" y="0" width="800" height="360" rx="12" fill="#0d121d" stroke="#263451"/>
+<text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Code that runs where you do not expect</text>
+<text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">TLS runs before the entry point, exceptions jump to handlers</text>
+<rect x="24" y="100" width="130" height="56" rx="7" fill="#111827" stroke="#263451"/>
+<text x="89.0" y="132.4" text-anchor="middle" font-size="12.5" fill="#e3fffa">Process start</text>
+<rect x="190" y="100" width="150" height="56" rx="7" fill="#111827" stroke="#ff2a6d"/>
+<text x="265.0" y="123.6" text-anchor="middle" font-size="12.5" fill="#e3fffa">TLS callbacks</text>
+<text x="265.0" y="141.1" text-anchor="middle" font-size="10.5" fill="#ff2a6d">before entry point</text>
+<rect x="376" y="100" width="130" height="56" rx="7" fill="#111827" stroke="#00f0ff"/>
+<text x="441.0" y="123.6" text-anchor="middle" font-size="12.5" fill="#e3fffa">Entry point</text>
+<text x="441.0" y="141.1" text-anchor="middle" font-size="10.5" fill="#9fb0c8">breakpoint hits</text>
+<rect x="542" y="100" width="120" height="56" rx="7" fill="#111827" stroke="#00f0ff"/>
+<text x="602.0" y="132.4" text-anchor="middle" font-size="12.5" fill="#e3fffa">main logic</text>
+<line x1="154" y1="128" x2="186" y2="128" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<line x1="340" y1="128" x2="372" y2="128" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<line x1="506" y1="128" x2="538" y2="128" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="542" y="218" width="230" height="56" rx="7" fill="#111827" stroke="#fcee0a"/>
+<text x="657.0" y="241.6" text-anchor="middle" font-size="12.5" fill="#e3fffa">Exception raised</text>
+<text x="657.0" y="259.1" text-anchor="middle" font-size="10.5" fill="#9fb0c8">int 3, null write</text>
+<line x1="602" y1="158" x2="602" y2="214" stroke="#fcee0a" stroke-width="2" marker-end="url(#a)"/>
+<rect x="300" y="218" width="200" height="56" rx="7" fill="#111827" stroke="#fcee0a"/>
+<text x="400.0" y="241.6" text-anchor="middle" font-size="12.5" fill="#e3fffa">VEH, then SEH chain</text>
+<text x="400.0" y="259.1" text-anchor="middle" font-size="10.5" fill="#9fb0c8">fs:[0] on x86</text>
+<line x1="540" y1="246" x2="504" y2="246" stroke="#fcee0a" stroke-width="2" marker-end="url(#a)"/>
+<rect x="24" y="218" width="230" height="56" rx="7" fill="#111827" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+<text x="139.0" y="241.6" text-anchor="middle" font-size="12.5" fill="#e3fffa">Hidden handler logic</text>
+<text x="139.0" y="259.1" text-anchor="middle" font-size="10.5" fill="#9fb0c8">looks like dead code</text>
+<line x1="298" y1="246" x2="258" y2="246" stroke="#ff2a6d" stroke-width="2" marker-end="url(#a)" stroke-dasharray="5 4"/>
+<text x="400" y="322" text-anchor="middle" font-size="11" fill="#6c7b93">Set breakpoints on TLS callbacks and handlers, and pass exceptions to the application.</text>
+</svg>

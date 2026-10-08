@@ -3,12 +3,15 @@ title: "Lesson 16.2: XOR, RC4 and custom Base64"
 image:
   path: /assets/img/covers/re-16-2-xor-rc4-custom-base64-three-youll.webp
   alt: "Lesson 16.2: XOR, RC4 and custom Base64"
-date: 2023-07-03 21:27:00 +0700
+date: 2022-08-08 05:54:00 +0700
 categories: ["Reverse Engineering", "Part 16 · Crypto and Algorithms"]
 tags: [reverse-engineering, crypto]
 render_with_liquid: false
 ---
 These are the three data transformations I run into most when taking apart crackmes and malware, which are XOR, RC4, and Base64 with a shuffled alphabet. They cover most of the cases where a string looks like garbage. All three can be recognized by eye and reversed with a few lines of Python. This lesson shows how to spot them and write the decoder.
+
+![Diagram of XOR, RC4 and custom Base64 recognition](/assets/img/re/re-16-2-xor-rc4-custom-base64-three-youll.svg)
+_XOR, RC4 and custom Base64: spot the pattern, then reimplement it_
 
 ## XOR
 

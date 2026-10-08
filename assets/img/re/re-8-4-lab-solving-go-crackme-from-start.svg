@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 340" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="340" rx="12" fill="#0d121d" stroke="#263451"/>
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Solving the Go crackme end to end</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">real values from the Go 1.22 build</text>
+  <rect x="30.0" y="90" width="124" height="88" rx="7" fill="#111827" stroke="#263451"/>
+  <text x="92.0" y="121.0" text-anchor="middle" font-size="12.5" fill="#e3fffa">Triage</text>
+  <text x="92.0" y="138.0" text-anchor="middle" font-size="11.0" fill="#6c7b93">file, go version</text>
+  <text x="92.0" y="155.0" text-anchor="middle" font-size="11.0" fill="#6c7b93">static, 1.9 MB</text>
+  <rect x="184.0" y="90" width="124" height="88" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="246.0" y="121.0" text-anchor="middle" font-size="12.5" fill="#e3fffa">Names back</text>
+  <text x="246.0" y="138.0" text-anchor="middle" font-size="11.0" fill="#6c7b93">strings | grep main.</text>
+  <text x="246.0" y="155.0" text-anchor="middle" font-size="11.0" fill="#6c7b93">main.checkKey</text>
+  <rect x="338.0" y="90" width="124" height="88" rx="7" fill="#111827" stroke="#fcee0a"/>
+  <text x="400.0" y="121.0" text-anchor="middle" font-size="12.5" fill="#e3fffa">Read checkKey</text>
+  <text x="400.0" y="138.0" text-anchor="middle" font-size="11.0" fill="#6c7b93">len must be 11</text>
+  <text x="400.0" y="155.0" text-anchor="middle" font-size="11.0" fill="#6c7b93">XOR 0x17, add i</text>
+  <rect x="492.0" y="90" width="124" height="88" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="554.0" y="121.0" text-anchor="middle" font-size="12.5" fill="#e3fffa">Invert it</text>
+  <text x="554.0" y="138.0" text-anchor="middle" font-size="11.0" fill="#6c7b93">small Python</text>
+  <text x="554.0" y="155.0" text-anchor="middle" font-size="11.0" fill="#6c7b93">no brute force</text>
+  <rect x="646.0" y="90" width="124" height="88" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="708.0" y="129.5" text-anchor="middle" font-size="12.5" fill="#e3fffa">GoCrackMe24</text>
+  <text x="708.0" y="146.5" text-anchor="middle" font-size="11.0" fill="#6c7b93">Correct!</text>
+  <line x1="157.0" y1="134.0" x2="180.0" y2="134.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="311.0" y1="134.0" x2="334.0" y2="134.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="465.0" y1="134.0" x2="488.0" y2="134.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="619.0" y1="134.0" x2="642.0" y2="134.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <text x="400" y="224" text-anchor="middle" font-size="13" fill="#fcee0a" font-family="'JetBrains Mono',monospace">want[i] = (input[i] XOR 0x17) + i</text>
+  <text x="400" y="252" text-anchor="middle" font-size="13" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">input[i] = (want[i] - i) XOR 0x17</text>
+  <text x="400" y="300" text-anchor="middle" font-size="11" fill="#6c7b93">-s -w strips symbols, but pclntab keeps main.checkKey visible.</text>
+</svg>

@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+<rect x="0" y="0" width="800" height="420" rx="12" fill="#0d121d" stroke="#263451"/>
+<text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Where the UPX stub gives itself away</text>
+<text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">pushad ... popad then a far jump to the OEP</text>
+<defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+<rect x="28.0" y="80" width="128.0" height="56" rx="7" fill="#111827" stroke="#00f0ff"/>
+<text x="92.0" y="103.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">pushad</text>
+<text x="92.0" y="120.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">save 8 registers</text>
+<rect x="182.0" y="80" width="128.0" height="56" rx="7" fill="#111827" stroke="#263451"/>
+<text x="246.0" y="103.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">Decompress</text>
+<text x="246.0" y="120.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">code into memory</text>
+<line x1="159.0" y1="108.0" x2="179.0" y2="108.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="336.0" y="80" width="128.0" height="56" rx="7" fill="#111827" stroke="#263451"/>
+<text x="400.0" y="103.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">Rebuild imports</text>
+<text x="400.0" y="120.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">resolve APIs</text>
+<line x1="313.0" y1="108.0" x2="333.0" y2="108.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="490.0" y="80" width="128.0" height="56" rx="7" fill="#111827" stroke="#fcee0a"/>
+<text x="554.0" y="103.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">popad</text>
+<text x="554.0" y="120.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">restore registers</text>
+<line x1="467.0" y1="108.0" x2="487.0" y2="108.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="644.0" y="80" width="128.0" height="56" rx="7" fill="#111827" stroke="#ff2a6d"/>
+<text x="708.0" y="103.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">jmp far</text>
+<text x="708.0" y="120.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">tail jump</text>
+<line x1="621.0" y1="108.0" x2="641.0" y2="108.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="300" y="152" width="200" height="52" rx="7" fill="#111827" stroke="#5fe3b0"/>
+<text x="400.0" y="173.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">OEP</text>
+<text x="400.0" y="190.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">clean prologue, real code</text>
+<path d="M708.0,136 L708.0,178 L502,178" fill="none" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<text x="400" y="240" text-anchor="middle" font-size="14" fill="#e3fffa">ESP trick</text>
+<rect x="28.0" y="256" width="160.5" height="56" rx="7" fill="#111827" stroke="#263451"/>
+<text x="108.25" y="279.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">Step over pushad</text>
+<text x="108.25" y="296.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">F8 once</text>
+<rect x="222.5" y="256" width="160.5" height="56" rx="7" fill="#111827" stroke="#263451"/>
+<text x="302.75" y="279.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">Follow ESP in dump</text>
+<text x="302.75" y="296.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">select 4 bytes</text>
+<line x1="191.5" y1="284.0" x2="219.5" y2="284.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="417.0" y="256" width="160.5" height="56" rx="7" fill="#111827" stroke="#fcee0a"/>
+<text x="497.25" y="279.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">Hardware bp</text>
+<text x="497.25" y="296.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">access, then F9</text>
+<line x1="386.0" y1="284.0" x2="414.0" y2="284.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="611.5" y="256" width="160.5" height="56" rx="7" fill="#111827" stroke="#ff2a6d"/>
+<text x="691.75" y="279.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">Stops after popad</text>
+<text x="691.75" y="296.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">step to the jmp</text>
+<line x1="580.5" y1="284.0" x2="608.5" y2="284.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<line x1="400" y1="322" x2="400" y2="346" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="250" y="348" width="300" height="48" rx="7" fill="#111827" stroke="#00f0ff"/>
+<text x="400.0" y="367.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">At the OEP: dump</text>
+<text x="400.0" y="384.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">Scylla, then Fix Dump</text>
+</svg>

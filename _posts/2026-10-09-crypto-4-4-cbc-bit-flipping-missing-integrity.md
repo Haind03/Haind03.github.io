@@ -3,7 +3,7 @@ title: "Lesson 4.4: CBC bit flipping and missing integrity"
 image:
   path: /assets/img/covers/crypto-4-4-cbc-bit-flipping-missing-integrity.webp
   alt: "CBC bit flipping and missing integrity"
-date: 2026-10-09 12:20:00 +0700
+date: 2023-05-27 20:04:00 +0700
 categories: ["Cryptography", "Crypto · Symmetric Encryption"]
 tags: [cryptography, cbc, bit-flipping, integrity]
 render_with_liquid: false

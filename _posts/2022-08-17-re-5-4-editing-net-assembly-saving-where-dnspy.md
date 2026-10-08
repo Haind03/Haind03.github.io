@@ -3,12 +3,15 @@ title: "Lesson 5.4: Editing a .NET assembly and saving it"
 image:
   path: /assets/img/covers/re-5-4-editing-net-assembly-saving-where-dnspy.webp
   alt: "Lesson 5.4: Editing a .NET assembly and saving it"
-date: 2022-08-17 15:56:00 +0700
+date: 2022-04-02 05:15:00 +0700
 categories: ["Reverse Engineering", "Part 05 · C# and .NET"]
 tags: [reverse-engineering, dotnet]
 render_with_liquid: false
 ---
 With native code, patching means changing opcode bytes one by one, watching that you don't shift addresses, then rebuilding. With .NET it's very different, because dnSpy lets you edit the C# code directly, hit recompile, and save the file. It sounds like cheating, but it follows from .NET assemblies carrying full metadata (see [Lesson 5.1](/posts/re-5-1-net-internals-why-decompiling-gives-back/)).
+
+![Two levels of .NET patching](/assets/img/re/re-5-4-editing-net-assembly-saving-where-dnspy.svg)
+_Try Edit Method in C# first and fall back to Edit IL Instructions when it will not compile._
 
 We'll patch at two levels, the C# level (easiest, but not always possible) and the IL level (always works, and the main skill of a .NET reverser).
 

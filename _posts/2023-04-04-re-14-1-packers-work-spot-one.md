@@ -3,12 +3,15 @@ title: "Lesson 14.1: How packers work and how to spot one"
 image:
   path: /assets/img/covers/re-14-1-packers-work-spot-one.webp
   alt: "Lesson 14.1: How packers work and how to spot one"
-date: 2023-04-04 11:06:00 +0700
+date: 2022-07-01 01:30:00 +0700
 categories: ["Reverse Engineering", "Part 14 · Packers and Obfuscation"]
 tags: [reverse-engineering, packer, obfuscation]
 render_with_liquid: false
 ---
 Everyone doing RE hits this sooner or later. You open a file in IDA, ready to find the logic, and you see a few dozen instructions and then a jump into a region of junk bytes. No meaningful strings, an empty import table, nothing makes sense no matter how long you read. You're not bad at this. The file is packed, and you're only looking at the shell.
+
+![What a packer does and how to spot one](/assets/img/re/re-14-1-packers-work-spot-one.svg)
+_A stub unpacks the original code in memory, and a few static signs reveal a packed file._
 
 This lesson helps you recognize that in a minute, instead of wasting an evening reading code that never runs.
 

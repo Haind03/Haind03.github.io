@@ -3,12 +3,15 @@ title: "Lesson 1.9: ARM/ARM64 basics for people who know x86"
 image:
   path: /assets/img/covers/re-1-9-arm-arm64-basics-people-who-already.webp
   alt: "Lesson 1.9: ARM/ARM64 basics for people who know x86"
-date: 2022-03-23 15:20:00 +0700
+date: 2022-01-29 07:52:00 +0700
 categories: ["Reverse Engineering", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
 If you plan to reverse Android apps, iOS apps, or firmware for routers and cameras, you'll hit ARM sooner or later. If you already know x86, ARM64 isn't starting from zero. Registers, stack, call/ret, parameters and return values all work the same way, only the syntax and a few habits differ. This lesson covers only the differences.
+
+![Return address on x86 vs ARM64](/assets/img/re/re-1-9-arm-arm64-basics-people-who-already.svg)
+_x86 pushes the return address on the stack, ARM64 keeps it in lr._
 
 ## RISC vs CISC
 

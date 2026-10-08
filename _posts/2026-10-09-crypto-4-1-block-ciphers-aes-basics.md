@@ -3,7 +3,7 @@ title: "Lesson 4.1: Block Ciphers and AES Basics"
 image:
   path: /assets/img/covers/crypto-4-1-block-ciphers-aes-basics.webp
   alt: "Block Ciphers and AES Basics"
-date: 2026-10-09 12:05:00 +0700
+date: 2023-05-02 04:00:00 +0700
 categories: ["Cryptography", "Crypto · Symmetric Encryption"]
 tags: [cryptography, aes, block-cipher, avalanche]
 render_with_liquid: false

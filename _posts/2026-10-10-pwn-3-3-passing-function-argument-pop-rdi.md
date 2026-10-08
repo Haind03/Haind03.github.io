@@ -3,7 +3,7 @@ title: "Lesson 3.3: Passing a Function Argument with pop rdi"
 image:
   path: /assets/img/covers/pwn-3-3-passing-function-argument-pop-rdi.webp
   alt: "Passing a Function Argument with pop rdi"
-date: 2026-10-10 11:15:00 +0700
+date: 2022-11-10 13:58:00 +0700
 categories: ["Binary Exploitation", "Pwn · Buffer Overflow"]
 tags: [pwn, rop, calling-convention, stack-alignment]
 render_with_liquid: false

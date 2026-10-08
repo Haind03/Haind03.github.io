@@ -3,12 +3,15 @@ title: "Lesson 1.11: Windows internals (2), PEB, TEB, handles and tokens"
 image:
   path: /assets/img/covers/re-1-11-windows-internals-2-peb-teb-handles.webp
   alt: "Lesson 1.11: Windows internals (2), PEB, TEB, handles and tokens"
-date: 2022-03-26 20:50:00 +0700
+date: 2022-02-02 19:41:00 +0700
 categories: ["Reverse Engineering", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
 The PEB is a data structure you'll keep running into in Windows code, especially malware. It lives in the process's own address space and you can read it without calling any API. That makes it useful for anti-debug tricks and for finding modules quietly. Once you know the PEB and the structures around it (TEB, handles, tokens), a lot of confusing-looking code starts to make sense.
+
+![Reaching the PEB](/assets/img/re/re-1-11-windows-internals-2-peb-teb-handles.svg)
+_Reading the PEB through a segment register, and the fields that matter._
 
 ## TEB and PEB
 

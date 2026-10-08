@@ -3,7 +3,7 @@ title: "Lesson 2.3: Rail Fence, Playfair, and Enigma"
 image:
   path: /assets/img/covers/crypto-2-3-rail-fence-playfair-enigma.webp
   alt: "Rail Fence, Playfair, and Enigma"
-date: 2026-10-09 10:15:00 +0700
+date: 2023-03-28 22:34:00 +0700
 categories: ["Cryptography", "Crypto · Classical Ciphers"]
 tags: [cryptography, classical-ciphers, rail-fence, playfair, enigma]
 render_with_liquid: false

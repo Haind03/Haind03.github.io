@@ -3,12 +3,15 @@ title: "Lesson 17.4: Recognizing DLL injection techniques"
 image:
   path: /assets/img/covers/re-17-4-recognizing-dll-injection-techniques.webp
   alt: "Lesson 17.4: Recognizing DLL injection techniques"
-date: 2023-08-03 23:30:00 +0700
+date: 2022-08-21 17:20:00 +0700
 categories: ["Reverse Engineering", "Part 17 · Patching, Hooking, Injection"]
 tags: [reverse-engineering, frida, hooking]
 render_with_liquid: false
 ---
 DLL injection is when one process forces another process to load and run its code. Legit software uses it now and then too (game overlays, accessibility tools, EDR), but malware uses it all the time to run hidden inside a legitimate process like `explorer.exe`, dodge allowlists, and be hard to kill.
+
+![DLL injection three-step frame](/assets/img/re/re-17-4-recognizing-dll-injection-techniques.svg)
+_Open the process, place the payload, force execution_
 
 This lesson doesn't teach you to write an injector. The goal is the opposite. When you're dissecting a sample or looking at a suspicious process, you should be able to say "this is CreateRemoteThread injection" or "this is manual mapping", know where to set breakpoints, and know which tool will show it. This is standard analyst knowledge, from the defender's side.
 

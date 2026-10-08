@@ -3,7 +3,7 @@ title: "Lesson 6.6: RSA CTF Lab from Easy to Hard"
 image:
   path: /assets/img/covers/crypto-6-6-rsa-ctf-lab-easy-hard.webp
   alt: "RSA CTF Lab from Easy to Hard"
-date: 2026-10-09 14:30:00 +0700
+date: 2023-09-07 12:21:00 +0700
 categories: ["Cryptography", "Crypto · RSA"]
 tags: [cryptography, rsa, ctf, rsactftool]
 render_with_liquid: false

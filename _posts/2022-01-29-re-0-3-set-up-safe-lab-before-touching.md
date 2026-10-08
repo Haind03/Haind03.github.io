@@ -3,12 +3,15 @@ title: "Lesson 0.3: Setting up a safe lab"
 image:
   path: /assets/img/covers/re-0-3-set-up-safe-lab-before-touching.webp
   alt: "Lesson 0.3: Setting up a safe lab"
-date: 2022-01-29 21:43:00 +0700
+date: 2022-01-06 20:48:00 +0700
 categories: ["Reverse Engineering", "Part 00 · Getting Started"]
 tags: [reverse-engineering, basics]
 render_with_liquid: false
 ---
 Never run an unknown sample on your real machine. Some people learn this by losing an evening cleaning up after "just running it to see what it does". Read this post and skip that part.
+
+![Two-VM malware lab layout](/assets/img/re/re-0-3-set-up-safe-lab-before-touching.svg)
+_Lab layout: a Windows victim VM and a Linux fake gateway on a host-only network, with no route out._
 
 For crackmes and CTFs the risk is close to zero, and running them on a normal machine is fine. Once you touch real malware or a binary of unknown origin, you need a lab. Set it up once and reuse it.
 

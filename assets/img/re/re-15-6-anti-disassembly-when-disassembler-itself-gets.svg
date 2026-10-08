@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 390" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+  <rect x="0" y="0" width="800" height="390" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">One byte, two readings</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">the CPU and a linear-sweep disassembler disagree on where code starts</text>
+  <rect x="240" y="90" width="70" height="50" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="275.0" y="119.0" text-anchor="middle" font-size="17" fill="#e3fffa" font-family="'JetBrains Mono',monospace">EB</text>
+  <text x="275" y="158" text-anchor="middle" font-size="10.5" fill="#6c7b93" font-family="'JetBrains Mono',monospace">+0</text>
+  <rect x="320" y="90" width="70" height="50" rx="7" fill="#111827" stroke="#fcee0a"/>
+  <text x="355.0" y="119.0" text-anchor="middle" font-size="17" fill="#e3fffa" font-family="'JetBrains Mono',monospace">FF</text>
+  <text x="355" y="158" text-anchor="middle" font-size="10.5" fill="#6c7b93" font-family="'JetBrains Mono',monospace">+1</text>
+  <rect x="400" y="90" width="70" height="50" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="435.0" y="119.0" text-anchor="middle" font-size="17" fill="#e3fffa" font-family="'JetBrains Mono',monospace">C0</text>
+  <text x="435" y="158" text-anchor="middle" font-size="10.5" fill="#6c7b93" font-family="'JetBrains Mono',monospace">+2</text>
+  <rect x="480" y="90" width="70" height="50" rx="7" fill="#111827" stroke="#263451"/>
+  <text x="515.0" y="119.0" text-anchor="middle" font-size="17" fill="#e3fffa" font-family="'JetBrains Mono',monospace">48</text>
+  <text x="515" y="158" text-anchor="middle" font-size="10.5" fill="#6c7b93" font-family="'JetBrains Mono',monospace">+3</text>
+  <text x="30" y="122" text-anchor="start" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">bytes</text>
+  <text x="30" y="208" text-anchor="start" font-size="12" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">CPU</text>
+  <rect x="240" y="190" width="150" height="40" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="315.0" y="214.0" text-anchor="middle" font-size="11.5" fill="#e3fffa" font-family="'JetBrains Mono',monospace">EB FF  jmp +1</text>
+  <rect x="320" y="244" width="150" height="40" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="395.0" y="268.0" text-anchor="middle" font-size="11.5" fill="#e3fffa" font-family="'JetBrains Mono',monospace">FF C0  inc eax</text>
+  <polyline points="315,230 315,240 395,240 395,242" fill="none" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <text x="30" y="330" text-anchor="start" font-size="12" fill="#ff2a6d" font-family="'JetBrains Mono',monospace">DISASSEMBLER</text>
+  <rect x="240" y="312" width="150" height="40" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="315.0" y="336.0" text-anchor="middle" font-size="11.5" fill="#e3fffa" font-family="'JetBrains Mono',monospace">EB FF  jmp</text>
+  <rect x="400" y="312" width="150" height="40" rx="7" fill="#111827" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+  <text x="475.0" y="336.0" text-anchor="middle" font-size="11.5" fill="#e3fffa" font-family="'JetBrains Mono',monospace">C0 48 ..  garbage</text>
+  <line x1="390" y1="332" x2="396" y2="332" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <text x="400" y="374" text-anchor="middle" font-size="11" fill="#6c7b93">Fix: undefine the wrong bytes and re-disassemble from the real jump target.</text>
+</svg>

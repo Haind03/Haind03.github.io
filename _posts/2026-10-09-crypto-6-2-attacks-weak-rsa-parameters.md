@@ -3,7 +3,7 @@ title: "Lesson 6.2: Attacks on Weak RSA Parameters"
 image:
   path: /assets/img/covers/crypto-6-2-attacks-weak-rsa-parameters.webp
   alt: "Attacks on Weak RSA Parameters"
-date: 2026-10-09 14:10:00 +0700
+date: 2023-08-04 06:55:00 +0700
 categories: ["Cryptography", "Crypto · RSA"]
 tags: [cryptography, rsa, factoring, fermat]
 render_with_liquid: false

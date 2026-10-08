@@ -3,12 +3,15 @@ title: "Lesson 15.4: Advanced anti-debug, self-debug and TLS callbacks"
 image:
   path: /assets/img/covers/re-15-4-advanced-anti-debug-self-debug-tls.webp
   alt: "Lesson 15.4: Advanced anti-debug, self-debug and TLS callbacks"
-date: 2023-05-20 20:16:00 +0700
+date: 2022-07-21 06:39:00 +0700
 categories: ["Reverse Engineering", "Part 15 · Anti-Reversing and Bypasses"]
 tags: [reverse-engineering, anti-debug]
 render_with_liquid: false
 ---
 The previous three lessons covered checks you run into midway through a program, such as asking an API, reading the PEB, measuring time. This one covers a nastier group. These checks either don't give you time to attach, or take the debugger's seat so you can't get in. Beginners often get stuck here with "the program exits right as it starts and I have no idea why".
+
+![Diagram of self-debugging and TLS callback timing](/assets/img/re/re-15-4-advanced-anti-debug-self-debug-tls.svg)
+_Self-debugging blocks attach, and a TLS callback runs before the entry point_
 
 ## Self-debugging: taking the debugger's seat
 

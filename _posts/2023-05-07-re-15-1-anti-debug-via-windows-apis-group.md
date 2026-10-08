@@ -3,12 +3,15 @@ title: "Lesson 15.1: Anti-debug via Windows APIs"
 image:
   path: /assets/img/covers/re-15-1-anti-debug-via-windows-apis-group.webp
   alt: "Lesson 15.1: Anti-debug via Windows APIs"
-date: 2023-05-07 09:13:00 +0700
+date: 2022-07-14 12:56:00 +0700
 categories: ["Reverse Engineering", "Part 15 · Anti-Reversing and Bypasses"]
 tags: [reverse-engineering, anti-debug]
 render_with_liquid: false
 ---
 When a program doesn't want a debugger attached, the first thing it usually tries is asking the OS directly whether it is being debugged. Windows has a few APIs that answer exactly that, and this is the first anti-debug group you'll meet. It's also the easiest to get past, because wherever it asks, there's a return value you can change.
+
+![Anti-debug API check and three bypasses](/assets/img/re/re-15-1-anti-debug-via-windows-apis-group.svg)
+_Each check is call, result, compare, branch, and any of the three steps can be changed._
 
 This lesson looks at anti-debug from the analyst's side, meaning understanding the mechanism so you can recognize it in code and get past it, not so you can write anti-analysis software.
 

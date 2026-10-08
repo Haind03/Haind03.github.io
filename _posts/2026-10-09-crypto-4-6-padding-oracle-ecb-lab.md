@@ -3,7 +3,7 @@ title: "Lesson 4.6: Padding oracle and byte-at-a-time ECB lab"
 image:
   path: /assets/img/covers/crypto-4-6-padding-oracle-ecb-lab.webp
   alt: "Padding oracle and byte-at-a-time ECB lab"
-date: 2026-10-09 12:30:00 +0700
+date: 2023-06-13 22:47:00 +0700
 categories: ["Cryptography", "Crypto · Symmetric Encryption"]
 tags: [cryptography, padding-oracle, ecb, lab]
 render_with_liquid: false

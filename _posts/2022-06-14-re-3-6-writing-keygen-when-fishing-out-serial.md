@@ -3,12 +3,15 @@ title: "Lesson 3.6: Writing a keygen"
 image:
   path: /assets/img/covers/re-3-6-writing-keygen-when-fishing-out-serial.webp
   alt: "Lesson 3.6: Writing a keygen"
-date: 2022-06-14 10:24:00 +0700
+date: 2022-03-10 18:11:00 +0700
 categories: ["Reverse Engineering", "Part 03 · C"]
 tags: [reverse-engineering, c]
 render_with_liquid: false
 ---
 In lesson 3.5 you found the password of a crackme by fishing it out of memory. That works for simple checks, where the program keeps the correct serial somewhere and compares against it, and you peek at it during the comparison. A keygenme is harder.
+
+![Keygen workflow](/assets/img/re/re-3-6-writing-keygen-when-fishing-out-serial.svg)
+_The four keygen steps; a failed cross-check sends you back to step 2._
 
 A keygenme doesn't keep any serial ready-made. It computes the correct serial from the username at runtime, then compares it with what you typed. Each username gets a different serial. Fishing out one serial solves exactly one username, and often you're the one choosing the username anyway. To win this kind, you have to understand the algorithm well enough to generate a serial for any username yourself. What you write is called a keygen.
 

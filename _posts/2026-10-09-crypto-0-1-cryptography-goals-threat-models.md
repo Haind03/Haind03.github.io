@@ -3,7 +3,7 @@ title: "Lesson 0.1: Cryptography Goals and Threat Models"
 image:
   path: /assets/img/covers/crypto-0-1-cryptography-goals-threat-models.webp
   alt: "Cryptography Goals and Threat Models"
-date: 2026-10-09 08:05:00 +0700
+date: 2023-01-02 09:00:00 +0700
 categories: ["Cryptography", "Crypto · Getting Started"]
 tags: [cryptography, threat-model, confidentiality, integrity]
 render_with_liquid: false

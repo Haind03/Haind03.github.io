@@ -3,7 +3,7 @@ title: "Lesson 8.3: Weak Elliptic Curves"
 image:
   path: /assets/img/covers/crypto-8-3-weak-elliptic-curves.webp
   alt: "Weak Elliptic Curves"
-date: 2026-10-09 16:15:00 +0700
+date: 2023-10-20 07:08:00 +0700
 categories: ["Cryptography", "Crypto · Elliptic Curves"]
 tags: [cryptography, ecc, invalid-curve, pohlig-hellman]
 render_with_liquid: false

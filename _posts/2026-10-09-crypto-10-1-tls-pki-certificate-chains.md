@@ -3,7 +3,7 @@ title: "Lesson 10.1: TLS and PKI Certificate Chains"
 image:
   path: /assets/img/covers/crypto-10-1-tls-pki-certificate-chains.webp
   alt: "TLS and PKI Certificate Chains"
-date: 2026-10-09 18:05:00 +0700
+date: 2023-11-14 23:12:00 +0700
 categories: ["Cryptography", "Crypto · Crypto in Practice"]
 tags: [cryptography, tls, pki, x509]
 render_with_liquid: false

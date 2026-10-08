@@ -3,7 +3,7 @@ title: "Lesson 6.4: Wiener Attack and Coppersmith"
 image:
   path: /assets/img/covers/crypto-6-4-wiener-attack-coppersmith.webp
   alt: "Wiener Attack and Coppersmith"
-date: 2026-10-09 14:20:00 +0700
+date: 2023-08-21 09:38:00 +0700
 categories: ["Cryptography", "Crypto · RSA"]
 tags: [cryptography, rsa, wiener, coppersmith]
 render_with_liquid: false

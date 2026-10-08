@@ -3,7 +3,7 @@ title: "Lesson 3.1: Overwriting a Local Variable to Bypass a Check"
 image:
   path: /assets/img/covers/pwn-3-1-overwriting-local-variable-bypass-check.webp
   alt: "Overwriting a Local Variable to Bypass a Check"
-date: 2026-10-10 11:05:00 +0700
+date: 2022-11-06 02:09:00 +0700
 categories: ["Binary Exploitation", "Pwn · Buffer Overflow"]
 tags: [pwn, buffer-overflow, stack, local-variables]
 render_with_liquid: false

@@ -3,12 +3,15 @@ title: "Lesson 12.3: Reversing an iOS app from the IPA file"
 image:
   path: /assets/img/covers/re-12-3-reversing-ios-app-from-ipa-file.webp
   alt: "Lesson 12.3: Reversing an iOS app from the IPA file"
-date: 2023-02-14 10:47:00 +0700
+date: 2022-06-17 14:03:00 +0700
 categories: ["Reverse Engineering", "Part 12 · Swift and Objective-C"]
 tags: [reverse-engineering, ios, swift]
 render_with_liquid: false
 ---
 Reversing iOS differs from Android in a way that puts beginners off, since you need to understand Mach-O and Objective-C/Swift, you first have to get past Apple's encryption layer, and you almost always need a jailbroken device. This lesson goes from the IPA file to hooking a running method, and says plainly where you need a real device.
+
+![IPA to analysis pipeline](/assets/img/re/re-12-3-reversing-ios-app-from-ipa-file.svg)
+_IPA pipeline: unzip, decrypt the FairPlay-protected binary from RAM, then analyze the Mach-O._
 
 A reminder of the boundary from [Lesson 0.2](/posts/re-0-2-legal-ethics-part-everyone-wants-skip/), which is that everything below is for security testing on your own app or an app you have permission for, not for cracking other people's apps.
 

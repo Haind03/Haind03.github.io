@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 350" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="350" rx="12" fill="#0d121d" stroke="#263451"/>
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Three sample files, three failure modes</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">each Bad MAGIC or warning has a different cause</text>
+  <rect x="30" y="84" width="210" height="60" rx="7" fill="#111827" stroke="#263451"/>
+  <text x="135.0" y="118.0" text-anchor="middle" font-size="11.5" fill="#e3fffa" font-family="'JetBrains Mono',monospace">ok.pyc</text>
+  <rect x="300" y="84" width="240" height="60" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="420.0" y="109.5" text-anchor="middle" font-size="12.5" fill="#e3fffa">Bad MAGIC!</text>
+  <text x="420.0" y="126.5" text-anchor="middle" font-size="11.0" fill="#6c7b93">file is 0 bytes</text>
+  <rect x="600" y="84" width="170" height="60" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="685.0" y="118.0" text-anchor="middle" font-size="12" fill="#e3fffa">Get the file again</text>
+  <line x1="243" y1="114" x2="296" y2="114" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="543" y1="114" x2="596" y2="114" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="30" y="172" width="210" height="60" rx="7" fill="#111827" stroke="#263451"/>
+  <text x="135.0" y="206.0" text-anchor="middle" font-size="11.5" fill="#e3fffa" font-family="'JetBrains Mono',monospace">apple_collector_game.pyc</text>
+  <rect x="300" y="172" width="240" height="60" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="420.0" y="197.5" text-anchor="middle" font-size="12.5" fill="#e3fffa">Bad MAGIC!</text>
+  <text x="420.0" y="214.5" text-anchor="middle" font-size="11.0" fill="#6c7b93">starts with e3: no header</text>
+  <rect x="600" y="172" width="170" height="60" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="685.0" y="206.0" text-anchor="middle" font-size="12" fill="#e3fffa">pycdas -c -v 3.11</text>
+  <line x1="243" y1="202" x2="296" y2="202" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="543" y1="202" x2="596" y2="202" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="30" y="260" width="210" height="60" rx="7" fill="#111827" stroke="#263451"/>
+  <text x="135.0" y="294.0" text-anchor="middle" font-size="11.5" fill="#e3fffa" font-family="'JetBrains Mono',monospace">out_sequencer.pyc</text>
+  <rect x="300" y="260" width="240" height="60" rx="7" fill="#111827" stroke="#fcee0a"/>
+  <text x="420.0" y="285.5" text-anchor="middle" font-size="12.5" fill="#e3fffa">Unsupported opcode</text>
+  <text x="420.0" y="302.5" text-anchor="middle" font-size="11.0" fill="#6c7b93">Python 3.13, newer than pycdc</text>
+  <rect x="600" y="260" width="170" height="60" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="685.0" y="294.0" text-anchor="middle" font-size="12" fill="#e3fffa">Read bytecode with pycdas</text>
+  <line x1="243" y1="290" x2="296" y2="290" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="543" y1="290" x2="596" y2="290" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+</svg>

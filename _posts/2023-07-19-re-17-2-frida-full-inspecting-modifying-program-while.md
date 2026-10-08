@@ -3,12 +3,15 @@ title: "Lesson 17.2: Frida, inspecting and modifying a running program"
 image:
   path: /assets/img/covers/re-17-2-frida-full-inspecting-modifying-program-while.webp
   alt: "Lesson 17.2: Frida, inspecting and modifying a running program"
-date: 2023-07-19 23:03:00 +0700
+date: 2022-08-17 05:31:00 +0700
 categories: ["Reverse Engineering", "Part 17 · Patching, Hooking, Injection"]
 tags: [reverse-engineering, frida, hooking]
 render_with_liquid: false
 ---
 Sometimes static reading gets you nowhere, and breakpoints in a debugger are slow and easy for anti-debug to catch. Frida is made for that. You inject a small piece of JavaScript into the running process and tell it "every time this function is called, print its parameters". No editing files on disk, no recompiling, and it runs on Windows, Linux, macOS, Android and iOS with the same API.
+
+![Frida architecture](/assets/img/re/re-17-2-frida-full-inspecting-modifying-program-while.svg)
+_The host loads a JavaScript agent that runs inside the target and hooks functions with Interceptor_
 
 This lesson covers Frida at the level you can use right away for RE. The scope is behavior analysis, security testing of your own software, and solving crackmes/CTFs. Use it to observe and understand, not to break things.
 

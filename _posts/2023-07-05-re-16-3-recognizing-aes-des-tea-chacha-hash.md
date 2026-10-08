@@ -3,12 +3,15 @@ title: "Lesson 16.3: Recognizing AES, DES, TEA, ChaCha and hash functions"
 image:
   path: /assets/img/covers/re-16-3-recognizing-aes-des-tea-chacha-hash.webp
   alt: "Lesson 16.3: Recognizing AES, DES, TEA, ChaCha and hash functions"
-date: 2023-07-05 22:39:00 +0700
+date: 2022-08-10 11:48:00 +0700
 categories: ["Reverse Engineering", "Part 16 · Crypto and Algorithms"]
 tags: [reverse-engineering, crypto]
 render_with_liquid: false
 ---
 In the last lesson you learned to find crypto constants with findcrypt. The tool doesn't always work though, and often you only have a piece of pseudocode in front of you and have to guess. Every common crypto algorithm has its own shape, and once you know a few of them you can tell which one you're facing. And once you know the name, you don't need to reimplement it. You call a standard library to decrypt.
+
+![Crypto algorithms and the fastest tell for each](/assets/img/re/re-16-3-recognizing-aes-des-tea-chacha-hash.svg)
+_Fastest tells for common crypto algorithms_
 
 This lesson goes through the algorithms you'll see most, with the fastest tell for each one.
 

@@ -3,7 +3,7 @@ title: "Lesson 4.2: ECB, CBC, CTR and GCM modes of operation"
 image:
   path: /assets/img/covers/crypto-4-2-ecb-cbc-ctr-gcm-modes.webp
   alt: "ECB, CBC, CTR and GCM modes of operation"
-date: 2026-10-09 12:10:00 +0700
+date: 2023-05-10 17:21:00 +0700
 categories: ["Cryptography", "Crypto · Symmetric Encryption"]
 tags: [cryptography, aes, block-cipher-modes, ecb]
 render_with_liquid: false

@@ -3,7 +3,7 @@ title: "Lesson 6.3: Common Modulus and Hastad Broadcast Attacks"
 image:
   path: /assets/img/covers/crypto-6-3-common-modulus-hastad-broadcast-attacks.webp
   alt: "Common Modulus and Hastad Broadcast Attacks"
-date: 2026-10-09 14:15:00 +0700
+date: 2023-08-12 20:17:00 +0700
 categories: ["Cryptography", "Crypto · RSA"]
 tags: [cryptography, rsa, hastad, crt]
 render_with_liquid: false

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+  <rect x="0" y="0" width="800" height="360" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Reading the PEB directly, no API call</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">the same data IsDebuggerPresent reads, fetched by hand</text>
+  <rect x="30" y="160" width="130" height="54" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="95.0" y="183.0" text-anchor="middle" font-size="12.5" fill="#e3fffa">Program</text>
+  <text x="95.0" y="199.0" text-anchor="middle" font-size="10.5" fill="#9fb0c8">just mov and cmp</text>
+  <rect x="205" y="150" width="170" height="74" rx="7" fill="#111827" stroke="#263451"/>
+  <text x="290.0" y="175.0" text-anchor="middle" font-size="12" fill="#e3fffa" font-family="'JetBrains Mono',monospace">Segment register</text>
+  <text x="290.0" y="191.0" text-anchor="middle" font-size="10" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">gs:[0x60] on x64</text>
+  <text x="290.0" y="207.0" text-anchor="middle" font-size="10" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">fs:[0x30] on x86</text>
+  <rect x="430" y="92" width="200" height="50" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="530.0" y="113.0" text-anchor="middle" font-size="12.5" fill="#e3fffa">BeingDebugged</text>
+  <text x="530.0" y="129.0" text-anchor="middle" font-size="10.5" fill="#9fb0c8">PEB+0x02, one byte</text>
+  <rect x="430" y="172" width="200" height="50" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="530.0" y="193.0" text-anchor="middle" font-size="12.5" fill="#e3fffa">NtGlobalFlag</text>
+  <text x="530.0" y="209.0" text-anchor="middle" font-size="10.5" fill="#9fb0c8">PEB+0xBC on x64</text>
+  <rect x="430" y="252" width="200" height="50" rx="7" fill="#111827" stroke="#fcee0a"/>
+  <text x="530.0" y="273.0" text-anchor="middle" font-size="12.5" fill="#e3fffa">ProcessHeap</text>
+  <text x="530.0" y="289.0" text-anchor="middle" font-size="10.5" fill="#9fb0c8">PEB+0x30 on x64</text>
+  <rect x="660" y="252" width="120" height="50" rx="7" fill="#111827" stroke="#fcee0a"/>
+  <text x="720.0" y="273.0" text-anchor="middle" font-size="12.5" fill="#e3fffa">Flags and</text>
+  <text x="720.0" y="289.0" text-anchor="middle" font-size="10.5" fill="#9fb0c8">ForceFlags</text>
+  <line x1="160" y1="187" x2="201" y2="187" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="375" y1="175" x2="426" y2="117" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="375" y1="187" x2="426" y2="197" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="375" y1="200" x2="426" y2="277" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="630" y1="277" x2="656" y2="277" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <text x="400" y="338" text-anchor="middle" font-size="11" fill="#6c7b93">No function to breakpoint, so you must spot the gs/fs reads while reading the code.</text>
+</svg>

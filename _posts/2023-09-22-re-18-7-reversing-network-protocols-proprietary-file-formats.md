@@ -3,12 +3,15 @@ title: "Lesson 18.7: Reversing network protocols and proprietary file formats"
 image:
   path: /assets/img/covers/re-18-7-reversing-network-protocols-proprietary-file-formats.webp
   alt: "Lesson 18.7: Reversing network protocols and proprietary file formats"
-date: 2023-09-22 10:37:00 +0700
+date: 2022-09-13 04:24:00 +0700
 categories: ["Reverse Engineering", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
 render_with_liquid: false
 ---
 Some problems don't live in a binary but in data, such as a save game file nobody has documented, a homemade network protocol between client and server, a binary config format. No spec, no documentation. Your job is to look at data samples and rebuild the spec, accurately enough to read the data yourself and produce valid data yourself.
+
+![Steps to reconstruct an unknown format](/assets/img/re/re-18-7-reversing-network-protocols-proprietary-file-formats.svg)
+_Reverse a format by diffing samples, then confirming in code._
 
 There are two sources of information, and I use both, the data itself (comparing many samples), and the code that handles the data (following the parse function in the binary). The data gives quick hypotheses, and the code confirms them.
 

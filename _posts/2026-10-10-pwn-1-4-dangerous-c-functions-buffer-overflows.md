@@ -3,7 +3,7 @@ title: "Lesson 1.4: Dangerous C Functions and Buffer Overflows"
 image:
   path: /assets/img/covers/pwn-1-4-dangerous-c-functions-buffer-overflows.webp
   alt: "Dangerous C Functions and Buffer Overflows"
-date: 2026-10-10 09:20:00 +0700
+date: 2022-10-28 02:31:00 +0700
 categories: ["Binary Exploitation", "Pwn · Foundations"]
 tags: [pwn, buffer-overflow, c-functions]
 render_with_liquid: false

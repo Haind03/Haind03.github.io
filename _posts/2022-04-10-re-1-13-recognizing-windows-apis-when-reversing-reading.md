@@ -3,12 +3,15 @@ title: "Lesson 1.13: Recognizing Windows APIs when reversing"
 image:
   path: /assets/img/covers/re-1-13-recognizing-windows-apis-when-reversing-reading.webp
   alt: "Lesson 1.13: Recognizing Windows APIs when reversing"
-date: 2022-04-10 15:08:00 +0700
+date: 2022-02-07 07:30:00 +0700
 categories: ["Reverse Engineering", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
 In lesson [1.10](/posts/re-1-10-windows-internals-1-win32-api-dlls/) you saw that the API list shows what a program intends to do. In lesson [1.4](/posts/re-1-4-x86-x64-assembly-2-stack-frames/) you learned where parameters get passed. This lesson combines the two, so you can look at any API call in a disassembly or debugger and read off which file it's opening, which registry key it's writing, where it's connecting.
+
+![CreateFileW argument mapping](/assets/img/re/re-1-13-recognizing-windows-apis-when-reversing-reading.svg)
+_Where each CreateFileW parameter lives on Windows x64._
 
 You'll do this a few hundred times every reversing session.
 

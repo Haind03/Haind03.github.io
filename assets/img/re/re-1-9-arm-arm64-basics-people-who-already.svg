@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+<defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+<rect x="0" y="0" width="800" height="360" rx="12" fill="#0d121d" stroke="#263451"/>
+<text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Where the return address goes</text>
+<text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">x86 uses the stack, ARM64 uses the link register</text>
+<text x="200" y="92" text-anchor="middle" font-size="13" fill="#00f0ff" font-family="'JetBrains Mono',monospace">x86-64</text>
+<text x="600" y="92" text-anchor="middle" font-size="13" fill="#ff2a6d" font-family="'JetBrains Mono',monospace">ARM64</text>
+<rect x="40" y="110" width="150" height="44" rx="7" fill="#111827" stroke="#00f0ff"/>
+<text x="115.0" y="136.4" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-family="'JetBrains Mono',monospace">call f</text>
+<line x1="190" y1="132" x2="230" y2="132" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="234" y="110" width="150" height="44" rx="7" fill="#111827" stroke="#00f0ff"/>
+<text x="309.0" y="127.6" text-anchor="middle" font-size="12.5" fill="#e3fffa">push ret addr</text>
+<text x="309.0" y="145.1" text-anchor="middle" font-size="12.5" fill="#e3fffa">onto stack</text>
+<rect x="40" y="186" width="150" height="44" rx="7" fill="#111827" stroke="#263451"/>
+<text x="115.0" y="212.4" text-anchor="middle" font-size="12.5" fill="#e3fffa">f runs</text>
+<line x1="300" y1="156" x2="300" y2="184" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<line x1="236" y1="208" x2="194" y2="208" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="234" y="186" width="150" height="44" rx="7" fill="#111827" stroke="#00f0ff"/>
+<text x="309.0" y="203.6" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-family="'JetBrains Mono',monospace">ret</text>
+<text x="309.0" y="221.1" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-family="'JetBrains Mono',monospace">pops stack</text>
+<rect x="440" y="110" width="150" height="44" rx="7" fill="#111827" stroke="#ff2a6d"/>
+<text x="515.0" y="136.4" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-family="'JetBrains Mono',monospace">bl f</text>
+<line x1="590" y1="132" x2="630" y2="132" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="634" y="110" width="140" height="44" rx="7" fill="#111827" stroke="#ff2a6d"/>
+<text x="704.0" y="127.6" text-anchor="middle" font-size="12.5" fill="#e3fffa">ret addr</text>
+<text x="704.0" y="145.1" text-anchor="middle" font-size="12.5" fill="#e3fffa">into lr (x30)</text>
+<rect x="440" y="186" width="150" height="44" rx="7" fill="#111827" stroke="#263451"/>
+<text x="515.0" y="212.4" text-anchor="middle" font-size="12.5" fill="#e3fffa">f runs</text>
+<line x1="704" y1="156" x2="704" y2="184" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<line x1="636" y1="208" x2="594" y2="208" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="634" y="186" width="140" height="44" rx="7" fill="#111827" stroke="#ff2a6d"/>
+<text x="704.0" y="203.6" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-family="'JetBrains Mono',monospace">ret</text>
+<text x="704.0" y="221.1" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-family="'JetBrains Mono',monospace">jumps to lr</text>
+<rect x="440" y="256" width="334" height="50" rx="7" fill="#111827" stroke="#fcee0a" stroke-dasharray="5 4"/>
+<text x="607.0" y="276.7" text-anchor="middle" font-size="12" fill="#fcee0a">Non-leaf function must save lr first</text>
+<text x="607.0" y="293.7" text-anchor="middle" font-size="10.5" fill="#9fb0c8">stp x29, x30, [sp, #-16]!  ...  ldp  ...  ret</text>
+<text x="400" y="338" text-anchor="middle" font-size="11" fill="#6c7b93">Args go in x0 to x7, the return value in x0.</text>
+</svg>

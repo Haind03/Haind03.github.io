@@ -3,12 +3,15 @@ title: "Lesson 2.1: Five-minute triage with DIE, strings and PE-bear"
 image:
   path: /assets/img/covers/re-2-1-five-minute-triage-die-strings-pe.webp
   alt: "Lesson 2.1: Five-minute triage with DIE, strings and PE-bear"
-date: 2022-04-10 15:52:00 +0700
+date: 2022-02-09 13:24:00 +0700
 categories: ["Reverse Engineering", "Part 02 · The Toolkit"]
 tags: [reverse-engineering, tools]
 render_with_liquid: false
 ---
 Before opening IDA or Ghidra, there's one thing veterans always do and beginners often skip, which is a quick checkup. Five minutes of asking "what am I holding" saves hours later. Open a disassembler on a packed file and you stare at garbage. Open it in the wrong 32/64-bit mode and every address is off. Skip the strings and you miss an answer sitting on the surface.
+
+![Five-minute triage workflow](/assets/img/re/re-2-1-five-minute-triage-die-strings-pe.svg)
+_Triage order: DIE, entropy and imports, file, strings, PE-bear, then decide._
 
 This lesson is a practical triage workflow with four tools. Detect It Easy is a portable build, so there's nothing to install.
 

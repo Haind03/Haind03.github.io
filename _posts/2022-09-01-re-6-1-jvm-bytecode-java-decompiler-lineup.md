@@ -3,7 +3,7 @@ title: "Lesson 6.1: JVM bytecode and Java decompilers"
 image:
   path: /assets/img/covers/re-6-1-jvm-bytecode-java-decompiler-lineup.webp
   alt: "Lesson 6.1: JVM bytecode and Java decompilers"
-date: 2022-09-01 09:11:00 +0700
+date: 2022-04-11 04:52:00 +0700
 categories: ["Reverse Engineering", "Part 06 · Java, Kotlin and Android"]
 tags: [reverse-engineering, android, java]
 render_with_liquid: false

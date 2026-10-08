@@ -3,12 +3,15 @@ title: "Lesson 8.3: Go's string, slice, interface and goroutine in assembly"
 image:
   path: /assets/img/covers/re-8-3-gos-string-slice-interface-goroutine-assembly.webp
   alt: "Lesson 8.3: Go's string, slice, interface and goroutine in assembly"
-date: 2022-11-19 11:53:00 +0700
+date: 2022-05-19 09:16:00 +0700
 categories: ["Reverse Engineering", "Part 08 · Go"]
 tags: [reverse-engineering, golang]
 render_with_liquid: false
 ---
 In the last lesson you recovered Go function names with pclntab. Function names are only half of it. You also need to know Go's own data types, because they look nothing like C. A Go string doesn't end with a 0 byte, a slice is three fields, an interface carries a type pointer, and every `go func` becomes a runtime call. If you don't know this, Go disassembly looks broken.
+
+![Go string, slice and interface layouts](/assets/img/re/re-8-3-gos-string-slice-interface-goroutine-assembly.svg)
+_Memory layout of a Go string, slice and interface value on x64._
 
 Every asm snippet and number in this lesson is real output, built with Go 1.22 on Linux x64 and taken with `go tool objdump` and `go tool nm`.
 

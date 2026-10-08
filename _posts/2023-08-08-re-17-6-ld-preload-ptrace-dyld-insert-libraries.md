@@ -3,12 +3,15 @@ title: "Lesson 17.6: LD_PRELOAD, ptrace and DYLD_INSERT_LIBRARIES"
 image:
   path: /assets/img/covers/re-17-6-ld-preload-ptrace-dyld-insert-libraries.webp
   alt: "Lesson 17.6: LD_PRELOAD, ptrace and DYLD_INSERT_LIBRARIES"
-date: 2023-08-08 14:54:00 +0700
+date: 2022-08-26 05:09:00 +0700
 categories: ["Reverse Engineering", "Part 17 · Patching, Hooking, Injection"]
 tags: [reverse-engineering, frida, hooking]
 render_with_liquid: false
 ---
 On Windows you hook with Detours, IAT or inline hooks (lesson [17.3](/posts/re-17-3-hooking-windows-iat-hooks-inline-hooks/)). On Linux and macOS there's a simpler way built into the OS loader, where you tell it to load your library before the standard library, and your function overrides the libc function. No overwriting bytes, no code cave, just an environment variable. This lesson uses it to expose the password of a crackme, and also covers ptrace, the mechanism behind every Linux debugger.
+
+![LD_PRELOAD lookup order](/assets/img/re/re-17-6-ld-preload-ptrace-dyld-insert-libraries.svg)
+_The dynamic linker finds the preloaded hook before libc_
 
 ## LD_PRELOAD
 

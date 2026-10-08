@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 380" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+  <rect x="0" y="0" width="800" height="380" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">How an integrity check reacts to a patch</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">attack the check, not the code it guards</text>
+  <rect x="30" y="130" width="150" height="56" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="105.0" y="154.0" text-anchor="middle" font-size="12.5" fill="#e3fffa">Protected code</text>
+  <text x="105.0" y="170.0" text-anchor="middle" font-size="10.5" fill="#9fb0c8">license function</text>
+  <rect x="230" y="130" width="150" height="56" rx="7" fill="#111827" stroke="#263451"/>
+  <text x="305.0" y="154.0" text-anchor="middle" font-size="12" fill="#e3fffa" font-family="'JetBrains Mono',monospace">crc32(code)</text>
+  <text x="305.0" y="170.0" text-anchor="middle" font-size="10" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">computed at runtime</text>
+  <rect x="430" y="130" width="150" height="56" rx="7" fill="#111827" stroke="#fcee0a"/>
+  <text x="505.0" y="154.0" text-anchor="middle" font-size="12" fill="#e3fffa" font-family="'JetBrains Mono',monospace">got == EXPECTED ?</text>
+  <text x="505.0" y="170.0" text-anchor="middle" font-size="10" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">embedded at build</text>
+  <line x1="180" y1="158" x2="226" y2="158" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="380" y1="158" x2="426" y2="158" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="630" y="100" width="150" height="48" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="705.0" y="120.0" text-anchor="middle" font-size="12.5" fill="#e3fffa">Match</text>
+  <text x="705.0" y="136.0" text-anchor="middle" font-size="10.5" fill="#9fb0c8">runs normally</text>
+  <rect x="630" y="172" width="150" height="48" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="705.0" y="192.0" text-anchor="middle" font-size="12.5" fill="#e3fffa">Mismatch</text>
+  <text x="705.0" y="208.0" text-anchor="middle" font-size="10.5" fill="#9fb0c8">exit or break</text>
+  <line x1="580" y1="148" x2="626" y2="126" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="580" y1="168" x2="626" y2="194" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="30" y="262" width="200" height="56" rx="7" fill="#111827" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+  <text x="130.0" y="286.0" text-anchor="middle" font-size="12.5" fill="#e3fffa">Patch the license code</text>
+  <text x="130.0" y="302.0" text-anchor="middle" font-size="10.5" fill="#9fb0c8">checksum changes</text>
+  <line x1="130" y1="262" x2="110" y2="190" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="330" y="262" width="330" height="56" rx="7" fill="#111827" stroke="#5fe3b0" stroke-dasharray="5 4"/>
+  <text x="495.0" y="286.0" text-anchor="middle" font-size="12.5" fill="#e3fffa">Patch verify_integrity instead</text>
+  <text x="495.0" y="302.0" text-anchor="middle" font-size="10.5" fill="#9fb0c8">mov eax,1 ; ret  (B8 01 00 00 00 C3)</text>
+  <line x1="505" y1="262" x2="505" y2="190" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <text x="400" y="350" text-anchor="middle" font-size="11" fill="#6c7b93">The check function sits outside the region it checksums, so editing it breaks nothing.</text>
+</svg>

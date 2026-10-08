@@ -3,7 +3,7 @@ title: "Lesson 9.2: Recovering MT19937 State and Breaking LCG"
 image:
   path: /assets/img/covers/crypto-9-2-recovering-mt19937-state-breaking-lcg.webp
   alt: "Recovering MT19937 State and Breaking LCG"
-date: 2026-10-09 17:10:00 +0700
+date: 2023-11-06 09:51:00 +0700
 categories: ["Cryptography", "Crypto · Randomness"]
 tags: [cryptography, mt19937, lcg, prng]
 render_with_liquid: false

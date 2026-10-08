@@ -3,7 +3,7 @@ title: "Lesson 4.3: PKCS#7 padding and the padding oracle attack"
 image:
   path: /assets/img/covers/crypto-4-3-pkcs7-padding-oracle-attack.webp
   alt: "PKCS#7 padding and the padding oracle attack"
-date: 2026-10-09 12:15:00 +0700
+date: 2023-05-19 06:42:00 +0700
 categories: ["Cryptography", "Crypto · Symmetric Encryption"]
 tags: [cryptography, padding-oracle, cbc, aes]
 render_with_liquid: false

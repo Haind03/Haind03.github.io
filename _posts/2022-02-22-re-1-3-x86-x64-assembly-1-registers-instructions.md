@@ -3,12 +3,15 @@ title: "Lesson 1.3: x86/x64 Assembly (1), registers and common instructions"
 image:
   path: /assets/img/covers/re-1-3-x86-x64-assembly-1-registers-instructions.webp
   alt: "Lesson 1.3: x86/x64 Assembly (1), registers and common instructions"
-date: 2022-02-22 09:00:00 +0700
+date: 2022-01-15 20:26:00 +0700
 categories: ["Reverse Engineering", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
 Many people are scared of assembly because they think they have to memorize hundreds of instructions. You don't. Most of the time you only run into about twenty of them over and over. Learn those and you can read most code. This lesson covers them.
+
+![rax, eax, ax and al](/assets/img/re/re-1-3-x86-x64-assembly-1-registers-instructions.svg)
+_The same register seen at 64, 32, 16 and 8 bits._
 
 ## Registers
 

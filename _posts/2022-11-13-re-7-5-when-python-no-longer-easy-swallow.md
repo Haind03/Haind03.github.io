@@ -3,7 +3,7 @@ title: "Lesson 7.5: Nuitka, Cython and PyArmor"
 image:
   path: /assets/img/covers/re-7-5-when-python-no-longer-easy-swallow.webp
   alt: "Lesson 7.5: Nuitka, Cython and PyArmor"
-date: 2022-11-13 14:45:00 +0700
+date: 2022-05-10 09:39:00 +0700
 categories: ["Reverse Engineering", "Part 07 · Python"]
 tags: [reverse-engineering, python]
 render_with_liquid: false

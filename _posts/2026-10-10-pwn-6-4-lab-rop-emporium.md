@@ -3,7 +3,7 @@ title: "Lesson 6.4: Lab, Solving ROP Emporium"
 image:
   path: /assets/img/covers/pwn-6-4-lab-rop-emporium.webp
   alt: "Lab, Solving ROP Emporium"
-date: 2026-10-10 14:20:00 +0700
+date: 2022-12-03 01:01:00 +0700
 categories: ["Binary Exploitation", "Pwn · ret2libc and ROP"]
 tags: [pwn, rop, lab, gadget]
 render_with_liquid: false

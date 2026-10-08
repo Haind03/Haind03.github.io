@@ -3,12 +3,15 @@ title: "Lesson 12.2: Swift reverse engineering"
 image:
   path: /assets/img/covers/re-12-2-swift-where-apple-makes-things-harder.webp
   alt: "Lesson 12.2: Swift reverse engineering"
-date: 2023-02-03 20:08:00 +0700
+date: 2022-06-15 08:09:00 +0700
 categories: ["Reverse Engineering", "Part 12 · Swift and Objective-C"]
 tags: [reverse-engineering, ios, swift]
 render_with_liquid: false
 ---
 The previous lesson on Objective-C was the easy one. In ObjC every method goes through `objc_msgSend`, and the metadata keeps the names so `class-dump` gives back almost the whole interface. Swift is harder. It's designed to run fast, so the compiler calls functions directly or through witness tables instead of dynamic dispatch, function names are heavily mangled, and ARC adds retain/release instructions everywhere. This lesson covers how to deal with each of those.
+
+![Swift reading workflow](/assets/img/re/re-12-2-swift-where-apple-makes-things-harder.svg)
+_Swift workflow: recognize, demangle, skip ARC noise, then follow named calls and tables._
 
 ## Recognizing a Swift binary
 

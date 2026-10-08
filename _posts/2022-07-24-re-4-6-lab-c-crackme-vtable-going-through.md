@@ -3,12 +3,15 @@ title: "Lesson 4.6: Lab, a C++ crackme with a vtable"
 image:
   path: /assets/img/covers/re-4-6-lab-c-crackme-vtable-going-through.webp
   alt: "Lesson 4.6: Lab, a C++ crackme with a vtable"
-date: 2022-07-24 20:03:00 +0700
+date: 2022-03-24 05:37:00 +0700
 categories: ["Reverse Engineering", "Part 04 · C++"]
 tags: [reverse-engineering, cpp]
 render_with_liquid: false
 ---
 This lesson finishes Part 4. You'll solve a C++ crackme that doesn't call its check function directly like the C crackme in Lesson 3.5. It calls a virtual function, so the call goes indirectly through the vtable. If you're used to looking for `call check` in C, you won't find it here. In the asm you only see a bare `call rcx`. The goal is to learn to trace through the vtable.
+
+![Virtual call through the vtable](/assets/img/re/re-4-6-lab-c-crackme-vtable-going-through.svg)
+_A virtual call loads the vtable pointer from the object, then the function address from the vtable._
 
 The crackme is attached in the Lab section below. Try solving it yourself first, what's below is a guide.
 

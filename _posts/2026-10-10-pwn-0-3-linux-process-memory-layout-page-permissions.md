@@ -3,7 +3,7 @@ title: "Lesson 0.3: Linux Process Memory Layout and Page Permissions"
 image:
   path: /assets/img/covers/pwn-0-3-linux-process-memory-layout-page-permissions.webp
   alt: "Linux Process Memory Layout and Page Permissions"
-date: 2026-10-10 08:15:00 +0700
+date: 2022-10-19 02:54:00 +0700
 categories: ["Binary Exploitation", "Pwn · Getting Started"]
 tags: [pwn, memory-layout, aslr, nx]
 render_with_liquid: false

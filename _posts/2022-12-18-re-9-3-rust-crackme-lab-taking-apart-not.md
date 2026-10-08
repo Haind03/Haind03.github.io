@@ -3,12 +3,15 @@ title: "Lesson 9.3: Rust crackme lab"
 image:
   path: /assets/img/covers/re-9-3-rust-crackme-lab-taking-apart-not.webp
   alt: "Lesson 9.3: Rust crackme lab"
-date: 2022-12-18 15:51:00 +0700
+date: 2022-05-28 08:54:00 +0700
 categories: ["Reverse Engineering", "Part 09 · Rust"]
 tags: [reverse-engineering, rust]
 render_with_liquid: false
 ---
 Rust binaries are annoying to read because the compiler inlines a lot, flattens iterator chains into flat loops, and adds panic code everywhere. But that panic code also helps you find things. This lesson combines 9.1 and 9.2 into a real case, which is getting the password out of a Rust crackme.
+
+![Rust crackme workflow](/assets/img/re/re-9-3-rust-crackme-lab-taking-apart-not.svg)
+_From string landmarks to the constant array, the transform and the inverted keygen._
 
 The lab for this lesson is at the end of the post. Try it yourself first, the walkthrough below is the path.
 

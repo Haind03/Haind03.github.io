@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 350" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="350" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Reconstructing an unknown format</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">data gives hypotheses, code confirms them</text>
+  <defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+  <rect x="32" y="100" width="228" height="60" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="146" y="126" text-anchor="middle" font-size="12.5" fill="#e3fffa">Collect samples</text>
+  <text x="146" y="144" text-anchor="middle" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">differ in one detail</text>
+  <rect x="286" y="100" width="228" height="60" rx="7" fill="#111827" stroke="#fcee0a"/>
+  <text x="400" y="126" text-anchor="middle" font-size="12.5" fill="#e3fffa">Diff the hex</text>
+  <text x="400" y="144" text-anchor="middle" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">changed bytes = the field</text>
+  <rect x="540" y="100" width="228" height="60" rx="7" fill="#111827" stroke="#fcee0a"/>
+  <text x="654" y="126" text-anchor="middle" font-size="12.5" fill="#e3fffa">Find the magic</text>
+  <text x="654" y="144" text-anchor="middle" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">anchor, then version</text>
+  <rect x="32" y="200" width="228" height="60" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="146" y="226" text-anchor="middle" font-size="12.5" fill="#e3fffa">Classify fields</text>
+  <text x="146" y="244" text-anchor="middle" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">fixed, length-prefixed, checksum</text>
+  <rect x="286" y="200" width="228" height="60" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="400" y="226" text-anchor="middle" font-size="12.5" fill="#e3fffa">Write a parser</text>
+  <text x="400" y="244" text-anchor="middle" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">struct.unpack or ImHex</text>
+  <rect x="540" y="200" width="228" height="60" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="654" y="226" text-anchor="middle" font-size="12.5" fill="#e3fffa">Confirm in code</text>
+  <text x="654" y="244" text-anchor="middle" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">follow the parse function</text>
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="262" y1="130" x2="283" y2="130"/>
+    <line x1="516" y1="130" x2="537" y2="130"/>
+    <path d="M654,162 L654,180 L146,180 L146,197"/>
+    <line x1="262" y1="230" x2="283" y2="230"/>
+    <line x1="516" y1="230" x2="537" y2="230"/>
+  </g>
+  <text x="400" y="332" text-anchor="middle" font-size="11" fill="#6c7b93">If the parser reads every sample and the checksum matches, the spec is right.</text>
+</svg>

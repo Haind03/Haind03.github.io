@@ -3,12 +3,15 @@ title: "Lesson 18.4: Binary diffing"
 image:
   path: /assets/img/covers/re-18-4-binary-diffing-finding-vulnerabilities-from-patch.webp
   alt: "Lesson 18.4: Binary diffing"
-date: 2023-09-07 09:55:00 +0700
+date: 2022-09-06 10:41:00 +0700
 categories: ["Reverse Engineering", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
 render_with_liquid: false
 ---
 Often the fastest way to learn what vulnerability a piece of software had is to read its patch. The vendor ships an update with a vague changelog line like "fixed some stability issues", but where the binaries before and after the patch differ tells you where the bug was. Comparing two binaries to find what differs is called binary diffing, and when the two binaries are before/after a patch it's called patch diffing.
+
+![Patch diffing pipeline from two binaries to the bug](/assets/img/re/re-18-4-binary-diffing-finding-vulnerabilities-from-patch.svg)
+_Patch diffing narrows two binaries down to the changed function._
 
 This lesson shows the technique with an example that actually ran, using two versions of the same program, one with a bug, one patched, and how diffing points at the fixed function.
 

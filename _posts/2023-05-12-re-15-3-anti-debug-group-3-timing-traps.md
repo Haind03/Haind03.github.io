@@ -3,12 +3,15 @@ title: "Lesson 15.3: Anti-debug group 3, timing and traps"
 image:
   path: /assets/img/covers/re-15-3-anti-debug-group-3-timing-traps.webp
   alt: "Lesson 15.3: Anti-debug group 3, timing and traps"
-date: 2023-05-12 11:29:00 +0700
+date: 2022-07-19 00:45:00 +0700
 categories: ["Reverse Engineering", "Part 15 · Anti-Reversing and Bypasses"]
 tags: [reverse-engineering, anti-debug]
 render_with_liquid: false
 ---
 The previous two groups (API and PEB) ask the operating system whether a debugger is attached. This group doesn't ask anyone. It works it out from two things a debugger can't hide. One is time, since stepping in a debugger makes the program run thousands of times slower. The other is exceptions, since a debugger has to sit between the program and the exception handling mechanism, and that leaves a trace.
+
+![Diagram of timing and exception traps](/assets/img/re/re-15-3-anti-debug-group-3-timing-traps.svg)
+_Timing and exception traps detect a debugger without asking the OS_
 
 This group matters because there's no neat API call to put a breakpoint on, so ScyllaHide can't always handle everything either.
 

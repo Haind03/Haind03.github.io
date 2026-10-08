@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 320" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+  <rect x="0" y="0" width="800" height="320" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Unity with the Mono backend</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">all gameplay code lives in one .NET assembly</text>
+  <text x="400" y="302" text-anchor="middle" font-size="11" fill="#6c7b93">Offline single-player games you own only.</text>
+  <rect x="28.0" y="100" width="214.7" height="56" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="135.35" y="123.5" text-anchor="middle" font-size="12.5" fill="#e3fffa">Recognize</text>
+  <text x="135.35" y="140.5" text-anchor="middle" font-size="10.5" fill="#9fb0c8">_Data/Managed/</text>
+  <line x1="244.7" y1="128.0" x2="289.7" y2="128.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="292.7" y="100" width="214.7" height="56" rx="7" fill="#111827" stroke="#fcee0a"/>
+  <text x="400.04999999999995" y="123.5" text-anchor="middle" font-size="12.5" fill="#e3fffa">Assembly-CSharp.dll</text>
+  <text x="400.04999999999995" y="140.5" text-anchor="middle" font-size="10.5" fill="#9fb0c8">all gameplay code</text>
+  <line x1="509.3" y1="128.0" x2="554.3" y2="128.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="557.3" y="100" width="214.7" height="56" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="664.65" y="123.5" text-anchor="middle" font-size="12.5" fill="#e3fffa">dnSpy</text>
+  <text x="664.65" y="140.5" text-anchor="middle" font-size="10.5" fill="#9fb0c8">near-source C#</text>
+  <rect x="28.0" y="206" width="214.7" height="56" rx="7" fill="#111827" stroke="#263451"/>
+  <text x="135.35" y="229.5" text-anchor="middle" font-size="12.5" fill="#e3fffa">Find the value</text>
+  <text x="135.35" y="246.5" text-anchor="middle" font-size="10.5" fill="#9fb0c8">health, ammo, score</text>
+  <line x1="244.7" y1="234.0" x2="289.7" y2="234.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="292.7" y="206" width="214.7" height="56" rx="7" fill="#111827" stroke="#263451"/>
+  <text x="400.04999999999995" y="229.5" text-anchor="middle" font-size="12.5" fill="#e3fffa">Edit method</text>
+  <text x="400.04999999999995" y="246.5" text-anchor="middle" font-size="10.5" fill="#9fb0c8">dnSpy: Edit Method</text>
+  <line x1="509.3" y1="234.0" x2="554.3" y2="234.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="557.3" y="206" width="214.7" height="56" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="664.65" y="229.5" text-anchor="middle" font-size="12.5" fill="#e3fffa">Save module</text>
+  <text x="664.65" y="246.5" text-anchor="middle" font-size="10.5" fill="#9fb0c8">run the game</text>
+  <polyline points="700,158 700,184 100,184 100,204" fill="none" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="228" y="262" width="344" height="30" rx="7" fill="#111827" stroke="#263451" stroke-dasharray="5 4"/>
+  <text x="400.0" y="281.0" text-anchor="middle" font-size="12.5" fill="#e3fffa">Assets: AssetStudio</text>
+</svg>

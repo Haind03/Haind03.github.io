@@ -3,7 +3,7 @@ title: "Lesson 7.1: Diffie-Hellman and the Discrete Logarithm Problem"
 image:
   path: /assets/img/covers/crypto-7-1-diffie-hellman-discrete-logarithm.webp
   alt: "Diffie-Hellman and the Discrete Logarithm Problem"
-date: 2026-10-09 15:05:00 +0700
+date: 2023-09-16 01:42:00 +0700
 categories: ["Cryptography", "Crypto · Diffie-Hellman"]
 tags: [cryptography, diffie-hellman, discrete-log, key-exchange]
 render_with_liquid: false

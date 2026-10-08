@@ -3,12 +3,15 @@ title: "Lesson 5.3: Debugging .NET without source using dnSpy"
 image:
   path: /assets/img/covers/re-5-3-debugging-net-without-source-using-dnspy.webp
   alt: "Lesson 5.3: Debugging .NET without source using dnSpy"
-date: 2022-08-16 09:08:00 +0700
+date: 2022-03-30 23:20:00 +0700
 categories: ["Reverse Engineering", "Part 05 · C# and .NET"]
 tags: [reverse-engineering, dotnet]
 render_with_liquid: false
 ---
 Debugging native code means dealing with addresses, registers, stack frames. .NET is a lot easier. dnSpy lets you set a breakpoint on a line of C# it decompiled from a file with no source at all, then run, stop, look at variables and edit them, just like debugging your own project in Visual Studio. It sounds a bit absurd, but it works, and this lesson shows how to use it.
+
+![dnSpy debugging loop](/assets/img/re/re-5-3-debugging-net-without-source-using-dnspy.svg)
+_The loop of break, inspect, edit a value and continue._
 
 ## Why managed debugging is easy
 

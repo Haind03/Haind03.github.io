@@ -3,12 +3,15 @@ title: "Lesson 2.7: Hex editors and templates"
 image:
   path: /assets/img/covers/re-2-7-hex-editors-templates-when-you-need.webp
   alt: "Lesson 2.7: Hex editors and templates"
-date: 2022-05-19 09:48:00 +0700
+date: 2022-02-23 00:50:00 +0700
 categories: ["Reverse Engineering", "Part 02 · The Toolkit"]
 tags: [reverse-engineering, tools]
 render_with_liquid: false
 ---
 A disassembler shows you instructions and a debugger shows you what happens at runtime. Sometimes you just want to open the file and look at every byte, to fix a broken magic number, patch one byte to get past a check, or read a weird file format nobody wrote a parser for. That's what a hex editor is for.
+
+![Bytes to structure](/assets/img/re/re-2-7-hex-editors-templates-when-you-need.svg)
+_How a template turns raw bytes into named fields you can follow and edit._
 
 This lesson doesn't go through every button of the three programs. It covers when you need a hex editor, which one to pick, and the template/pattern idea that turns raw bytes into a readable structure.
 

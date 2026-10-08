@@ -3,12 +3,15 @@ title: "Lesson 15.7: Anti-attach, anti-dump and anti-hook"
 image:
   path: /assets/img/covers/re-15-7-anti-attach-anti-dump-anti-hook.webp
   alt: "Lesson 15.7: Anti-attach, anti-dump and anti-hook"
-date: 2023-06-21 09:26:00 +0700
+date: 2022-07-28 00:22:00 +0700
 categories: ["Reverse Engineering", "Part 15 · Anti-Reversing and Bypasses"]
 tags: [reverse-engineering, anti-debug]
 render_with_liquid: false
 ---
 The previous three lessons covered anti-debug, meaning how a program knows it's being debugged. This lesson covers tricks aimed at three specific things you often do, which are to attach a debugger to a running process, dump memory to a file, and hook APIs. Each one blocks a different tool, so you need to understand each separately to undo it.
+
+![Diagram of anti-attach, anti-dump and anti-hook](/assets/img/re/re-15-7-anti-attach-anti-dump-anti-hook.svg)
+_Anti-attach, anti-dump and anti-hook each block one tool, with a way around each_
 
 Like every lesson in this part, this is from the analyst's point of view, so understand the mechanism so you can recognize it and get past it in your own samples, not so you can put it into other people's software.
 

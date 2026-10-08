@@ -3,12 +3,15 @@ title: "Lesson 2.2: IDA for beginners"
 image:
   path: /assets/img/covers/re-2-2-ida-beginners-master-tool-before-binary.webp
   alt: "Lesson 2.2: IDA for beginners"
-date: 2022-04-12 23:38:00 +0700
+date: 2022-02-11 19:18:00 +0700
 categories: ["Reverse Engineering", "Part 02 · The Toolkit"]
 tags: [reverse-engineering, tools]
 render_with_liquid: false
 ---
 IDA is the name you hear most when you first get into this field, and it also scares off a lot of people in the first ten minutes. A screen full of windows, strange shortcuts, many `sub_401000` names that tell you nothing. IDA isn't really hard, it's just big. This lesson covers what I use 90% of the time and skips the rest until you need it.
+
+![IDA beginner loop](/assets/img/re/re-2-2-ida-beginners-master-tool-before-binary.svg)
+_The IDA beginner loop: open, strings, xref, rename, decompile, navigate._
 
 The series uses IDA Free as the baseline because it's free and enough to learn x86/x64. The Pro version adds the Hex-Rays decompiler (the F5 key) and more architectures, but the basic operations are identical.
 

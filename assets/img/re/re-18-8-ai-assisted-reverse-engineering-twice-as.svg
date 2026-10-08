@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 350" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="350" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Two ways to wire an LLM into reversing</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">the plugin asks, the MCP agent drives</text>
+  <defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+  <rect x="32" y="100" width="164" height="60" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="114" y="126" text-anchor="middle" font-size="12.5" fill="#e3fffa">Analyst</text>
+  <text x="114" y="144" text-anchor="middle" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">selects a function</text>
+  <rect x="222" y="100" width="164" height="60" rx="7" fill="#111827" stroke="#fcee0a"/>
+  <text x="305" y="126" text-anchor="middle" font-size="12.5" fill="#e3fffa">Plugin</text>
+  <text x="305" y="144" text-anchor="middle" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">Gepetto, GhidrAssist</text>
+  <rect x="413" y="100" width="164" height="60" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="495" y="126" text-anchor="middle" font-size="12.5" fill="#e3fffa">LLM</text>
+  <text x="495" y="144" text-anchor="middle" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">explains, suggests names</text>
+  <rect x="604" y="100" width="164" height="60" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="686" y="126" text-anchor="middle" font-size="12.5" fill="#e3fffa">Suggestions</text>
+  <text x="686" y="144" text-anchor="middle" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">you review and apply</text>
+  <text x="32" y="90" font-size="11.5" fill="#6c7b93" font-family="'JetBrains Mono',monospace">Type 1: plugin, one way</text>
+  <rect x="32" y="200" width="164" height="60" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="114" y="226" text-anchor="middle" font-size="12.5" fill="#e3fffa">LLM agent</text>
+  <text x="114" y="244" text-anchor="middle" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">Cursor, Cline</text>
+  <rect x="222" y="200" width="164" height="60" rx="7" fill="#111827" stroke="#fcee0a"/>
+  <text x="305" y="226" text-anchor="middle" font-size="12.5" fill="#e3fffa">MCP server</text>
+  <text x="305" y="244" text-anchor="middle" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">ida-pro-mcp, GhidraMCP</text>
+  <rect x="413" y="200" width="164" height="60" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="495" y="226" text-anchor="middle" font-size="12.5" fill="#e3fffa">Decompiler</text>
+  <text x="495" y="244" text-anchor="middle" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">IDA, Ghidra, r2</text>
+  <rect x="604" y="200" width="164" height="60" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="686" y="226" text-anchor="middle" font-size="12.5" fill="#e3fffa">Actions</text>
+  <text x="686" y="244" text-anchor="middle" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">rename, comment, xrefs</text>
+  <text x="32" y="190" font-size="11.5" fill="#6c7b93" font-family="'JetBrains Mono',monospace">Type 2: MCP, agent in the loop</text>
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="198" y1="130" x2="220" y2="130"/>
+    <line x1="389" y1="130" x2="410" y2="130"/>
+    <line x1="580" y1="130" x2="600" y2="130"/>
+    <line x1="198" y1="230" x2="220" y2="230"/>
+    <line x1="389" y1="230" x2="410" y2="230"/>
+    <line x1="580" y1="230" x2="600" y2="230"/>
+  </g>
+  <text x="400" y="332" text-anchor="middle" font-size="11" fill="#6c7b93">Either way the model guesses; verify its claims against the code.</text>
+</svg>

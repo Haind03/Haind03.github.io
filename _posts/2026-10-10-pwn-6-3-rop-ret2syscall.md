@@ -3,7 +3,7 @@ title: "Lesson 6.3: Chaining ROP Gadgets and ret2syscall"
 image:
   path: /assets/img/covers/pwn-6-3-rop-ret2syscall.webp
   alt: "Chaining ROP Gadgets and ret2syscall"
-date: 2026-10-10 14:15:00 +0700
+date: 2022-11-30 19:07:00 +0700
 categories: ["Binary Exploitation", "Pwn · ret2libc and ROP"]
 tags: [pwn, rop, syscall, gadget]
 render_with_liquid: false

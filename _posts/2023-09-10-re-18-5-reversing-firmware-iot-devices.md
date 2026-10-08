@@ -3,12 +3,15 @@ title: "Lesson 18.5: Reversing firmware and IoT devices"
 image:
   path: /assets/img/covers/re-18-5-reversing-firmware-iot-devices.webp
   alt: "Lesson 18.5: Reversing firmware and IoT devices"
-date: 2023-09-10 11:09:00 +0700
+date: 2022-09-08 16:35:00 +0700
 categories: ["Reverse Engineering", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
 render_with_liquid: false
 ---
 The old router in the corner of the house, the cheap camera, the smart lock, they all run a bit of embedded Linux in a few MB of flash. Reversing firmware means opening that box, which means getting the filesystem, reading the service code, finding backdoors and hardcoded credentials, and then, if you want, running the whole firmware in an emulator on your own machine without the real hardware. This lesson goes from getting the firmware to running a binary from it.
+
+![Firmware reversing pipeline](/assets/img/re/re-18-5-reversing-firmware-iot-devices.svg)
+_From a firmware image to readable service code._
 
 It pulls together almost everything so far. The binaries are usually MIPS or ARM (see [Lesson 1.9](/posts/re-1-9-arm-arm64-basics-people-who-already/)), the format is ELF ([Lesson 1.8](/posts/re-1-8-elf-mach-o-two-formats-outside/)), and you open them in Ghidra like always.
 

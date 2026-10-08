@@ -3,7 +3,7 @@ title: "Lesson 0.3: Setting Up a Crypto Lab"
 image:
   path: /assets/img/covers/crypto-0-3-setting-up-crypto-lab.webp
   alt: "Setting Up a Crypto Lab"
-date: 2026-10-09 08:15:00 +0700
+date: 2023-01-19 11:42:00 +0700
 categories: ["Cryptography", "Crypto · Getting Started"]
 tags: [cryptography, python, sagemath, tooling]
 render_with_liquid: false

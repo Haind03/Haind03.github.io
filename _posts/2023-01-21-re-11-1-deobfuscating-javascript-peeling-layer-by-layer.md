@@ -3,12 +3,15 @@ title: "Lesson 11.1: Deobfuscating JavaScript"
 image:
   path: /assets/img/covers/re-11-1-deobfuscating-javascript-peeling-layer-by-layer.webp
   alt: "Lesson 11.1: Deobfuscating JavaScript"
-date: 2023-01-21 16:43:00 +0700
+date: 2022-06-06 08:31:00 +0700
 categories: ["Reverse Engineering", "Part 11 · JavaScript, Electron, WebAssembly"]
 tags: [reverse-engineering, javascript, wasm]
 render_with_liquid: false
 ---
 JavaScript doesn't compile to machine code, it runs as text. That sounds like the easiest thing to reverse, but because it's text, people put a lot of effort into obfuscating it, such as renaming variables to garbage, hiding strings in encoded arrays, shredding control flow. JS malware, credit card skimmers on websites and adblock-blocking scripts are all obfuscated. This lesson covers how to take the layers off in the right order.
+
+![JavaScript deobfuscation workflow](/assets/img/re/re-11-1-deobfuscating-javascript-peeling-layer-by-layer.svg)
+_JavaScript workflow: beautify, identify the obfuscator, run webcrack or synchrony, read what is left._
 
 Remember this first. Obfuscation doesn't encrypt the logic, it only makes it hard to read. The code still has to run, so everything you need is there, just covered up. Your job is to remove the cover.
 

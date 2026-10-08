@@ -3,12 +3,15 @@ title: "Lesson 16.1: Identifying crypto algorithms by their constants"
 image:
   path: /assets/img/covers/re-16-1-identifying-crypto-algorithms-by-their-constants.webp
   alt: "Lesson 16.1: Identifying crypto algorithms by their constants"
-date: 2023-07-03 21:32:00 +0700
+date: 2022-08-06 00:00:00 +0700
 categories: ["Reverse Engineering", "Part 16 · Crypto and Algorithms"]
 tags: [reverse-engineering, crypto]
 render_with_liquid: false
 ---
 Encryption algorithms are hard to hide. Almost every standard algorithm carries a fixed set of constants (magic constants), and those numbers never change. If you see `0x67452301` at the top of a function, you're almost certainly looking at MD5 or SHA-1. This lesson shows how to use these fingerprints to mark out the crypto in a few seconds instead of reading a thousand lines of bit-twiddling loops.
+
+![Diagram mapping crypto constants to algorithms](/assets/img/re/re-16-1-identifying-crypto-algorithms-by-their-constants.svg)
+_Constants found in a binary map straight to the algorithm_
 
 ## Why constants are a reliable giveaway
 

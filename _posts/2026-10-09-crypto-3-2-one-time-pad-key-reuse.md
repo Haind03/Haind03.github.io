@@ -3,7 +3,7 @@ title: "Lesson 3.2: One-Time Pad and Key Reuse"
 image:
   path: /assets/img/covers/crypto-3-2-one-time-pad-key-reuse.webp
   alt: "One-Time Pad and Key Reuse"
-date: 2026-10-09 11:10:00 +0700
+date: 2023-04-15 01:17:00 +0700
 categories: ["Cryptography", "Crypto · XOR and OTP"]
 tags: [cryptography, otp, xor, two-time-pad, nonce-reuse]
 render_with_liquid: false

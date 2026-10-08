@@ -3,12 +3,15 @@ title: "Lesson 18.1: Scripting the decompiler"
 image:
   path: /assets/img/covers/re-18-1-scripting-decompiler-let-machine-do-boring.webp
   alt: "Lesson 18.1: Scripting the decompiler"
-date: 2023-08-25 21:24:00 +0700
+date: 2022-08-30 16:58:00 +0700
 categories: ["Reverse Engineering", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
 render_with_liquid: false
 ---
 Some jobs in reverse engineering repeat until they're boring, such as decrypting the same kind of string encryption for three hundred strings, mass-renaming functions by some rule, marking every call to an API. Doing it by hand is slow and error-prone. Write a script and let the decompiler do it.
+
+![Flow of a bulk-edit IDAPython script](/assets/img/re/re-18-1-scripting-decompiler-let-machine-do-boring.svg)
+_Typical shape of a bulk-edit IDAPython script._
 
 All three big platforms have an API. IDA has IDAPython, Ghidra has Java/Python scripting, Binary Ninja has a Python API. The idea is the same, only the syntax differs. This lesson focuses on IDAPython because it's the most common, then touches on the other two.
 

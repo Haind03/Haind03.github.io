@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+<rect x="0" y="0" width="800" height="360" rx="12" fill="#0d121d" stroke="#263451"/>
+<text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">From a number on screen to a stable pointer</text>
+<text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">scan, filter, trace the code, then survive a restart</text>
+<defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+<rect x="28.0" y="90" width="156.0" height="56" rx="7" fill="#111827" stroke="#00f0ff"/>
+<text x="106.0" y="113.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">First Scan</text>
+<text x="106.0" y="130.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">exact or unknown</text>
+<rect x="224.0" y="90" width="156.0" height="56" rx="7" fill="#111827" stroke="#263451"/>
+<text x="302.0" y="113.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">Change value</text>
+<text x="302.0" y="130.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">in the game</text>
+<line x1="187.0" y1="118.0" x2="221.0" y2="118.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="420.0" y="90" width="156.0" height="56" rx="7" fill="#111827" stroke="#00f0ff"/>
+<text x="498.0" y="113.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">Next Scan</text>
+<text x="498.0" y="130.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">filter the list</text>
+<line x1="383.0" y1="118.0" x2="417.0" y2="118.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="616.0" y="90" width="156.0" height="56" rx="7" fill="#111827" stroke="#5fe3b0"/>
+<text x="694.0" y="113.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">Few addresses</text>
+<text x="694.0" y="130.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">left</text>
+<line x1="579.0" y1="118.0" x2="613.0" y2="118.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<path d="M400,146 L400,176 L200,176 L200,206" fill="none" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<text x="300" y="170" text-anchor="middle" font-size="10" fill="#6c7b93"></text>
+<rect x="70" y="208" width="260" height="56" rx="7" fill="#111827" stroke="#ff2a6d"/>
+<text x="200.0" y="231.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">Find out what accesses</text>
+<text x="200.0" y="248.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">which instruction touches it</text>
+<line x1="330" y1="236" x2="376" y2="236" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="380" y="208" width="340" height="56" rx="7" fill="#111827" stroke="#fcee0a"/>
+<text x="550.0" y="231.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">Pointer scan</text>
+<text x="550.0" y="248.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">[[base + 0x10] + 0x8] + 0x4C</text>
+<text x="400" y="300" text-anchor="middle" font-size="11" fill="#6c7b93">The address changes every run because the object lives on the heap and ASLR moves modules.</text>
+<text x="400" y="322" text-anchor="middle" font-size="11" fill="#6c7b93">A pointer path from a fixed module base stays valid after restart.</text>
+</svg>

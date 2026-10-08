@@ -3,12 +3,15 @@ title: "Lesson 14.3: Dumping a process and rebuilding the IAT with Scylla"
 image:
   path: /assets/img/covers/re-14-3-dumping-process-rebuilding-iat-scylla.webp
   alt: "Lesson 14.3: Dumping a process and rebuilding the IAT with Scylla"
-date: 2023-04-18 23:54:00 +0700
+date: 2022-07-05 13:18:00 +0700
 categories: ["Reverse Engineering", "Part 14 · Packers and Obfuscation"]
 tags: [reverse-engineering, packer, obfuscation]
 render_with_liquid: false
 ---
 In [lesson 14.2](/posts/re-14-2-unpacking-upx-automatic-manual/) you traced your way to the OEP, which means the unpacking stub has finished running and the original code is in memory. Next you want to get it out as a runnable file. You'd think you can just dump the memory region to disk. Try it and the dumped file crashes as soon as you run it. This lesson explains why, and how Scylla fixes it.
+
+![Scylla dump and IAT rebuild steps](/assets/img/re/re-14-3-dumping-process-rebuilding-iat-scylla.svg)
+_From the OEP to a runnable file: autosearch the IAT, get imports, dump, then fix the dump._
 
 ## Why a raw dump doesn't run
 

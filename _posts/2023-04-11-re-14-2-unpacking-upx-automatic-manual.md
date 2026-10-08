@@ -3,12 +3,15 @@ title: "Lesson 14.2: Unpacking UPX, automatic and manual"
 image:
   path: /assets/img/covers/re-14-2-unpacking-upx-automatic-manual.webp
   alt: "Lesson 14.2: Unpacking UPX, automatic and manual"
-date: 2023-04-11 22:33:00 +0700
+date: 2022-07-03 07:24:00 +0700
 categories: ["Reverse Engineering", "Part 14 · Packers and Obfuscation"]
 tags: [reverse-engineering, packer, obfuscation]
 render_with_liquid: false
 ---
 UPX is the packer you'll meet most, and a good place to learn manual unpacking because it's simple, open source, and has no anti-debug. The structure of every packer is the same. A small piece of code (the stub) decompresses the real code into memory and then jumps to the original entry point. This lesson goes from the laziest way (one command) to what you do by hand when the packer resists.
+
+![The UPX stub and the ESP trick](/assets/img/re/re-14-2-unpacking-upx-automatic-manual.svg)
+_The stub runs pushad, unpacks, runs popad and jumps to the OEP, which the ESP trick catches._
 
 ## What a packer does
 

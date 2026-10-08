@@ -3,7 +3,7 @@ title: "Lesson 4.1: C++ for reversers, name mangling and the this pointer"
 image:
   path: /assets/img/covers/re-4-1-c-through-reversers-eyes-name-mangling.webp
   alt: "Lesson 4.1: C++ for reversers, name mangling and the this pointer"
-date: 2022-06-21 10:01:00 +0700
+date: 2022-03-13 00:05:00 +0700
 categories: ["Reverse Engineering", "Part 04 · C++"]
 tags: [reverse-engineering, cpp]
 render_with_liquid: false

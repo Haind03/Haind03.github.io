@@ -3,7 +3,7 @@ title: "Lesson 5.4: Password Storage and Cracking with hashcat"
 image:
   path: /assets/img/covers/crypto-5-4-password-storage-cracking-hashcat.webp
   alt: "Password Storage and Cracking with hashcat"
-date: 2026-10-09 13:20:00 +0700
+date: 2023-07-18 04:12:00 +0700
 categories: ["Cryptography", "Crypto · Hashes and MACs"]
 tags: [cryptography, passwords, hashcat, bcrypt, argon2]
 render_with_liquid: false

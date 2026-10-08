@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 330" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+<defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+<rect x="0" y="0" width="800" height="330" rx="12" fill="#0d121d" stroke="#263451"/>
+<text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Crypto algorithms by their fastest tell</text>
+<text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">spot the constant first, then confirm the structure</text>
+<rect x="28" y="84" width="236" height="90" rx="7" fill="#111827" stroke="#00f0ff"/>
+<text x="146.0" y="116.0" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-weight="700">TEA / XTEA</text>
+<text x="146.0" y="133.0" text-anchor="middle" font-size="11" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">0x9E3779B9</text>
+<text x="146.0" y="150.0" text-anchor="middle" font-size="11" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">delta, 32 rounds, shl 4 / shr 5</text>
+<rect x="278" y="84" width="236" height="90" rx="7" fill="#111827" stroke="#ff2a6d"/>
+<text x="396.0" y="116.0" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-weight="700">AES</text>
+<text x="396.0" y="133.0" text-anchor="middle" font-size="11" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">63 7C 77 7B ...</text>
+<text x="396.0" y="150.0" text-anchor="middle" font-size="11" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">256-byte S-box</text>
+<rect x="528" y="84" width="236" height="90" rx="7" fill="#111827" stroke="#fcee0a"/>
+<text x="646.0" y="116.0" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-weight="700">ChaCha / Salsa20</text>
+<text x="646.0" y="133.0" text-anchor="middle" font-size="11" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">"expand 32-byte k"</text>
+<text x="646.0" y="150.0" text-anchor="middle" font-size="11" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">ARX rounds, no tables</text>
+<rect x="28" y="194" width="236" height="90" rx="7" fill="#111827" stroke="#5fe3b0"/>
+<text x="146.0" y="226.0" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-weight="700">DES / 3DES</text>
+<text x="146.0" y="243.0" text-anchor="middle" font-size="11" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">8 small S-boxes</text>
+<text x="146.0" y="260.0" text-anchor="middle" font-size="11" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">many bit permutations</text>
+<rect x="278" y="194" width="236" height="90" rx="7" fill="#111827" stroke="#00f0ff"/>
+<text x="396.0" y="226.0" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-weight="700">MD5 / SHA-256</text>
+<text x="396.0" y="243.0" text-anchor="middle" font-size="11" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">67452301 EFCDAB89</text>
+<text x="396.0" y="260.0" text-anchor="middle" font-size="11" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">428A2F98... K table, 64 rounds</text>
+<rect x="528" y="194" width="236" height="90" rx="7" fill="#111827" stroke="#263451"/>
+<text x="646.0" y="226.0" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-weight="700">CRC32</text>
+<text x="646.0" y="243.0" text-anchor="middle" font-size="11" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">poly 0xEDB88320</text>
+<text x="646.0" y="260.0" text-anchor="middle" font-size="11" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">256-entry table, checksum only</text>
+<text x="400" y="310" text-anchor="middle" font-size="11" fill="#6c7b93" font-family="'JetBrains Mono',monospace">Name the algorithm, then use a library instead of reimplementing it.</text>
+</svg>

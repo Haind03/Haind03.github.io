@@ -3,7 +3,7 @@ title: "Lesson 6.2: Anatomy of an APK file"
 image:
   path: /assets/img/covers/re-6-2-anatomy-apk-file.webp
   alt: "Lesson 6.2: Anatomy of an APK file"
-date: 2022-09-26 15:03:00 +0700
+date: 2022-04-13 10:46:00 +0700
 categories: ["Reverse Engineering", "Part 06 · Java, Kotlin and Android"]
 tags: [reverse-engineering, android, java]
 render_with_liquid: false

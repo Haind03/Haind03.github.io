@@ -3,12 +3,15 @@ title: "Lesson 19.2: IOC, YARA, capa and Sigma"
 image:
   path: /assets/img/covers/re-19-2-ioc-yara-capa-sigma-turning-sample.webp
   alt: "Lesson 19.2: IOC, YARA, capa and Sigma"
-date: 2023-10-22 10:09:00 +0700
+date: 2022-09-19 22:07:00 +0700
 categories: ["Reverse Engineering", "Part 19 · Malware Analysis Basics"]
 tags: [reverse-engineering, malware]
 render_with_liquid: false
 ---
 Analyzing a malware sample and then leaving it there is a waste. What you want from reversing a sample is something that helps you (and the community) recognize it next time, recognize its variants, and spot it running in a system. This lesson covers four things, IOCs for sharing indicators, YARA for scanning files and memory, capa for profiling capabilities, and Sigma for catching behavior in logs. All of them are defensive tools.
+
+![Detection layers from IOC to Sigma](/assets/img/re/re-19-2-ioc-yara-capa-sigma-turning-sample.svg)
+_The four detection layers, from easy to evade (IOC) to hard to evade (Sigma)._
 
 ## IOC: indicators to share
 

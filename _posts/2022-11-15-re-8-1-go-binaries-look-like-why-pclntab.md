@@ -3,7 +3,7 @@ title: "Lesson 8.1: What Go binaries look like"
 image:
   path: /assets/img/covers/re-8-1-go-binaries-look-like-why-pclntab.webp
   alt: "Lesson 8.1: What Go binaries look like"
-date: 2022-11-15 22:09:00 +0700
+date: 2022-05-14 21:28:00 +0700
 categories: ["Reverse Engineering", "Part 08 · Go"]
 tags: [reverse-engineering, golang]
 render_with_liquid: false

@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 330" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="330" rx="12" fill="#0d121d" stroke="#263451"/>
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Recovering names from a stripped Go binary</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">strip removes the symbol table, not pclntab</text>
+  <rect x="30.0" y="100" width="124" height="84" rx="7" fill="#111827" stroke="#263451"/>
+  <text x="92.0" y="129.0" text-anchor="middle" font-size="12.5" fill="#e3fffa">Stripped Go</text>
+  <text x="92.0" y="146.0" text-anchor="middle" font-size="12.5" fill="#e3fffa">binary</text>
+  <text x="92.0" y="163.0" text-anchor="middle" font-size="11.0" fill="#6c7b93">sub_xxxx names</text>
+  <rect x="184.0" y="100" width="124" height="84" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="246.0" y="129.0" text-anchor="middle" font-size="12.5" fill="#e3fffa">pclntab +</text>
+  <text x="246.0" y="146.0" text-anchor="middle" font-size="12.5" fill="#e3fffa">moduledata</text>
+  <text x="246.0" y="163.0" text-anchor="middle" font-size="11.0" fill="#6c7b93">still inside</text>
+  <rect x="338.0" y="100" width="124" height="84" rx="7" fill="#111827" stroke="#fcee0a"/>
+  <text x="400.0" y="137.5" text-anchor="middle" font-size="12.5" fill="#e3fffa">GoReSym</text>
+  <text x="400.0" y="154.5" text-anchor="middle" font-size="11.0" fill="#6c7b93">-t -d -p</text>
+  <rect x="492.0" y="100" width="124" height="84" rx="7" fill="#111827" stroke="#263451"/>
+  <text x="554.0" y="137.5" text-anchor="middle" font-size="12.5" fill="#e3fffa">symbols.json</text>
+  <text x="554.0" y="154.5" text-anchor="middle" font-size="11.0" fill="#6c7b93">names, types</text>
+  <rect x="646.0" y="100" width="124" height="84" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="708.0" y="137.5" text-anchor="middle" font-size="12.5" fill="#e3fffa">IDA / Ghidra</text>
+  <text x="708.0" y="154.5" text-anchor="middle" font-size="11.0" fill="#6c7b93">main.* readable</text>
+  <line x1="157.0" y1="142.0" x2="180.0" y2="142.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="311.0" y1="142.0" x2="334.0" y2="142.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="465.0" y1="142.0" x2="488.0" y2="142.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="619.0" y1="142.0" x2="642.0" y2="142.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="250" y="236" width="300" height="50" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+  <text x="400.0" y="256.5" text-anchor="middle" font-size="12" fill="#e3fffa">IDA plugin or Ghidra extension</text>
+  <text x="400.0" y="273.5" text-anchor="middle" font-size="12" fill="#e3fffa">renames in place</text>
+  <path d="M 232,188 L 232,261 L 246,261" fill="none" stroke="#ff2a6d" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#a)"/>
+  <path d="M 554,261 L 668,261 L 668,188" fill="none" stroke="#ff2a6d" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#a)"/>
+  <text x="400" y="314" text-anchor="middle" font-size="11" fill="#6c7b93">Check the Go version too: Go 1.17 moved arguments from the stack to registers.</text>
+</svg>

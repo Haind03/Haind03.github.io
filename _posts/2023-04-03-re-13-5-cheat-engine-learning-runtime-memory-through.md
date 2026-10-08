@@ -3,12 +3,15 @@ title: "Lesson 13.5: Cheat Engine and runtime memory"
 image:
   path: /assets/img/covers/re-13-5-cheat-engine-learning-runtime-memory-through.webp
   alt: "Lesson 13.5: Cheat Engine and runtime memory"
-date: 2023-04-03 20:01:00 +0700
+date: 2022-06-28 19:35:00 +0700
 categories: ["Reverse Engineering", "Part 13 · Games: Unity, Unreal, Lua"]
 tags: [reverse-engineering, game-hacking]
 render_with_liquid: false
 ---
 One firm rule first is that everything in this lesson is only for offline, single-player games of your own, or for the bundled Cheat Engine Tutorial. Touching online games is cheating, violates the ToS, and in many places is illegal. Anti-cheat will also ban you. We use Cheat Engine not to cheat, but because it's the most visual way to practice memory analysis, since you see values in RAM change in real time, trace the address, and then trace the code that touches that address. The same skill works when analyzing malware or any other process.
+
+![Cheat Engine from first scan to pointer path](/assets/img/re/re-13-5-cheat-engine-learning-runtime-memory-through.svg)
+_Scan and filter to find the address, then use a pointer path so it survives a restart._
 
 Cheat Engine (CE) is a memory scanner plus debugger for Windows. It attaches to a running process and lets you search, watch and modify that process's memory.
 

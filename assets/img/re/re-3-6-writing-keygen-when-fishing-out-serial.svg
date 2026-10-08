@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 270" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="270" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">The keygen workflow</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">four steps, every time</text>
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+  <rect x="30" y="90" width="160" height="70" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="110.0" y="120.5" text-anchor="middle" font-size="13" fill="#e3fffa" font-weight="700">1. Locate validate</text>
+  <text x="110.0" y="137.5" text-anchor="middle" font-size="11" fill="#9fb0c8">xref from Wrong string</text>
+  <rect x="223" y="90" width="160" height="70" rx="7" fill="#111827" stroke="#fcee0a"/>
+  <text x="303.0" y="120.5" text-anchor="middle" font-size="13" fill="#e3fffa" font-weight="700">2. Isolate the math</text>
+  <text x="303.0" y="137.5" text-anchor="middle" font-size="11" fill="#9fb0c8">username to serial</text>
+  <rect x="417" y="90" width="160" height="70" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="497.0" y="120.5" text-anchor="middle" font-size="13" fill="#e3fffa" font-weight="700">3. Rewrite in Python</text>
+  <text x="497.0" y="137.5" text-anchor="middle" font-size="11" fill="#9fb0c8">same algorithm</text>
+  <rect x="610" y="90" width="160" height="70" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="690.0" y="120.5" text-anchor="middle" font-size="13" fill="#e3fffa" font-weight="700">4. Cross-check</text>
+  <text x="690.0" y="137.5" text-anchor="middle" font-size="11" fill="#9fb0c8">test it on the target</text>
+  <line x1="190" y1="125" x2="219" y2="125" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="383" y1="125" x2="413" y2="125" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="577" y1="125" x2="606" y2="125" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <text x="400" y="252" text-anchor="middle" font-size="11" fill="#6c7b93">If the check fails, you misread a step: return to step 2.</text>
+</svg>

@@ -3,12 +3,15 @@ title: "Lesson 18.3: Symbolic execution"
 image:
   path: /assets/img/covers/re-18-3-symbolic-execution-making-computer-solve-crackme.webp
   alt: "Lesson 18.3: Symbolic execution"
-date: 2023-09-04 11:00:00 +0700
+date: 2022-09-04 04:46:00 +0700
 categories: ["Reverse Engineering", "Part 18 · Advanced Topics"]
 tags: [reverse-engineering, advanced]
 render_with_liquid: false
 ---
 In [lesson 16.4](/posts/re-16-4-rewriting-algorithm-python-letting-z3-solve/) you wrote constraints by hand and let Z3 solve them. That means reading every comparison in the binary and copying it down without a single wrong sign. With a check function that has a few dozen branches, that's tiring and easy to get wrong. Symbolic execution does the copying for you. It runs the binary with the input as symbolic variables, collects constraints along the way, then calls a solver. You only say "find the path to the spot that prints Correct".
+
+![angr workflow from binary to solved input](/assets/img/re/re-18-3-symbolic-execution-making-computer-solve-crackme.svg)
+_angr takes a binary to a concrete input by exploring paths toward a goal._
 
 ## The core idea
 

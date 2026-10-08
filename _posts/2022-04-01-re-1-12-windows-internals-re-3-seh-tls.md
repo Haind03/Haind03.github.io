@@ -3,12 +3,15 @@ title: "Lesson 1.12: Windows internals for RE (3): SEH, TLS callbacks and syscal
 image:
   path: /assets/img/covers/re-1-12-windows-internals-re-3-seh-tls.webp
   alt: "Lesson 1.12: Windows internals for RE (3): SEH, TLS callbacks and syscalls"
-date: 2022-04-01 16:44:00 +0700
+date: 2022-02-05 01:35:00 +0700
 categories: ["Reverse Engineering", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
 The three things in this lesson have one annoying thing in common, which is that they let code run in places you don't expect. An exception jumps the flow to a handler you haven't read. A TLS callback runs before `main` even starts. A syscall drops straight into the kernel and skips every Win32 function you're watching. Malware uses all three for that reason, so it's worth knowing how each one works.
+
+![Unexpected execution paths](/assets/img/re/re-1-12-windows-internals-re-3-seh-tls.svg)
+_TLS callbacks run before the entry point, and exceptions transfer control to handlers._
 
 ## SEH
 

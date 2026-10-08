@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+  <rect x="0" y="0" width="800" height="400" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Three transforms behind most garbage strings</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">spot the pattern, then copy the algorithm into Python</text>
+  <rect x="270" y="76" width="260" height="40" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="400.0" y="100.0" text-anchor="middle" font-size="12.5" fill="#e3fffa">Unreadable string</text>
+  <rect x="24" y="160" width="236" height="96" rx="7" fill="#111827" stroke="#fcee0a"/>
+  <text x="142.0" y="188.0" text-anchor="middle" font-size="14" fill="#e3fffa">XOR</text>
+  <text x="142.0" y="204.0" text-anchor="middle" font-size="12" fill="#9fb0c8">loop: xor al, dl</text>
+  <text x="142.0" y="220.0" text-anchor="middle" font-size="12" fill="#9fb0c8">key: known plaintext</text>
+  <text x="142.0" y="236.0" text-anchor="middle" font-size="12" fill="#9fb0c8">same code encrypts, decrypts</text>
+  <line x1="400" y1="116" x2="142" y2="156" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="142" y1="256" x2="400" y2="296" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="282" y="160" width="236" height="96" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="400.0" y="188.0" text-anchor="middle" font-size="14" fill="#e3fffa">RC4</text>
+  <text x="400.0" y="204.0" text-anchor="middle" font-size="12" fill="#9fb0c8">S[i] = i, 256 times</text>
+  <text x="400.0" y="220.0" text-anchor="middle" font-size="12" fill="#9fb0c8">KSA swap loop, AND 0xFF</text>
+  <text x="400.0" y="236.0" text-anchor="middle" font-size="12" fill="#9fb0c8">key near KSA or hardcoded</text>
+  <line x1="400" y1="116" x2="400" y2="156" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="400" y1="256" x2="400" y2="296" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="540" y="160" width="236" height="96" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="658.0" y="188.0" text-anchor="middle" font-size="14" fill="#e3fffa">Custom Base64</text>
+  <text x="658.0" y="204.0" text-anchor="middle" font-size="12" fill="#9fb0c8">64 chars table in .rdata</text>
+  <text x="658.0" y="220.0" text-anchor="middle" font-size="12" fill="#9fb0c8">standard decode gives junk</text>
+  <text x="658.0" y="236.0" text-anchor="middle" font-size="12" fill="#9fb0c8">translate, then b64decode</text>
+  <line x1="400" y1="116" x2="658" y2="156" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="658" y1="256" x2="400" y2="296" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="240" y="298" width="320" height="48" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="400.0" y="318.0" text-anchor="middle" font-size="12.5" fill="#e3fffa">Copy the algorithm to Python</text>
+  <text x="400.0" y="334.0" text-anchor="middle" font-size="10.5" fill="#9fb0c8">do not rerun the binary</text>
+</svg>

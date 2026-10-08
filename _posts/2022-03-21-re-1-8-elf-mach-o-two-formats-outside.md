@@ -3,12 +3,15 @@ title: "Lesson 1.8: ELF and Mach-O"
 image:
   path: /assets/img/covers/re-1-8-elf-mach-o-two-formats-outside.webp
   alt: "Lesson 1.8: ELF and Mach-O"
-date: 2022-03-21 22:18:00 +0700
+date: 2022-01-27 01:58:00 +0700
 categories: ["Reverse Engineering", "Part 01 · Computer Fundamentals for RE"]
 tags: [reverse-engineering, assembly, windows-internals]
 render_with_liquid: false
 ---
 Last lesson cut open the Windows PE. Reversing doesn't only happen on Windows though. Servers run Linux, Android is Linux at the core, and Macs and iPhones use their own format. PE is the format for Windows files, ELF is Linux's and Mach-O is Apple's. Know these three and you can read the header of almost every binary you'll meet.
+
+![ELF layout](/assets/img/re/re-1-8-elf-mach-o-two-formats-outside.svg)
+_ELF has two views: segments for the loader, sections for the linker and analysis tools._
 
 All three solve the same problem, which is packaging code, data, and the info on how to load it into memory. Learn one and the other two come fast. This lesson focuses on ELF because you'll meet it most, then skims Mach-O and compares.
 

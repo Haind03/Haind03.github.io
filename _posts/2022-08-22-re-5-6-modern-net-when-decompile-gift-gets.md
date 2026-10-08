@@ -3,7 +3,7 @@ title: "Lesson 5.6: Modern .NET publish modes"
 image:
   path: /assets/img/covers/re-5-6-modern-net-when-decompile-gift-gets.webp
   alt: "Lesson 5.6: Modern .NET publish modes"
-date: 2022-08-22 15:21:00 +0700
+date: 2022-04-06 17:03:00 +0700
 categories: ["Reverse Engineering", "Part 05 · C# and .NET"]
 tags: [reverse-engineering, dotnet]
 render_with_liquid: false

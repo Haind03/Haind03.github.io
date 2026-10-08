@@ -3,12 +3,15 @@ title: "Lesson 6.9: Big lab, solving OWASP UnCrackable Level 1 to 3"
 image:
   path: /assets/img/covers/re-6-9-big-lab-solving-owasp-uncrackable-level.webp
   alt: "Lesson 6.9: Big lab, solving OWASP UnCrackable Level 1 to 3"
-date: 2022-10-30 21:23:00 +0700
+date: 2022-04-29 04:07:00 +0700
 categories: ["Reverse Engineering", "Part 06 · Java, Kotlin and Android"]
 tags: [reverse-engineering, android, java]
 render_with_liquid: false
 ---
 This lesson pulls together everything in Part 6. Instead of a crackme I made myself, we use the standard practice set the industry uses, the OWASP UnCrackable App for Android, part of the MASTG (Mobile Application Security Testing Guide). There are three levels, each harder than the last, and each one uses a group of techniques you just learned.
+
+![OWASP UnCrackable levels and approaches](/assets/img/re/re-6-9-big-lab-solving-owasp-uncrackable-level.svg)
+_The three UnCrackable levels, each with its static and dynamic route, converge on the final comparison._
 
 I like this set because it's legal. It's open source, made for learning, and OWASP encourages you to break it. There's no copyright or terms-of-service problem like with a commercial app.
 

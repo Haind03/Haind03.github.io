@@ -3,12 +3,15 @@ title: "Lesson 11.3: WebAssembly"
 image:
   path: /assets/img/covers/re-11-3-webassembly-reading-bytecode-that-runs-browser.webp
   alt: "Lesson 11.3: WebAssembly"
-date: 2023-01-29 09:03:00 +0700
+date: 2022-06-10 20:20:00 +0700
 categories: ["Reverse Engineering", "Part 11 · JavaScript, Electron, WebAssembly"]
 tags: [reverse-engineering, javascript, wasm]
 render_with_liquid: false
 ---
 When a web page does heavy work (games, crypto, encryption, image processing) that plain JavaScript can't handle, people move that part to WebAssembly (WASM). For reversers WASM is familiar and a bit strange. It's familiar because it's bytecode for a stack-based VM, like the JVM or CPython from Parts 6 and 7. It's strange because it doesn't keep variable names and often hides the important logic on purpose. This lesson covers opening a `.wasm` file and reading it.
+
+![WebAssembly reversing pipeline](/assets/img/re/re-11-3-webassembly-reading-bytecode-that-runs-browser.svg)
+_WASM pipeline: grab the .wasm, inspect with wabt, read WAT or decompiled pseudo-C._
 
 ## What WASM is, from a reverse angle
 

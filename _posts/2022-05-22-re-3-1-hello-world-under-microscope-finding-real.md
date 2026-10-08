@@ -3,7 +3,7 @@ title: "Lesson 3.1: Hello world and finding the real main"
 image:
   path: /assets/img/covers/re-3-1-hello-world-under-microscope-finding-real.webp
   alt: "Lesson 3.1: Hello world and finding the real main"
-date: 2022-05-22 09:13:00 +0700
+date: 2022-02-27 12:39:00 +0700
 categories: ["Reverse Engineering", "Part 03 · C"]
 tags: [reverse-engineering, c]
 render_with_liquid: false

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+<rect x="0" y="0" width="800" height="360" rx="12" fill="#0d121d" stroke="#263451"/>
+<text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Dump and IAT rebuild with Scylla</text>
+<text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">a raw dump runs nowhere because its import table is gone</text>
+<defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+<rect x="28.0" y="84" width="156.0" height="56" rx="7" fill="#111827" stroke="#263451"/>
+<text x="106.0" y="107.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">Reach the OEP</text>
+<text x="106.0" y="124.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">x64dbg, lesson 14.2</text>
+<rect x="224.0" y="84" width="156.0" height="56" rx="7" fill="#111827" stroke="#00f0ff"/>
+<text x="302.0" y="107.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">Attach</text>
+<text x="302.0" y="124.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">process stays alive</text>
+<line x1="187.0" y1="112.0" x2="221.0" y2="112.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="420.0" y="84" width="156.0" height="56" rx="7" fill="#111827" stroke="#00f0ff"/>
+<text x="498.0" y="107.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">Set OEP</text>
+<text x="498.0" y="124.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">enter the address</text>
+<line x1="383.0" y1="112.0" x2="417.0" y2="112.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="616.0" y="84" width="156.0" height="56" rx="7" fill="#111827" stroke="#fcee0a"/>
+<text x="694.0" y="107.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">IAT Autosearch</text>
+<text x="694.0" y="124.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">find the pointer run</text>
+<line x1="579.0" y1="112.0" x2="613.0" y2="112.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<path d="M400,140 L400,164 L120,164 L120,190" fill="none" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="28.0" y="192" width="156.0" height="56" rx="7" fill="#111827" stroke="#fcee0a"/>
+<text x="106.0" y="215.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">Get Imports</text>
+<text x="106.0" y="232.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">map pointers to APIs</text>
+<rect x="224.0" y="192" width="156.0" height="56" rx="7" fill="#111827" stroke="#ff2a6d"/>
+<text x="302.0" y="215.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">Clean up</text>
+<text x="302.0" y="232.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">red or redirected</text>
+<line x1="187.0" y1="220.0" x2="221.0" y2="220.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="420.0" y="192" width="156.0" height="56" rx="7" fill="#111827" stroke="#00f0ff"/>
+<text x="498.0" y="215.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">Dump</text>
+<text x="498.0" y="232.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">write memory to file</text>
+<line x1="383.0" y1="220.0" x2="417.0" y2="220.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="616.0" y="192" width="156.0" height="56" rx="7" fill="#111827" stroke="#5fe3b0"/>
+<text x="694.0" y="215.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">Fix Dump</text>
+<text x="694.0" y="232.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">new import section</text>
+<line x1="579.0" y1="220.0" x2="613.0" y2="220.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<line x1="400" y1="248" x2="400" y2="276" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+<rect x="250" y="278" width="300" height="50" rx="7" fill="#111827" stroke="#5fe3b0"/>
+<text x="400.0" y="298.8" text-anchor="middle" font-size="12.5" fill="#e3fffa">_dump_SCY.exe runs</text>
+<text x="400.0" y="315.2" text-anchor="middle" font-size="10.5" fill="#9fb0c8">loader resolves imports</text>
+</svg>

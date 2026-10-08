@@ -3,7 +3,7 @@ title: "Lesson 9.1: How malloc and free Work, Chunks, Bins, Tcache"
 image:
   path: /assets/img/covers/pwn-9-1-malloc-free-chunks-bins-tcache.webp
   alt: "How malloc and free Work, Chunks, Bins, Tcache"
-date: 2026-10-10 17:05:00 +0700
+date: 2022-12-14 06:33:00 +0700
 categories: ["Binary Exploitation", "Pwn · Heap Basics"]
 tags: [pwn, heap, tcache, glibc]
 render_with_liquid: false

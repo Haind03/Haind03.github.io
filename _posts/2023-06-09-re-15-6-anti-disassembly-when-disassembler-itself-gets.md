@@ -3,12 +3,15 @@ title: "Lesson 15.6: Anti-disassembly"
 image:
   path: /assets/img/covers/re-15-6-anti-disassembly-when-disassembler-itself-gets.webp
   alt: "Lesson 15.6: Anti-disassembly"
-date: 2023-06-09 14:05:00 +0700
+date: 2022-07-25 18:28:00 +0700
 categories: ["Reverse Engineering", "Part 15 · Anti-Reversing and Bypasses"]
 tags: [reverse-engineering, anti-debug]
 render_with_liquid: false
 ---
 The earlier anti-debug lessons were about getting past the debugger at runtime. This one targets the static step, making IDA, Ghidra or objdump decode many wrong instructions the moment you open the file, while the CPU still runs the code correctly. You read the pseudocode, think it's the real logic, and it turns out to be garbage. Once you know these tricks you stop trusting the disassembler's output blindly.
+
+![Diagram of overlapping instruction bytes](/assets/img/re/re-15-6-anti-disassembly-when-disassembler-itself-gets.svg)
+_The same bytes decode differently for the CPU and a linear-sweep disassembler_
 
 Every trick rests on one fact, that x86 has variable-length instructions, so a byte can be the start of one instruction and also the middle of another. Fool the disassembler about where an instruction begins and everything after it is decoded wrong.
 

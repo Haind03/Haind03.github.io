@@ -3,12 +3,15 @@ title: "Lesson 2.3: Ghidra basics"
 image:
   path: /assets/img/covers/re-2-3-ghidra-basics-free-knife-thats-worth.webp
   alt: "Lesson 2.3: Ghidra basics"
-date: 2022-04-13 09:56:00 +0700
+date: 2022-02-14 01:13:00 +0700
 categories: ["Reverse Engineering", "Part 02 · The Toolkit"]
 tags: [reverse-engineering, tools]
 render_with_liquid: false
 ---
 Ghidra is a reversing suite written by the NSA and open sourced in 2019. People ask what a free tool can do. It has a decompiler that turns assembly into C-like pseudocode, runs on almost every architecture, and costs nothing. For a beginner that's a good enough reason to start with Ghidra instead of waiting until you can afford IDA Pro.
+
+![Ghidra workflow](/assets/img/re/re-2-3-ghidra-basics-free-knife-thats-worth.svg)
+_The Ghidra loop from project creation to reading the decompiler._
 
 This lesson goes through one full loop, from opening Ghidra to reading a function's pseudocode. The full shortcut list is in the [cheatsheet](/posts/re-resources-cheatsheet-shortcuts-quick-reference/), here I only mention the ones we use.
 

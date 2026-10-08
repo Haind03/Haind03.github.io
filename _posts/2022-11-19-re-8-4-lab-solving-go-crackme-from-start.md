@@ -3,12 +3,15 @@ title: "Lesson 8.4: Lab, solving a Go crackme"
 image:
   path: /assets/img/covers/re-8-4-lab-solving-go-crackme-from-start.webp
   alt: "Lesson 8.4: Lab, solving a Go crackme"
-date: 2022-11-19 16:19:00 +0700
+date: 2022-05-21 15:11:00 +0700
 categories: ["Reverse Engineering", "Part 08 · Go"]
 tags: [reverse-engineering, golang]
 render_with_liquid: false
 ---
 The previous three lessons covered the theory. Go binaries are big because they carry the whole runtime, pclntab keeps the function names, and Go strings carry a length and don't end in null. This lesson puts it together on a real crackme that I built with Go 1.22, and finds the password as if I'd never seen the source.
+
+![Go crackme solving steps](/assets/img/re/re-8-4-lab-solving-go-crackme-from-start.svg)
+_The crackme workflow from triage to the recovered password, with the check and its inverse._
 
 Every number below is real output.
 

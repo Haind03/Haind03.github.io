@@ -3,7 +3,7 @@ title: "Lesson 2.2: Caesar, Vigenere and Frequency Analysis"
 image:
   path: /assets/img/covers/crypto-2-2-caesar-vigenere-frequency-analysis.webp
   alt: "Caesar, Vigenere and Frequency Analysis"
-date: 2026-10-09 10:10:00 +0700
+date: 2023-03-20 09:12:00 +0700
 categories: ["Cryptography", "Crypto · Classical Ciphers"]
 tags: [cryptography, classical-ciphers, vigenere, frequency-analysis]
 render_with_liquid: false

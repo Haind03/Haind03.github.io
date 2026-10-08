@@ -3,12 +3,15 @@ title: "Lesson 4.5: Plugins that rebuild C++ classes"
 image:
   path: /assets/img/covers/re-4-5-plugins-that-rebuild-c-classes-let.webp
   alt: "Lesson 4.5: Plugins that rebuild C++ classes"
-date: 2022-07-20 11:16:00 +0700
+date: 2022-03-21 23:43:00 +0700
 categories: ["Reverse Engineering", "Part 04 · C++"]
 tags: [reverse-engineering, cpp]
 render_with_liquid: false
 ---
 In lesson 4.2 you built the class tree by hand, which meant finding the vtable, reading the RTTI, assigning types and tracing inheritance. One or two classes is fine, but a real C++ program with a few dozen classes is a whole day of repeating the same job. That job is better handed to a plugin. Plugins don't understand the logic for you, but they clear out the mechanical part so you can focus on the author's code.
+
+![Plugin pipeline for rebuilding C++ classes](/assets/img/re/re-4-5-plugins-that-rebuild-c-classes-let.svg)
+_How RTTI-based plugins build classes, types and named virtual calls, and the fallback when RTTI is missing._
 
 This lesson goes over the main plugins for IDA and Ghidra, and when to trust them and when to do it by hand again.
 

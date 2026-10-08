@@ -3,12 +3,15 @@ title: "Lesson 10.2: Visual Basic 6"
 image:
   path: /assets/img/covers/re-10-2-visual-basic-6-two-worlds-inside.webp
   alt: "Lesson 10.2: Visual Basic 6"
-date: 2022-12-30 14:23:00 +0700
+date: 2022-06-01 20:43:00 +0700
 categories: ["Reverse Engineering", "Part 10 · Legacy: Delphi, VB6, AutoIt, AHK"]
 tags: [reverse-engineering, legacy]
 render_with_liquid: false
 ---
 Visual Basic 6 came out in the late 90s, but there's still a lot of internal software, small tools, and even malware written in it. Reversing VB6 has a catch from the start, which is that two exe files can both be VB6 and still need completely different analysis. The reason is the compile mode. Knowing this first saves you a whole session of fumbling around.
+
+![VB6 P-Code versus Native](/assets/img/re/re-10-2-visual-basic-6-two-worlds-inside.svg)
+_VB6 compile modes: P-Code runs on the msvbvm60 VM, Native is real x86 full of runtime calls._
 
 Don't confuse VB6 with VB.NET. The names are similar but the technologies are different. VB.NET compiles to IL and runs on the CLR, and you open it with dnSpy/ILSpy like any other .NET assembly (see Part 5 again). VB6 has nothing to do with .NET, and it compiles to a very distinct form that this lesson covers. Working out which one you're holding is the first job, and Detect It Easy does it in a second.
 

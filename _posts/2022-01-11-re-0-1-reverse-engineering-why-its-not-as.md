@@ -3,7 +3,7 @@ title: "Lesson 0.1: What is reverse engineering"
 image:
   path: /assets/img/covers/re-0-1-reverse-engineering-why-its-not-as.webp
   alt: "Lesson 0.1: What is reverse engineering"
-date: 2022-01-11 22:43:00 +0700
+date: 2022-01-02 09:00:00 +0700
 categories: ["Reverse Engineering", "Part 00 · Getting Started"]
 tags: [reverse-engineering, basics]
 render_with_liquid: false

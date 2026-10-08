@@ -3,7 +3,7 @@ title: "Lesson 6.2: Leaking libc Through the GOT with puts or write"
 image:
   path: /assets/img/covers/pwn-6-2-leaking-libc-got.webp
   alt: "Leaking libc Through the GOT with puts or write"
-date: 2026-10-10 14:10:00 +0700
+date: 2022-11-28 13:13:00 +0700
 categories: ["Binary Exploitation", "Pwn · ret2libc and ROP"]
 tags: [pwn, ret2libc, got, aslr]
 render_with_liquid: false

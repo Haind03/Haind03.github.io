@@ -3,12 +3,15 @@ title: "Lesson 15.9: Bypassing anti-debug"
 image:
   path: /assets/img/covers/re-15-9-bypassing-anti-debug-from-mouse-click.webp
   alt: "Lesson 15.9: Bypassing anti-debug"
-date: 2023-06-22 20:40:00 +0700
+date: 2022-08-01 12:11:00 +0700
 categories: ["Reverse Engineering", "Part 15 · Anti-Reversing and Bypasses"]
 tags: [reverse-engineering, anti-debug]
 render_with_liquid: false
 ---
 The previous four lessons (15.1 to 15.4) showed all kinds of anti-debug, including asking an API, reading the PEB, measuring time, setting traps, hiding in a TLS callback. If you had to patch each one by hand, a malware sample with twenty checks would eat your whole afternoon. Luckily most of that work is already packaged into plugins, and you just turn them on. When a plugin isn't enough, there are a few manual techniques to fill in.
+
+![Diagram of four anti-debug bypass levels](/assets/img/re/re-15-9-bypassing-anti-debug-from-mouse-click.svg)
+_The four bypass levels, from user-mode hiding to manual patching_
 
 Almost every anti-debug check boils down to one question, "am I being watched", answered by reading a flag, a value, or a system behavior. Bypassing it doesn't mean deleting the question. You answer falsely, so every source of information says there's no debugger. The tools below all do that lying, at different layers.
 

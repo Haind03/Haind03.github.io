@@ -3,12 +3,15 @@ title: "Lesson 10.3: Scripts packed into exes"
 image:
   path: /assets/img/covers/re-10-3-scripts-packed-into-exes-easier-open.webp
   alt: "Lesson 10.3: Scripts packed into exes"
-date: 2023-01-13 11:38:00 +0700
+date: 2022-06-04 02:37:00 +0700
 categories: ["Reverse Engineering", "Part 10 · Legacy: Delphi, VB6, AutoIt, AHK"]
 tags: [reverse-engineering, legacy]
 render_with_liquid: false
 ---
 Some exes aren't worth dragging into IDA, because you'll waste your whole evening. They're scripts packed into an executable. Inside there's no compiled C code, just an AutoIt or AutoHotkey script, or an NSIS installer, plus a stub whose only job is to unpack the script and run it. For these, don't read the stub's assembly, extract the original script. Often you get back nearly the exact source.
+
+![Identify then extract packed scripts](/assets/img/re/re-10-3-scripts-packed-into-exes-easier-open.svg)
+_Identify the wrapper with DIE and strings, then use the extractor that matches the type._
 
 This matters in practice. Malware likes AutoIt and NSIS because they're quick to pack, hard to catch with signatures, and look harmless. So you should know how to dig the script out.
 

@@ -3,12 +3,15 @@ title: "Lesson 19.4: Extracting config and C2"
 image:
   path: /assets/img/covers/re-19-4-extracting-config-c2-pulling-out-brain.webp
   alt: "Lesson 19.4: Extracting config and C2"
-date: 2023-11-05 20:43:00 +0700
+date: 2022-09-24 09:56:00 +0700
 categories: ["Reverse Engineering", "Part 19 · Malware Analysis Basics"]
 tags: [reverse-engineering, malware]
 render_with_liquid: false
 ---
 Almost every piece of malware that can be controlled remotely carries a bit of config, such as the address of the command-and-control (C2) server, the port, the encryption key, a campaign id, a mutex name, a list of commands. If you extract that config, you have a map of the attacker's infrastructure. It's one of the most useful things an analyst can produce for threat intel, and it uses the crypto skills from Part 16 directly.
+
+![Three ways to extract a malware config](/assets/img/re/re-19-4-extracting-config-c2-pulling-out-brain.svg)
+_Static, dynamic and automatic routes to the same decrypted config._
 
 ## Why it's worth the effort
 

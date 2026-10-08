@@ -3,7 +3,7 @@ title: "Lesson 5.2: Length Extension Attack"
 image:
   path: /assets/img/covers/crypto-5-2-length-extension-attack.webp
   alt: "Length Extension Attack"
-date: 2026-10-09 13:10:00 +0700
+date: 2023-07-01 01:30:00 +0700
 categories: ["Cryptography", "Crypto · Hashes and MACs"]
 tags: [cryptography, hash, length-extension, sha256]
 render_with_liquid: false

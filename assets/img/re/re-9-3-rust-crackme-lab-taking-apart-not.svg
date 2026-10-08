@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 330" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="330" rx="12" fill="#0d121d" stroke="#263451"/>
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Attacking a Rust crackme</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">start from strings, skip the runtime</text>
+  <rect x="30.0" y="90" width="124" height="88" rx="7" fill="#111827" stroke="#263451"/>
+  <text x="92.0" y="121.0" text-anchor="middle" font-size="12.5" fill="#e3fffa">Confirm Rust</text>
+  <text x="92.0" y="138.0" text-anchor="middle" font-size="11.0" fill="#6c7b93">strings: rustc, .rs</text>
+  <text x="92.0" y="155.0" text-anchor="middle" font-size="11.0" fill="#6c7b93">_ZN symbols</text>
+  <rect x="184.0" y="90" width="124" height="88" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="246.0" y="121.0" text-anchor="middle" font-size="12.5" fill="#e3fffa">xref "Nope."</text>
+  <text x="246.0" y="138.0" text-anchor="middle" font-size="11.0" fill="#6c7b93">lands in check()</text>
+  <text x="246.0" y="155.0" text-anchor="middle" font-size="11.0" fill="#6c7b93">skips lang_start</text>
+  <rect x="338.0" y="90" width="124" height="88" rx="7" fill="#111827" stroke="#fcee0a"/>
+  <text x="400.0" y="121.0" text-anchor="middle" font-size="12.5" fill="#e3fffa">Constant array</text>
+  <text x="400.0" y="138.0" text-anchor="middle" font-size="11.0" fill="#6c7b93">12 bytes in .rodata</text>
+  <text x="400.0" y="155.0" text-anchor="middle" font-size="11.0" fill="#6c7b93">length check = 12</text>
+  <rect x="492.0" y="90" width="124" height="88" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="554.0" y="121.0" text-anchor="middle" font-size="12.5" fill="#e3fffa">Transform</text>
+  <text x="554.0" y="138.0" text-anchor="middle" font-size="11.0" fill="#6c7b93">add index</text>
+  <text x="554.0" y="155.0" text-anchor="middle" font-size="11.0" fill="#6c7b93">XOR 0x3C</text>
+  <rect x="646.0" y="90" width="124" height="88" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="708.0" y="121.0" text-anchor="middle" font-size="12.5" fill="#e3fffa">Keygen</text>
+  <text x="708.0" y="138.0" text-anchor="middle" font-size="11.0" fill="#6c7b93">invert per byte</text>
+  <text x="708.0" y="155.0" text-anchor="middle" font-size="11.0" fill="#6c7b93">Rust_1s_Fun!</text>
+  <line x1="157.0" y1="134.0" x2="180.0" y2="134.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="311.0" y1="134.0" x2="334.0" y2="134.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="465.0" y1="134.0" x2="488.0" y2="134.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="619.0" y1="134.0" x2="642.0" y2="134.0" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <text x="400" y="224" text-anchor="middle" font-size="13" fill="#fcee0a" font-family="'JetBrains Mono',monospace">enc = (input[i] + i) XOR 0x3C</text>
+  <text x="400" y="252" text-anchor="middle" font-size="13" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">input[i] = (EXPECTED[i] XOR 0x3C) - i</text>
+  <text x="400" y="300" text-anchor="middle" font-size="11" fill="#6c7b93">Do not rebuild the iterator syntax; work out the per-character steps.</text>
+</svg>

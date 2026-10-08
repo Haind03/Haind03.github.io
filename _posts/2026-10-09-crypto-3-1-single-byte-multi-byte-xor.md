@@ -3,7 +3,7 @@ title: "Lesson 3.1: Single-Byte and Multi-Byte XOR"
 image:
   path: /assets/img/covers/crypto-3-1-single-byte-multi-byte-xor.webp
   alt: "Single-Byte and Multi-Byte XOR"
-date: 2026-10-09 11:05:00 +0700
+date: 2023-04-06 11:55:00 +0700
 categories: ["Cryptography", "Crypto · XOR and OTP"]
 tags: [cryptography, xor, repeating-key-xor, hamming-distance]
 render_with_liquid: false

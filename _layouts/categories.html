@@ -1,6 +1,6 @@
 ---
 layout: page
-# All the Categories of posts
+# All the Categories of posts, ordered chronologically by track/year
 ---
 
 {% include lang.html %}
@@ -10,148 +10,163 @@ layout: page
 
 {% assign group_index = 0 %}
 
-{% assign sort_categories = site.categories | sort %}
-
-{% for category in sort_categories %}
-  {% assign category_name = category | first %}
+<!-- Collect all top-level categories -->
+{% assign all_top = '' | split: '' %}
+{% for category in site.categories %}
+  {% assign cn = category | first %}
   {% assign posts_of_category = category | last %}
   {% assign first_post = posts_of_category | first %}
+  {% if cn == first_post.categories[0] %}
+    {% assign all_top = all_top | push: cn %}
+  {% endif %}
+{% endfor %}
 
-  {% if category_name == first_post.categories[0] %}
-    {% assign sub_categories = '' | split: '' %}
+<!-- Preferred chronological order; any others follow -->
+{% assign preferred = 'Reverse Engineering,Binary Exploitation,Cryptography,Malware Analysis,CTF Journey,LLM Security' | split: ',' %}
+{% assign extras = '' | split: '' %}
+{% for cn in all_top %}
+  {% unless preferred contains cn %}
+    {% assign extras = extras | push: cn %}
+  {% endunless %}
+{% endfor %}
+{% assign final_order = preferred | concat: extras %}
 
-    {% for post in posts_of_category %}
-      {% assign second_category = post.categories[1] %}
-      {% if second_category %}
-        {% unless sub_categories contains second_category %}
-          {% assign sub_categories = sub_categories | push: second_category %}
-        {% endunless %}
-      {% endif %}
-    {% endfor %}
+{% for category_name in final_order %}
+  {% assign posts_of_category = site.categories[category_name] %}
+  {% unless posts_of_category %}{% continue %}{% endunless %}
 
-    {% assign sub_categories = sub_categories | sort %}
-    {% assign sub_categories_size = sub_categories | size %}
+  {% assign sub_categories = '' | split: '' %}
+  {% for post in posts_of_category %}
+    {% assign second_category = post.categories[1] %}
+    {% if second_category %}
+      {% unless sub_categories contains second_category %}
+        {% assign sub_categories = sub_categories | push: second_category %}
+      {% endunless %}
+    {% endif %}
+  {% endfor %}
 
-    <div class="card categories">
-      <!-- top-category -->
-      <div
-        id="{{ HEAD_PREFIX }}{{ group_index }}"
-        class="card-header d-flex justify-content-between hide-border-bottom"
-      >
-        <span class="ms-2">
-          <i class="far fa-folder{% if sub_categories_size > 0 %}-open{% endif %} fa-fw"></i>
+  {% assign sub_categories = sub_categories | sort %}
+  {% assign sub_categories_size = sub_categories | size %}
 
-          {% capture _category_url %}/categories/{{ category_name | slugify | url_encode }}/{% endcapture %}
-          <a href="{{ _category_url | relative_url }}" class="mx-2">{{ category_name }}</a>
+  <div class="card categories">
+    <!-- top-category -->
+    <div
+      id="{{ HEAD_PREFIX }}{{ group_index }}"
+      class="card-header d-flex justify-content-between hide-border-bottom"
+    >
+      <span class="ms-2">
+        <i class="far fa-folder{% if sub_categories_size > 0 %}-open{% endif %} fa-fw"></i>
 
-          <!-- content count -->
-          {% assign top_posts_size = site.categories[category_name] | size %}
-          <span class="text-muted small font-weight-light">
-            {% if sub_categories_size > 0 %}
-              {{ sub_categories_size }}
-              {% if sub_categories_size > 1 %}
-                {{
-                  site.data.locales[lang].categories.category_measure.plural
-                  | default: site.data.locales[lang].categories.category_measure
-                }}
-              {% else %}
-                {{
-                  site.data.locales[lang].categories.category_measure.singular
-                  | default: site.data.locales[lang].categories.category_measure
-                }}
-              {% endif -%}
-              ,
-            {% endif %}
+        {% capture _category_url %}/categories/{{ category_name | slugify | url_encode }}/{% endcapture %}
+        <a href="{{ _category_url | relative_url }}" class="mx-2">{{ category_name }}</a>
 
-            {{ top_posts_size }}
-
-            {% if top_posts_size > 1 %}
+        <!-- content count -->
+        {% assign top_posts_size = site.categories[category_name] | size %}
+        <span class="text-muted small font-weight-light">
+          {% if sub_categories_size > 0 %}
+            {{ sub_categories_size }}
+            {% if sub_categories_size > 1 %}
               {{
-                site.data.locales[lang].categories.post_measure.plural
-                | default: site.data.locales[lang].categories.post_measure
+                site.data.locales[lang].categories.category_measure.plural
+                | default: site.data.locales[lang].categories.category_measure
               }}
             {% else %}
               {{
-                site.data.locales[lang].categories.post_measure.singular
-                | default: site.data.locales[lang].categories.post_measure
+                site.data.locales[lang].categories.category_measure.singular
+                | default: site.data.locales[lang].categories.category_measure
               }}
-            {% endif %}
-          </span>
+            {% endif -%}
+            ,
+          {% endif %}
+
+          {{ top_posts_size }}
+
+          {% if top_posts_size > 1 %}
+            {{
+              site.data.locales[lang].categories.post_measure.plural
+              | default: site.data.locales[lang].categories.post_measure
+            }}
+          {% else %}
+            {{
+              site.data.locales[lang].categories.post_measure.singular
+              | default: site.data.locales[lang].categories.post_measure
+            }}
+          {% endif %}
         </span>
+      </span>
 
-        <!-- arrow -->
-        {% if sub_categories_size > 0 %}
-          <a
-            href="#{{ LIST_PREFIX }}{{ group_index }}"
-            data-bs-toggle="collapse"
-            aria-expanded="true"
-            aria-label="{{ HEAD_PREFIX }}{{ group_index }}-trigger"
-            class="category-trigger hide-border-bottom"
-          >
-            <i class="fas fa-fw fa-angle-down"></i>
-          </a>
-        {% else %}
-          <a
-            href="#{{ LIST_PREFIX }}{{ group_index }}"
-            data-bs-toggle="collapse"
-            aria-expanded="false"
-            aria-label="{{ HEAD_PREFIX }}{{ group_index }}-trigger"
-            class="category-trigger hide-border-bottom collapsed"
-          >
-            <i class="fas fa-fw fa-angle-down"></i>
-          </a>
-        {% endif %}
-      </div>
-      <!-- .card-header -->
-
-      <!-- Sub-categories -->
+      <!-- arrow -->
       {% if sub_categories_size > 0 %}
-        <div id="{{ LIST_PREFIX }}{{ group_index }}" class="collapse show" aria-expanded="true">
-          <ul class="list-group">
-            {% for sub_category in sub_categories %}
-              <li class="list-group-item">
-                <i class="far fa-folder fa-fw"></i>
-
-                {% capture _sub_ctg_url %}/categories/{{ sub_category | slugify | url_encode }}/{% endcapture %}
-                <a href="{{ _sub_ctg_url | relative_url }}" class="mx-2">{{ sub_category }}</a>
-
-                {% assign posts_size = site.categories[sub_category] | size %}
-                <span class="text-muted small font-weight-light">
-                  {{ posts_size }}
-
-                  {% if posts_size > 1 %}
-                    {{
-                      site.data.locales[lang].categories.post_measure.plural
-                      | default: site.data.locales[lang].categories.post_measure
-                    }}
-                  {% else %}
-                    {{
-                      site.data.locales[lang].categories.post_measure.singular
-                      | default: site.data.locales[lang].categories.post_measure
-                    }}
-                  {% endif %}
-                </span>
-              </li>
-            {% endfor %}
-          </ul>
-        </div>
+        <a
+          href="#{{ LIST_PREFIX }}{{ group_index }}"
+          data-bs-toggle="collapse"
+          aria-expanded="true"
+          aria-label="{{ HEAD_PREFIX }}{{ group_index }}-trigger"
+          class="category-trigger hide-border-bottom"
+        >
+          <i class="fas fa-fw fa-angle-down"></i>
+        </a>
       {% else %}
-        <!-- No sub-categories: list the posts instead -->
-        <div id="{{ LIST_PREFIX }}{{ group_index }}" class="collapse" aria-expanded="false">
-          <ul class="list-group">
-            {% for post in posts_of_category %}
-              <li class="list-group-item">
-                <i class="far fa-file-lines fa-fw"></i>
-                <a href="{{ post.url | relative_url }}" class="mx-2">{{ post.title }}</a>
-                <span class="text-muted small font-weight-light">{{ post.date | date: '%Y-%m-%d' }}</span>
-              </li>
-            {% endfor %}
-          </ul>
-        </div>
+        <a
+          href="#{{ LIST_PREFIX }}{{ group_index }}"
+          data-bs-toggle="collapse"
+          aria-expanded="false"
+          aria-label="{{ HEAD_PREFIX }}{{ group_index }}-trigger"
+          class="category-trigger hide-border-bottom collapsed"
+        >
+          <i class="fas fa-fw fa-angle-down"></i>
+        </a>
       {% endif %}
     </div>
-    <!-- .card -->
+    <!-- .card-header -->
 
-    {% assign group_index = group_index | plus: 1 %}
-  {% endif %}
+    <!-- Sub-categories -->
+    {% if sub_categories_size > 0 %}
+      <div id="{{ LIST_PREFIX }}{{ group_index }}" class="collapse show" aria-expanded="true">
+        <ul class="list-group">
+          {% for sub_category in sub_categories %}
+            <li class="list-group-item">
+              <i class="far fa-folder fa-fw"></i>
+
+              {% capture _sub_ctg_url %}/categories/{{ sub_category | slugify | url_encode }}/{% endcapture %}
+              <a href="{{ _sub_ctg_url | relative_url }}" class="mx-2">{{ sub_category }}</a>
+
+              {% assign posts_size = site.categories[sub_category] | size %}
+              <span class="text-muted small font-weight-light">
+                {{ posts_size }}
+
+                {% if posts_size > 1 %}
+                  {{
+                    site.data.locales[lang].categories.post_measure.plural
+                    | default: site.data.locales[lang].categories.post_measure
+                  }}
+                {% else %}
+                  {{
+                    site.data.locales[lang].categories.post_measure.singular
+                    | default: site.data.locales[lang].categories.post_measure
+                  }}
+                {% endif %}
+              </span>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% else %}
+      <!-- No sub-categories: list the posts instead -->
+      <div id="{{ LIST_PREFIX }}{{ group_index }}" class="collapse" aria-expanded="false">
+        <ul class="list-group">
+          {% for post in posts_of_category %}
+            <li class="list-group-item">
+              <i class="far fa-file-lines fa-fw"></i>
+              <a href="{{ post.url | relative_url }}" class="mx-2">{{ post.title }}</a>
+              <span class="text-muted small font-weight-light">{{ post.date | date: '%Y-%m-%d' }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+  </div>
+  <!-- .card -->
+
+  {% assign group_index = group_index | plus: 1 %}
 {% endfor %}

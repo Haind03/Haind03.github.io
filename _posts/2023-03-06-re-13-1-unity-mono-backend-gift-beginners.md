@@ -3,12 +3,15 @@ title: "Lesson 13.1: Unity with the Mono backend"
 image:
   path: /assets/img/covers/re-13-1-unity-mono-backend-gift-beginners.webp
   alt: "Lesson 13.1: Unity with the Mono backend"
-date: 2023-03-06 22:31:00 +0700
+date: 2022-06-19 19:58:00 +0700
 categories: ["Reverse Engineering", "Part 13 · Games: Unity, Unreal, Lua"]
 tags: [reverse-engineering, game-hacking]
 render_with_liquid: false
 ---
 Unity with the Mono backend is the easiest kind of game to practice reversing on. All the gameplay code sits in a single .NET file called `Assembly-CSharp.dll`, and as you know from Part 5, .NET decompiles to nearly the original source. Open it in dnSpy and you can read class names, variable names, logic, then edit directly and save. You never touch a line of assembly.
+
+![Unity Mono workflow](/assets/img/re/re-13-1-unity-mono-backend-gift-beginners.svg)
+_Unity Mono: find Assembly-CSharp.dll, read it in dnSpy, edit a method and save._
 
 This lesson assumes you're working on an offline, single-player game of your own. Modifying online games is a different matter, both technically and legally, and isn't covered here.
 

@@ -3,7 +3,7 @@ title: "Lesson 2.3: checksec, ROPgadget, ropper, and one_gadget"
 image:
   path: /assets/img/covers/pwn-2-3-checksec-ropgadget-ropper-one-gadget.webp
   alt: "checksec, ROPgadget, ropper, and one_gadget"
-date: 2026-10-10 09:35:00 +0700
+date: 2022-11-03 20:15:00 +0700
 categories: ["Binary Exploitation", "Pwn · Tooling"]
 tags: [pwn, checksec, rop, one-gadget]
 render_with_liquid: false

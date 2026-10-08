@@ -3,12 +3,15 @@ title: "Lesson 2.6: GDB, pwndbg and WinDbg"
 image:
   path: /assets/img/covers/re-2-6-gdb-pwndbg-windbg-debugging-from-command.webp
   alt: "Lesson 2.6: GDB, pwndbg and WinDbg"
-date: 2022-05-09 20:51:00 +0700
+date: 2022-02-20 18:56:00 +0700
 categories: ["Reverse Engineering", "Part 02 · The Toolkit"]
 tags: [reverse-engineering, tools]
 render_with_liquid: false
 ---
 x64dbg in the last lesson is a GUI where you just click. But when you move to Linux, or need to debug the Windows kernel, or want to script a whole debugging session, you go back to the command line. GDB is the standard on Linux, WinDbg on the deep end of Windows. This lesson won't make you an expert in either, it just gives you enough to sit down and get work done.
+
+![GDB session flow](/assets/img/re/re-2-6-gdb-pwndbg-windbg-debugging-from-command.svg)
+_A typical GDB session from loading the program to inspecting memory._
 
 ## Why use a CLI debugger at all
 

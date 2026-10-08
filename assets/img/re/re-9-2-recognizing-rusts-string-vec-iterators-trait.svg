@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="360" rx="12" fill="#0d121d" stroke="#263451"/>
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Rust values you meet in a disassembler</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">one cell is 8 bytes on x64</text>
+  <text x="24" y="106" text-anchor="start" font-size="13" fill="#e3fffa" font-family="'JetBrains Mono',monospace">&amp;str</text>
+  <text x="24" y="124" text-anchor="start" font-size="10.5" fill="#6c7b93">16 bytes, borrowed</text>
+  <rect x="174" y="84" width="120" height="44" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="234.0" y="110.0" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-family="'JetBrains Mono',monospace">ptr</text>
+  <rect x="294" y="84" width="120" height="44" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="354.0" y="110.0" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-family="'JetBrains Mono',monospace">len</text>
+  <text x="430" y="110" text-anchor="start" font-size="11" fill="#9fb0c8">ptr + const length</text>
+  <text x="24" y="172" text-anchor="start" font-size="13" fill="#e3fffa" font-family="'JetBrains Mono',monospace">String / Vec</text>
+  <text x="24" y="190" text-anchor="start" font-size="10.5" fill="#6c7b93">24 bytes, owned</text>
+  <rect x="174" y="150" width="120" height="44" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="234.0" y="176.0" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-family="'JetBrains Mono',monospace">ptr</text>
+  <rect x="294" y="150" width="120" height="44" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="354.0" y="176.0" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-family="'JetBrains Mono',monospace">len</text>
+  <rect x="414" y="150" width="120" height="44" rx="7" fill="#111827" stroke="#fcee0a"/>
+  <text x="474.0" y="176.0" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-family="'JetBrains Mono',monospace">cap</text>
+  <text x="550" y="176" text-anchor="start" font-size="11" fill="#9fb0c8">cap &gt;= len</text>
+  <text x="24" y="238" text-anchor="start" font-size="13" fill="#e3fffa" font-family="'JetBrains Mono',monospace">&amp;dyn Trait</text>
+  <text x="24" y="256" text-anchor="start" font-size="10.5" fill="#6c7b93">16 bytes, fat pointer</text>
+  <rect x="174" y="216" width="120" height="44" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="234.0" y="242.0" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-family="'JetBrains Mono',monospace">data ptr</text>
+  <rect x="294" y="216" width="120" height="44" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="354.0" y="242.0" text-anchor="middle" font-size="12.5" fill="#e3fffa" font-family="'JetBrains Mono',monospace">vtable ptr</text>
+  <text x="430" y="242" text-anchor="start" font-size="11" fill="#9fb0c8">call [vtable+0x18]</text>
+  <text x="400" y="300" text-anchor="middle" font-size="11.5" fill="#9fb0c8">Iterator chains inline into one flat loop: read what the loop body does.</text>
+  <text x="400" y="326" text-anchor="middle" font-size="11" fill="#6c7b93">Option usually becomes a tag plus data, or null for pointer types.</text>
+</svg>
