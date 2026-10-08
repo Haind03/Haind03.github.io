@@ -1,0 +1,17 @@
+[*] thong diep: amount=100&to=alice
+[*] bat dau timing attack, khoi phuc 6 byte dau cua tag...
+    byte 0 -> 08
+    byte 1 -> 7a
+    byte 2 -> 60
+    byte 3 -> c2
+    byte 4 -> ed
+    byte 5 -> 2a
+[*] khoi phuc : 087a60c2ed2a
+[*] tag that  : 087a60c2ed2a
+[*] khop?     : True (11.3s)
+[+] timing attack THANH CONG, khong biet key
+
+[*] cach lam dung: hmac.compare_digest (hang thoi gian).
+    sai byte cuoi : 127 ns
+    sai byte dau  : 127 ns
+    => chenh lech khong tuyen tinh theo prefix -> khong con oracle thoi gian

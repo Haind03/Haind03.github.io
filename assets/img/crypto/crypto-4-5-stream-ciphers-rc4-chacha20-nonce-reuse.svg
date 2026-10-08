@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="400" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Nonce reuse turns a stream cipher into a two-time pad</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">same key + same nonce = same keystream K</text>
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+  <g font-size="12.5" text-anchor="middle">
+    <rect x="28" y="140" width="130" height="62" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="93" y="164" fill="#e3fffa">key + nonce</text>
+    <text x="93" y="184" fill="#fcee0a" font-size="11">keystream K</text>
+
+    <rect x="214" y="84" width="130" height="50" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="279" y="114" fill="#e3fffa">C1 = P1 XOR K</text>
+    <rect x="214" y="208" width="130" height="50" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="279" y="238" fill="#e3fffa">C2 = P2 XOR K</text>
+
+    <rect x="400" y="140" width="170" height="62" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="485" y="164" fill="#ff2a6d">C1 XOR C2</text>
+    <text x="485" y="184" fill="#e3fffa">= P1 XOR P2</text>
+
+    <rect x="626" y="84" width="150" height="62" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="701" y="108" fill="#e3fffa">know P1</text>
+    <text x="701" y="128" fill="#5fe3b0" font-size="11">P2 = (P1 XOR P2) XOR P1</text>
+    <rect x="626" y="196" width="150" height="62" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="701" y="220" fill="#e3fffa">know nothing</text>
+    <text x="701" y="240" fill="#5fe3b0" font-size="11">crib dragging</text>
+  </g>
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="158" y1="158" x2="210" y2="118"/>
+    <line x1="158" y1="186" x2="210" y2="226"/>
+    <line x1="344" y1="112" x2="396" y2="158"/>
+    <line x1="344" y1="234" x2="396" y2="186"/>
+    <line x1="570" y1="156" x2="622" y2="124"/>
+    <line x1="570" y1="186" x2="622" y2="222"/>
+  </g>
+  <text x="400" y="296" text-anchor="middle" font-size="12" fill="#ff2a6d" font-family="'JetBrains Mono',monospace">K cancels out, so the attacker never touches the key</text>
+  <rect x="28" y="316" width="744" height="56" rx="7" fill="#111827" stroke="#263451"/>
+  <text x="400" y="340" text-anchor="middle" font-size="12.5" fill="#e3fffa">Applies to AES-CTR, AES-GCM, RC4 (same key), ChaCha20, Salsa20</text>
+  <text x="400" y="358" text-anchor="middle" font-size="11.5" fill="#5fe3b0">Fix: unique nonce per message under one key, or AES-GCM-SIV</text>
+</svg>

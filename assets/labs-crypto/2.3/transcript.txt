@@ -1,0 +1,20 @@
+=== solve.py (rail fence) ===
+IoC cua ciphertext: 0.0867 (cao nhu text thuong -> transposition, khong phai thay the)
+--- brute so rail (diem bigram, cao = giong tieng Anh) ---
+rails=2: WEEFCERALOTCEAEIRVDDSEONE   (bigram=5.80)
+rails=3: WEAREDISCOVEREDFLEEATONCE   (bigram=19.07)
+rails=4: WTEVFEEEEDARCDOECSROANIEL   (bigram=5.85)
+rails=5: WLSADOOTEEECEAEECRFINVEDR   (bigram=7.64)
+rails=6: WRRECEAFDLETSEINVAOECEEOD   (bigram=6.86)
+rails=7: WREOEAEIAERLETDEOVNDCFSEC   (bigram=6.94)
+Chon rail: 3
+Ban ro   : WEAREDISCOVEREDFLEEATONCE
+
+=== enigma.py ===
+plaintext : THEENIGMAMACHINEWASBROKENATBLETCHLEYPARKBYEXPLOITINGCRIBS
+ciphertext: HMVMVPZRGBRYXZAKOFNTTEVOWWWQQCXXOOAVDHFUAOAOCPZUGUBQSIOHW
+giai lai  : THEENIGMAMACHINEWASBROKENATBLETCHLEYPARKBYEXPLOITINGCRIBS
+khong chu nao map ve chinh no: True
+--- brute 26^3 ---
+vi tri tim lai: WXC
+ban ro        : THEENIGMAMACHINEWASBROKENATBLETCHLEYPARKBYEXPLOITINGCRIBS

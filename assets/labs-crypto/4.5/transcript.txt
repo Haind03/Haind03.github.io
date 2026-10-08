@@ -1,0 +1,27 @@
+=== Buoc 1: meo dau cach (doc duoc phan lon) ===
+#e mu't never ever re!se a &o<ce since doi g  hat leaks the whole key tre m
+ he p5ssword for the 'tagin/ !erver sits i si0e a locked vault that i  of'l
+$leas1 come meet me a  the 'l6 stone bridg+ t;night when the clock st!ike2 
+7rypt;graphy is the s udy o. !ecure commun'ca ion in the presence of 2dve3s
+5lway' authenticate t<e cip e text or an a:ta7ker is completely free 'o m.d
+ he q!ick brown fox j!mps o>e  the lazy do) a:d then it runs along a "uie5 
+ he s olen key you wa:ted i; 4lag{n0nce_re;seis_tw0_time_pad} keep i' se"r
+'end  he reinforcemen s ove: &o the easter  g5te well before the morn:ng 2u
+5 str1am cipher is re5lly j=s& a fancy key=tr1am that you xor with th6 pl i
+?eep  he plaintext ra her s o t and the ke7 m5terial truly hard for a=yon$ 
+0o no  ever trust a c;mmuni+a&ion channel :ha  you are unable to veri5y e/d
+ he w1ekly staff meet=ng ha; <ow been move* d;wn to the second baseme=t o' 
+=== Buoc 2: known-plaintext tren cau da nhan ra -> full keystream ===
+we must never ever reuse a nonce since doing that leaks the whole keystream
+the password for the staging server sits inside a locked vault that is offl
+please come meet me at the old stone bridge tonight when the clock strikes 
+cryptography is the study of secure communication in the presence of advers
+always authenticate the ciphertext or an attacker is completely free to mod
+the quick brown fox jumps over the lazy dog and then it runs along a quiet 
+the stolen key you wanted is flag{n0nce_reuse_is_tw0_time_pad} keep it secr
+send the reinforcements over to the eastern gate well before the morning su
+a stream cipher is really just a fancy keystream that you xor with the plai
+keep the plaintext rather short and the key material truly hard for anyone 
+do not ever trust a communication channel that you are unable to verify end
+the weekly staff meeting has now been moved down to the second basement of 
+FLAG: flag{n0nce_reuse_is_tw0_time_pad}

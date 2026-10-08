@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="360" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Four modes of operation for a 16-byte block cipher</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">E = AES encrypt, Pi = plaintext block, Ci = ciphertext block</text>
+  <g font-size="12.5" text-anchor="middle">
+    <rect x="21" y="84" width="182" height="170" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="112" y="110" fill="#ff2a6d" font-weight="700" font-size="15">ECB</text>
+    <text x="112" y="140" fill="#e3fffa" font-family="'JetBrains Mono',monospace" font-size="11.5">Ci = E(Pi)</text>
+    <text x="112" y="170" fill="#9fb0c8">blocks are independent</text>
+    <text x="112" y="190" fill="#9fb0c8">same P gives same C</text>
+    <text x="112" y="226" fill="#ff2a6d">leaks patterns</text>
+
+    <rect x="213" y="84" width="182" height="170" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="304" y="110" fill="#00f0ff" font-weight="700" font-size="15">CBC</text>
+    <text x="304" y="140" fill="#e3fffa" font-family="'JetBrains Mono',monospace" font-size="11.5">Ci = E(Pi XOR Ci-1)</text>
+    <text x="304" y="170" fill="#9fb0c8">IV unpredictable</text>
+    <text x="304" y="190" fill="#9fb0c8">needs padding</text>
+    <text x="304" y="226" fill="#fcee0a">no integrity</text>
+
+    <rect x="405" y="84" width="182" height="170" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="496" y="110" fill="#00f0ff" font-weight="700" font-size="15">CTR</text>
+    <text x="496" y="140" fill="#e3fffa" font-family="'JetBrains Mono',monospace" font-size="11">Ci = Pi XOR E(nonce,ctr)</text>
+    <text x="496" y="170" fill="#9fb0c8">stream cipher</text>
+    <text x="496" y="190" fill="#9fb0c8">no padding</text>
+    <text x="496" y="226" fill="#fcee0a">nonce must not repeat</text>
+
+    <rect x="597" y="84" width="182" height="170" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="688" y="110" fill="#5fe3b0" font-weight="700" font-size="15">GCM</text>
+    <text x="688" y="140" fill="#e3fffa" font-family="'JetBrains Mono',monospace" font-size="11.5">CTR + GHASH tag</text>
+    <text x="688" y="170" fill="#9fb0c8">AEAD</text>
+    <text x="688" y="190" fill="#9fb0c8">tag checked before use</text>
+    <text x="688" y="226" fill="#fcee0a">nonce must not repeat</text>
+  </g>
+  <rect x="21" y="282" width="374" height="50" rx="7" fill="#111827" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+  <text x="208" y="304" text-anchor="middle" font-size="12.5" fill="#e3fffa">ECB, CBC, CTR alone: confidentiality only</text>
+  <text x="208" y="322" text-anchor="middle" font-size="11.5" fill="#6c7b93">attacker can edit ciphertext unnoticed</text>
+  <rect x="405" y="282" width="374" height="50" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="592" y="304" text-anchor="middle" font-size="12.5" fill="#e3fffa">GCM or ChaCha20-Poly1305: default choice</text>
+  <text x="592" y="322" text-anchor="middle" font-size="11.5" fill="#6c7b93">any change makes verification fail</text>
+</svg>

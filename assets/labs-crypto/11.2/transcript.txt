@@ -1,0 +1,17 @@
+$ python3 chall.py
+# public key Pub:
+Pub_x = 0xfc81823f5b43814a2132c887f300af63acfcd131f02c47d4bd987ab45c4557c3
+Pub_y = 0x122390e7ce285c7bff1fe94ae930c6b87a17d320d3d9136ebf60b8ac073175f0
+# hai chu ky (chu y r1 == r2, dau hieu chet nguoi):
+m1 = b'transfer 10 coins to alice'
+r1 = 0xcdf0e3eec0fa477bd838b85049e6b991b5ab21904a64d953b42ee1486e53858e
+s1 = 0xb62fcafc13530506eb1a304131da3c7c49bb31ebd186007a8659ae3e37c053e0
+m2 = b'transfer 99 coins to mallory'
+r2 = 0xcdf0e3eec0fa477bd838b85049e6b991b5ab21904a64d953b42ee1486e53858e
+s2 = 0x5db9a313c891fe387c4b5e8cbea17916f8f4c20f6c459807e228742b4f4ad249
+r1 == r2 ? True
+
+$ python3 solve.py
+nonce k khoi phuc : 0x1337c0debeef1337c0debeef1337c0debeef
+private key d     : 0x666c61677b65636473615f6b5f7265753565217d
+flag              : flag{ecdsa_k_reu5e!}

@@ -1,0 +1,14 @@
+=== solve_ecb_byte_at_a_time.py ===
+block size: 16
+la ECB    : True
+--- SECRET khoi phuc ---
+Rollin' in my 5.0
+With my rag-top down so my hair can blow
+The girlies on standby waving just to say hi
+Did you stop? No, I just drove by
+
+--- OK, moi het SECRET ma khong biet key ---
+
+=== solve_padding_oracle.py ===
+khoi phuc: b'flag{ecb_and_padding_oracle_both_fall_without_the_key}'
+OK, giai ma khong biet key

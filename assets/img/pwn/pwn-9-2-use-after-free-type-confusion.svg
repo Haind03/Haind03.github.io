@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="400" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Use-after-free type confusion</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">same chunk, two incompatible views of its bytes</text>
+
+  <defs>
+    <marker id="a4" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- step 1: create -->
+  <g font-size="12" text-anchor="middle">
+    <rect x="28" y="90" width="150" height="56" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="103" y="110" fill="#e3fffa">create()</text>
+    <text x="103" y="126" fill="#9fb0c8" font-size="10.5">Obj chunk 0x30</text>
+    <text x="103" y="140" fill="#6c7b93" font-size="10">action = &amp;say_hi</text>
+  </g>
+
+  <!-- step 2: free -->
+  <g font-size="12" text-anchor="middle">
+    <rect x="226" y="90" width="150" height="56" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="301" y="110" fill="#ff2a6d" font-weight="700">free()</text>
+    <text x="301" y="126" fill="#9fb0c8" font-size="10.5">-&gt; tcache[0x30]</text>
+    <text x="301" y="140" fill="#6c7b93" font-size="10">o NOT set to NULL (bug)</text>
+  </g>
+  <line x1="178" y1="118" x2="222" y2="118" stroke="#6c7b93" stroke-width="2" marker-end="url(#a4)"/>
+
+  <!-- step 3: spray -->
+  <g font-size="12" text-anchor="middle">
+    <rect x="424" y="90" width="170" height="56" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="509" y="110" fill="#fcee0a" font-weight="700">spray()</text>
+    <text x="509" y="126" fill="#9fb0c8" font-size="10.5">malloc(0x30) reclaims it</text>
+    <text x="509" y="140" fill="#6c7b93" font-size="10">writes 24 bytes + &amp;win</text>
+  </g>
+  <line x1="376" y1="118" x2="420" y2="118" stroke="#6c7b93" stroke-width="2" marker-end="url(#a4)"/>
+
+  <!-- step 4: use -->
+  <g font-size="12" text-anchor="middle">
+    <rect x="622" y="90" width="150" height="56" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="697" y="110" fill="#5fe3b0" font-weight="700">use()</text>
+    <text x="697" y="126" fill="#9fb0c8" font-size="10.5">o-&gt;action()</text>
+    <text x="697" y="140" fill="#6c7b93" font-size="10">calls win() -> shell</text>
+  </g>
+  <line x1="594" y1="118" x2="618" y2="118" stroke="#6c7b93" stroke-width="2" marker-end="url(#a4)"/>
+
+  <!-- chunk bytes detail -->
+  <text x="30" y="210" font-size="13" font-weight="700" fill="#9fb0c8">Same 0x30 bytes, two interpretations</text>
+  <g font-size="11.5">
+    <rect x="30" y="224" width="340" height="30" rx="4" fill="#111827" stroke="#00f0ff"/>
+    <text x="40" y="244" fill="#e3fffa">info[24] "AAAA...."  (offset 0x00)</text>
+    <rect x="30" y="256" width="340" height="30" rx="4" fill="#111827" stroke="#ff2a6d"/>
+    <text x="40" y="276" fill="#ff2a6d" font-weight="700">action (offset 0x18) was &amp;say_hi</text>
+  </g>
+  <g font-size="11.5">
+    <rect x="430" y="224" width="340" height="30" rx="4" fill="#111827" stroke="#00f0ff" stroke-dasharray="5 4"/>
+    <text x="440" y="244" fill="#e3fffa">raw bytes written by spray()</text>
+    <rect x="430" y="256" width="340" height="30" rx="4" fill="#111827" stroke="#5fe3b0" stroke-dasharray="5 4"/>
+    <text x="440" y="276" fill="#5fe3b0" font-weight="700">same offset now holds &amp;win</text>
+  </g>
+  <line x1="370" y1="270" x2="426" y2="270" stroke="#fcee0a" stroke-width="2" marker-end="url(#a4)"/>
+  <text x="398" y="262" text-anchor="middle" font-size="9.5" fill="#fcee0a" font-family="'JetBrains Mono',monospace">reclaim</text>
+
+  <text x="400" y="320" text-anchor="middle" font-size="11.5" fill="#9fb0c8">Program still treats the chunk as an Obj with a function pointer at 0x18.</text>
+  <text x="400" y="340" text-anchor="middle" font-size="11.5" fill="#9fb0c8">The bytes there are now attacker-controlled: type confusion gives control of the call target.</text>
+  <text x="400" y="368" text-anchor="middle" font-size="11" fill="#6c7b93">no-PIE means &amp;win is a fixed, known address, so no leak is needed.</text>
+</svg>

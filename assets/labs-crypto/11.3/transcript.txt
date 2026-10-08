@@ -1,0 +1,10 @@
+$ python3 solve.py
+token goc (hex): 1d74ebc119606bfe3ea46ea451c325881435fe
+role hien tai  : (False, None)
+token che (hex): 1d74ebc119606bfe3ea46ea451c323991c2fe4
+ket qua        : (True, 'flag{m4lle4ble_ctr_n0_m4c_equals_g4me_0ver}')
+FLAG           : flag{m4lle4ble_ctr_n0_m4c_equals_g4me_0ver}
+
+$ python3 nonce_reuse_demo.py
+ct1 XOR ct2 (hex): 000000000003030b52570000000000000000000000
+so byte 0 o duoi : 16 / 21 -> phan plaintext trung nhau lo ra

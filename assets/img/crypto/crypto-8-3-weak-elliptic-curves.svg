@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="800" height="400" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Four ways an elliptic curve goes weak</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">check discriminant, group order, and input points</text>
+
+  <g font-size="12" text-anchor="middle">
+    <rect x="30" y="84" width="170" height="40" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="115" y="109" fill="#ff2a6d" font-weight="700">Singular curve</text>
+    <rect x="228" y="84" width="170" height="40" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="313" y="109" fill="#ff2a6d" font-weight="700">Smooth order</text>
+    <rect x="426" y="84" width="170" height="40" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="511" y="109" fill="#ff2a6d" font-weight="700">Invalid curve</text>
+    <rect x="624" y="84" width="146" height="40" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="697" y="109" fill="#ff2a6d" font-weight="700">Anomalous</text>
+
+    <rect x="30" y="156" width="170" height="56" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="115" y="178" fill="#e3fffa">4a^3 + 27b^2 = 0</text>
+    <text x="115" y="197" fill="#6c7b93" font-size="10.5">double root, node</text>
+    <rect x="228" y="156" width="170" height="56" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="313" y="178" fill="#e3fffa">N = 3^4 * 5^3</text>
+    <text x="313" y="197" fill="#6c7b93" font-size="10.5">only small prime factors</text>
+    <rect x="426" y="156" width="170" height="56" rx="7" fill="#0b1518" stroke="#00f0ff" stroke-dasharray="5 4"/>
+    <text x="511" y="178" fill="#e3fffa">point on curve b'</text>
+    <text x="511" y="197" fill="#6c7b93" font-size="10.5">add formula ignores b</text>
+    <rect x="624" y="156" width="146" height="56" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="697" y="178" fill="#e3fffa">#E(Fp) = p</text>
+    <text x="697" y="197" fill="#6c7b93" font-size="10.5">order equals the field</text>
+
+    <rect x="30" y="244" width="170" height="56" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="115" y="266" fill="#e3fffa">phi maps points</text>
+    <text x="115" y="285" fill="#6c7b93" font-size="10.5">to the group Fp*</text>
+    <rect x="228" y="244" width="170" height="56" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="313" y="266" fill="#e3fffa">small ECDLP per q^e</text>
+    <text x="313" y="285" fill="#6c7b93" font-size="10.5">BSGS on points</text>
+    <rect x="426" y="244" width="170" height="56" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="511" y="266" fill="#e3fffa">d*P stays in subgroup t</text>
+    <text x="511" y="285" fill="#6c7b93" font-size="10.5">learn d mod t</text>
+    <rect x="624" y="244" width="146" height="56" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="697" y="266" fill="#e3fffa">Smart attack</text>
+    <text x="697" y="285" fill="#6c7b93" font-size="10.5">p-adic lift, use Sage</text>
+
+    <rect x="30" y="332" width="170" height="40" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="115" y="357" fill="#5fe3b0">ordinary dlog, solved</text>
+    <rect x="228" y="332" width="170" height="40" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="313" y="357" fill="#5fe3b0">CRT gives secret</text>
+    <rect x="426" y="332" width="170" height="40" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="511" y="357" fill="#5fe3b0">CRT gives d</text>
+    <rect x="624" y="332" width="146" height="40" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="697" y="357" fill="#5fe3b0">linear time</text>
+  </g>
+
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="115" y1="125" x2="115" y2="152"/>
+    <line x1="313" y1="125" x2="313" y2="152"/>
+    <line x1="511" y1="125" x2="511" y2="152"/>
+    <line x1="697" y1="125" x2="697" y2="152"/>
+    <line x1="115" y1="213" x2="115" y2="240"/>
+    <line x1="313" y1="213" x2="313" y2="240"/>
+    <line x1="511" y1="213" x2="511" y2="240"/>
+    <line x1="697" y1="213" x2="697" y2="240"/>
+    <line x1="115" y1="301" x2="115" y2="328"/>
+    <line x1="313" y1="301" x2="313" y2="328"/>
+    <line x1="511" y1="301" x2="511" y2="328"/>
+    <line x1="697" y1="301" x2="697" y2="328"/>
+  </g>
+</svg>

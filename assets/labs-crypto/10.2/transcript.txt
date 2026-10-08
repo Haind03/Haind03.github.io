@@ -1,0 +1,11 @@
+$ python3 gen.py
+seed    = 0xc0ffee42
+ct_hex  = fd15bc05ba11cf45476d6fd97c0b8c73c800eb2fea47975deac898e478b7d783f432f07befca0f
+
+$ python3 solve.py
+seed tim duoc : 0xc0ffee42
+flag          : flag{z3_cr4ck5_cu5t0m_prng_1n_0ne_sh0t}
+
+$ python3 modeq.py
+sat
+x = 31337  y = 42424

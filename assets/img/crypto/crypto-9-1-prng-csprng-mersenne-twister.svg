@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 380" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="380" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">PRNG with a small seed vs CSPRNG</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">same seed, same sequence: whoever finds the seed owns the output</text>
+  <defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+  <g font-size="12.5" text-anchor="middle">
+    <rect x="30" y="86" width="150" height="54" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="105" y="109" fill="#e3fffa">seed</text>
+    <text x="105" y="126" fill="#6c7b93" font-size="10.5">time(), PID, constant</text>
+    <rect x="230" y="86" width="150" height="54" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="305" y="109" fill="#e3fffa">MT19937</text>
+    <text x="305" y="126" fill="#6c7b93" font-size="10.5">624 x 32-bit state</text>
+    <rect x="430" y="86" width="150" height="54" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="505" y="109" fill="#e3fffa">getrandbits(64)</text>
+    <text x="505" y="126" fill="#6c7b93" font-size="10.5">deterministic output</text>
+    <rect x="630" y="86" width="140" height="54" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="700" y="109" fill="#e3fffa">reset token</text>
+    <text x="700" y="126" fill="#6c7b93" font-size="10.5">session id, nonce</text>
+    <rect x="30" y="172" width="150" height="46" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="105" y="191" fill="#9fb0c8" font-size="11">attacker scans</text>
+    <text x="105" y="207" fill="#9fb0c8" font-size="11">20000 seeds</text>
+    <rect x="630" y="172" width="140" height="46" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="700" y="191" fill="#9fb0c8" font-size="11">next token</text>
+    <text x="700" y="207" fill="#9fb0c8" font-size="11">predicted</text>
+    <rect x="30" y="256" width="150" height="54" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="105" y="279" fill="#e3fffa">OS entropy</text>
+    <text x="105" y="296" fill="#6c7b93" font-size="10.5">/dev/urandom</text>
+    <rect x="230" y="256" width="150" height="54" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="305" y="279" fill="#e3fffa">CSPRNG</text>
+    <text x="305" y="296" fill="#6c7b93" font-size="10.5">no small seed</text>
+    <rect x="430" y="256" width="150" height="54" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="505" y="279" fill="#e3fffa">secrets / urandom</text>
+    <text x="505" y="296" fill="#6c7b93" font-size="10.5">next-bit unpredictable</text>
+    <rect x="630" y="256" width="140" height="54" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="700" y="279" fill="#e3fffa">token</text>
+    <text x="700" y="296" fill="#6c7b93" font-size="10.5">cannot be guessed</text>
+  </g>
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="180" y1="113" x2="226" y2="113"/>
+    <line x1="380" y1="113" x2="426" y2="113"/>
+    <line x1="580" y1="113" x2="626" y2="113"/>
+    <line x1="180" y1="283" x2="226" y2="283"/>
+    <line x1="380" y1="283" x2="426" y2="283"/>
+    <line x1="580" y1="283" x2="626" y2="283"/>
+  </g>
+  <g stroke="#ff2a6d" stroke-width="2" marker-end="url(#a)" fill="none" opacity="0.85">
+    <line x1="105" y1="172" x2="105" y2="144"/>
+    <line x1="180" y1="195" x2="626" y2="195" stroke-dasharray="5 4"/>
+  </g>
+  <text x="400" y="348" text-anchor="middle" font-size="11" fill="#6c7b93">Top: the seed space is small, so the whole stream can be rebuilt. Bottom: no seed to find.</text>
+</svg>

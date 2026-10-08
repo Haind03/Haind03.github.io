@@ -1,0 +1,2 @@
+is_admin sau khi lat bit: True
+OK, da gia mao ;admin=true ma khong biet key

@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="360" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">The pwntools exploit skeleton</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">one tube API for local process and remote server</text>
+  <defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+  <g font-size="12" text-anchor="middle">
+    <rect x="28" y="92" width="150" height="56" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="103" y="116" fill="#e3fffa">ELF('./vuln')</text>
+    <text x="103" y="134" fill="#6c7b93" font-size="10.5">sym, plt, got</text>
+    <rect x="218" y="92" width="150" height="56" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="293" y="116" fill="#e3fffa">build payload</text>
+    <text x="293" y="134" fill="#6c7b93" font-size="10.5">flat(), p64(), p32()</text>
+    <rect x="408" y="92" width="150" height="56" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="483" y="116" fill="#e3fffa">send / recv</text>
+    <text x="483" y="134" fill="#6c7b93" font-size="10.5">sendlineafter, recvuntil</text>
+    <rect x="598" y="92" width="174" height="56" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="685" y="116" fill="#e3fffa">interactive()</text>
+    <text x="685" y="134" fill="#6c7b93" font-size="10.5">shell on the target</text>
+  </g>
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="178" y1="120" x2="214" y2="120"/>
+    <line x1="368" y1="120" x2="404" y2="120"/>
+    <line x1="558" y1="120" x2="594" y2="120"/>
+  </g>
+  <text x="400" y="190" text-anchor="middle" font-size="12.5" font-weight="700" fill="#e3fffa">io = the tube, one line chooses the target</text>
+  <g font-size="12" text-anchor="middle">
+    <rect x="130" y="206" width="240" height="50" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="250" y="228" fill="#e3fffa" font-family="'JetBrains Mono',monospace">process('./vuln')</text>
+    <text x="250" y="245" fill="#6c7b93" font-size="10.5">local testing</text>
+    <rect x="430" y="206" width="240" height="50" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="550" y="228" fill="#e3fffa" font-family="'JetBrains Mono',monospace">remote('host', 1337)</text>
+    <text x="550" y="245" fill="#6c7b93" font-size="10.5">real server</text>
+  </g>
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="250" y1="206" x2="340" y2="160" />
+    <line x1="550" y1="206" x2="460" y2="160" />
+  </g>
+  <g font-size="11.5" font-family="'JetBrains Mono',monospace" fill="#9fb0c8">
+    <text x="130" y="296">p64(0x401156) = 56 11 40 00 00 00 00 00</text>
+    <text x="130" y="316">u64(leak.ljust(8, b'\x00')) = address as an int</text>
+  </g>
+  <text x="400" y="344" text-anchor="middle" font-size="11" fill="#6c7b93">Everything sent and received is bytes, never str.</text>
+</svg>

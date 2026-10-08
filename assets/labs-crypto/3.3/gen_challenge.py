@@ -1,0 +1,15 @@
+import base64, itertools
+
+plaintext = (
+"When you XOR a plaintext against a repeating key, the ciphertext still carries the "
+"shape of the language underneath it. Every column that lines up with one byte of the "
+"key is nothing more than a single byte XOR, and a single byte XOR is trivially broken "
+"by trying all two hundred and fifty six possibilities and scoring the result. The only "
+"real trick is figuring out how long the key is, and the Hamming distance between blocks "
+"hands that to you almost for free. flag{h4mming_distance_unlocks_the_keysize} Keep the "
+"text long enough and the statistics will always win in the end, every single time.").encode()
+
+key = b"STRIKE"
+ct = bytes(b ^ k for b, k in zip(plaintext, itertools.cycle(key)))
+open("challenge_gen.b64", "wb").write(base64.b64encode(ct))
+print("Da ghi challenge_gen.b64, do dai khoa", len(key), ", do dai ct", len(ct))

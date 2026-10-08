@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="400" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">The crypto lab toolset</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">one venv for pip packages, Sage through conda or Docker</text>
+  <defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+  <rect x="24" y="76" width="500" height="250" rx="9" fill="#0b1518" stroke="#00f0ff" stroke-dasharray="5 4"/>
+  <text x="40" y="98" font-size="11.5" fill="#00f0ff" font-family="'JetBrains Mono',monospace">~/cryptolab (python3 -m venv)</text>
+  <g font-size="12.5" text-anchor="middle">
+    <rect x="44" y="116" width="142" height="62" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="115" y="141" fill="#e3fffa">pycryptodome</text>
+    <text x="115" y="160" fill="#9fb0c8" font-size="10.5">AES, RSA, number</text>
+    <rect x="200" y="116" width="142" height="62" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="271" y="141" fill="#e3fffa">gmpy2</text>
+    <text x="271" y="160" fill="#9fb0c8" font-size="10.5">iroot, fast big ints</text>
+    <rect x="356" y="116" width="150" height="62" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="431" y="141" fill="#e3fffa">sympy</text>
+    <text x="431" y="160" fill="#9fb0c8" font-size="10.5">factorint, isprime</text>
+    <rect x="44" y="196" width="142" height="62" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="115" y="221" fill="#e3fffa">pwntools</text>
+    <text x="115" y="240" fill="#9fb0c8" font-size="10.5">remote oracles</text>
+    <rect x="200" y="196" width="142" height="62" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="271" y="221" fill="#e3fffa">z3-solver</text>
+    <text x="271" y="240" fill="#9fb0c8" font-size="10.5">constraints, PRNG</text>
+    <rect x="356" y="196" width="150" height="62" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="431" y="221" fill="#e3fffa">notebook</text>
+    <text x="431" y="240" fill="#9fb0c8" font-size="10.5">Jupyter scratchpad</text>
+    <rect x="44" y="274" width="462" height="38" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="275" y="298" fill="#9fb0c8" font-size="11.5" font-family="'JetBrains Mono',monospace">smoke_test.py  ->  OK: all tools ready</text>
+    <rect x="590" y="116" width="186" height="96" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="683" y="142" fill="#fcee0a" font-weight="700">SageMath</text>
+    <text x="683" y="164" fill="#9fb0c8" font-size="10.5">LLL, EC, discrete_log</text>
+    <text x="683" y="184" fill="#e3fffa" font-size="10.5">conda create -n sage</text>
+    <text x="683" y="200" fill="#e3fffa" font-size="10.5">or docker sagemath/sagemath</text>
+    <rect x="590" y="234" width="186" height="78" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="683" y="260" fill="#ff2a6d">Avoid</text>
+    <text x="683" y="280" fill="#9fb0c8" font-size="10.5">pycrypto (dead package)</text>
+    <text x="683" y="296" fill="#9fb0c8" font-size="10.5">system pip, native Windows Sage</text>
+  </g>
+  <line x1="524" y1="164" x2="586" y2="164" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" stroke-dasharray="4 4"/>
+  <text x="400" y="368" text-anchor="middle" font-size="11" fill="#6c7b93">Activate the venv in every new terminal before running lab code.</text>
+</svg>

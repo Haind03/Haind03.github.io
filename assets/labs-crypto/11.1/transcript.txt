@@ -1,0 +1,11 @@
+$ python3 c03_single_xor.py
+khoa (byte) : 88 0x58
+plaintext   : Cooking MC's like a pound of bacon
+
+$ python3 c08_detect_ecb.py
+so block trung (ECB): 2 -> day la ECB
+so block trung (CBC): 0 -> khong lo pattern
+
+$ python3 c17_padding_oracle.py
+plaintext (co padding): b'flag{p4dding_0racle_l34ks_th3_wh0le_plaintext}\x02\x02'
+flag: flag{p4dding_0racle_l34ks_th3_wh0le_plaintext}

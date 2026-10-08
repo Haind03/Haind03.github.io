@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 380" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="800" height="380" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Diffie-Hellman key exchange</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">public: p = 23, g = 5</text>
+
+  <g font-size="12.5" text-anchor="middle">
+    <rect x="40" y="90" width="150" height="62" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="115" y="114" fill="#e3fffa" font-weight="700">Alice</text>
+    <text x="115" y="136" fill="#fcee0a" font-family="'JetBrains Mono',monospace">secret a = 6</text>
+
+    <rect x="610" y="90" width="150" height="62" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="685" y="114" fill="#e3fffa" font-weight="700">Bob</text>
+    <text x="685" y="136" fill="#fcee0a" font-family="'JetBrains Mono',monospace">secret b = 15</text>
+
+    <rect x="270" y="90" width="260" height="62" rx="7" fill="#0b1518" stroke="#00f0ff" stroke-dasharray="5 4"/>
+    <text x="400" y="112" fill="#9fb0c8">public channel</text>
+    <text x="400" y="135" fill="#00f0ff" font-family="'JetBrains Mono',monospace">A = 8        B = 19</text>
+  </g>
+
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="190" y1="112" x2="266" y2="112"/>
+    <line x1="610" y1="132" x2="534" y2="132"/>
+  </g>
+  <g font-size="11" text-anchor="middle" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">
+    <text x="228" y="104">A = g^a</text>
+    <text x="572" y="152">B = g^b</text>
+  </g>
+
+  <g font-size="12" text-anchor="middle">
+    <rect x="40" y="200" width="200" height="66" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="140" y="224" fill="#9fb0c8">Alice computes</text>
+    <text x="140" y="246" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">B^a mod p = 2</text>
+
+    <rect x="560" y="200" width="200" height="66" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="660" y="224" fill="#9fb0c8">Bob computes</text>
+    <text x="660" y="246" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">A^b mod p = 2</text>
+
+    <rect x="290" y="200" width="220" height="66" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="400" y="224" fill="#9fb0c8">shared secret</text>
+    <text x="400" y="246" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">g^(ab) mod p</text>
+  </g>
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="115" y1="154" x2="115" y2="196"/>
+    <line x1="685" y1="154" x2="685" y2="196"/>
+    <line x1="240" y1="233" x2="286" y2="233"/>
+    <line x1="560" y1="233" x2="514" y2="233"/>
+  </g>
+
+  <g font-size="12" text-anchor="middle">
+    <rect x="130" y="304" width="540" height="48" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="400" y="325" fill="#ff2a6d" font-weight="700">Eavesdropper: sees p, g, A, B</text>
+    <text x="400" y="342" fill="#9fb0c8">needs a from 5^a = 8 mod 23, a discrete log (hard when p is large)</text>
+  </g>
+</svg>

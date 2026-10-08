@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="420" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Passing an argument with pop rdi ; ret</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">chain: [pop_rdi][value][ret][win]</text>
+
+  <!-- stack chain, low to high -->
+  <g font-size="12" text-anchor="middle">
+    <text x="150" y="88" fill="#6c7b93" font-size="11">low address (saved RIP slot)</text>
+
+    <rect x="50" y="96" width="200" height="46" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="150" y="124" fill="#ff2a6d" font-weight="700" font-family="'JetBrains Mono',monospace">pop_rdi_ret</text>
+
+    <rect x="50" y="150" width="200" height="46" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="150" y="178" fill="#fcee0a" font-family="'JetBrains Mono',monospace">0xdeadbeefcafebabe</text>
+
+    <rect x="50" y="204" width="200" height="46" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="150" y="232" fill="#e3fffa" font-family="'JetBrains Mono',monospace">ret (align only)</text>
+
+    <rect x="50" y="258" width="200" height="46" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="150" y="286" fill="#5fe3b0" font-weight="700" font-family="'JetBrains Mono',monospace">win</text>
+    <text x="150" y="316" fill="#6c7b93" font-size="11">high address</text>
+  </g>
+
+  <!-- flow arrows annotated -->
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+  <g font-size="11" fill="#9fb0c8">
+    <path d="M250,119 C 330,119 330,150 260,167" fill="none" stroke="#fcee0a" stroke-width="2" marker-end="url(#a)"/>
+    <text x="400" y="110" font-family="'JetBrains Mono',monospace">1. ret lands on pop_rdi_ret</text>
+    <text x="400" y="128" font-family="'JetBrains Mono',monospace">2. pop rdi takes 0xdead...babe -&gt; rdi</text>
+    <text x="400" y="146" font-family="'JetBrains Mono',monospace">3. gadget's own ret jumps past alignment ret</text>
+    <text x="400" y="164" font-family="'JetBrains Mono',monospace">4. that ret jumps into win, rdi already set</text>
+  </g>
+
+  <!-- rdi register box -->
+  <rect x="500" y="200" width="230" height="60" rx="7" fill="#0b1518" stroke="#fcee0a" stroke-dasharray="5 4"/>
+  <text x="615" y="224" text-anchor="middle" fill="#fcee0a" font-size="12" font-family="'JetBrains Mono',monospace">rdi = 0xdeadbeefcafebabe</text>
+  <text x="615" y="242" text-anchor="middle" fill="#9fb0c8" font-size="11">set before win() starts</text>
+  <line x1="250" y1="173" x2="500" y2="225" stroke="#fcee0a" stroke-width="1.5" stroke-dasharray="3 3"/>
+
+  <!-- movaps alignment note -->
+  <rect x="500" y="272" width="230" height="78" rx="7" fill="#1a0e14" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+  <text x="615" y="294" text-anchor="middle" fill="#ff2a6d" font-weight="700" font-size="12">movaps needs RSP % 16 == 0</text>
+  <text x="615" y="312" text-anchor="middle" fill="#9fb0c8" font-size="10.5">odd number of 8-byte elements</text>
+  <text x="615" y="328" text-anchor="middle" fill="#9fb0c8" font-size="10.5">leaves RSP off by 8 at call time</text>
+  <text x="615" y="344" text-anchor="middle" fill="#9fb0c8" font-size="10.5">-&gt; one extra ret fixes parity</text>
+
+  <text x="400" y="388" text-anchor="middle" font-size="11" fill="#6c7b93">Without the extra ret, win() runs but system("/bin/sh") crashes at movaps inside do_system.</text>
+</svg>

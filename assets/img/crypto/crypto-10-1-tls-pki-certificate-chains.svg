@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="400" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">TLS: ECDHE for the key, a chain for identity</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">two separate jobs: key exchange and authentication</text>
+  <defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+  <g font-size="12.5" text-anchor="middle">
+    <rect x="30" y="90" width="150" height="54" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="105" y="113" fill="#e3fffa">Client</text>
+    <text x="105" y="130" fill="#6c7b93" font-size="10.5">ClientHello + ECDHE key</text>
+    <rect x="620" y="90" width="150" height="54" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="695" y="113" fill="#e3fffa">Server</text>
+    <text x="695" y="130" fill="#6c7b93" font-size="10.5">ServerHello + ECDHE key</text>
+    <rect x="260" y="82" width="280" height="30" rx="7" fill="#0b1518" stroke="#fcee0a"/>
+    <text x="400" y="102" fill="#9fb0c8" font-size="11">shared secret to session keys (AEAD)</text>
+    <rect x="260" y="122" width="280" height="30" rx="7" fill="#0b1518" stroke="#5fe3b0"/>
+    <text x="400" y="142" fill="#9fb0c8" font-size="11">Certificate + CertificateVerify, Finished</text>
+  </g>
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="180" y1="97" x2="256" y2="97"/>
+    <line x1="544" y1="137" x2="616" y2="137"/>
+  </g>
+  <text x="30" y="196" font-size="11.5" fill="#6c7b93" font-family="'JetBrains Mono',monospace">chain of trust (each arrow = a signature)</text>
+  <g font-size="12.5" text-anchor="middle">
+    <rect x="30" y="214" width="160" height="54" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="110" y="237" fill="#e3fffa">Root CA</text>
+    <text x="110" y="254" fill="#6c7b93" font-size="10.5">self-signed, in trust store</text>
+    <rect x="260" y="214" width="160" height="54" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="340" y="237" fill="#e3fffa">Intermediate CA</text>
+    <text x="340" y="254" fill="#6c7b93" font-size="10.5">CA:TRUE, pathlen 0</text>
+    <rect x="490" y="214" width="160" height="54" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="570" y="237" fill="#e3fffa">Leaf cert</text>
+    <text x="570" y="254" fill="#6c7b93" font-size="10.5">SAN: crypto.demo.local</text>
+    <rect x="680" y="214" width="90" height="54" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="725" y="237" fill="#e3fffa">verify</text>
+    <text x="725" y="254" fill="#6c7b93" font-size="10.5">OK</text>
+  </g>
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="190" y1="241" x2="256" y2="241"/>
+    <line x1="420" y1="241" x2="486" y2="241"/>
+    <line x1="650" y1="241" x2="676" y2="241"/>
+  </g>
+  <g font-size="11" text-anchor="middle">
+    <rect x="30" y="306" width="170" height="46" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="115" y="325" fill="#9fb0c8">self-signed: error 18</text>
+    <text x="115" y="341" fill="#9fb0c8">no trusted root</text>
+    <rect x="230" y="306" width="170" height="46" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="315" y="325" fill="#9fb0c8">missing intermediate</text>
+    <text x="315" y="341" fill="#9fb0c8">error 20</text>
+    <rect x="430" y="306" width="170" height="46" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="515" y="325" fill="#9fb0c8">hostname mismatch</text>
+    <text x="515" y="341" fill="#9fb0c8">error 62</text>
+    <rect x="630" y="306" width="140" height="46" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="700" y="325" fill="#9fb0c8">downgrade</text>
+    <text x="700" y="341" fill="#9fb0c8">old protocol</text>
+  </g>
+</svg>

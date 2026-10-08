@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="420" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Five mitigations, five blind spots</text>
+  <text x="400" y="54" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">checksec tells you which ones are active before you pick a technique</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- NX -->
+  <g font-size="11.5">
+    <rect x="30" y="80" width="150" height="66" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="105" y="102" text-anchor="middle" fill="#ff2a6d" font-weight="700">NX / DEP</text>
+    <text x="105" y="118" text-anchor="middle" fill="#9fb0c8" font-size="10.5">blocks shellcode</text>
+    <text x="105" y="132" text-anchor="middle" fill="#9fb0c8" font-size="10.5">on stack/heap</text>
+    <text x="105" y="139" text-anchor="middle" fill="#6c7b93" font-size="9.5">bypass: ret2libc/ROP</text>
+  </g>
+
+  <!-- ASLR -->
+  <g font-size="11.5">
+    <rect x="195" y="80" width="150" height="66" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="270" y="102" text-anchor="middle" fill="#fcee0a" font-weight="700">ASLR</text>
+    <text x="270" y="118" text-anchor="middle" fill="#9fb0c8" font-size="10.5">blocks hardcoded</text>
+    <text x="270" y="132" text-anchor="middle" fill="#9fb0c8" font-size="10.5">libc/stack/heap addr</text>
+    <text x="270" y="139" text-anchor="middle" fill="#6c7b93" font-size="9.5">bypass: leak one address</text>
+  </g>
+
+  <!-- PIE -->
+  <g font-size="11.5">
+    <rect x="360" y="80" width="150" height="66" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="435" y="102" text-anchor="middle" fill="#fcee0a" font-weight="700">PIE</text>
+    <text x="435" y="118" text-anchor="middle" fill="#9fb0c8" font-size="10.5">blocks hardcoded</text>
+    <text x="435" y="132" text-anchor="middle" fill="#9fb0c8" font-size="10.5">program code addr</text>
+    <text x="435" y="139" text-anchor="middle" fill="#6c7b93" font-size="9.5">bypass: leak image base</text>
+  </g>
+
+  <!-- canary -->
+  <g font-size="11.5">
+    <rect x="525" y="80" width="150" height="66" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="600" y="102" text-anchor="middle" fill="#00f0ff" font-weight="700">Stack canary</text>
+    <text x="600" y="118" text-anchor="middle" fill="#9fb0c8" font-size="10.5">blocks linear overflow</text>
+    <text x="600" y="132" text-anchor="middle" fill="#9fb0c8" font-size="10.5">onto saved RIP</text>
+    <text x="600" y="139" text-anchor="middle" fill="#6c7b93" font-size="9.5">bypass: leak / brute force</text>
+  </g>
+
+  <!-- RELRO -->
+  <g font-size="11.5">
+    <rect x="195" y="170" width="150" height="66" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="270" y="192" text-anchor="middle" fill="#5fe3b0" font-weight="700">RELRO (full)</text>
+    <text x="270" y="208" text-anchor="middle" fill="#9fb0c8" font-size="10.5">blocks GOT overwrite</text>
+    <text x="270" y="222" text-anchor="middle" fill="#9fb0c8" font-size="10.5">(.got.plt read-only)</text>
+    <text x="270" y="229" text-anchor="middle" fill="#6c7b93" font-size="9.5">bypass: other target (Part 8)</text>
+  </g>
+
+  <!-- belongs-to row -->
+  <g font-size="10.5" text-anchor="middle" fill="#6c7b93">
+    <text x="105" y="165">belongs to: kernel + CPU</text>
+    <text x="270" y="165">belongs to: kernel</text>
+    <text x="435" y="165">belongs to: binary</text>
+    <text x="600" y="165">belongs to: compiler</text>
+  </g>
+
+  <!-- checksec box -->
+  <g font-size="12" text-anchor="middle">
+    <rect x="260" y="270" width="280" height="60" rx="7" fill="#0b1518" stroke="#263451" stroke-dasharray="5 4"/>
+    <text x="400" y="294" fill="#e3fffa">checksec / pwn checksec</text>
+    <text x="400" y="312" fill="#9fb0c8" font-size="11">RELRO, Canary, NX, PIE lines</text>
+  </g>
+  <line x1="105" y1="146" x2="300" y2="270" stroke="#ff2a6d" stroke-width="2" marker-end="url(#a)" opacity="0.7"/>
+  <line x1="270" y1="146" x2="350" y2="270" stroke="#fcee0a" stroke-width="2" marker-end="url(#a)" opacity="0.7"/>
+  <line x1="435" y1="146" x2="450" y2="270" stroke="#fcee0a" stroke-width="2" marker-end="url(#a)" opacity="0.7"/>
+  <line x1="600" y1="146" x2="500" y2="270" stroke="#00f0ff" stroke-width="2" marker-end="url(#a)" opacity="0.7"/>
+  <line x1="270" y1="236" x2="380" y2="270" stroke="#5fe3b0" stroke-width="2" marker-end="url(#a)" opacity="0.7"/>
+
+  <text x="400" y="365" text-anchor="middle" font-size="11.5" fill="#00f0ff" font-family="'JetBrains Mono',monospace">ASLR (kernel) != PIE (binary): the series' most common beginner mix-up.</text>
+  <text x="400" y="388" text-anchor="middle" font-size="11" fill="#6c7b93">No mitigation fixes the bug. Each one only forces a different technique or an extra leak.</text>
+</svg>

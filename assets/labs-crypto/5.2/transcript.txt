@@ -1,0 +1,11 @@
+[*] SHA-256 thuan Python khop hashlib: OK
+[*] cookie goc : user=guest&role=user
+[*] tag goc    : cb8812e07e3cd35a8d3681c7a42d215e29d5a64bff5a47b933d3123fe42412fe
+[*] them vao   : &role=admin
+[*] cookie gia : b'user=guest&role=user\x80\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01 &role=admin'
+[*] tag gia    : 852c4ec59310acd64b183290909dc9070821845fb5c15b8245317d5e09cea4a8
+[*] server chap nhan cookie gia? True
+[+] length extension THANH CONG, khong he biet secret
+
+[*] khi chua biet do dai secret, quet thu:
+    do dai secret dung = 16

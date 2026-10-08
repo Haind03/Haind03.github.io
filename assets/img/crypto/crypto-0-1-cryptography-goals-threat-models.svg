@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 380" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="380" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Encryption alone protects only one of three goals</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">stream cipher: flipping a ciphertext bit flips the same plaintext bit</text>
+  <defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker></defs>
+  <g font-size="12.5" text-anchor="middle">
+    <rect x="24" y="86" width="120" height="58" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="84" y="110" fill="#e3fffa">Plaintext</text>
+    <text x="84" y="128" fill="#9fb0c8" font-size="10.5" font-family="'JetBrains Mono',monospace">admin=0</text>
+    <rect x="184" y="86" width="120" height="58" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="244" y="110" fill="#e3fffa">XOR keystream</text>
+    <text x="244" y="128" fill="#fcee0a" font-size="10.5">secret key</text>
+    <rect x="344" y="86" width="120" height="58" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="404" y="110" fill="#e3fffa">Ciphertext</text>
+    <text x="404" y="128" fill="#9fb0c8" font-size="10.5">unreadable</text>
+    <rect x="504" y="86" width="130" height="58" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="569" y="110" fill="#ff2a6d">Attacker XORs</text>
+    <text x="569" y="128" fill="#9fb0c8" font-size="10.5">0x01 into last byte</text>
+    <rect x="674" y="86" width="102" height="58" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="725" y="110" fill="#e3fffa">Decrypt</text>
+    <text x="725" y="128" fill="#ff2a6d" font-size="10.5" font-family="'JetBrains Mono',monospace">admin=1</text>
+  </g>
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="144" y1="115" x2="180" y2="115"/>
+    <line x1="304" y1="115" x2="340" y2="115"/>
+    <line x1="464" y1="115" x2="500" y2="115"/>
+    <line x1="634" y1="115" x2="670" y2="115"/>
+  </g>
+  <text x="400" y="190" text-anchor="middle" font-size="12" fill="#9fb0c8">The key stays secret, yet the message was changed and nothing detected it.</text>
+  <g font-size="13" text-anchor="middle">
+    <rect x="24" y="218" width="236" height="84" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="142" y="244" fill="#5fe3b0" font-weight="700">Confidentiality</text>
+    <text x="142" y="266" fill="#e3fffa" font-size="11.5">only readers with the key</text>
+    <text x="142" y="284" fill="#5fe3b0" font-size="11.5">covered by encryption</text>
+    <rect x="282" y="218" width="236" height="84" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="400" y="244" fill="#ff2a6d" font-weight="700">Integrity</text>
+    <text x="400" y="266" fill="#e3fffa" font-size="11.5">no silent modification</text>
+    <text x="400" y="284" fill="#ff2a6d" font-size="11.5">needs a MAC or AEAD</text>
+    <rect x="540" y="218" width="236" height="84" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="658" y="244" fill="#ff2a6d" font-weight="700">Authentication</text>
+    <text x="658" y="266" fill="#e3fffa" font-size="11.5">sender is who they claim</text>
+    <text x="658" y="284" fill="#ff2a6d" font-size="11.5">needs a MAC or signature</text>
+  </g>
+  <text x="400" y="342" text-anchor="middle" font-size="11" fill="#6c7b93">Always ask: secure against an attacker who can do what?</text>
+</svg>

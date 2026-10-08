@@ -1,0 +1,14 @@
+=== PHAN A: MT19937 ===
+[*] da quan sat 624 output 32-bit tu PRNG nan nhan
+[*] du doan 6 so ke tiep: [3556353787, 873163371, 1678995355, 1884424988, 2004216369, 840814323]
+[*] PRNG that sinh ra   : [3556353787, 873163371, 1678995355, 1884424988, 2004216369, 840814323]
+[*] khop? True
+[+] clone MT19937 thanh cong, du doan dung so tuong lai
+
+=== PHAN B: LCG ===
+[*] chi co day output: [1048490390, 638681367, 965945604, 390061805, 1953255714, 1965234099, 1486606704, 550010089, 1352818030, 2125298703, 239375516, 86179493]
+[*] khoi phuc m = 2147483648 | that = 2147483648 | dung? True
+[*] khoi phuc a = 1103515245 | that = 1103515245 | dung? True
+[*] khoi phuc c = 12345 | that = 12345 | dung? True
+[*] du doan so ke tiep = 840622714 | that = 840622714 | khop? True
+[+] pha LCG thanh cong, khoi phuc het tham so va du doan dung

@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 440" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="440" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Heap note capstone: UAF to GOT overwrite</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">leak heap -&gt; poison next -&gt; land on atoi@got -&gt; trigger</text>
+
+  <defs>
+    <marker id="a6" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- stage 1 -->
+  <g font-size="12" text-anchor="middle">
+    <rect x="28" y="90" width="150" height="54" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="103" y="110" fill="#e3fffa">del(0); del(1)</text>
+    <text x="103" y="126" fill="#9fb0c8" font-size="10.5">UAF: notes[i] not NULL</text>
+    <text x="103" y="139" fill="#6c7b93" font-size="10">tcache[0x40] count=2</text>
+  </g>
+
+  <g font-size="12" text-anchor="middle">
+    <rect x="212" y="90" width="150" height="54" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="287" y="110" fill="#e3fffa">view(0)</text>
+    <text x="287" y="126" fill="#9fb0c8" font-size="10.5">leak fd = note0&gt;&gt;12</text>
+    <text x="287" y="139" fill="#6c7b93" font-size="10">hi = heap_base&gt;&gt;12</text>
+  </g>
+  <line x1="178" y1="117" x2="208" y2="117" stroke="#6c7b93" stroke-width="2" marker-end="url(#a6)"/>
+
+  <!-- stage 2 -->
+  <g font-size="12" text-anchor="middle">
+    <rect x="396" y="90" width="180" height="54" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="486" y="110" fill="#ff2a6d" font-weight="700">edit(1, hi XOR target)</text>
+    <text x="486" y="126" fill="#9fb0c8" font-size="10.5">target = atoi@got</text>
+    <text x="486" y="139" fill="#6c7b93" font-size="10">no absolute offset needed</text>
+  </g>
+  <line x1="362" y1="117" x2="392" y2="117" stroke="#6c7b93" stroke-width="2" marker-end="url(#a6)"/>
+
+  <g font-size="12" text-anchor="middle">
+    <rect x="612" y="90" width="160" height="54" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="692" y="110" fill="#fcee0a" font-weight="700">add(2); add(3)</text>
+    <text x="692" y="126" fill="#9fb0c8" font-size="10.5">2nd alloc returns</text>
+    <text x="692" y="139" fill="#6c7b93" font-size="10">&amp;atoi@got</text>
+  </g>
+  <line x1="576" y1="117" x2="608" y2="117" stroke="#6c7b93" stroke-width="2" marker-end="url(#a6)"/>
+
+  <!-- GOT row -->
+  <text x="30" y="190" font-size="13" font-weight="700" fill="#9fb0c8">.got.plt entries (alignment matters)</text>
+  <g font-size="11" text-anchor="middle">
+    <rect x="30"  y="204" width="140" height="44" rx="6" fill="#111827" stroke="#263451" stroke-dasharray="4 3"/>
+    <text x="100" y="222" fill="#9fb0c8">free@got</text>
+    <text x="100" y="236" fill="#6c7b93" font-size="9.5">0x404000 (loader-adjacent, avoid)</text>
+
+    <rect x="182" y="204" width="140" height="44" rx="6" fill="#111827" stroke="#263451" stroke-dasharray="4 3"/>
+    <text x="252" y="222" fill="#9fb0c8">puts@got</text>
+    <text x="252" y="236" fill="#6c7b93" font-size="9.5">0x404018 (8-aligned only)</text>
+
+    <rect x="334" y="204" width="140" height="44" rx="6" fill="#111827" stroke="#ff2a6d"/>
+    <text x="404" y="222" fill="#ff2a6d" font-weight="700">atoi@got</text>
+    <text x="404" y="236" fill="#9fb0c8" font-size="9.5">0x404050, 16-aligned, chosen</text>
+
+    <rect x="486" y="204" width="140" height="44" rx="6" fill="#111827" stroke="#263451" stroke-dasharray="4 3"/>
+    <text x="556" y="222" fill="#9fb0c8">read@got</text>
+    <text x="556" y="236" fill="#6c7b93" font-size="9.5">0x404038 (8-aligned only)</text>
+  </g>
+
+  <!-- stage 3 -->
+  <g font-size="12" text-anchor="middle">
+    <rect x="200" y="290" width="200" height="54" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="300" y="310" fill="#ff2a6d" font-weight="700">edit(3, &amp;backdoor)</text>
+    <text x="300" y="326" fill="#9fb0c8" font-size="10.5">*atoi@got = backdoor</text>
+    <text x="300" y="339" fill="#6c7b93" font-size="10">needs Partial RELRO</text>
+  </g>
+  <line x1="404" y1="248" x2="330" y2="286" stroke="#6c7b93" stroke-width="2" marker-end="url(#a6)"/>
+
+  <g font-size="12" text-anchor="middle">
+    <rect x="460" y="290" width="220" height="54" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="570" y="310" fill="#5fe3b0" font-weight="700">add() -&gt; idx&gt; "0"</text>
+    <text x="570" y="326" fill="#9fb0c8" font-size="10.5">atoi("0") jumps to backdoor</text>
+    <text x="570" y="339" fill="#6c7b93" font-size="10">system("/bin/sh") -&gt; flag</text>
+  </g>
+  <line x1="400" y1="317" x2="456" y2="317" stroke="#6c7b93" stroke-width="2" marker-end="url(#a6)"/>
+
+  <text x="400" y="400" text-anchor="middle" font-size="11" fill="#6c7b93">Four pieces chained: UAF leak, safe-linking poison, 16-aligned GOT target, natural trigger.</text>
+</svg>

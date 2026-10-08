@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="360" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Guestbook: leak libc, then ret2libc</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">No PIE, no canary, NX on, dynamic -&gt; two-stage exploit</text>
+
+  <defs>
+    <marker id="a2" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- stage 1 row -->
+  <text x="30" y="100" font-size="13" font-weight="700" fill="#00f0ff">Stage 1 · leak</text>
+  <g font-size="12" text-anchor="middle">
+    <rect x="30"  y="112" width="150" height="54" rx="7" fill="#111827" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="105" y="134" fill="#e3fffa">overflow 72B</text>
+    <text x="105" y="150" fill="#9fb0c8" font-size="10">attacker payload</text>
+
+    <rect x="212" y="112" width="160" height="54" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="292" y="134" fill="#e3fffa">pop rdi; ret</text>
+    <text x="292" y="150" fill="#9fb0c8" font-size="10">puts(puts@got)</text>
+
+    <rect x="404" y="112" width="160" height="54" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="484" y="134" fill="#e3fffa">leak printed</text>
+    <text x="484" y="150" fill="#9fb0c8" font-size="10">puts @ libc runtime</text>
+
+    <rect x="596" y="112" width="178" height="54" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="685" y="134" fill="#5fe3b0" font-weight="700">libc base</text>
+    <text x="685" y="150" fill="#9fb0c8" font-size="10">leak - libc.sym['puts']</text>
+  </g>
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a2)" fill="none">
+    <line x1="180" y1="139" x2="208" y2="139"/>
+    <line x1="372" y1="139" x2="400" y2="139"/>
+    <line x1="564" y1="139" x2="592" y2="139"/>
+  </g>
+  <text x="400" y="186" text-anchor="middle" font-size="11" fill="#6c7b93">ret back to main for a second round</text>
+
+  <!-- stage 2 row -->
+  <text x="30" y="226" font-size="13" font-weight="700" fill="#ff2a6d">Stage 2 · exploit</text>
+  <g font-size="12" text-anchor="middle">
+    <rect x="30"  y="238" width="150" height="54" rx="7" fill="#111827" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="105" y="260" fill="#e3fffa">overflow 72B</text>
+    <text x="105" y="276" fill="#9fb0c8" font-size="10">second payload</text>
+
+    <rect x="212" y="238" width="160" height="54" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="292" y="260" fill="#e3fffa">ret; pop rdi</text>
+    <text x="292" y="276" fill="#9fb0c8" font-size="10">16-byte align</text>
+
+    <rect x="404" y="238" width="160" height="54" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="484" y="260" fill="#e3fffa">"/bin/sh"</text>
+    <text x="484" y="276" fill="#9fb0c8" font-size="10">libc.search()</text>
+
+    <rect x="596" y="238" width="178" height="54" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="685" y="260" fill="#5fe3b0" font-weight="700">system()</text>
+    <text x="685" y="276" fill="#9fb0c8" font-size="10">shell + flag.txt</text>
+  </g>
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a2)" fill="none">
+    <line x1="180" y1="265" x2="208" y2="265"/>
+    <line x1="372" y1="265" x2="400" y2="265"/>
+    <line x1="564" y1="265" x2="592" y2="265"/>
+  </g>
+
+  <text x="400" y="330" text-anchor="middle" font-size="11" fill="#6c7b93">ASLR changes the libc base every run; leak minus offset always recovers it.</text>
+</svg>

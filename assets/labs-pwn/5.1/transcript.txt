@@ -1,0 +1,129 @@
+=====================================================================
+Lab 5.1 - transcript (output checksec THAT, chay tren server verify)
+Moi truong: Ubuntu 24.04.4 LTS, glibc 2.39, gcc 13.3.0
+Lenh: pwn checksec <binary>   (pwntools)
+=====================================================================
+
+$ bash build.sh
+[*] built: vuln_all vuln_nopie vuln_exec vuln_canary vuln_pie vuln_partial vuln_norelro vuln_nocet
+
+# Luu y: tren Ubuntu 24.04, gcc 13.3 MAC DINH bat -fcf-protection (CET), nen
+# checksec hien them hai dong SHSTK va IBT o moi ban KHONG co -fcf-protection=none.
+
+---------------------------------------------------------------------
+1) vuln_all : gcc mac dinh (du bo mitigation)
+---------------------------------------------------------------------
+$ pwn checksec vuln_all
+    Arch:       amd64-64-little
+    RELRO:      Full RELRO
+    Stack:      Canary found
+    NX:         NX enabled
+    PIE:        PIE enabled
+    SHSTK:      Enabled
+    IBT:        Enabled
+    Stripped:   No
+
+---------------------------------------------------------------------
+2) vuln_nopie : -fno-stack-protector -no-pie
+---------------------------------------------------------------------
+$ pwn checksec vuln_nopie
+    Arch:       amd64-64-little
+    RELRO:      Partial RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        No PIE (0x400000)
+    SHSTK:      Enabled
+    IBT:        Enabled
+    Stripped:   No
+
+---------------------------------------------------------------------
+3) vuln_exec : -fno-stack-protector -no-pie -z execstack (tat NX)
+---------------------------------------------------------------------
+$ pwn checksec vuln_exec
+    Arch:       amd64-64-little
+    RELRO:      Partial RELRO
+    Stack:      No canary found
+    NX:         NX unknown - GNU_STACK missing
+    PIE:        No PIE (0x400000)
+    Stack:      Executable
+    RWX:        Has RWX segments
+    SHSTK:      Enabled
+    IBT:        Enabled
+    Stripped:   No
+
+---------------------------------------------------------------------
+4) vuln_canary : -fstack-protector-all -no-pie
+---------------------------------------------------------------------
+$ pwn checksec vuln_canary
+    Arch:       amd64-64-little
+    RELRO:      Partial RELRO
+    Stack:      Canary found
+    NX:         NX enabled
+    PIE:        No PIE (0x400000)
+    SHSTK:      Enabled
+    IBT:        Enabled
+    Stripped:   No
+
+---------------------------------------------------------------------
+5) vuln_pie : -fno-stack-protector -fpie -pie (NX + PIE, khong canary)
+---------------------------------------------------------------------
+$ pwn checksec vuln_pie
+    Arch:       amd64-64-little
+    RELRO:      Full RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        PIE enabled
+    SHSTK:      Enabled
+    IBT:        Enabled
+    Stripped:   No
+
+---------------------------------------------------------------------
+6) vuln_partial : -Wl,-z,relro,-z,lazy (ep Partial RELRO)
+---------------------------------------------------------------------
+$ pwn checksec vuln_partial
+    Arch:       amd64-64-little
+    RELRO:      Partial RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        No PIE (0x400000)
+    SHSTK:      Enabled
+    IBT:        Enabled
+    Stripped:   No
+
+---------------------------------------------------------------------
+7) vuln_norelro : -Wl,-z,norelro (No RELRO)
+---------------------------------------------------------------------
+$ pwn checksec vuln_norelro
+    Arch:       amd64-64-little
+    RELRO:      No RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        No PIE (0x400000)
+    SHSTK:      Enabled
+    IBT:        Enabled
+    Stripped:   No
+
+---------------------------------------------------------------------
+8) vuln_nocet : gcc mac dinh + -fcf-protection=none (tat CET)
+---------------------------------------------------------------------
+$ pwn checksec vuln_nocet
+    Arch:       amd64-64-little
+    RELRO:      Full RELRO
+    Stack:      Canary found
+    NX:         NX enabled
+    PIE:        PIE enabled
+    Stripped:   No
+# => khong con dong SHSTK/IBT: dung -fcf-protection=none da go CET marker.
+
+---------------------------------------------------------------------
+Bang tong hop (doc tu output tren)
+---------------------------------------------------------------------
+binary         RELRO     Canary  NX            PIE              CET(SHSTK/IBT)
+vuln_all       Full      Yes     enabled       PIE              Enabled
+vuln_nopie     Partial   No      enabled       No PIE(0x400000) Enabled
+vuln_exec      Partial   No      KHONG (RWX)   No PIE(0x400000) Enabled
+vuln_canary    Partial   Yes     enabled       No PIE(0x400000) Enabled
+vuln_pie       Full      No      enabled       PIE              Enabled
+vuln_partial   Partial   No      enabled       No PIE(0x400000) Enabled
+vuln_norelro   No RELRO  No      enabled       No PIE(0x400000) Enabled
+vuln_nocet     Full      Yes     enabled       PIE              (tat)

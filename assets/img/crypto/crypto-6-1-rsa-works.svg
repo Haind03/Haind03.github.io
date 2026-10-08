@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="800" height="420" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">RSA key generation, encryption, and the trapdoor</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">toy values: p=61, q=53, e=17, d=2753</text>
+
+  <g font-size="12" text-anchor="middle">
+    <rect x="30" y="84" width="130" height="54" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="95" y="106" fill="#e3fffa">primes p, q</text>
+    <text x="95" y="123" fill="#fcee0a" font-size="10.5">secret</text>
+    <rect x="210" y="84" width="150" height="54" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="285" y="106" fill="#e3fffa">n = p * q</text>
+    <text x="285" y="123" fill="#00f0ff" font-size="10.5">public, 3233</text>
+    <rect x="410" y="84" width="170" height="54" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="495" y="106" fill="#e3fffa">phi = (p-1)(q-1)</text>
+    <text x="495" y="123" fill="#fcee0a" font-size="10.5">secret, 3120</text>
+    <rect x="630" y="84" width="140" height="54" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="700" y="106" fill="#e3fffa">d = e^-1 mod phi</text>
+    <text x="700" y="123" fill="#fcee0a" font-size="10.5">private key</text>
+  </g>
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="160" y1="111" x2="206" y2="111"/>
+    <line x1="360" y1="111" x2="406" y2="111"/>
+    <line x1="580" y1="111" x2="626" y2="111"/>
+  </g>
+  <text x="495" y="166" text-anchor="middle" font-size="11" fill="#00f0ff" font-family="'JetBrains Mono',monospace">e = 65537 (public), gcd(e, phi) = 1</text>
+
+  <g font-size="12" text-anchor="middle">
+    <rect x="30" y="206" width="150" height="54" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="105" y="228" fill="#e3fffa">plaintext m</text>
+    <text x="105" y="245" fill="#6c7b93" font-size="10.5">0 &lt;= m &lt; n</text>
+    <rect x="325" y="206" width="150" height="54" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="400" y="228" fill="#e3fffa">ciphertext c</text>
+    <text x="400" y="245" fill="#6c7b93" font-size="10.5">c = m^e mod n</text>
+    <rect x="620" y="206" width="150" height="54" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="695" y="228" fill="#e3fffa">m recovered</text>
+    <text x="695" y="245" fill="#5fe3b0" font-size="10.5">m = c^d mod n</text>
+  </g>
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="180" y1="233" x2="321" y2="233"/>
+    <line x1="475" y1="233" x2="616" y2="233"/>
+  </g>
+  <text x="250" y="224" text-anchor="middle" font-size="11" fill="#00f0ff">public (n, e)</text>
+  <text x="545" y="224" text-anchor="middle" font-size="11" fill="#fcee0a">private d</text>
+
+  <rect x="30" y="296" width="740" height="84" rx="7" fill="#111827" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+  <text x="400" y="320" text-anchor="middle" font-size="12.5" fill="#ff2a6d" font-weight="700">Attack: factor n</text>
+  <text x="400" y="342" text-anchor="middle" font-size="11.5" fill="#9fb0c8">n -&gt; p, q -&gt; phi -&gt; d. Anyone who factors n has the private key.</text>
+  <text x="400" y="362" text-anchor="middle" font-size="11" fill="#6c7b93" font-family="'JetBrains Mono',monospace">e*d = 17 * 2753 = 46801 = 1 + 15 * 3120</text>
+</svg>

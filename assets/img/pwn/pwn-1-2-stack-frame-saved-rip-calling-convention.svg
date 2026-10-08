@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 440" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="440" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Stack frame of vuln() and the overflow path</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">buf writes upward, the stack grows downward</text>
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+  <g font-size="12.5" text-anchor="middle">
+    <rect x="230" y="78" width="280" height="46" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="370" y="106" fill="#9fb0c8">caller's frame (main)</text>
+
+    <rect x="230" y="134" width="280" height="50" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="370" y="156" fill="#ff2a6d" font-weight="700">saved RIP</text>
+    <text x="370" y="174" fill="#9fb0c8" font-size="11">[rbp+8], return into main</text>
+
+    <rect x="230" y="194" width="280" height="50" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="370" y="216" fill="#fcee0a" font-weight="700">saved RBP</text>
+    <text x="370" y="234" fill="#9fb0c8" font-size="11">[rbp], main's old frame pointer</text>
+
+    <rect x="230" y="254" width="280" height="70" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="370" y="280" fill="#00f0ff" font-weight="700">char buf[64]</text>
+    <text x="370" y="298" fill="#9fb0c8" font-size="11">local buffer, top of the frame</text>
+    <text x="370" y="314" fill="#9fb0c8" font-size="11">[rsp]</text>
+  </g>
+  <g stroke="#ff2a6d" stroke-width="2.5" fill="none" marker-end="url(#a)">
+    <path d="M370,310 L370,264"/>
+    <path d="M370,254 L370,204"/>
+    <path d="M370,194 L370,144"/>
+  </g>
+  <text x="560" y="280" font-size="11" fill="#ff2a6d" font-family="'JetBrains Mono',monospace">overflow writes up,</text>
+  <text x="560" y="296" font-size="11" fill="#ff2a6d" font-family="'JetBrains Mono',monospace">past RBP, into RIP</text>
+
+  <g font-size="11" fill="#6c7b93" text-anchor="start">
+    <text x="30" y="90">high address</text>
+    <text x="30" y="316">low address</text>
+  </g>
+
+  <g font-size="12" font-family="'JetBrains Mono',monospace">
+    <rect x="30" y="356" width="740" height="60" rx="7" fill="#0b1518" stroke="#5fe3b0" stroke-dasharray="5 4"/>
+    <text x="50" y="378" fill="#5fe3b0">Parameter order (System V AMD64):</text>
+    <text x="50" y="398" fill="#9fb0c8">1 rdi   2 rsi   3 rdx   4 rcx   5 r8   6 r9   7+ stack   return value: rax</text>
+  </g>
+</svg>

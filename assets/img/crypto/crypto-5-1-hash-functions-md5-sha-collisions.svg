@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 410" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="800" height="410" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Three attacks on a hash, three different costs</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">n-bit digest: collision costs 2^(n/2), preimage costs 2^n</text>
+
+  <g font-size="12.5" text-anchor="middle">
+    <rect x="40" y="84" width="170" height="50" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="125" y="106" fill="#e3fffa">Input m</text>
+    <text x="125" y="123" fill="#6c7b93" font-size="10.5">any length</text>
+    <rect x="315" y="84" width="170" height="50" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="400" y="106" fill="#e3fffa">H(m)</text>
+    <text x="400" y="123" fill="#6c7b93" font-size="10.5">one way, no key</text>
+    <rect x="590" y="84" width="170" height="50" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="675" y="106" fill="#e3fffa">Digest h</text>
+    <text x="675" y="123" fill="#6c7b93" font-size="10.5">fixed n bits</text>
+  </g>
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="210" y1="109" x2="311" y2="109"/>
+    <line x1="485" y1="109" x2="586" y2="109"/>
+  </g>
+
+  <g font-size="12" text-anchor="middle">
+    <rect x="40" y="172" width="230" height="86" rx="7" fill="#0b1518" stroke="#00f0ff" stroke-dasharray="5 4"/>
+    <text x="155" y="196" fill="#00f0ff" font-weight="700">Preimage</text>
+    <text x="155" y="216" fill="#9fb0c8">given h, find any m</text>
+    <text x="155" y="236" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">cost ~ 2^n</text>
+    <rect x="285" y="172" width="230" height="86" rx="7" fill="#0b1518" stroke="#00f0ff" stroke-dasharray="5 4"/>
+    <text x="400" y="196" fill="#00f0ff" font-weight="700">Second preimage</text>
+    <text x="400" y="216" fill="#9fb0c8">given m1, find m2 != m1</text>
+    <text x="400" y="236" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">cost ~ 2^n</text>
+    <rect x="530" y="172" width="230" height="86" rx="7" fill="#111827" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="645" y="196" fill="#ff2a6d" font-weight="700">Collision</text>
+    <text x="645" y="216" fill="#9fb0c8">attacker picks both m1, m2</text>
+    <text x="645" y="236" fill="#ff2a6d" font-family="'JetBrains Mono',monospace">cost ~ 2^(n/2)</text>
+  </g>
+
+  <g font-size="12" text-anchor="middle">
+    <rect x="40" y="296" width="170" height="52" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="125" y="318" fill="#e3fffa">MD5</text>
+    <text x="125" y="336" fill="#ff2a6d" font-size="11">collisions broken</text>
+    <rect x="235" y="296" width="170" height="52" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="320" y="318" fill="#e3fffa">SHA-1</text>
+    <text x="320" y="336" fill="#ff2a6d" font-size="11">collisions broken</text>
+    <rect x="430" y="296" width="170" height="52" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="515" y="318" fill="#e3fffa">SHA-2</text>
+    <text x="515" y="336" fill="#5fe3b0" font-size="11">no known collision</text>
+    <rect x="625" y="296" width="135" height="52" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="692" y="318" fill="#e3fffa">SHA-3</text>
+    <text x="692" y="336" fill="#5fe3b0" font-size="11">sponge design</text>
+  </g>
+  <text x="400" y="384" text-anchor="middle" font-size="11" fill="#6c7b93">Collisions fall first, so a hash that fails there cannot be trusted for signatures.</text>
+</svg>

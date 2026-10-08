@@ -1,0 +1,4 @@
+Khoa tung phan tu crib 'FLAG': CRYP
+Khoa khoi phuc             : CRYPTO
+Ban ro                     : FLAG{v1g3n3re_c1ph3r_1s_n0t_s4fe}
+FLAG                       : FLAG{v1g3n3re_c1ph3r_1s_n0t_s4fe}

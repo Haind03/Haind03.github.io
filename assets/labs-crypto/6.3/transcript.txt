@@ -1,0 +1,2 @@
+[1] common modulus -> b'CTF{common_modulus_no_d_needed}'
+[2] Hastad broadcast: can chinh xac=True -> b'CTF{hastad_broadcast_crt_cube}'

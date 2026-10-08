@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="420" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">ROP Emporium: four steps up the ladder</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">same overflow, same offset 40, one new skill each time</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <g font-size="12.5" text-anchor="middle">
+    <rect x="30" y="100" width="165" height="70" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="112" y="124" fill="#e3fffa" font-weight="700">ret2win</text>
+    <text x="112" y="142" fill="#9fb0c8" font-size="10.5">jump to a</text>
+    <text x="112" y="156" fill="#9fb0c8" font-size="10.5">ready-made function</text>
+
+    <rect x="218" y="100" width="165" height="70" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="300" y="124" fill="#e3fffa" font-weight="700">split</text>
+    <text x="300" y="142" fill="#9fb0c8" font-size="10.5">set one register</text>
+    <text x="300" y="156" fill="#9fb0c8" font-size="10.5">pop rdi, call system</text>
+
+    <rect x="406" y="100" width="180" height="70" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="496" y="124" fill="#e3fffa" font-weight="700">callme</text>
+    <text x="496" y="142" fill="#9fb0c8" font-size="10.5">set 3 registers,</text>
+    <text x="496" y="156" fill="#9fb0c8" font-size="10.5">call 3 funcs in order</text>
+
+    <rect x="604" y="100" width="166" height="70" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="687" y="124" fill="#e3fffa" font-weight="700">write4</text>
+    <text x="687" y="142" fill="#9fb0c8" font-size="10.5">write own string</text>
+    <text x="687" y="156" fill="#9fb0c8" font-size="10.5">into .bss, then call</text>
+  </g>
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="195" y1="135" x2="214" y2="135"/>
+    <line x1="383" y1="135" x2="402" y2="135"/>
+    <line x1="586" y1="135" x2="600" y2="135"/>
+  </g>
+
+  <!-- write4 detail below -->
+  <text x="400" y="222" text-anchor="middle" font-size="12" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">write4 in detail</text>
+  <g font-size="11.5" text-anchor="middle">
+    <rect x="60" y="238" width="160" height="50" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="140" y="258" fill="#e3fffa">pop r14, r15 ; ret</text>
+    <text x="140" y="274" fill="#9fb0c8" font-size="10">r14=data, r15="flag.txt"</text>
+
+    <rect x="260" y="238" width="160" height="50" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="340" y="258" fill="#ff2a6d" font-weight="700">mov [r14], r15</text>
+    <text x="340" y="274" fill="#9fb0c8" font-size="10">writes 8 bytes to .bss</text>
+
+    <rect x="460" y="238" width="140" height="50" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="530" y="258" fill="#e3fffa">pop rdi ; ret</text>
+    <text x="530" y="274" fill="#9fb0c8" font-size="10">rdi = data</text>
+
+    <rect x="620" y="238" width="140" height="50" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="690" y="258" fill="#5fe3b0" font-weight="700">print_file</text>
+    <text x="690" y="274" fill="#9fb0c8" font-size="10">prints flag.txt</text>
+  </g>
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="220" y1="263" x2="256" y2="263"/>
+    <line x1="420" y1="263" x2="456" y2="263"/>
+    <line x1="600" y1="263" x2="616" y2="263"/>
+  </g>
+  <line x1="687" y1="170" x2="340" y2="234" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" opacity="0.8"/>
+
+  <text x="400" y="340" text-anchor="middle" font-size="11.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">Always resolve addresses with elf.sym / elf.plt / rop.find_gadget, never hardcode.</text>
+  <text x="400" y="364" text-anchor="middle" font-size="11" fill="#6c7b93">A ret gadget before any system() call fixes the 16-byte stack alignment.</text>
+</svg>

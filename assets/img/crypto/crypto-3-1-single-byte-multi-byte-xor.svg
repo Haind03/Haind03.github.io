@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <defs>
+    <marker id="a" markerWidth="9" marker360eight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="800" height="360" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Breaking repeating-key XOR</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">c[i] = p[i] xor k[i mod m]  : one key length, m single-byte problems</text>
+  <g font-size="12.5" text-anchor="middle">
+    <rect x="28" y="100" width="130" height="62" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="93" y="126" fill="#e3fffa">Ciphertext</text>
+    <text x="93" y="146" fill="#6c7b93" font-size="10.5">known bytes</text>
+    <rect x="196" y="100" width="150" height="62" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="271" y="124" fill="#ff2a6d" font-weight="700">1. Guess m</text>
+    <text x="271" y="144" fill="#9fb0c8" font-size="11">smallest avg Hamming / m</text>
+    <rect x="384" y="100" width="150" height="62" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="459" y="124" fill="#e3fffa" font-weight="700">2. Split columns</text>
+    <text x="459" y="144" fill="#9fb0c8" font-size="11" font-family="'JetBrains Mono',monospace">ct[j::m]</text>
+    <rect x="572" y="100" width="200" height="62" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="672" y="124" fill="#e3fffa" font-weight="700">3. Single-byte per column</text>
+    <text x="672" y="144" fill="#9fb0c8" font-size="11">brute 256, score English</text>
+    <rect x="572" y="226" width="200" height="62" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="672" y="250" fill="#fcee0a" font-weight="700">4. Key bytes joined</text>
+    <text x="672" y="270" fill="#9fb0c8" font-size="11" font-family="'JetBrains Mono',monospace">k = k0 k1 ... k(m-1)</text>
+    <rect x="334" y="226" width="200" height="62" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="434" y="250" fill="#5fe3b0" font-weight="700">Plaintext</text>
+    <text x="434" y="270" fill="#9fb0c8" font-size="11">c xor key, repeated</text>
+    <rect x="28" y="226" width="270" height="62" rx="7" fill="#111827" stroke="#6c7b93" stroke-dasharray="5 4"/>
+    <text x="163" y="250" fill="#e3fffa">Crib dragging (optional)</text>
+    <text x="163" y="270" fill="#9fb0c8" font-size="11" font-family="'JetBrains Mono',monospace">k = c xor crib, e.g. "flag{"</text>
+  </g>
+  <text x="400" y="326" text-anchor="middle" font-size="11.5" fill="#6c7b93">multiples of m (2m, 3m) also score low, so a repeated key means the true length is a divisor</text>
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="158" y1="131" x2="192" y2="131"/><line x1="346" y1="131" x2="380" y2="131"/><line x1="534" y1="131" x2="568" y2="131"/>
+    <line x1="672" y1="162" x2="672" y2="222"/><line x1="572" y1="257" x2="538" y2="257"/>
+    <line x1="298" y1="257" x2="330" y2="257" stroke-dasharray="4 3"/>
+  </g>
+</svg>

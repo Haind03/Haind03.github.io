@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="800" height="400" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">From point addition to ECDH and ECDSA</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">y^2 = x^3 + 3x + 2 (mod 97), G = (0, 14), n = 103</text>
+
+  <g font-size="12" text-anchor="middle">
+    <rect x="30" y="86" width="220" height="60" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="140" y="108" fill="#e3fffa">P + Q (chord and tangent)</text>
+    <text x="140" y="128" fill="#6c7b93" font-size="10.5" font-family="'JetBrains Mono',monospace">m = (y2-y1)/(x2-x1)</text>
+
+    <rect x="290" y="86" width="220" height="60" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="400" y="108" fill="#e3fffa">k*G by double-and-add</text>
+    <text x="400" y="128" fill="#6c7b93" font-size="10.5" font-family="'JetBrains Mono',monospace">2G = (86, 53)</text>
+
+    <rect x="550" y="86" width="220" height="60" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="660" y="108" fill="#e3fffa">ECDLP: given k*G, find k</text>
+    <text x="660" y="128" fill="#fcee0a" font-size="10.5">hard on a good curve</text>
+  </g>
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="250" y1="116" x2="286" y2="116"/>
+    <line x1="510" y1="116" x2="546" y2="116"/>
+  </g>
+
+  <!-- ECDH -->
+  <g font-size="12" text-anchor="middle">
+    <text x="205" y="184" fill="#00f0ff" font-weight="700">ECDH</text>
+    <rect x="30" y="196" width="150" height="56" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="105" y="218" fill="#e3fffa">Alice dA = 17</text>
+    <text x="105" y="238" fill="#6c7b93" font-size="10.5" font-family="'JetBrains Mono',monospace">QA = dA*G</text>
+
+    <rect x="230" y="196" width="150" height="56" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="305" y="218" fill="#e3fffa">Bob dB = 71</text>
+    <text x="305" y="238" fill="#6c7b93" font-size="10.5" font-family="'JetBrains Mono',monospace">QB = dB*G</text>
+
+    <rect x="80" y="290" width="250" height="52" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="205" y="312" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">dA*QB = dB*QA</text>
+    <text x="205" y="331" fill="#9fb0c8" font-size="11">shared point (67, 84)</text>
+  </g>
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="105" y1="254" x2="160" y2="286"/>
+    <line x1="305" y1="254" x2="250" y2="286"/>
+  </g>
+
+  <!-- ECDSA -->
+  <g font-size="12" text-anchor="middle">
+    <text x="600" y="184" fill="#00f0ff" font-weight="700">ECDSA</text>
+    <rect x="430" y="196" width="170" height="56" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="515" y="218" fill="#e3fffa">nonce k, key d</text>
+    <text x="515" y="238" fill="#6c7b93" font-size="10.5" font-family="'JetBrains Mono',monospace">r = (k*G).x mod n</text>
+
+    <rect x="630" y="196" width="150" height="56" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="705" y="218" fill="#e3fffa">hash z</text>
+    <text x="705" y="238" fill="#6c7b93" font-size="10.5">of the message</text>
+
+    <rect x="430" y="290" width="350" height="52" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="605" y="312" fill="#ff2a6d" font-family="'JetBrains Mono',monospace">s = k^-1 (z + r*d) mod n</text>
+    <text x="605" y="331" fill="#9fb0c8" font-size="11">signature (r, s); verify X = u1*G + u2*Q</text>
+  </g>
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="515" y1="254" x2="560" y2="286"/>
+    <line x1="705" y1="254" x2="650" y2="286"/>
+  </g>
+  <text x="400" y="376" text-anchor="middle" font-size="11" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">coordinates mod p = 97, scalars and signatures mod n = 103</text>
+</svg>

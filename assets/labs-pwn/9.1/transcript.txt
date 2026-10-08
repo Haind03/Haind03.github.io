@@ -1,0 +1,57 @@
+Moi truong: Ubuntu 24.04.4 LTS, glibc 2.39-0ubuntu8.9, gcc 13.3.0, gdb 15.1.
+ASLR tat (setarch -R) de so on dinh khi hoc; co che safe-linking van y het khi ASLR bat.
+
+$ ./build.sh
+[*] built: heapview
+
+============ ./heapview (setarch -R) ============
+== chunk vua cap phat ==
+a    mem=0x4052a0  prev_size=0  size_field=0x41  (chunk_size=0x40 PREV_INUSE=1)
+b    mem=0x4052e0  prev_size=0  size_field=0x41  (chunk_size=0x40 PREV_INUSE=1)
+c    mem=0x405320  prev_size=0  size_field=0x41  (chunk_size=0x40 PREV_INUSE=1)
+
+== free(a) -> vao tcache[0x40] (bin rong) ==
+a.fd (obfuscated) = 0x405
+a>>12             = 0x405   (== fd vi next=NULL: PROTECT(a,0)=a>>12)
+a.key             = 0xd0bc08f26109c69f   (tcache_key, de phat hien double free)
+
+== free(b) -> b thanh dau bin, b.fd tro toi a (bi obfuscate) ==
+b.fd (stored)     = 0x4056a5
+PROTECT(b,a)      = 0x4056a5   (= (b>>12) XOR a)
+REVEAL(b.fd)      = 0x4052a0   (= (b>>12) XOR b.fd -> dia chi a that)
+a that            = 0x4052a0
+
+Nhan xet:
+  - size_field = 0x41 = chunk_size 0x40 + bit PREV_INUSE (0x1). malloc(0x30) ->
+    chunk 0x40 vi cong 8 byte header roi lam tron len boi so 16.
+  - 3 chunk lien tiep cach nhau dung 0x40 (0x4052a0, 0x4052e0, 0x405320).
+  - chunk dau tien nam o heap_base + 0x2a0 (0x290 dau heap la tcache_perthread_struct).
+  - free(a) vao tcache rong: fd = PROTECT(a, NULL) = a>>12. Day la safe-linking.
+  - key = gia tri ngau nhien 64-bit cua tien trinh (tcache_key), khong phai con tro heap.
+  - free(b): b.fd luu PROTECT(b, a) = (b>>12) XOR a. REVEAL lay lai dia chi a that.
+
+============ gdb -q -nx -x look.gdb ./heapview ============
+Temporary breakpoint 1 at 0x4013f9: file src.c, line 39.
+=== dia chi 3 chunk ===
+$1 = (void *) 0x4052a0
+$2 = (void *) 0x4052e0
+$3 = (void *) 0x405320
+=== header + fd + key cua chunk a (a-0x10) ===
+0x405290:	0x0000000000000000	0x0000000000000041
+0x4052a0:	0x0000000000000405	0xd0bc08f26109c69f
+=== vung heap ===
+Mapped address spaces:
+          Start Addr           End Addr       Size     Offset  Perms  objfile
+            0x400000           0x401000     0x1000        0x0  r--p   .../heapview
+            0x401000           0x402000     0x1000     0x1000  r-xp   .../heapview
+            0x402000           0x403000     0x1000     0x2000  r--p   .../heapview
+            0x403000           0x404000     0x1000     0x2000  r--p   .../heapview
+            0x404000           0x405000     0x1000     0x3000  rw-p   .../heapview
+            0x405000           0x426000    0x21000        0x0  rw-p   [heap]
+      0x7ffff7c00000     0x7ffff7c28000    0x28000        0x0  r--p   libc.so.6
+      ... (libc, ld, stack ...)
+
+Doc tu gdb:
+  - 0x405290: prev_size=0, size=0x41 -> header cua chunk a.
+  - 0x4052a0: qword dau = 0x405 (fd obfuscated sau free), qword sau = key.
+  - [heap] bat dau o 0x405000, ngay sau segment rw-p cua binary.

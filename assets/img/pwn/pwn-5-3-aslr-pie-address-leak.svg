@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 380" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="380" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">One leak rebuilds the whole object</text>
+  <text x="400" y="54" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">internal offsets are fixed at link time; only the base moves</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- leak source -->
+  <g font-size="12" text-anchor="middle">
+    <rect x="30" y="90" width="170" height="60" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="115" y="112" fill="#00f0ff" font-weight="700">leaked pointer</text>
+    <text x="115" y="128" fill="#9fb0c8" font-size="10.5">%15$p -&gt; base + 0x1244</text>
+    <text x="115" y="142" fill="#9fb0c8" font-size="10.5">(a .text return address)</text>
+  </g>
+
+  <!-- subtract offset -->
+  <g font-size="12" text-anchor="middle">
+    <rect x="245" y="90" width="170" height="60" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="330" y="112" fill="#fcee0a" font-weight="700">subtract known offset</text>
+    <text x="330" y="128" fill="#9fb0c8" font-size="10.5">base = leak - 0x1244</text>
+    <text x="330" y="142" fill="#9fb0c8" font-size="10.5">offset fixed at link time</text>
+  </g>
+  <line x1="200" y1="120" x2="241" y2="120" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+
+  <!-- base -->
+  <g font-size="12" text-anchor="middle">
+    <rect x="460" y="90" width="170" height="60" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="545" y="112" fill="#5fe3b0" font-weight="700">image / libc base</text>
+    <text x="545" y="128" fill="#9fb0c8" font-size="10.5">page-aligned</text>
+    <text x="545" y="142" fill="#9fb0c8" font-size="10.5">low 12 bits = 000</text>
+  </g>
+  <line x1="415" y1="120" x2="456" y2="120" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+
+  <!-- any symbol -->
+  <g font-size="12" text-anchor="middle">
+    <rect x="620" y="200" width="150" height="60" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="695" y="222" fill="#ff2a6d" font-weight="700">win / system</text>
+    <text x="695" y="238" fill="#9fb0c8" font-size="10.5">base + own offset</text>
+  </g>
+  <line x1="545" y1="150" x2="670" y2="196" stroke="#5fe3b0" stroke-width="2" marker-end="url(#a)"/>
+
+  <g font-size="12" text-anchor="middle">
+    <rect x="440" y="200" width="150" height="60" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="515" y="222" fill="#ff2a6d" font-weight="700">&quot;/bin/sh&quot;</text>
+    <text x="515" y="238" fill="#9fb0c8" font-size="10.5">base + own offset</text>
+  </g>
+  <line x1="500" y1="150" x2="500" y2="196" stroke="#5fe3b0" stroke-width="2" marker-end="url(#a)"/>
+
+  <!-- ASLR vs PIE note -->
+  <g font-size="11" text-anchor="middle">
+    <rect x="30" y="200" width="330" height="80" rx="7" fill="#0b1518" stroke="#263451" stroke-dasharray="5 4"/>
+    <text x="195" y="224" fill="#9fb0c8" font-weight="700">ASLR (kernel) vs PIE (binary)</text>
+    <text x="195" y="242" fill="#9fb0c8">ASLR randomizes libc, stack, heap</text>
+    <text x="195" y="258" fill="#9fb0c8">PIE extends that to the main image</text>
+    <text x="195" y="272" fill="#6c7b93" font-size="9.5">no-PIE image always sits at 0x400000</text>
+  </g>
+
+  <text x="400" y="335" text-anchor="middle" font-size="11.5" fill="#fcee0a" font-family="'JetBrains Mono',monospace">A stack pointer only tells you about the stack, never the image or libc base.</text>
+  <text x="400" y="358" text-anchor="middle" font-size="11" fill="#6c7b93">base &amp; 0xfff != 0 means the offset subtracted was wrong.</text>
+</svg>

@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 380" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="800" height="380" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Three classical ciphers, one weakness each</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">what the cipher changes, what it leaks, how it is broken</text>
+
+  <g font-size="12.5" text-anchor="middle">
+    <!-- column 1 -->
+    <rect x="28" y="80" width="230" height="40" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="143" y="105" fill="#e3fffa" font-weight="700">Rail fence</text>
+    <rect x="28" y="144" width="230" height="52" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="143" y="166" fill="#e3fffa">Transposition</text>
+    <text x="143" y="184" fill="#9fb0c8" font-size="11.5">letters keep identity, move place</text>
+    <rect x="28" y="220" width="230" height="52" rx="7" fill="#111827" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="143" y="242" fill="#ff2a6d">Leak: IoC stays high</text>
+    <text x="143" y="260" fill="#9fb0c8" font-size="11.5">key = number of rails only</text>
+    <rect x="28" y="296" width="230" height="52" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="143" y="318" fill="#5fe3b0">Brute-force rails 2..n</text>
+    <text x="143" y="336" fill="#9fb0c8" font-size="11.5">read the one that makes sense</text>
+
+    <!-- column 2 -->
+    <rect x="285" y="80" width="230" height="40" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="400" y="105" fill="#e3fffa" font-weight="700">Playfair</text>
+    <rect x="285" y="144" width="230" height="52" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="400" y="166" fill="#e3fffa">Digraph substitution</text>
+    <text x="400" y="184" fill="#9fb0c8" font-size="11.5">5x5 square from a keyword</text>
+    <rect x="285" y="220" width="230" height="52" rx="7" fill="#111827" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="400" y="242" fill="#ff2a6d">Leak: bigram statistics</text>
+    <text x="400" y="260" fill="#9fb0c8" font-size="11.5">even length, no double letters</text>
+    <rect x="285" y="296" width="230" height="52" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="400" y="318" fill="#5fe3b0">Hill climbing on square</text>
+    <text x="400" y="336" fill="#9fb0c8" font-size="11.5">score with English bigrams</text>
+
+    <!-- column 3 -->
+    <rect x="542" y="80" width="230" height="40" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="657" y="105" fill="#e3fffa" font-weight="700">Enigma</text>
+    <rect x="542" y="144" width="230" height="52" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="657" y="166" fill="#e3fffa">Rotors + reflector</text>
+    <text x="657" y="184" fill="#9fb0c8" font-size="11.5">alphabet changes each key press</text>
+    <rect x="542" y="220" width="230" height="52" rx="7" fill="#111827" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="657" y="242" fill="#ff2a6d">Leak: no letter to itself</text>
+    <text x="657" y="260" fill="#9fb0c8" font-size="11.5">self-inverse, crib can be aligned</text>
+    <rect x="542" y="296" width="230" height="52" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="657" y="318" fill="#5fe3b0">Simulate + brute missing part</text>
+    <text x="657" y="336" fill="#9fb0c8" font-size="11.5">e.g. 26^3 start positions</text>
+  </g>
+
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="143" y1="120" x2="143" y2="140"/><line x1="143" y1="196" x2="143" y2="216"/><line x1="143" y1="272" x2="143" y2="292"/>
+    <line x1="400" y1="120" x2="400" y2="140"/><line x1="400" y1="196" x2="400" y2="216"/><line x1="400" y1="272" x2="400" y2="292"/>
+    <line x1="657" y1="120" x2="657" y2="140"/><line x1="657" y1="196" x2="657" y2="216"/><line x1="657" y1="272" x2="657" y2="292"/>
+  </g>
+</svg>

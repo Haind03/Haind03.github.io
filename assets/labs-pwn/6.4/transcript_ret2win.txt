@@ -1,0 +1,23 @@
+[*] '/root/techlabs/verify-pwn-b/6.4/ret2win'
+    Arch:       amd64-64-little
+    RELRO:      Partial RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        No PIE (0x400000)
+    Stripped:   No
+    Debuginfo:  Yes
+[x] Starting local process './ret2win'
+[+] Starting local process './ret2win': pid 428936
+[*] Loading gadgets for '/root/techlabs/verify-pwn-b/6.4/ret2win'
+[*] ret gadget   = 0x40101a
+[*] ret2win()    = 0x401166
+[x] Receiving all data
+[x] Receiving all data: 1B
+[x] Receiving all data: 19B
+[x] Receiving all data: 63B
+[+] Receiving all data: Done (63B)
+[*] Stopped process './ret2win' (pid 428936)
+ ret2win() called:
+FLAG{rop_emporium_local_equivalent_p6_2026}
+
+[+] ret2win OK: da in flag
