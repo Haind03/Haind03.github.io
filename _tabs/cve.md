@@ -165,6 +165,7 @@ order: 1
 <div class="ca-plat">
   <a href="https://www.wordfence.com/threat-intel/vulnerabilities/researchers/nguyen-dinh-hai-haind" target="_blank" rel="noopener"><strong>Wordfence</strong><span>Researcher profile with all advisories.</span></a>
   <a href="https://patchstack.com/database/researchers/e27f086e-ad03-440c-aee4-f95fd885527e" target="_blank" rel="noopener"><strong>Patchstack</strong><span>Researcher profile on Patchstack.</span></a>
+  <a href="https://vulnerability.circl.lu/credits/HaiND%20from%20the%20Post%20and%20Telecommunication%20Institute%20of%20Technology" target="_blank" rel="noopener"><strong>CIRCL</strong><span>Credits on the CIRCL vulnerability-lookup.</span></a>
 </div>
 
 </div>
