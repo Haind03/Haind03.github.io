@@ -1,4 +1,4 @@
-# Credited WordPress plugin CVEs. CVSS scores are the CNA scores on cve.org. Keep this file sorted by cvss, highest first;
+# Credited CVEs. CVSS scores are the CNA scores on cve.org. Keep this file sorted by cvss, highest first;
 # the landing page renders it in file order.
 
 - id: CVE-2026-48836
@@ -43,6 +43,12 @@
   type: "Authenticated (Contributor+) SQL Injection"
   date: 2026-07-02
   url: https://www.cve.org/CVERecord?id=CVE-2026-57765
+- id: CVE-2026-108110
+  cvss: 7.6
+  plugin: "MOVO <= 0.2.3"
+  type: "Authorization Bypass Through User-Controlled Key"
+  date: 2026-10-09
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108110
 - id: CVE-2026-32481
   cvss: 7.5
   plugin: "Ezoic <= 2.22.11"
@@ -109,6 +115,12 @@
   type: "Unauthenticated Cross Site Scripting (XSS)"
   date: 2026-10-06
   url: https://www.cve.org/CVERecord?id=CVE-2026-32574
+- id: CVE-2026-105883
+  cvss: 7.1
+  plugin: "Th Shop Mania <= 1.9.1"
+  type: "Missing Authorization"
+  date: 2026-10-09
+  url: https://www.cve.org/CVERecord?id=CVE-2026-105883
 - id: CVE-2026-78536
   cvss: 6.5
   plugin: "Robokassa payment gateway for WooCommerce <= 1.8.9"
@@ -145,3 +157,15 @@
   type: "Missing Authorization"
   date: 2026-09-08
   url: https://www.cve.org/CVERecord?id=CVE-2026-81788
+- id: CVE-2026-108112
+  cvss: 5.3
+  plugin: "ruoyi-ai <= 3.1.0"
+  type: "Missing Authorization"
+  date: 2026-10-09
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108112
+- id: CVE-2026-108111
+  cvss: 5.3
+  plugin: "ruoyi-ai <= 3.1.0"
+  type: "Missing Authorization"
+  date: 2026-10-09
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108111
