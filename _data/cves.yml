@@ -124,7 +124,7 @@
 - id: CVE-2026-108158
   cvss: 7.1
   plugin: "plugNmeet-server <= 2.5.2"
-  type: "Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')"
+  type: "Path Traversal"
   date: 2026-10-09
   url: https://www.cve.org/CVERecord?id=CVE-2026-108158
 - id: CVE-2026-78536
