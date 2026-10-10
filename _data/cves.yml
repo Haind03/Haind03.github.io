@@ -205,6 +205,12 @@
   type: "Missing Authorization"
   date: 2026-09-08
   url: https://www.cve.org/CVERecord?id=CVE-2026-81788
+- id: CVE-2026-108604
+  cvss: 6.3
+  plugin: "tabularis <= 0.27.0"
+  type: "Incorrect Authorization"
+  date: 2026-10-10
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108604
 - id: CVE-2026-108592
   cvss: 6.0
   plugin: "mini-swe-agent <= 2.4.6"
@@ -283,12 +289,24 @@
   type: "Missing Authorization"
   date: 2026-10-10
   url: https://www.cve.org/CVERecord?id=CVE-2026-108165
+- id: CVE-2026-108602
+  cvss: 5.3
+  plugin: "helicone <= v2025.08.21-1"
+  type: "Server-Side Request Forgery (SSRF)"
+  date: 2026-10-10
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108602
 - id: CVE-2026-108115
   cvss: 4.9
   plugin: "suna <= 0.13.52"
   type: "Server-Side Request Forgery (SSRF)"
   date: 2026-10-10
   url: https://www.cve.org/CVERecord?id=CVE-2026-108115
+- id: CVE-2026-108603
+  cvss: 4.8
+  plugin: "slide-maker <= 5.8.0"
+  type: "Path Traversal"
+  date: 2026-10-10
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108603
 - id: CVE-2026-108579
   cvss: 4.2
   plugin: "openpanel <= 2.3.0"
