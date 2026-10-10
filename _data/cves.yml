@@ -1,4 +1,4 @@
-# Credited CVEs. CVSS scores are the CNA scores on cve.org. Keep this file sorted by cvss, highest first;
+# Credited CVEs. CVSS is the highest base score published on cve.org. Keep this file sorted by cvss, highest first;
 # the landing page renders it in file order.
 
 - id: CVE-2026-48836
@@ -200,11 +200,23 @@
   date: 2026-09-08
   url: https://www.cve.org/CVERecord?id=CVE-2026-81788
 - id: CVE-2026-108112
-  cvss: 5.3
+  cvss: 5.4
   plugin: "ruoyi-ai <= 3.1.0"
   type: "Missing Authorization"
   date: 2026-10-09
   url: https://www.cve.org/CVERecord?id=CVE-2026-108112
+- id: CVE-2026-108585
+  cvss: 5.4
+  plugin: "argocd-mcp <= 0.9.0"
+  type: "Path Traversal"
+  date: 2026-10-10
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108585
+- id: CVE-2026-108586
+  cvss: 5.4
+  plugin: "@1mcp/agent <= 0.39.0"
+  type: "Incorrect Authorization"
+  date: 2026-10-10
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108586
 - id: CVE-2026-108111
   cvss: 5.3
   plugin: "ruoyi-ai <= 3.1.0"
@@ -223,32 +235,20 @@
   type: "Missing Authorization"
   date: 2026-10-10
   url: https://www.cve.org/CVERecord?id=CVE-2026-108165
-- id: CVE-2026-108585
-  cvss: 5.3
-  plugin: "argocd-mcp <= 0.9.0"
-  type: "Path Traversal"
-  date: 2026-10-10
-  url: https://www.cve.org/CVERecord?id=CVE-2026-108585
-- id: CVE-2026-108586
-  cvss: 5.3
-  plugin: "@1mcp/agent <= 0.39.0"
-  type: "Incorrect Authorization"
-  date: 2026-10-10
-  url: https://www.cve.org/CVERecord?id=CVE-2026-108586
 - id: CVE-2026-108115
-  cvss: 2.3
+  cvss: 4.9
   plugin: "suna <= 0.13.52"
   type: "Server-Side Request Forgery (SSRF)"
   date: 2026-10-10
   url: https://www.cve.org/CVERecord?id=CVE-2026-108115
 - id: CVE-2026-108579
-  cvss: 2.3
+  cvss: 4.2
   plugin: "openpanel <= 2.3.0"
   type: "CSV Injection"
   date: 2026-10-10
   url: https://www.cve.org/CVERecord?id=CVE-2026-108579
 - id: CVE-2026-108583
-  cvss: 2.3
+  cvss: 4.2
   plugin: "zotero-mcp <= 0.14.1"
   type: "Server-Side Request Forgery (SSRF)"
   date: 2026-10-10
