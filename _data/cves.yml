@@ -79,6 +79,12 @@
   type: "Missing Authorization"
   date: 2026-06-17
   url: https://www.cve.org/CVERecord?id=CVE-2026-54828
+- id: CVE-2026-108593
+  cvss: 7.3
+  plugin: "9router <= 0.5.99"
+  type: "Code Injection"
+  date: 2026-10-10
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108593
 - id: CVE-2026-27536
   cvss: 7.1
   plugin: "MailChimp Subscribe Form, Optin Builder, PopUp Builder, Form Builder <= 4.3.3"
@@ -199,6 +205,24 @@
   type: "Missing Authorization"
   date: 2026-09-08
   url: https://www.cve.org/CVERecord?id=CVE-2026-81788
+- id: CVE-2026-108592
+  cvss: 6.0
+  plugin: "mini-swe-agent <= 2.4.6"
+  type: "Cleartext Storage of Sensitive Information in an Environment Variable"
+  date: 2026-10-10
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108592
+- id: CVE-2026-108595
+  cvss: 6.0
+  plugin: "phi <= 0.28.4"
+  type: "Incorrect Authorization"
+  date: 2026-10-10
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108595
+- id: CVE-2026-108591
+  cvss: 5.9
+  plugin: "InnoShop <= 0.9.2"
+  type: "External Control of File Name or Path"
+  date: 2026-10-10
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108591
 - id: CVE-2026-108112
   cvss: 5.4
   plugin: "ruoyi-ai <= 3.1.0"
@@ -253,3 +277,9 @@
   type: "Server-Side Request Forgery (SSRF)"
   date: 2026-10-10
   url: https://www.cve.org/CVERecord?id=CVE-2026-108583
+- id: CVE-2026-108594
+  cvss: 3.5
+  plugin: "mealie <= 3.28.0"
+  type: "Server-Side Request Forgery (SSRF)"
+  date: 2026-10-10
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108594
