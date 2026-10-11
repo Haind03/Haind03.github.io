@@ -7,6 +7,10 @@
   icon: 'fab fa-linkedin'
   url: 'https://www.linkedin.com/in/haind03'
 
+- type: telegram
+  icon: 'fab fa-telegram'
+  url: 'https://t.me/HaiPandaaaa'
+
 - type: email
   icon: "fas fa-envelope"
 # Uncomment and complete the url below to enable more contact options
