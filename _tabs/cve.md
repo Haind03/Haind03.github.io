@@ -20,7 +20,7 @@ order: 1
   .ca-kick::before { content: ''; display: inline-block; width: 28px; height: 2px; background: var(--cp-magenta); vertical-align: middle; margin-right: .6rem; box-shadow: 0 0 8px var(--cp-magenta); }
   .ca-lead { font-size: 1.08rem; color: #dbe6f3; border-left: 2px solid var(--cp-cyan); padding-left: 1rem; }
 
-  .ca-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .8rem; margin: 2rem 0 1.25rem; }
+  .ca-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .8rem; margin: 2rem 0 1.25rem; }
   .ca-stat { position: relative; background: var(--cp-panel); border: 1px solid var(--cp-line); padding: 1rem 1.1rem .9rem; clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%); }
   .ca-stat::before { content: ''; position: absolute; left: 0; top: 0; width: 40%; height: 2px; background: var(--c, var(--cp-cyan)); box-shadow: 0 0 10px var(--c, var(--cp-cyan)); }
   .ca-stat b { display: block; font: 700 1.9rem/1.1 var(--cp-display); color: var(--cp-ink); }
@@ -77,7 +77,7 @@ order: 1
     .ca-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   }
   @media (max-width: 767px) {
-    .ca-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .ca-stats { gap: .5rem; }
     .ca-steps, .ca-plat { grid-template-columns: 1fr; }
     .ca-head { display: none; }
     .ca-row { grid-template-columns: 3.4rem minmax(0, 1fr); gap: .3rem .8rem; }
@@ -88,9 +88,9 @@ order: 1
 
 <div class="ca">
 
-<div class="ca-kick">Bug bounty // WordPress</div>
+<div class="ca-kick">Bug bounty // Vulnerability research</div>
 
-<p class="ca-lead">These are the CVEs I've got from bug bounty work on WordPress plugins. I report through Wordfence and Patchstack. Once the vendor ships a fix, the advisory goes public, the CVE is published and the bounty is paid.</p>
+<p class="ca-lead">These are the CVEs credited to me from bug bounty and vulnerability research on WordPress plugins, web applications and open-source projects. I report through bug bounty programs such as Wordfence and Patchstack, as well as other coordinated disclosure channels. Once the vendor ships a fix, the advisory goes public and the CVE is published.</p>
 
 <p>Most of what I find is in access control and input handling: REST routes or AJAX actions without proper permission checks, SQL built from user input, and stored XSS. I mostly look for bugs that work without logging in. The highest one here is an unauthenticated RCE in Easy Invoice (CVSS 10.0).</p>
 
@@ -98,7 +98,6 @@ order: 1
   <div class="ca-stat"><b>{{ total }}</b><span>CVEs assigned</span></div>
   <div class="ca-stat" style="--c: var(--cp-magenta)"><b>{{ crit }}</b><span>Critical (9.0+)</span></div>
   <div class="ca-stat" style="--c: var(--cp-yellow)"><b>{{ unauth }}</b><span>No login needed</span></div>
-  <div class="ca-stat" style="--c: #5fe3b0"><b>#244</b><span>Wordfence all time</span></div>
 </div>
 
 <div class="ca-dist" role="img" aria-label="{{ crit }} critical, {{ high }} high, {{ med }} medium">
@@ -114,14 +113,14 @@ order: 1
 
 <div class="ca-h"><span class="n">0x01</span><h2>Process</h2></div>
 
-<p>The process is the same for every one of them.</p>
+<p>The workflow stays the same whatever the target is: a WordPress plugin, a web application or an open-source project.</p>
 
 <div class="ca-steps">
-  <div>Find<span>Read the plugin code and look at what an outside user can reach.</span></div>
-  <div>PoC<span>Confirm it on a local WordPress install.</span></div>
-  <div>Report<span>Send it to the bounty program with the code path and impact.</span></div>
-  <div>Patch<span>They verify it and contact the vendor.</span></div>
-  <div>CVE + bounty<span>Advisory and CVE published, bounty paid.</span></div>
+  <div>Scope<span>Pick a target and check the program scope and rules.</span></div>
+  <div>Audit<span>Map the attack surface, then review the source or test what an outside user can reach.</span></div>
+  <div>PoC<span>Reproduce it in a lab I control, never on live systems.</span></div>
+  <div>Disclose<span>Report privately to the bounty program, the vendor or a CNA, with root cause and impact.</span></div>
+  <div>Fix + CVE<span>The vendor ships a patch, then the advisory and CVE go public.</span></div>
 </div>
 
 <div class="ca-h"><span class="n">0x02</span><h2>The archive</h2></div>
