@@ -227,7 +227,7 @@ threat hunting · web security · vulnerability research
 
   <section class="sec">
     <div class="sec-h"><span class="n">0x03</span><h2>Vuln research</h2></div>
-    <p>I find bugs in WordPress plugins and report them through the Wordfence and Patchstack bug bounty programs. So far that's {{ site.data.cves.size }} CVEs (#244 all time on Wordfence). Top 5 by CVSS below, the full list is in the <a href="/cve/">CVE archive</a>, and the advisories are on my <a href="https://www.wordfence.com/threat-intel/vulnerabilities/researchers/nguyen-dinh-hai-haind" target="_blank" rel="noopener">Wordfence researcher profile</a>.</p>
+    <p>I find bugs in WordPress plugins, web applications and open-source projects, and report them through bug bounty programs such as Wordfence and Patchstack or other coordinated disclosure channels. So far that's {{ site.data.cves.size }} CVEs. Top 5 by CVSS below, the full list is in the <a href="/cve/">CVE archive</a>, and the advisories are on my <a href="https://www.wordfence.com/threat-intel/vulnerabilities/researchers/nguyen-dinh-hai-haind" target="_blank" rel="noopener">Wordfence researcher profile</a>.</p>
     <div class="cve-head"><span>CVSS</span><span>CVE</span><span>Affected</span><span class="ty">Type</span></div>
     {% for c in site.data.cves limit: 5 %}
       {% assign sev = "low" %}{% if c.cvss >= 9 %}{% assign sev = "crit" %}{% elsif c.cvss >= 7 %}{% assign sev = "high" %}{% elsif c.cvss >= 4 %}{% assign sev = "med" %}{% endif %}
