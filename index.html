@@ -67,14 +67,6 @@ image:
   .lead-cp { font-size: 1.08rem; color: #dbe6f3; border-left: 2px solid var(--cp-magenta); padding-left: 1rem; }
 
   /* ---------- timeline ---------- */
-  .tl { list-style: none; margin: 0; padding: 0 0 0 1.25rem; border-left: 1px solid var(--cp-line-2); }
-  .tl li { position: relative; padding: 0 0 1.6rem 1rem; }
-  .tl li::before { content: ''; position: absolute; left: calc(-1.25rem - 6px); top: .35rem; width: 11px; height: 11px; background: var(--cp-bg); border: 2px solid var(--cp-cyan); transform: rotate(45deg); box-shadow: 0 0 10px rgb(0 240 255 / 60%); }
-  .tl li:first-child::before { background: var(--cp-cyan); }
-  .tl .when { font: .72rem var(--cp-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--cp-magenta); }
-  .tl .what { font: 700 1.1rem var(--cp-display); color: var(--cp-ink); margin-top: .15rem; }
-  .tl .where { font: .8rem var(--cp-mono); color: var(--cp-cyan-dim); }
-  .tl p { margin: .45rem 0 0; }
 
   /* ---------- cve grid ---------- */
   .cve-head, .cve { display: grid; grid-template-columns: 3.6rem 9.6rem minmax(0, 1fr) minmax(0, 15rem); gap: 1rem; align-items: center; }
@@ -196,37 +188,7 @@ threat hunting · web security · vulnerability research
   </section>
 
   <section class="sec">
-    <div class="sec-h"><span class="n">0x02</span><h2>Experience</h2></div>
-    <ul class="tl">
-      <li>
-        <div class="when">May 2026 · now</div>
-        <div class="what">Cybersecurity Teaching Assistant</div>
-        <div class="where">Posts and Telecommunications Institute of Technology</div>
-        <p>Teaching support for security courses, academic research, and training students for security competitions.</p>
-      </li>
-      <li>
-        <div class="when">2024 · Apr 2026</div>
-        <div class="what">Threat Hunting &amp; Malware Analysis</div>
-        <div class="where">BlueCyber Limited Company</div>
-        <p>Hunting for advanced persistent threats, analysing malicious activity and samples, and running incident response investigations.</p>
-      </li>
-      <li>
-        <div class="when">Feb 2023 · Feb 2024</div>
-        <div class="what">Intern, Reverse Engineering &amp; Malware Analysis</div>
-        <div class="where">BlueCyber Limited Company</div>
-        <p>Reverse engineering and malware analysis.</p>
-      </li>
-      <li>
-        <div class="when">2024 · 2025</div>
-        <div class="what">Challenge author</div>
-        <div class="where">PTIT Student Information Security Competition</div>
-        <p>Wrote reverse engineering and forensics challenges, validated the solutions and deployed the infrastructure for the qualifying and final rounds.</p>
-      </li>
-    </ul>
-  </section>
-
-  <section class="sec">
-    <div class="sec-h"><span class="n">0x03</span><h2>Vuln research</h2></div>
+    <div class="sec-h"><span class="n">0x02</span><h2>Vuln research</h2></div>
     <p>I find bugs in WordPress plugins, web applications and open-source projects, and report them through bug bounty programs such as Wordfence and Patchstack or other coordinated disclosure channels. So far that's {{ site.data.cves.size }} CVEs. Top 5 by CVSS below, the full list is in the <a href="/cve/">CVE archive</a>, and the advisories are on my <a href="https://www.wordfence.com/threat-intel/vulnerabilities/researchers/nguyen-dinh-hai-haind" target="_blank" rel="noopener">Wordfence researcher profile</a>.</p>
     <div class="cve-head"><span>CVSS</span><span>CVE</span><span>Affected</span><span class="ty">Type</span></div>
     {% for c in site.data.cves limit: 5 %}
@@ -242,7 +204,7 @@ threat hunting · web security · vulnerability research
   </section>
 
   <section class="sec">
-    <div class="sec-h"><span class="n">0x04</span><h2>Honors</h2></div>
+    <div class="sec-h"><span class="n">0x03</span><h2>Honors</h2></div>
     {% for h in site.data.honors %}
       <div class="hon">
         <span class="d">{{ h.date }}</span>
@@ -253,7 +215,7 @@ threat hunting · web security · vulnerability research
   </section>
 
   <section class="sec">
-    <div class="sec-h"><span class="n">0x05</span><h2>Start reading</h2></div>
+    <div class="sec-h"><span class="n">0x04</span><h2>Start reading</h2></div>
     <div class="cards">
       <a href="/reverse-engineering/"><code>$ cd reverse-engineering/</code><strong>Reverse Engineering</strong><span>My RE series: assembly, file formats, languages, unpacking, anti-debug, Frida.</span></a>
       <a href="/categories/malware-analysis/"><code>$ cd malware-analysis/</code><strong>Malware analysis</strong><span>Write-ups on malware samples and a threat hunting lab.</span></a>
@@ -263,7 +225,7 @@ threat hunting · web security · vulnerability research
   </section>
 
   <section class="sec">
-    <div class="sec-h"><span class="n">0x06</span><h2>Latest</h2></div>
+    <div class="sec-h"><span class="n">0x05</span><h2>Latest</h2></div>
     <div class="cmd"><span class="p">$</span> ls -t posts/ | head -5</div>
     <ul class="ls">
       {% for post in site.posts limit: 5 %}
