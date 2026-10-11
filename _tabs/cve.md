@@ -50,7 +50,7 @@ order: 1
   .ca-filters button.on { background: var(--cp-cyan); color: var(--cp-bg); border-color: var(--cp-cyan); }
   .ca-filters button b { opacity: .6; margin-left: .35rem; font-weight: 600; }
 
-  .ca-head, .ca-row { display: grid; grid-template-columns: 3.6rem 9.8rem minmax(0, 1.35fr) minmax(0, 1fr) 6.5rem; gap: 1rem; align-items: center; }
+  .ca-head, .ca-row { display: grid; grid-template-columns: 3.6rem 9.8rem minmax(0, 1.35fr) minmax(0, 1fr); gap: 1rem; align-items: center; }
   .ca-head { font: 500 .66rem var(--cp-mono); letter-spacing: .16em; text-transform: uppercase; color: var(--cp-mute); padding: 0 .9rem .6rem; border-bottom: 1px solid var(--cp-cyan-dim); }
   .ca-row { padding: .75rem .9rem; border-bottom: 1px solid var(--cp-line); transition: background .15s, opacity .25s; }
   .ca-row:hover { background: linear-gradient(90deg, rgb(0 240 255 / 6%), transparent); }
@@ -58,7 +58,6 @@ order: 1
   .ca-row .id { font: .8rem var(--cp-mono); white-space: nowrap; }
   .ca-row .pl { color: var(--cp-ink); font-size: .92rem; }
   .ca-row .ty { color: var(--cp-mute); font-size: .84rem; }
-  .ca-row .dt { font: .74rem var(--cp-mono); color: var(--cp-mute); white-space: nowrap; }
   .ca-cvss { display: inline-block; width: 3.1rem; text-align: center; font: 700 .78rem var(--cp-mono); padding: .25rem 0; color: #07090f; clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px); }
   .ca-cvss.crit { background: var(--cp-magenta); color: #fff; }
   .ca-cvss.high { background: #ff8a3d; }
@@ -74,13 +73,7 @@ order: 1
   .ca-plat strong { display: block; font: 700 1.1rem var(--cp-display); color: var(--cp-ink); text-transform: uppercase; letter-spacing: .04em; }
   .ca-plat span { font-size: .86rem; color: var(--cp-mute); }
 
-  @media (max-width: 1599px) {
-    .ca-head, .ca-row { grid-template-columns: 3.6rem 9.8rem minmax(0, 1.35fr) minmax(0, 1fr); }
-    .ca-head .dt, .ca-row .dt { display: none; }
-  }
   @media (max-width: 1199px) {
-    .ca-head, .ca-row { grid-template-columns: 3.6rem 9.8rem minmax(0, 1.35fr) minmax(0, 1fr); }
-    .ca-head .dt, .ca-row .dt { display: none; }
     .ca-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   }
   @media (max-width: 767px) {
@@ -144,7 +137,7 @@ order: 1
   <button data-f="other">Other</button>
 </div>
 
-<div class="ca-head"><span>CVSS</span><span>CVE</span><span>Affected plugin</span><span>Type</span><span class="dt">Published</span></div>
+<div class="ca-head"><span>CVSS</span><span>CVE</span><span>Affected plugin</span><span>Type</span></div>
 {% for c in cves %}
   {% assign sev = "med" %}{% if c.cvss >= 9 %}{% assign sev = "crit" %}{% elsif c.cvss >= 7 %}{% assign sev = "high" %}{% endif %}
   {% assign cls = "other" %}
@@ -154,7 +147,6 @@ order: 1
     <a class="id" href="{{ c.url }}" target="_blank" rel="noopener">{{ c.id }}</a>
     <span class="pl">{{ c.plugin }}</span>
     <span class="ty">{{ c.type }}</span>
-    <span class="dt">{{ c.date | date: "%Y-%m-%d" }}</span>
   </div>
 {% endfor %}
 
