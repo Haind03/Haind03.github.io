@@ -13,6 +13,12 @@
   type: "Unauthenticated Arbitrary File Upload"
   date: 2026-10-06
   url: https://www.cve.org/CVERecord?id=CVE-2026-32579
+- id: CVE-2026-108753
+  cvss: 9.4
+  plugin: "agnai <= 1.0.555"
+  type: "Use of Hard-coded Credentials"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108753
 - id: CVE-2026-61950
   cvss: 9.3
   plugin: "TrueBooker Appointment Booking and Scheduler System <= 1.2.3"
@@ -37,18 +43,60 @@
   type: "Missing Authorization"
   date: 2026-07-28
   url: https://www.cve.org/CVERecord?id=CVE-2026-65542
+- id: CVE-2026-108746
+  cvss: 8.8
+  plugin: "vearch <= 3.5.9"
+  type: "Incorrect Authorization"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108746
+- id: CVE-2026-108758
+  cvss: 8.8
+  plugin: "easyappointments <= 1.6.0"
+  type: "Authorization Bypass"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108758
+- id: CVE-2026-108714
+  cvss: 8.7
+  plugin: "kotlin-sdk <= 0.15.0"
+  type: "Resource Exhaustion"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108714
+- id: CVE-2026-108739
+  cvss: 8.7
+  plugin: "OpenAgents <= launcher-v1.0.17"
+  type: "Missing Authentication for Critical Function"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108739
+- id: CVE-2026-108718
+  cvss: 8.6
+  plugin: "rill <= 0.90.5"
+  type: "Missing Authorization"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108718
 - id: CVE-2026-57765
   cvss: 8.5
   plugin: "Shopping Cart & eCommerce Store <= 5.9.1"
   type: "Authenticated (Contributor+) SQL Injection"
   date: 2026-07-02
   url: https://www.cve.org/CVERecord?id=CVE-2026-57765
+- id: CVE-2026-108740
+  cvss: 8.3
+  plugin: "GoatCounter <= 2.7.0"
+  type: "Mass Assignment"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108740
 - id: CVE-2026-108545
   cvss: 8.2
   plugin: "SillyTavern <= 1.19.0"
   type: "Uncontrolled Resource Consumption"
   date: 2026-10-10
   url: https://www.cve.org/CVERecord?id=CVE-2026-108545
+- id: CVE-2026-108729
+  cvss: 8.2
+  plugin: "corteza <= 2024.9.10"
+  type: "Incorrect Authorization"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108729
 - id: CVE-2026-108546
   cvss: 7.7
   plugin: "spotweb <= 1.5.8"
@@ -58,9 +106,27 @@
 - id: CVE-2026-108110
   cvss: 7.6
   plugin: "MOVO <= 0.2.3"
-  type: "Authorization Bypass Through User-Controlled Key"
+  type: "Authorization Bypass"
   date: 2026-10-09
   url: https://www.cve.org/CVERecord?id=CVE-2026-108110
+- id: CVE-2026-108737
+  cvss: 7.6
+  plugin: "Traccar <= 6.16.0"
+  type: "Weak Password Recovery"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108737
+- id: CVE-2026-108759
+  cvss: 7.6
+  plugin: "mistral.rs <= 0.9.4"
+  type: "Link Following"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108759
+- id: CVE-2026-108760
+  cvss: 7.6
+  plugin: "llamafarm <= 0.0.34"
+  type: "Binding to an Unrestricted IP Address"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108760
 - id: CVE-2026-32481
   cvss: 7.5
   plugin: "Ezoic <= 2.22.11"
@@ -85,6 +151,12 @@
   type: "Code Injection"
   date: 2026-10-10
   url: https://www.cve.org/CVERecord?id=CVE-2026-108593
+- id: CVE-2026-108744
+  cvss: 7.3
+  plugin: "pbi-cli <= 3.12.0"
+  type: "OS Command Injection"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108744
 - id: CVE-2026-27536
   cvss: 7.1
   plugin: "MailChimp Subscribe Form, Optin Builder, PopUp Builder, Form Builder <= 4.3.3"
@@ -157,12 +229,48 @@
   type: "Missing Authorization"
   date: 2026-10-10
   url: https://www.cve.org/CVERecord?id=CVE-2026-108581
+- id: CVE-2026-108710
+  cvss: 7.1
+  plugin: "NornicDB <= 1.4.1"
+  type: "Missing Authorization"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108710
+- id: CVE-2026-108728
+  cvss: 7.1
+  plugin: "flyte <= 2.0.51"
+  type: "Cleartext Storage of Sensitive Information"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108728
+- id: CVE-2026-108757
+  cvss: 7.1
+  plugin: "pinclaw <= 0.3.0"
+  type: "Missing Authentication for Critical Function"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108757
 - id: CVE-2026-108580
   cvss: 6.9
   plugin: "AniWorld Downloader <= 5.3.0"
   type: "Brute Force"
   date: 2026-10-10
   url: https://www.cve.org/CVERecord?id=CVE-2026-108580
+- id: CVE-2026-108724
+  cvss: 6.9
+  plugin: "Sylius <= 2.3.0"
+  type: "Authorization Bypass"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108724
+- id: CVE-2026-108748
+  cvss: 6.9
+  plugin: "quarkus-langchain4j <= 1.14.1"
+  type: "Memory Leak"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108748
+- id: CVE-2026-108755
+  cvss: 6.9
+  plugin: "hatchet <= 0.110.5"
+  type: "Resource Exhaustion"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108755
 - id: CVE-2026-108582
   cvss: 6.8
   plugin: "GenOffice <= 0.11.505"
@@ -211,6 +319,24 @@
   type: "Incorrect Authorization"
   date: 2026-10-10
   url: https://www.cve.org/CVERecord?id=CVE-2026-108604
+- id: CVE-2026-108717
+  cvss: 6.3
+  plugin: "iTop <= 3.3.0"
+  type: "Missing Authorization"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108717
+- id: CVE-2026-108736
+  cvss: 6.3
+  plugin: "speedtest-tracker <= 1.15.0"
+  type: "Use of Less Trusted Source"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108736
+- id: CVE-2026-108749
+  cvss: 6.3
+  plugin: "docling-serve <= 1.36.0"
+  type: "Missing Authentication for Critical Function"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108749
 - id: CVE-2026-108592
   cvss: 6.0
   plugin: "mini-swe-agent <= 2.4.6"
@@ -226,9 +352,15 @@
 - id: CVE-2026-108596
   cvss: 6.0
   plugin: "openlit <= 2.1.0"
-  type: "Authorization Bypass Through User-Controlled Key"
+  type: "Authorization Bypass"
   date: 2026-10-10
   url: https://www.cve.org/CVERecord?id=CVE-2026-108596
+- id: CVE-2026-108716
+  cvss: 6.0
+  plugin: "mcp-remote <= 0.14.3"
+  type: "Cleartext Transmission"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108716
 - id: CVE-2026-108591
   cvss: 5.9
   plugin: "InnoShop <= 0.9.2"
@@ -241,6 +373,12 @@
   type: "Path Traversal"
   date: 2026-10-10
   url: https://www.cve.org/CVERecord?id=CVE-2026-108597
+- id: CVE-2026-108721
+  cvss: 5.8
+  plugin: "open-computer-use <= 1.0.0"
+  type: "Improper Handling of Case Sensitivity"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108721
 - id: CVE-2026-108599
   cvss: 5.7
   plugin: "phi <= 0.28.4"
@@ -271,6 +409,24 @@
   type: "Incorrect Authorization"
   date: 2026-10-10
   url: https://www.cve.org/CVERecord?id=CVE-2026-108586
+- id: CVE-2026-108725
+  cvss: 5.4
+  plugin: "core <= 2.0.23"
+  type: "Cross-site Scripting"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108725
+- id: CVE-2026-108731
+  cvss: 5.4
+  plugin: "raven <= 3.0.0"
+  type: "Missing Authorization"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108731
+- id: CVE-2026-108756
+  cvss: 5.4
+  plugin: "trinity <= 0.9.5"
+  type: "Missing Authorization"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108756
 - id: CVE-2026-108111
   cvss: 5.3
   plugin: "ruoyi-ai <= 3.1.0"
@@ -295,6 +451,96 @@
   type: "Server-Side Request Forgery (SSRF)"
   date: 2026-10-10
   url: https://www.cve.org/CVERecord?id=CVE-2026-108602
+- id: CVE-2026-108711
+  cvss: 5.3
+  plugin: "honcho <= 3.3.0"
+  type: "Incorrect Authorization"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108711
+- id: CVE-2026-108712
+  cvss: 5.3
+  plugin: "SuiteCRM <= 7.15.2"
+  type: "Missing Authorization"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108712
+- id: CVE-2026-108713
+  cvss: 5.3
+  plugin: "SuiteCRM <= 7.15.2"
+  type: "Missing Authorization"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108713
+- id: CVE-2026-108715
+  cvss: 5.3
+  plugin: "librenms <= 26.9.1.1"
+  type: "Authorization Bypass"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108715
+- id: CVE-2026-108719
+  cvss: 5.3
+  plugin: "LLMGateway <= 1.20.0"
+  type: "Server-Side Request Forgery (SSRF)"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108719
+- id: CVE-2026-108720
+  cvss: 5.3
+  plugin: "phpipam <= 1.8.3"
+  type: "Missing Authorization"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108720
+- id: CVE-2026-108726
+  cvss: 5.3
+  plugin: "GLPI <= 12.0.0"
+  type: "Missing Authorization"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108726
+- id: CVE-2026-108727
+  cvss: 5.3
+  plugin: "EdgeEver <= 1.108.0"
+  type: "Missing Authorization"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108727
+- id: CVE-2026-108730
+  cvss: 5.3
+  plugin: "raven <= 3.0.0"
+  type: "Missing Authorization"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108730
+- id: CVE-2026-108732
+  cvss: 5.3
+  plugin: "hrms <= 16.11.0"
+  type: "Missing Authorization"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108732
+- id: CVE-2026-108733
+  cvss: 5.3
+  plugin: "hrms <= 16.11.0"
+  type: "Missing Authorization"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108733
+- id: CVE-2026-108734
+  cvss: 5.3
+  plugin: "crm <= 1.87.0"
+  type: "Missing Authorization"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108734
+- id: CVE-2026-108735
+  cvss: 5.3
+  plugin: "miniflux <= 2.3.3"
+  type: "Server-Side Request Forgery (SSRF)"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108735
+- id: CVE-2026-108742
+  cvss: 5.3
+  plugin: "CloudBeaver <= 25.3.5"
+  type: "Missing Authorization"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108742
+- id: CVE-2026-108750
+  cvss: 5.3
+  plugin: "OpenDocMan <= 2.10.0"
+  type: "Decompression Bomb"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108750
 - id: CVE-2026-108115
   cvss: 4.9
   plugin: "suna <= 0.13.52"
@@ -307,6 +553,18 @@
   type: "Path Traversal"
   date: 2026-10-10
   url: https://www.cve.org/CVERecord?id=CVE-2026-108603
+- id: CVE-2026-108751
+  cvss: 4.8
+  plugin: "moai-adk <= 3.1.2"
+  type: "Link Following"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108751
+- id: CVE-2026-108754
+  cvss: 4.8
+  plugin: "gpt-load <= 1.4.11"
+  type: "Sensitive Info in Logs"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108754
 - id: CVE-2026-108579
   cvss: 4.2
   plugin: "openpanel <= 2.3.0"
@@ -319,9 +577,51 @@
   type: "Server-Side Request Forgery (SSRF)"
   date: 2026-10-10
   url: https://www.cve.org/CVERecord?id=CVE-2026-108583
+- id: CVE-2026-108722
+  cvss: 4.2
+  plugin: "open-computer-use <= 610bac85d242b2fdf43fbe36bce2348658a2d4c9"
+  type: "Cross-site Scripting"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108722
+- id: CVE-2026-108738
+  cvss: 4.2
+  plugin: "Traccar <= 6.16.0"
+  type: "Cross-Site Request Forgery (CSRF)"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108738
+- id: CVE-2026-108747
+  cvss: 4.2
+  plugin: "lightdash <= 2.556.0"
+  type: "Authorization Bypass"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108747
+- id: CVE-2026-108752
+  cvss: 4.2
+  plugin: "jupyterhub <= 6.0.1"
+  type: "Duplicate Identifier"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108752
 - id: CVE-2026-108594
   cvss: 3.5
   plugin: "mealie <= 3.28.0"
   type: "Server-Side Request Forgery (SSRF)"
   date: 2026-10-10
   url: https://www.cve.org/CVERecord?id=CVE-2026-108594
+- id: CVE-2026-108741
+  cvss: 3.1
+  plugin: "Shepherd <= 0.3.1"
+  type: "TOCTOU Race Condition"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108741
+- id: CVE-2026-108745
+  cvss: 3.1
+  plugin: "CloudBeaver <= 25.3.5"
+  type: "Missing Authorization"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108745
+- id: CVE-2026-108723
+  cvss: 2.5
+  plugin: "answer-me-with-html <= 0.5.0"
+  type: "Link Following"
+  date: 2026-10-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108723
