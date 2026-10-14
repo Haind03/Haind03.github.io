@@ -302,6 +302,27 @@
   class: pwn
   date: 2026-10-14
   url: https://www.cve.org/CVERecord?id=CVE-2026-110599
+- id: CVE-2026-110712
+  cvss: 7.1
+  plugin: "libsmb2 <= 6.2"
+  type: "Out-of-Bounds Read"
+  class: pwn
+  date: 2026-10-14
+  url: https://www.cve.org/CVERecord?id=CVE-2026-110712
+- id: CVE-2026-110713
+  cvss: 7.1
+  plugin: "libsmb2 <= 6.2"
+  type: "Out-of-Bounds Read"
+  class: pwn
+  date: 2026-10-14
+  url: https://www.cve.org/CVERecord?id=CVE-2026-110713
+- id: CVE-2026-110714
+  cvss: 7.1
+  plugin: "libsmb2 <= 6.2"
+  type: "Integer Underflow (Wrap or Wraparound)"
+  class: pwn
+  date: 2026-10-14
+  url: https://www.cve.org/CVERecord?id=CVE-2026-110714
 - id: CVE-2026-108580
   cvss: 6.9
   plugin: "AniWorld Downloader <= 5.3.0"
@@ -344,6 +365,27 @@
   class: pwn
   date: 2026-10-14
   url: https://www.cve.org/CVERecord?id=CVE-2026-110598
+- id: CVE-2026-110654
+  cvss: 6.9
+  plugin: "libzvbi <= 0.2.45"
+  type: "Out-of-Bounds Write"
+  class: pwn
+  date: 2026-10-14
+  url: https://www.cve.org/CVERecord?id=CVE-2026-110654
+- id: CVE-2026-110658
+  cvss: 6.9
+  plugin: "sofia-sip <= 1.13.18"
+  type: "Out-of-Bounds Read"
+  class: pwn
+  date: 2026-10-14
+  url: https://www.cve.org/CVERecord?id=CVE-2026-110658
+- id: CVE-2026-110715
+  cvss: 6.9
+  plugin: "MuJS < 1.3.9"
+  type: "Out-of-Bounds Write"
+  class: pwn
+  date: 2026-10-14
+  url: https://www.cve.org/CVERecord?id=CVE-2026-110715
 - id: CVE-2026-108582
   cvss: 6.8
   plugin: "GenOffice <= 0.11.505"
@@ -379,6 +421,20 @@
   class: pwn
   date: 2026-10-14
   url: https://www.cve.org/CVERecord?id=CVE-2026-110605
+- id: CVE-2026-110659
+  cvss: 6.8
+  plugin: "ELFIO <= 3.12"
+  type: "NULL Pointer Dereference"
+  class: pwn
+  date: 2026-10-14
+  url: https://www.cve.org/CVERecord?id=CVE-2026-110659
+- id: CVE-2026-110716
+  cvss: 6.8
+  plugin: "unshield <= 1.6.2"
+  type: "Out-of-Bounds Read"
+  class: pwn
+  date: 2026-10-14
+  url: https://www.cve.org/CVERecord?id=CVE-2026-110716
 - id: CVE-2026-78536
   cvss: 6.5
   plugin: "Robokassa payment gateway for WooCommerce <= 1.8.9"
@@ -750,6 +806,20 @@
   class: pwn
   date: 2026-10-14
   url: https://www.cve.org/CVERecord?id=CVE-2026-110606
+- id: CVE-2026-110660
+  cvss: 4.8
+  plugin: "vgmstream <= r2117"
+  type: "Out-of-Bounds Read"
+  class: pwn
+  date: 2026-10-14
+  url: https://www.cve.org/CVERecord?id=CVE-2026-110660
+- id: CVE-2026-110661
+  cvss: 4.8
+  plugin: "CGNS <= 4.5.2"
+  type: "Out-of-Bounds Read"
+  class: pwn
+  date: 2026-10-14
+  url: https://www.cve.org/CVERecord?id=CVE-2026-110661
 - id: CVE-2026-108579
   cvss: 4.2
   plugin: "openpanel <= 2.3.0"
@@ -820,6 +890,20 @@
   class: web
   date: 2026-10-11
   url: https://www.cve.org/CVERecord?id=CVE-2026-108745
+- id: CVE-2026-110655
+  cvss: 3.1
+  plugin: "miniupnpc <= 2.3.3"
+  type: "Out-of-Bounds Read"
+  class: pwn
+  date: 2026-10-14
+  url: https://www.cve.org/CVERecord?id=CVE-2026-110655
+- id: CVE-2026-110656
+  cvss: 3.1
+  plugin: "miniupnpc <= 2.3.3"
+  type: "Out-of-Bounds Read"
+  class: pwn
+  date: 2026-10-14
+  url: https://www.cve.org/CVERecord?id=CVE-2026-110656
 - id: CVE-2026-108723
   cvss: 2.5
   plugin: "answer-me-with-html <= 0.5.0"
