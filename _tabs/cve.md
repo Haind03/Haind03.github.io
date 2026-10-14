@@ -129,10 +129,20 @@ order: 1
 <div class="ca-filters" id="ca-filters">
   <button class="on" data-f="all">All<b>{{ total }}</b></button>
   <button data-f="crit">Critical</button>
-  <button data-f="rce">RCE / Auth bypass</button>
+  <button data-f="cat:web">Web</button>
+  <button data-f="cat:pwn">Pwn</button>
+  <button data-f="cat:crypto">Crypto</button>
   <button data-f="sqli">SQL injection</button>
   <button data-f="xss">XSS</button>
-  <button data-f="authz">Missing authorization</button>
+  <button data-f="ssrf">SSRF</button>
+  <button data-f="rce">RCE / Auth bypass</button>
+  <button data-f="authz">Missing authz</button>
+  <button data-f="overflow">Buffer overflow</button>
+  <button data-f="oob">Out-of-bounds</button>
+  <button data-f="uaf">Use-after-free</button>
+  <button data-f="mfree">Double / invalid free</button>
+  <button data-f="nullderef">NULL deref</button>
+  <button data-f="dos">DoS</button>
   <button data-f="other">Other</button>
 </div>
 
@@ -140,8 +150,19 @@ order: 1
 {% for c in cves %}
   {% assign sev = "med" %}{% if c.cvss >= 9 %}{% assign sev = "crit" %}{% elsif c.cvss >= 7 %}{% assign sev = "high" %}{% endif %}
   {% assign cls = "other" %}
-  {% if c.type contains "SQL" %}{% assign cls = "sqli" %}{% elsif c.type contains "Scripting" %}{% assign cls = "xss" %}{% elsif c.type contains "Remote Code" or c.type contains "Authentication Bypass" %}{% assign cls = "rce" %}{% elsif c.type contains "Missing Authorization" or c.type contains "Unauthorized" %}{% assign cls = "authz" %}{% endif %}
-  <div class="ca-row" data-sev="{{ sev }}" data-cls="{{ cls }}">
+  {% if c.type contains "SQL" %}{% assign cls = "sqli" %}
+  {% elsif c.type contains "Scripting" or c.type contains "XSS" %}{% assign cls = "xss" %}
+  {% elsif c.type contains "SSRF" or c.type contains "Server-Side Request" %}{% assign cls = "ssrf" %}
+  {% elsif c.type contains "Remote Code" or c.type contains "Code Injection" or c.type contains "OS Command" or c.type contains "Authentication Bypass" %}{% assign cls = "rce" %}
+  {% elsif c.type contains "Authorization" or c.type contains "Unauthorized" or c.type contains "Missing Authentication" %}{% assign cls = "authz" %}
+  {% elsif c.type contains "Overflow" %}{% assign cls = "overflow" %}
+  {% elsif c.type contains "Out-of-Bounds" or c.type contains "Out of Bounds" %}{% assign cls = "oob" %}
+  {% elsif c.type contains "Use After Free" %}{% assign cls = "uaf" %}
+  {% elsif c.type contains "Double Free" or c.type contains "Invalid Free" or c.type contains "Uninitialized" %}{% assign cls = "mfree" %}
+  {% elsif c.type contains "NULL Pointer" or c.type contains "Dereference" %}{% assign cls = "nullderef" %}
+  {% elsif c.type contains "Infinite Loop" or c.type contains "Excessive Iteration" or c.type contains "Divide by Zero" or c.type contains "Resource Exhaustion" or c.type contains "Decompression" %}{% assign cls = "dos" %}
+  {% endif %}
+  <div class="ca-row" data-sev="{{ sev }}" data-cat="{{ c.class }}" data-cls="{{ cls }}">
     <span class="cv"><span class="ca-cvss {{ sev }}">{{ c.cvss }}</span></span>
     <a class="id" href="{{ c.url }}" target="_blank" rel="noopener">{{ c.id }}</a>
     <span class="pl">{{ c.plugin }}</span>
@@ -157,6 +178,7 @@ order: 1
   <a href="https://www.wordfence.com/threat-intel/vulnerabilities/researchers/nguyen-dinh-hai-haind" target="_blank" rel="noopener"><strong>Wordfence</strong><span>Researcher profile with all advisories.</span></a>
   <a href="https://patchstack.com/database/researchers/e27f086e-ad03-440c-aee4-f95fd885527e" target="_blank" rel="noopener"><strong>Patchstack</strong><span>Researcher profile on Patchstack.</span></a>
   <a href="https://vulnerability.circl.lu/credits/HaiND%20from%20the%20Post%20and%20Telecommunication%20Institute%20of%20Technology" target="_blank" rel="noopener"><strong>CIRCL</strong><span>Credits on the CIRCL vulnerability-lookup.</span></a>
+  <a href="https://www.vulncheck.com/" target="_blank" rel="noopener"><strong>VulnCheck</strong><span>CNA that assigns CVEs for my open-source reports.</span></a>
 </div>
 
 </div>
@@ -169,7 +191,12 @@ order: 1
     if (!bar) return;
     var rows = Array.prototype.slice.call(document.querySelectorAll('.ca-row'));
     var filter = 'all', page = 1;
-    function match(r, f) { return f === 'all' || (f === 'crit' ? r.dataset.sev === 'crit' : r.dataset.cls === f); }
+    function match(r, f) {
+      if (f === 'all') return true;
+      if (f === 'crit') return r.dataset.sev === 'crit';
+      if (f.indexOf('cat:') === 0) return r.dataset.cat === f.slice(4);
+      return r.dataset.cls === f;
+    }
     function render() {
       var shown = rows.filter(function (r) { return match(r, filter); });
       var pages = Math.max(1, Math.ceil(shown.length / PER));
