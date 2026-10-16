@@ -1,48 +1,41 @@
 # Credited CVEs. CVSS is the highest base score published on cve.org. Keep this file sorted by cvss, highest first;
 # the landing page renders it in file order.
-
-- id: CVE-2026-48836
-  cvss: 10.0
-  plugin: "Easy Invoice <= 2.1.19"
-  type: "Unauthenticated Remote Code Execution"
-  date: 2026-06-01
-  url: https://www.cve.org/CVERecord?id=CVE-2026-48836
 - id: CVE-2026-32579
   cvss: 10.0
   plugin: "Kognetiks Chatbot for WordPress <= 2.4.9"
   type: "Unauthenticated Arbitrary File Upload"
   date: 2026-10-06
   url: https://www.cve.org/CVERecord?id=CVE-2026-32579
+- id: CVE-2026-48836
+  cvss: 10.0
+  plugin: "Easy Invoice <= 2.1.19"
+  type: "Unauthenticated Remote Code Execution"
+  date: 2026-06-01
+  url: https://www.cve.org/CVERecord?id=CVE-2026-48836
 - id: CVE-2026-108753
   cvss: 9.4
   plugin: "agnai <= 1.0.555"
   type: "Use of Hard-coded Credentials"
   date: 2026-10-11
   url: https://www.cve.org/CVERecord?id=CVE-2026-108753
-- id: CVE-2026-61950
-  cvss: 9.3
-  plugin: "TrueBooker Appointment Booking and Scheduler System <= 1.2.3"
-  type: "Unauthenticated SQL Injection"
-  date: 2026-07-16
-  url: https://www.cve.org/CVERecord?id=CVE-2026-61950
-- id: CVE-2026-57683
-  cvss: 9.3
-  plugin: "WP Fast Total Search <= 1.80.280"
-  type: "Unauthenticated SQL Injection"
-  date: 2026-06-29
-  url: https://www.cve.org/CVERecord?id=CVE-2026-57683
 - id: CVE-2026-49776
   cvss: 9.3
   plugin: "GPTranslate <= 2.32.6"
   type: "Unauthenticated SQL Injection"
   date: 2026-06-04
   url: https://www.cve.org/CVERecord?id=CVE-2026-49776
-- id: CVE-2026-65542
-  cvss: 8.8
-  plugin: "Super Socializer <= 7.14.5"
-  type: "Missing Authorization"
-  date: 2026-07-28
-  url: https://www.cve.org/CVERecord?id=CVE-2026-65542
+- id: CVE-2026-57683
+  cvss: 9.3
+  plugin: "WP Fast Total Search <= 1.80.280"
+  type: "Unauthenticated SQL Injection"
+  date: 2026-06-29
+  url: https://www.cve.org/CVERecord?id=CVE-2026-57683
+- id: CVE-2026-61950
+  cvss: 9.3
+  plugin: "TrueBooker Appointment Booking and Scheduler System <= 1.2.3"
+  type: "Unauthenticated SQL Injection"
+  date: 2026-07-16
+  url: https://www.cve.org/CVERecord?id=CVE-2026-61950
 - id: CVE-2026-108746
   cvss: 8.8
   plugin: "vearch <= 3.5.9"
@@ -55,6 +48,12 @@
   type: "Authorization Bypass"
   date: 2026-10-11
   url: https://www.cve.org/CVERecord?id=CVE-2026-108758
+- id: CVE-2026-65542
+  cvss: 8.8
+  plugin: "Super Socializer <= 7.14.5"
+  type: "Missing Authorization"
+  date: 2026-07-28
+  url: https://www.cve.org/CVERecord?id=CVE-2026-65542
 - id: CVE-2026-108714
   cvss: 8.7
   plugin: "kotlin-sdk <= 0.15.0"
@@ -73,18 +72,18 @@
   type: "Missing Authorization"
   date: 2026-10-11
   url: https://www.cve.org/CVERecord?id=CVE-2026-108718
-- id: CVE-2026-57765
-  cvss: 8.5
-  plugin: "Shopping Cart & eCommerce Store <= 5.9.1"
-  type: "Authenticated (Contributor+) SQL Injection"
-  date: 2026-07-02
-  url: https://www.cve.org/CVERecord?id=CVE-2026-57765
 - id: CVE-2017-20286
   cvss: 8.5
   plugin: "DevIL <= 1.8.0"
   type: "Out-of-Bounds Write"
   date: 2026-10-14
   url: https://www.cve.org/CVERecord?id=CVE-2017-20286
+- id: CVE-2026-57765
+  cvss: 8.5
+  plugin: "Shopping Cart & eCommerce Store <= 5.9.1"
+  type: "Authenticated (Contributor+) SQL Injection"
+  date: 2026-07-02
+  url: https://www.cve.org/CVERecord?id=CVE-2026-57765
 - id: CVE-2026-108740
   cvss: 8.3
   plugin: "GoatCounter <= 2.7.0"
@@ -163,54 +162,6 @@
   type: "OS Command Injection"
   date: 2026-10-11
   url: https://www.cve.org/CVERecord?id=CVE-2026-108744
-- id: CVE-2026-27536
-  cvss: 7.1
-  plugin: "MailChimp Subscribe Form, Optin Builder, PopUp Builder, Form Builder <= 4.3.3"
-  type: "Unauthenticated Stored Cross-Site Scripting"
-  date: 2026-08-11
-  url: https://www.cve.org/CVERecord?id=CVE-2026-27536
-- id: CVE-2026-57388
-  cvss: 7.1
-  plugin: "Hydra Booking <= 1.1.44"
-  type: "Unauthenticated Stored Cross-Site Scripting"
-  date: 2026-07-08
-  url: https://www.cve.org/CVERecord?id=CVE-2026-57388
-- id: CVE-2026-57403
-  cvss: 7.1
-  plugin: "GD Security Headers <= 1.8"
-  type: "Unauthenticated Stored Cross-Site Scripting"
-  date: 2026-07-08
-  url: https://www.cve.org/CVERecord?id=CVE-2026-57403
-- id: CVE-2026-57405
-  cvss: 7.1
-  plugin: "Open Shop theme <= 1.7.1"
-  type: "Missing Authorization"
-  date: 2026-07-08
-  url: https://www.cve.org/CVERecord?id=CVE-2026-57405
-- id: CVE-2026-57362
-  cvss: 7.1
-  plugin: "WPBot AI ChatBot <= 8.3.2"
-  type: "Reflected Cross-Site Scripting"
-  date: 2026-07-01
-  url: https://www.cve.org/CVERecord?id=CVE-2026-57362
-- id: CVE-2026-57337
-  cvss: 7.1
-  plugin: "Landing Page Builder <= 1.5.3.5"
-  type: "Unauthenticated Stored Cross-Site Scripting"
-  date: 2026-06-29
-  url: https://www.cve.org/CVERecord?id=CVE-2026-57337
-- id: CVE-2026-42729
-  cvss: 7.1
-  plugin: "Property Hive <= 2.2.2"
-  type: "Unauthenticated Stored Cross-Site Scripting"
-  date: 2026-05-23
-  url: https://www.cve.org/CVERecord?id=CVE-2026-42729
-- id: CVE-2026-32574
-  cvss: 7.1
-  plugin: "Smart Forms <= 2.6.104"
-  type: "Unauthenticated Cross Site Scripting (XSS)"
-  date: 2026-10-06
-  url: https://www.cve.org/CVERecord?id=CVE-2026-32574
 - id: CVE-2026-105883
   cvss: 7.1
   plugin: "Th Shop Mania <= 1.9.1"
@@ -223,12 +174,6 @@
   type: "Path Traversal"
   date: 2026-10-09
   url: https://www.cve.org/CVERecord?id=CVE-2026-108158
-- id: CVE-2026-93949
-  cvss: 7.1
-  plugin: "Grocery Shopping Store <= 1.3.3"
-  type: "Authentication Bypass"
-  date: 2026-10-10
-  url: https://www.cve.org/CVERecord?id=CVE-2026-93949
 - id: CVE-2026-108581
   cvss: 7.1
   plugin: "Octop <= 1.0.2b6"
@@ -277,6 +222,66 @@
   type: "Integer Underflow (Wrap or Wraparound)"
   date: 2026-10-14
   url: https://www.cve.org/CVERecord?id=CVE-2026-110714
+- id: CVE-2026-27536
+  cvss: 7.1
+  plugin: "MailChimp Subscribe Form, Optin Builder, PopUp Builder, Form Builder <= 4.3.3"
+  type: "Unauthenticated Stored Cross-Site Scripting"
+  date: 2026-08-11
+  url: https://www.cve.org/CVERecord?id=CVE-2026-27536
+- id: CVE-2026-32574
+  cvss: 7.1
+  plugin: "Smart Forms <= 2.6.104"
+  type: "Unauthenticated Cross Site Scripting (XSS)"
+  date: 2026-10-06
+  url: https://www.cve.org/CVERecord?id=CVE-2026-32574
+- id: CVE-2026-42729
+  cvss: 7.1
+  plugin: "Property Hive <= 2.2.2"
+  type: "Unauthenticated Stored Cross-Site Scripting"
+  date: 2026-05-23
+  url: https://www.cve.org/CVERecord?id=CVE-2026-42729
+- id: CVE-2026-57337
+  cvss: 7.1
+  plugin: "Landing Page Builder <= 1.5.3.5"
+  type: "Unauthenticated Stored Cross-Site Scripting"
+  date: 2026-06-29
+  url: https://www.cve.org/CVERecord?id=CVE-2026-57337
+- id: CVE-2026-57362
+  cvss: 7.1
+  plugin: "WPBot AI ChatBot <= 8.3.2"
+  type: "Reflected Cross-Site Scripting"
+  date: 2026-07-01
+  url: https://www.cve.org/CVERecord?id=CVE-2026-57362
+- id: CVE-2026-57388
+  cvss: 7.1
+  plugin: "Hydra Booking <= 1.1.44"
+  type: "Unauthenticated Stored Cross-Site Scripting"
+  date: 2026-07-08
+  url: https://www.cve.org/CVERecord?id=CVE-2026-57388
+- id: CVE-2026-57403
+  cvss: 7.1
+  plugin: "GD Security Headers <= 1.8"
+  type: "Unauthenticated Stored Cross-Site Scripting"
+  date: 2026-07-08
+  url: https://www.cve.org/CVERecord?id=CVE-2026-57403
+- id: CVE-2026-57405
+  cvss: 7.1
+  plugin: "Open Shop theme <= 1.7.1"
+  type: "Missing Authorization"
+  date: 2026-07-08
+  url: https://www.cve.org/CVERecord?id=CVE-2026-57405
+- id: CVE-2026-93949
+  cvss: 7.1
+  plugin: "Grocery Shopping Store <= 1.3.3"
+  type: "Authentication Bypass"
+  date: 2026-10-10
+  url: https://www.cve.org/CVERecord?id=CVE-2026-93949
+- id: CVE-2024-58397
+  cvss: 6.9
+  plugin: "mp4v2 <= 2.1.3"
+  type: "Out-of-bounds Read"
+  date: 2026-10-15
+  url: https://www.cve.org/CVERecord?id=CVE-2024-58397
 - id: CVE-2026-108580
   cvss: 6.9
   plugin: "AniWorld Downloader <= 5.3.0"
@@ -499,12 +504,6 @@
   type: "Out-of-bounds Read"
   date: 2026-10-15
   url: https://www.cve.org/CVERecord?id=CVE-2026-111167
-- id: CVE-2024-58397
-  cvss: 6.9
-  plugin: "mp4v2 <= 2.1.3"
-  type: "Out-of-bounds Read"
-  date: 2026-10-15
-  url: https://www.cve.org/CVERecord?id=CVE-2024-58397
 - id: CVE-2026-111269
   cvss: 6.9
   plugin: "libical <= 4.0.6"
@@ -529,18 +528,18 @@
   type: "Out-of-bounds Write"
   date: 2026-10-15
   url: https://www.cve.org/CVERecord?id=CVE-2026-111275
-- id: CVE-2026-108582
-  cvss: 6.8
-  plugin: "GenOffice <= 0.11.505"
-  type: "Insecure Permissions"
-  date: 2026-10-10
-  url: https://www.cve.org/CVERecord?id=CVE-2026-108582
 - id: CVE-2016-20099
   cvss: 6.8
   plugin: "l-smash <= 2.14.5"
   type: "Infinite Loop"
   date: 2026-10-14
   url: https://www.cve.org/CVERecord?id=CVE-2016-20099
+- id: CVE-2026-108582
+  cvss: 6.8
+  plugin: "GenOffice <= 0.11.505"
+  type: "Insecure Permissions"
+  date: 2026-10-10
+  url: https://www.cve.org/CVERecord?id=CVE-2026-108582
 - id: CVE-2026-110596
   cvss: 6.8
   plugin: "quirc <= 1.2"
@@ -697,6 +696,30 @@
   type: "Out-of-bounds Read"
   date: 2026-10-15
   url: https://www.cve.org/CVERecord?id=CVE-2026-111274
+- id: CVE-2026-111677
+  cvss: 6.8
+  plugin: "antiword <= 0.37"
+  type: "Out-of-bounds Read"
+  date: 2026-10-16
+  url: https://www.cve.org/CVERecord?id=CVE-2026-111677
+- id: CVE-2026-56050
+  cvss: 6.5
+  plugin: "PPOM Product Addons & Custom Fields for WooCommerce <= 33.0.18"
+  type: "Missing Authorization"
+  date: 2026-06-25
+  url: https://www.cve.org/CVERecord?id=CVE-2026-56050
+- id: CVE-2026-57340
+  cvss: 6.5
+  plugin: "Japanized for WooCommerce <= 2.9.12"
+  type: "Missing Authorization"
+  date: 2026-06-29
+  url: https://www.cve.org/CVERecord?id=CVE-2026-57340
+- id: CVE-2026-57375
+  cvss: 6.5
+  plugin: "MStore API <= 4.18.4"
+  type: "Missing Authorization"
+  date: 2026-07-07
+  url: https://www.cve.org/CVERecord?id=CVE-2026-57375
 - id: CVE-2026-78536
   cvss: 6.5
   plugin: "Robokassa payment gateway for WooCommerce <= 1.8.9"
@@ -709,30 +732,6 @@
   type: "Unauthenticated Unauthorized Lead and Search Manipulation"
   date: 2026-09-08
   url: https://www.cve.org/CVERecord?id=CVE-2026-81787
-- id: CVE-2026-57375
-  cvss: 6.5
-  plugin: "MStore API <= 4.18.4"
-  type: "Missing Authorization"
-  date: 2026-07-07
-  url: https://www.cve.org/CVERecord?id=CVE-2026-57375
-- id: CVE-2026-57340
-  cvss: 6.5
-  plugin: "Japanized for WooCommerce <= 2.9.12"
-  type: "Missing Authorization"
-  date: 2026-06-29
-  url: https://www.cve.org/CVERecord?id=CVE-2026-57340
-- id: CVE-2026-56050
-  cvss: 6.5
-  plugin: "PPOM Product Addons & Custom Fields for WooCommerce <= 33.0.18"
-  type: "Missing Authorization"
-  date: 2026-06-25
-  url: https://www.cve.org/CVERecord?id=CVE-2026-56050
-- id: CVE-2026-81788
-  cvss: 6.3
-  plugin: "IMPress for IDX Broker <= 3.3.0"
-  type: "Missing Authorization"
-  date: 2026-09-08
-  url: https://www.cve.org/CVERecord?id=CVE-2026-81788
 - id: CVE-2026-108604
   cvss: 6.3
   plugin: "tabularis <= 0.27.0"
@@ -775,6 +774,12 @@
   type: "Uninitialized Pointer"
   date: 2026-10-14
   url: https://www.cve.org/CVERecord?id=CVE-2026-110603
+- id: CVE-2026-81788
+  cvss: 6.3
+  plugin: "IMPress for IDX Broker <= 3.3.0"
+  type: "Missing Authorization"
+  date: 2026-09-08
+  url: https://www.cve.org/CVERecord?id=CVE-2026-81788
 - id: CVE-2026-108592
   cvss: 6.0
   plugin: "mini-swe-agent <= 2.4.6"
@@ -991,6 +996,12 @@
   type: "Server-Side Request Forgery (SSRF)"
   date: 2026-10-10
   url: https://www.cve.org/CVERecord?id=CVE-2026-108115
+- id: CVE-2024-58392
+  cvss: 4.8
+  plugin: "PhysicsFS <= 3.2.0"
+  type: "Out-of-Bounds Read"
+  date: 2026-10-14
+  url: https://www.cve.org/CVERecord?id=CVE-2024-58392
 - id: CVE-2026-108603
   cvss: 4.8
   plugin: "slide-maker <= 5.8.0"
@@ -1009,12 +1020,6 @@
   type: "Sensitive Info in Logs"
   date: 2026-10-11
   url: https://www.cve.org/CVERecord?id=CVE-2026-108754
-- id: CVE-2024-58392
-  cvss: 4.8
-  plugin: "PhysicsFS <= 3.2.0"
-  type: "Out-of-Bounds Read"
-  date: 2026-10-14
-  url: https://www.cve.org/CVERecord?id=CVE-2024-58392
 - id: CVE-2026-110606
   cvss: 4.8
   plugin: "libdxfrw <= LC2.2.0"
@@ -1033,6 +1038,12 @@
   type: "Out-of-Bounds Read"
   date: 2026-10-14
   url: https://www.cve.org/CVERecord?id=CVE-2026-110661
+- id: CVE-2026-111678
+  cvss: 4.8
+  plugin: "antiword <= 0.37"
+  type: "Out-of-bounds Read"
+  date: 2026-10-16
+  url: https://www.cve.org/CVERecord?id=CVE-2026-111678
 - id: CVE-2026-108579
   cvss: 4.2
   plugin: "openpanel <= 2.3.0"
