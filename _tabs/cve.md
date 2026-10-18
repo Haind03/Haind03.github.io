@@ -113,7 +113,7 @@ order: 1
 
 <div class="ca-h"><span class="n">0x01</span><h2>Process</h2></div>
 
-<p>The workflow stays the same whatever the target is: a WordPress plugin, a web application or an open-source project.</p>
+<p>The workflow stays the same whatever the target is: a WordPress plugin, a web application, an open-source project or a native binary / pwnable target.</p>
 
 <div class="ca-steps">
   <div>Scope<span>Pick a target and check the program scope and rules.</span></div>
