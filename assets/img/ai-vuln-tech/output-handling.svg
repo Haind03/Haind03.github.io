@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 420" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="820" height="420" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="410" y="32" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">LLM output is untrusted data</text>
+  <text x="410" y="54" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">one string, many sinks: the sink decides which classic injection you get</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+    <marker id="p" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#ff2a6d"/>
+    </marker>
+    <marker id="g" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#5fe3b0"/>
+    </marker>
+  </defs>
+
+  <!-- the output source -->
+  <g text-anchor="middle">
+    <rect x="40" y="188" width="150" height="66" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="115" y="216" font-size="13" font-weight="700" fill="#ff2a6d">LLM output</text>
+    <text x="115" y="236" font-size="11" fill="#9fb0c8">untrusted string</text>
+  </g>
+
+  <!-- untrusted flow into the gate -->
+  <path d="M190,221 L360,196" stroke="#ff2a6d" stroke-width="3" stroke-dasharray="6 5" fill="none" marker-end="url(#p)"/>
+
+  <!-- the control gate -->
+  <rect x="366" y="70" width="150" height="248" rx="8" fill="#0b1518" stroke="#5fe3b0"/>
+  <g text-anchor="middle">
+    <text x="441" y="150" font-size="13" font-weight="700" fill="#5fe3b0">SANITIZE AT</text>
+    <text x="441" y="168" font-size="13" font-weight="700" fill="#5fe3b0">THE SINK</text>
+  </g>
+  <g text-anchor="middle" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">
+    <text x="441" y="196">html.escape()</text>
+    <text x="441" y="214">allowlist (nh3)</text>
+    <text x="441" y="232">prepared stmt</text>
+    <text x="441" y="250">host allowlist</text>
+    <text x="441" y="268">block internal IPs</text>
+    <text x="441" y="290" fill="#5fe3b0">+ CSP in browser</text>
+  </g>
+
+  <!-- clean fan-out to sinks -->
+  <g stroke="#5fe3b0" stroke-width="2" marker-end="url(#g)" fill="none" opacity="0.9">
+    <line x1="516" y1="194" x2="556" y2="92"/>
+    <line x1="516" y1="194" x2="556" y2="142"/>
+    <line x1="516" y1="194" x2="556" y2="192"/>
+    <line x1="516" y1="194" x2="556" y2="242"/>
+    <line x1="516" y1="194" x2="556" y2="292"/>
+  </g>
+
+  <!-- sinks -->
+  <g text-anchor="middle">
+    <rect x="560" y="72" width="236" height="40" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="678" y="90" font-size="11.5" fill="#e3fffa">Browser renders HTML</text>
+    <text x="678" y="105" font-size="10.5" fill="#ff2a6d">unescaped -&gt; XSS</text>
+
+    <rect x="560" y="122" width="236" height="40" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="678" y="140" font-size="11.5" fill="#e3fffa">SQL built by string</text>
+    <text x="678" y="155" font-size="10.5" fill="#ff2a6d">-&gt; SQL injection</text>
+
+    <rect x="560" y="172" width="236" height="40" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="678" y="190" font-size="11.5" fill="#e3fffa">shell / eval argument</text>
+    <text x="678" y="205" font-size="10.5" fill="#ff2a6d">-&gt; RCE</text>
+
+    <rect x="560" y="222" width="236" height="40" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="678" y="240" font-size="11.5" fill="#e3fffa">server fetch(URL)</text>
+    <text x="678" y="255" font-size="10.5" fill="#ff2a6d">-&gt; SSRF</text>
+
+    <rect x="560" y="272" width="236" height="40" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="678" y="290" font-size="11.5" fill="#e3fffa">markdown image link</text>
+    <text x="678" y="305" font-size="10.5" fill="#ff2a6d">-&gt; data exfil</text>
+  </g>
+
+  <text x="410" y="362" text-anchor="middle" font-size="11.5" fill="#9fb0c8">A patched input filter does not help: the hole is at the output.</text>
+  <text x="410" y="384" text-anchor="middle" font-size="11.5" fill="#6c7b93">Blacklisting keywords like &lt;script&gt; loses; escape or allowlist at the sink.</text>
+</svg>

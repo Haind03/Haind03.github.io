@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="420" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Misinformation: confident, fluent, and wrong</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">two sources feed one over-trusted answer</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- sources -->
+  <rect x="24" y="100" width="200" height="58" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="124" y="124" text-anchor="middle" font-size="12.5" font-weight="700" fill="#ff2a6d">(a) Hallucination</text>
+  <text x="124" y="143" text-anchor="middle" font-size="10.5" fill="#9fb0c8">plausible tokens, not facts</text>
+
+  <rect x="24" y="198" width="200" height="58" rx="7" fill="#0b1518" stroke="#00f0ff" stroke-dasharray="5 4"/>
+  <text x="124" y="222" text-anchor="middle" font-size="12.5" fill="#e3fffa">(b) Induced by attacker</text>
+  <text x="124" y="241" text-anchor="middle" font-size="10" fill="#6c7b93" font-family="'JetBrains Mono',monospace">injection LLM01 &#183; poisoning LLM04/08</text>
+
+  <!-- LLM -->
+  <rect x="300" y="142" width="120" height="72" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="360" y="173" text-anchor="middle" font-size="14" font-weight="700" fill="#ff2a6d">LLM</text>
+  <text x="360" y="193" text-anchor="middle" font-size="10.5" fill="#9fb0c8">fluent + confident</text>
+
+  <!-- output -->
+  <rect x="478" y="142" width="140" height="72" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="548" y="173" text-anchor="middle" font-size="12.5" fill="#e3fffa">Confident wrong</text>
+  <text x="548" y="191" text-anchor="middle" font-size="12.5" fill="#e3fffa">answer</text>
+
+  <!-- consumer -->
+  <rect x="668" y="142" width="108" height="72" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="722" y="168" text-anchor="middle" font-size="12" fill="#e3fffa">User / agent</text>
+  <text x="722" y="185" text-anchor="middle" font-size="10" fill="#9fb0c8">acts on it</text>
+  <text x="722" y="199" text-anchor="middle" font-size="10" fill="#9fb0c8">overreliance (LLM06)</text>
+
+  <!-- arrows -->
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="224" y1="132" x2="296" y2="165"/>
+    <line x1="224" y1="226" x2="296" y2="193"/>
+    <line x1="420" y1="178" x2="474" y2="178"/>
+    <line x1="618" y1="178" x2="664" y2="178"/>
+  </g>
+
+  <!-- defense panel -->
+  <rect x="24" y="266" width="752" height="138" rx="7" fill="#0b1518" stroke="#263451"/>
+  <text x="400" y="288" text-anchor="middle" font-size="12.5" font-weight="700" fill="#5fe3b0">Defense: remove what you can, reduce the rest</text>
+
+  <!-- D1 remove source (hard) -->
+  <rect x="40" y="300" width="224" height="90" rx="6" fill="#111827" stroke="#5fe3b0"/>
+  <text x="152" y="322" text-anchor="middle" font-size="11.5" font-weight="700" fill="#5fe3b0">Remove source (b) - HARD</text>
+  <text x="152" y="343" text-anchor="middle" font-size="10.5" fill="#e3fffa">block injection + RAG poisoning</text>
+  <text x="152" y="360" text-anchor="middle" font-size="10.5" fill="#e3fffa">at the root (Lessons 3 and 6)</text>
+  <text x="152" y="378" text-anchor="middle" font-size="10" fill="#6c7b93">the only true removal here</text>
+
+  <!-- D2 reduce hallucination (soft) -->
+  <rect x="288" y="300" width="224" height="90" rx="6" fill="#111827" stroke="#5fe3b0" stroke-dasharray="5 4"/>
+  <text x="400" y="322" text-anchor="middle" font-size="11.5" font-weight="700" fill="#5fe3b0">Reduce hallucination - SOFT</text>
+  <text x="400" y="343" text-anchor="middle" font-size="10.5" fill="#e3fffa">grounding + citation check</text>
+  <text x="400" y="360" text-anchor="middle" font-size="10.5" fill="#e3fffa">lower temperature</text>
+  <text x="400" y="378" text-anchor="middle" font-size="10.5" fill="#e3fffa">teach "I do not know" &#183; verify</text>
+
+  <!-- D3 anti-overreliance -->
+  <rect x="536" y="300" width="224" height="90" rx="6" fill="#111827" stroke="#5fe3b0"/>
+  <text x="648" y="322" text-anchor="middle" font-size="11.5" font-weight="700" fill="#5fe3b0">Stop blind trust</text>
+  <text x="648" y="343" text-anchor="middle" font-size="10.5" fill="#e3fffa">human confirms irreversible</text>
+  <text x="648" y="360" text-anchor="middle" font-size="10.5" fill="#e3fffa">actions; label uncertainty;</text>
+  <text x="648" y="378" text-anchor="middle" font-size="10.5" fill="#e3fffa">never auto-trigger from output</text>
+
+  <!-- connectors -->
+  <g stroke="#5fe3b0" stroke-width="1.5" stroke-dasharray="3 4" fill="none" opacity="0.4">
+    <line x1="152" y1="300" x2="150" y2="256"/>
+    <line x1="400" y1="300" x2="430" y2="218"/>
+    <line x1="648" y1="300" x2="700" y2="218"/>
+  </g>
+</svg>

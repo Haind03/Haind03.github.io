@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 440" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="440" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Every red-team tool runs the same loop</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">generate variants, send to target, score, report a rate</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/></marker>
+  </defs>
+
+  <!-- A: payload variants -->
+  <rect x="250" y="86" width="300" height="56" rx="7" fill="#0b1518" stroke="#00f0ff" stroke-dasharray="5 4"/>
+  <text x="400" y="110" text-anchor="middle" font-size="13" fill="#e3fffa">Payload variants</text>
+  <text x="400" y="129" text-anchor="middle" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">probes / attacker LLM</text>
+
+  <!-- B: target -->
+  <rect x="290" y="176" width="220" height="56" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="400" y="200" text-anchor="middle" font-size="13" font-weight="700" fill="#ff2a6d">Target model</text>
+  <text x="400" y="219" text-anchor="middle" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">qwen2.5:3b / the app</text>
+
+  <!-- C: detector -->
+  <rect x="290" y="266" width="220" height="56" rx="7" fill="#111827" stroke="#fcee0a"/>
+  <text x="400" y="290" text-anchor="middle" font-size="13" fill="#e3fffa">Detector / scorer</text>
+  <text x="400" y="309" text-anchor="middle" font-size="10.5" fill="#9fb0c8">pass or fail, each run</text>
+
+  <!-- D: success rate -->
+  <rect x="290" y="356" width="220" height="52" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="400" y="380" text-anchor="middle" font-size="13" font-weight="700" fill="#5fe3b0">Success rate over N runs</text>
+  <text x="400" y="398" text-anchor="middle" font-size="10" fill="#9fb0c8">the only honest measure</text>
+
+  <!-- pipeline arrows -->
+  <g stroke="#6c7b93" stroke-width="2" fill="none" marker-end="url(#a)">
+    <line x1="400" y1="142" x2="400" y2="174"/>
+    <line x1="400" y1="232" x2="400" y2="264"/>
+    <line x1="400" y1="322" x2="400" y2="354"/>
+  </g>
+
+  <!-- loop return C -> A on the left -->
+  <path d="M290,294 L150,294 L150,114 L248,114" stroke="#6c7b93" stroke-width="2" fill="none" marker-end="url(#a)"/>
+  <text x="162" y="200" font-size="11" fill="#6c7b93">next</text>
+  <text x="162" y="215" font-size="11" fill="#6c7b93">variant</text>
+
+  <!-- right-side tool legend -->
+  <line x1="566" y1="96" x2="566" y2="330" stroke="#263451" stroke-width="1"/>
+  <g>
+    <text x="580" y="116" font-size="12.5" font-weight="700" fill="#e3fffa">garak</text>
+    <text x="580" y="134" font-size="10.5" fill="#9fb0c8">fixed probes + detector</text>
+    <text x="580" y="150" font-size="10.5" fill="#6c7b93">a fast model scan</text>
+
+    <text x="580" y="214" font-size="12.5" font-weight="700" fill="#e3fffa">PyRIT</text>
+    <text x="580" y="232" font-size="10.5" fill="#9fb0c8">drives the whole loop</text>
+    <text x="580" y="248" font-size="10.5" fill="#6c7b93">multi-turn, orchestrated</text>
+
+    <text x="580" y="300" font-size="12.5" font-weight="700" fill="#e3fffa">promptfoo</text>
+    <text x="580" y="318" font-size="10.5" fill="#9fb0c8">C as a regression gate</text>
+    <text x="580" y="334" font-size="10.5" fill="#6c7b93">rerun on app_fixed.py</text>
+  </g>
+
+  <text x="400" y="430" text-anchor="middle" font-size="11" fill="#6c7b93">A payload passes on one run and fails the next, so only the rate means anything.</text>
+</svg>

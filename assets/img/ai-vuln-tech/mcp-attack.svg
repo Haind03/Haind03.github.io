@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 410" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="410" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Agent and MCP attacks</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">a tool result is new input to the model</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+    <marker id="c" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#00f0ff"/>
+    </marker>
+  </defs>
+
+  <!-- main chain -->
+  <g font-size="12" text-anchor="middle">
+    <rect x="24"  y="150" width="140" height="58" rx="7" fill="#0b1518" stroke="#00f0ff" stroke-dasharray="5 4"/>
+    <text x="94"  y="175" fill="#e3fffa">User / task</text>
+    <text x="94"  y="193" fill="#6c7b93" font-size="10">(untrusted)</text>
+
+    <rect x="232" y="150" width="166" height="58" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="315" y="175" fill="#ff2a6d" font-weight="700">Agent LLM</text>
+    <text x="315" y="193" fill="#9fb0c8" font-size="10">proposes a tool call</text>
+
+    <rect x="466" y="150" width="158" height="58" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="545" y="172" fill="#fcee0a" font-weight="700">App executes</text>
+    <text x="545" y="190" fill="#9fb0c8" font-size="10">holds token / key</text>
+  </g>
+
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="164" y1="179" x2="228" y2="179"/>
+    <line x1="398" y1="179" x2="462" y2="179"/>
+    <line x1="624" y1="179" x2="650" y2="179"/>
+  </g>
+
+  <!-- malicious MCP server -->
+  <rect x="652" y="146" width="124" height="66" rx="7" fill="#140d16" stroke="#ff2a6d" stroke-dasharray="6 5"/>
+  <text x="714" y="170" text-anchor="middle" font-size="11.5" fill="#ff2a6d" font-weight="700">MCP server</text>
+  <text x="714" y="187" text-anchor="middle" font-size="10" fill="#9fb0c8">(malicious)</text>
+  <text x="714" y="201" text-anchor="middle" font-size="9.5" fill="#6c7b93">poisoned desc + data</text>
+
+  <!-- loop back: tool result as new untrusted input -->
+  <path d="M714,212 L714,300 L315,300 L315,210" stroke="#00f0ff" stroke-width="2" fill="none" marker-end="url(#c)" opacity="0.9"/>
+  <text x="515" y="318" text-anchor="middle" font-size="11" fill="#00f0ff" font-family="'JetBrains Mono',monospace">tool result returns as new untrusted input (carries the injection)</text>
+
+  <!-- tool poisoning callout -->
+  <rect x="520" y="86" width="256" height="34" rx="7" fill="#0d121d" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+  <text x="648" y="107" text-anchor="middle" font-size="10.5" fill="#ff2a6d">tool poisoning: instruction hidden in the tool description</text>
+  <line x1="714" y1="120" x2="714" y2="142" stroke="#ff2a6d" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <!-- confused deputy callout -->
+  <rect x="398" y="226" width="248" height="34" rx="7" fill="#0d121d" stroke="#fcee0a" stroke-dasharray="5 4"/>
+  <text x="522" y="247" text-anchor="middle" font-size="10.5" fill="#fcee0a">confused deputy: the agent uses the app's privilege</text>
+  <line x1="545" y1="226" x2="545" y2="212" stroke="#fcee0a" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <!-- hard controls footer -->
+  <rect x="24" y="338" width="752" height="48" rx="7" fill="#0c1a16" stroke="#5fe3b0"/>
+  <text x="400" y="358" text-anchor="middle" font-size="11.5" fill="#5fe3b0" font-weight="700">Hard controls</text>
+  <text x="400" y="376" text-anchor="middle" font-size="11" fill="#9fb0c8">least privilege per tool · tool results are untrusted · confirm irreversible actions · trust only known MCP servers</text>
+</svg>

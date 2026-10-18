@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="400" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">RAG / knowledge poisoning</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">one poisoned chunk rewrites the answer for every user</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- row labels -->
+  <text x="40" y="88" font-size="12" font-weight="700" fill="#ff2a6d" font-family="'JetBrains Mono',monospace">WRITE</text>
+  <text x="40" y="188" font-size="12" font-weight="700" fill="#00f0ff" font-family="'JetBrains Mono',monospace">READ</text>
+
+  <!-- write / ingest row -->
+  <g font-size="12.5" text-anchor="middle">
+    <rect x="40" y="96" width="160" height="54" rx="7" fill="#0b1518" stroke="#00f0ff" stroke-dasharray="5 4"/>
+    <text x="120" y="120" fill="#e3fffa">Attacker</text>
+    <text x="120" y="137" fill="#6c7b93" font-size="10.5">writes :poison, no login</text>
+
+    <rect x="240" y="96" width="170" height="54" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="325" y="120" fill="#e3fffa">Knowledge store</text>
+    <text x="325" y="137" fill="#6c7b93" font-size="10.5">no ingest check</text>
+  </g>
+
+  <!-- read / query row -->
+  <g font-size="12.5" text-anchor="middle">
+    <rect x="40" y="196" width="160" height="54" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="120" y="227" fill="#e3fffa">User question</text>
+
+    <rect x="240" y="196" width="170" height="54" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="325" y="220" fill="#e3fffa">Top-k similarity</text>
+    <text x="325" y="237" fill="#ff2a6d" font-size="10.5">poisoned chunk selected</text>
+
+    <rect x="448" y="196" width="182" height="54" rx="7" fill="#0b1518" stroke="#00f0ff" stroke-dasharray="5 4"/>
+    <text x="539" y="220" fill="#e3fffa">Prompt</text>
+    <text x="539" y="237" fill="#9fb0c8" font-size="10.5">chunks inserted (untrusted)</text>
+
+    <rect x="668" y="196" width="104" height="54" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="720" y="228" fill="#ff2a6d" font-weight="700">LLM</text>
+  </g>
+
+  <!-- arrows -->
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="200" y1="123" x2="236" y2="123"/>
+    <line x1="200" y1="223" x2="236" y2="223"/>
+    <line x1="410" y1="223" x2="444" y2="223"/>
+    <line x1="630" y1="223" x2="664" y2="223"/>
+    <line x1="325" y1="150" x2="325" y2="192"/>
+    <line x1="720" y1="250" x2="720" y2="280"/>
+  </g>
+  <text x="340" y="176" font-size="10.5" fill="#6c7b93" font-family="'JetBrains Mono',monospace">retrieved</text>
+
+  <!-- outcome -->
+  <rect x="430" y="282" width="342" height="42" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="601" y="308" text-anchor="middle" font-size="12.5" fill="#e3fffa">Same wrong answer for every user</text>
+
+  <!-- hard control -->
+  <rect x="28" y="338" width="744" height="38" rx="7" fill="#0b1518" stroke="#5fe3b0"/>
+  <text x="44" y="362" font-size="11.5" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">FIX</text>
+  <text x="90" y="362" font-size="11.5" fill="#e3fffa">ingest only source=official and retrieve only official chunks. Provenance and a distance threshold are softer add-ons.</text>
+
+  <text x="400" y="392" text-anchor="middle" font-size="11" fill="#6c7b93">The model trusts a retrieved chunk over its own base knowledge, so the source is the real control point.</text>
+</svg>

@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 410" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="820" height="410" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="410" y="32" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Excessive agency: the app runs what the model proposes</text>
+  <text x="410" y="54" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">three axes - functionality, permissions, autonomy - and where the control belongs</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+    <marker id="g" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#5fe3b0"/>
+    </marker>
+  </defs>
+
+  <!-- user + model -->
+  <g text-anchor="middle">
+    <rect x="24" y="182" width="112" height="52" rx="7" fill="#0b1518" stroke="#00f0ff" stroke-dasharray="5 4"/>
+    <text x="80" y="204" font-size="12.5" fill="#e3fffa">bob</text>
+    <text x="80" y="221" font-size="10.5" fill="#6c7b93">(normal user)</text>
+
+    <rect x="156" y="182" width="96" height="52" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="204" y="205" font-size="13" font-weight="700" fill="#ff2a6d">LLM</text>
+    <text x="204" y="222" font-size="10" fill="#9fb0c8">proposes</text>
+  </g>
+  <line x1="136" y1="208" x2="154" y2="208" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+
+  <!-- proposed tool calls -->
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="252" y1="208" x2="298" y2="89"/>
+    <line x1="252" y1="208" x2="298" y2="195"/>
+    <line x1="252" y1="208" x2="298" y2="301"/>
+  </g>
+
+  <g text-anchor="middle" font-family="'JetBrains Mono',monospace">
+    <rect x="300" y="64" width="196" height="50" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="398" y="88" font-size="12" fill="#e3fffa">get_balance(alice)</text>
+    <text x="398" y="105" font-size="10" fill="#fcee0a">[permissions / IDOR]</text>
+
+    <rect x="300" y="170" width="196" height="50" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="398" y="194" font-size="12" fill="#e3fffa">refund(9999 -&gt; self)</text>
+    <text x="398" y="211" font-size="10" fill="#fcee0a">[autonomy]</text>
+
+    <rect x="300" y="276" width="196" height="50" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="398" y="300" font-size="12" fill="#e3fffa">delete_user(carol)</text>
+    <text x="398" y="317" font-size="10" fill="#fcee0a">[functionality]</text>
+  </g>
+
+  <!-- call -> gate -->
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="496" y1="89" x2="538" y2="89"/>
+    <line x1="496" y1="195" x2="538" y2="195"/>
+    <line x1="496" y1="301" x2="538" y2="301"/>
+  </g>
+
+  <!-- the gate -->
+  <rect x="540" y="60" width="60" height="300" rx="8" fill="#0b1518" stroke="#5fe3b0"/>
+  <text x="570" y="210" text-anchor="middle" transform="rotate(-90 570 210)" font-size="13" font-weight="700" fill="#5fe3b0">AUTHORIZE IN THE TOOL FN</text>
+
+  <!-- gate -> controls -->
+  <g stroke="#5fe3b0" stroke-width="2" marker-end="url(#g)" fill="none">
+    <line x1="600" y1="89" x2="658" y2="89"/>
+    <line x1="600" y1="195" x2="658" y2="195"/>
+    <line x1="600" y1="301" x2="658" y2="301"/>
+  </g>
+
+  <!-- controls -->
+  <g text-anchor="middle">
+    <rect x="660" y="64" width="150" height="50" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="735" y="85" font-size="11.5" fill="#e3fffa">scope to the</text>
+    <text x="735" y="101" font-size="11.5" fill="#e3fffa">session user</text>
+
+    <rect x="660" y="170" width="150" height="50" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="735" y="191" font-size="11.5" fill="#e3fffa">confirm + amount</text>
+    <text x="735" y="207" font-size="11.5" fill="#e3fffa">threshold</text>
+
+    <rect x="660" y="276" width="150" height="50" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="735" y="297" font-size="11.5" fill="#e3fffa">hidden from</text>
+    <text x="735" y="313" font-size="11.5" fill="#e3fffa">bob's role</text>
+  </g>
+
+  <text x="410" y="378" text-anchor="middle" font-size="11.5" fill="#9fb0c8">The model only proposes; the app decides.</text>
+  <text x="410" y="398" text-anchor="middle" font-size="11.5" fill="#6c7b93">Controls live inside each tool fn, keyed to the session identity - not to what the model says.</text>
+</svg>

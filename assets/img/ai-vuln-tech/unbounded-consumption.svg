@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="420" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Unbounded consumption</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">every token costs CPU, GPU and money - and nothing limits it</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- variants band -->
+  <rect x="24" y="72" width="752" height="44" rx="7" fill="#0b1518" stroke="#00f0ff" stroke-dasharray="5 4"/>
+  <text x="400" y="91" text-anchor="middle" font-size="12" fill="#e3fffa">Variants (all abuse availability or cost, not data)</text>
+  <text x="400" y="108" text-anchor="middle" font-size="11" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">output flooding &#183; input flooding &#183; parallel sessions (DoS) &#183; model extraction</text>
+
+  <!-- main chain -->
+  <g text-anchor="middle">
+    <rect x="24" y="138" width="150" height="58" rx="7" fill="#0b1518" stroke="#00f0ff" stroke-dasharray="5 4"/>
+    <text x="99" y="163" font-size="12.5" fill="#e3fffa">Abusive request</text>
+    <text x="99" y="181" font-size="10.5" fill="#6c7b93">(untrusted)</text>
+
+    <rect x="206" y="138" width="130" height="58" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="271" y="163" font-size="14" font-weight="700" fill="#ff2a6d">LLM</text>
+    <text x="271" y="181" font-size="10" fill="#9fb0c8">one full pass per token</text>
+
+    <rect x="368" y="138" width="168" height="58" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="452" y="158" font-size="12" fill="#e3fffa">Output: N tokens</text>
+  </g>
+  <!-- token strip -->
+  <g>
+    <rect x="382" y="170" width="13" height="14" rx="2" fill="#0b1518" stroke="#00f0ff"/>
+    <rect x="399" y="170" width="13" height="14" rx="2" fill="#0b1518" stroke="#00f0ff"/>
+    <rect x="416" y="170" width="13" height="14" rx="2" fill="#0b1518" stroke="#00f0ff"/>
+    <rect x="433" y="170" width="13" height="14" rx="2" fill="#0b1518" stroke="#00f0ff"/>
+    <rect x="450" y="170" width="13" height="14" rx="2" fill="#0b1518" stroke="#00f0ff"/>
+    <rect x="467" y="170" width="13" height="14" rx="2" fill="#0b1518" stroke="#00f0ff"/>
+    <rect x="484" y="170" width="13" height="14" rx="2" fill="#0b1518" stroke="#00f0ff"/>
+    <rect x="501" y="170" width="13" height="14" rx="2" fill="#0b1518" stroke="#00f0ff"/>
+    <text x="520" y="181" font-size="11" fill="#6c7b93">...</text>
+  </g>
+
+  <!-- cost box -->
+  <rect x="568" y="128" width="208" height="80" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="672" y="150" text-anchor="middle" font-size="13" font-weight="700" fill="#ff2a6d">Cost blows up</text>
+  <g>
+    <rect x="586" y="186" width="12" height="10" fill="#ff2a6d" opacity="0.55"/>
+    <rect x="604" y="178" width="12" height="18" fill="#ff2a6d" opacity="0.65"/>
+    <rect x="622" y="168" width="12" height="28" fill="#ff2a6d" opacity="0.8"/>
+    <rect x="640" y="158" width="12" height="38" fill="#ff2a6d"/>
+  </g>
+  <text x="670" y="173" font-size="10.5" fill="#9fb0c8">$$$ Denial of Wallet</text>
+  <text x="670" y="195" font-size="10.5" fill="#9fb0c8">CPU/GPU -&gt; DoS</text>
+
+  <!-- arrows -->
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="174" y1="167" x2="202" y2="167"/>
+    <line x1="336" y1="167" x2="364" y2="167"/>
+    <line x1="536" y1="167" x2="564" y2="167"/>
+  </g>
+
+  <text x="400" y="234" text-anchor="middle" font-size="11.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">cost &#8733; (input + output tokens) &#215; requests, and nothing bounds it</text>
+
+  <!-- defense band -->
+  <rect x="24" y="256" width="752" height="148" rx="7" fill="#0b1518" stroke="#5fe3b0"/>
+  <text x="400" y="279" text-anchor="middle" font-size="12.5" font-weight="700" fill="#5fe3b0">Deterministic guardrails - put them at the gateway, not scattered in app code</text>
+
+  <g text-anchor="middle" font-size="11">
+    <rect x="40" y="294" width="136" height="54" rx="6" fill="#111827" stroke="#5fe3b0"/>
+    <text x="108" y="316" fill="#e3fffa">Output cap</text>
+    <text x="108" y="334" fill="#6c7b93" font-family="'JetBrains Mono',monospace">num_predict=256</text>
+
+    <rect x="188" y="294" width="136" height="54" rx="6" fill="#111827" stroke="#5fe3b0"/>
+    <text x="256" y="316" fill="#e3fffa">Input cap</text>
+    <text x="256" y="334" fill="#6c7b93">reject &gt; N tokens</text>
+
+    <rect x="336" y="294" width="136" height="54" rx="6" fill="#111827" stroke="#5fe3b0"/>
+    <text x="404" y="316" fill="#e3fffa">Rate limit</text>
+    <text x="404" y="334" fill="#6c7b93">per user / min</text>
+
+    <rect x="484" y="294" width="136" height="54" rx="6" fill="#111827" stroke="#5fe3b0"/>
+    <text x="552" y="316" fill="#e3fffa">Quota + alerts</text>
+    <text x="552" y="334" fill="#6c7b93">per day / month</text>
+
+    <rect x="632" y="294" width="136" height="54" rx="6" fill="#111827" stroke="#5fe3b0"/>
+    <text x="700" y="316" fill="#e3fffa">Timeout</text>
+    <text x="700" y="334" fill="#6c7b93">per LLM call</text>
+  </g>
+
+  <text x="400" y="371" text-anchor="middle" font-size="11" fill="#9fb0c8">These remove the class and apply to every endpoint. An in-prompt "be brief" only reduces it.</text>
+  <text x="400" y="391" text-anchor="middle" font-size="11" fill="#6c7b93">Denial of Wallet: the attacker never crashes you - you pay until you switch it off.</text>
+</svg>

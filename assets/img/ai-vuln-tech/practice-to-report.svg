@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 440" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="820" height="440" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="410" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">From practice arena to a report that counts</text>
+  <text x="410" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">practice in legal arenas, then let the scope filter decide what is a paid vulnerability</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- left: legal arenas -->
+  <rect x="24" y="86" width="236" height="300" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="142" y="112" text-anchor="middle" font-size="14" font-weight="700" fill="#5fe3b0">Legal practice arenas</text>
+  <line x1="40" y1="122" x2="244" y2="122" stroke="#263451"/>
+  <g font-size="12">
+    <text x="40" y="154" font-weight="700" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">+</text>
+    <text x="58" y="154" fill="#e3fffa">Gandalf (prompt injection)</text>
+    <text x="40" y="198" font-weight="700" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">+</text>
+    <text x="58" y="198" fill="#e3fffa">HackAPrompt challenges</text>
+    <text x="40" y="242" font-weight="700" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">+</text>
+    <text x="58" y="242" fill="#e3fffa">CTFs with an LLM category</text>
+    <text x="40" y="286" font-weight="700" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">+</text>
+    <text x="58" y="286" fill="#e3fffa">DEF CON AI Village</text>
+    <text x="40" y="330" font-weight="700" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">+</text>
+    <text x="58" y="330" fill="#e3fffa">Your own labs (safest)</text>
+  </g>
+  <text x="142" y="368" text-anchor="middle" font-size="11" fill="#6c7b93">built to be attacked, not production</text>
+
+  <!-- center: scope filter -->
+  <rect x="300" y="86" width="236" height="300" rx="7" fill="#111827" stroke="#263451"/>
+  <text x="418" y="112" text-anchor="middle" font-size="14" font-weight="700" fill="#e3fffa">Bug bounty: read the scope</text>
+  <line x1="316" y1="122" x2="520" y2="122" stroke="#263451"/>
+
+  <rect x="314" y="138" width="208" height="98" rx="6" fill="#0b1518" stroke="#ff2a6d"/>
+  <text x="326" y="166" font-size="13" font-weight="700" fill="#ff2a6d" font-family="'JetBrains Mono',monospace">x</text>
+  <text x="346" y="166" font-size="13" fill="#e3fffa">Pure jailbreak</text>
+  <text x="326" y="188" font-size="11" fill="#9fb0c8">"model said something bad"</text>
+  <text x="326" y="220" font-size="12" font-weight="700" fill="#ff2a6d">usually OUT of scope</text>
+
+  <rect x="314" y="252" width="208" height="116" rx="6" fill="#0b1518" stroke="#5fe3b0"/>
+  <text x="326" y="280" font-size="13" font-weight="700" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">+</text>
+  <text x="346" y="280" font-size="13" fill="#e3fffa">Application-layer impact</text>
+  <text x="326" y="302" font-size="11" fill="#9fb0c8">XSS / SSRF, unauthorized</text>
+  <text x="326" y="318" font-size="11" fill="#9fb0c8">action, other users' data</text>
+  <text x="326" y="350" font-size="12" font-weight="700" fill="#5fe3b0">IN scope, pays</text>
+
+  <!-- right: good report -->
+  <rect x="576" y="86" width="220" height="300" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="686" y="112" text-anchor="middle" font-size="14" font-weight="700" fill="#5fe3b0">A report that counts</text>
+  <line x1="592" y1="122" x2="780" y2="122" stroke="#263451"/>
+  <g font-size="11.5">
+    <text x="592" y="154" font-weight="700" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">+</text>
+    <text x="610" y="154" fill="#e3fffa">Success rate, e.g. 4/5</text>
+    <text x="592" y="196" font-weight="700" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">+</text>
+    <text x="610" y="196" fill="#e3fffa">Model, version, temp, seed</text>
+    <text x="592" y="238" font-weight="700" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">+</text>
+    <text x="610" y="238" fill="#e3fffa">Minimal repro + logs</text>
+    <text x="592" y="280" font-weight="700" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">+</text>
+    <text x="610" y="280" fill="#e3fffa">App-layer impact shown</text>
+    <text x="592" y="322" font-weight="700" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">+</text>
+    <text x="610" y="322" fill="#e3fffa">Fix = hard control in app</text>
+  </g>
+  <text x="686" y="368" text-anchor="middle" font-size="11" fill="#6c7b93">probabilistic bug, so measure it</text>
+
+  <!-- arrows -->
+  <line x1="260" y1="236" x2="298" y2="236" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none"/>
+  <line x1="522" y1="310" x2="574" y2="310" stroke="#5fe3b0" stroke-width="2" marker-end="url(#a)" fill="none"/>
+
+  <text x="410" y="422" text-anchor="middle" font-size="11" fill="#6c7b93">A jailbreak alone is content safety. A paid vulnerability needs real application-layer impact.</text>
+</svg>
