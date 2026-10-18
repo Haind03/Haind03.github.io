@@ -90,9 +90,9 @@ order: 1
 
 <div class="ca-kick">Bug bounty // Vulnerability research</div>
 
-<p class="ca-lead">These are the CVEs credited to me from bug bounty and vulnerability research on WordPress plugins, web applications and open-source projects. I report through bug bounty programs such as Wordfence and Patchstack, as well as other coordinated disclosure channels. Once the vendor ships a fix, the advisory goes public and the CVE is published.</p>
+<p class="ca-lead">These are the CVEs credited to me from bug bounty and vulnerability research on WordPress plugins, web applications and open-source projects. I report through programs like Wordfence and Patchstack and through other coordinated disclosure channels, so the vendor always hears about an issue before it is public. Each CVE shows up here only after the fix ships and the advisory goes out.</p>
 
-<p>Most of what I find is in access control and input handling: REST routes or AJAX actions without proper permission checks, SQL built from user input, and stored XSS. I mostly look for bugs that work without logging in. The highest one here is an unauthenticated RCE in Easy Invoice (CVSS 10.0).</p>
+<p>Most of what I find sits in access control and input handling, things like REST routes or AJAX actions with no permission check, SQL built straight from user input, and stored XSS. I focus on bugs that work with no login at all. The highest one here is an unauthenticated RCE in Easy Invoice at CVSS 10.0.</p>
 
 <div class="ca-stats">
   <div class="ca-stat"><b>{{ total }}</b><span>CVEs assigned</span></div>
