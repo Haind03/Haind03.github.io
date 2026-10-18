@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 390" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="390" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">CORS: reflected Origin plus credentials</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">the browser is tricked into handing the victim's data to the evil page</text>
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <rect x="24" y="166" width="178" height="84" rx="7" fill="#111827" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+  <text x="113" y="196" text-anchor="middle" font-size="12.5" fill="#ff2a6d" font-weight="700">evil.example</text>
+  <text x="113" y="217" text-anchor="middle" font-size="10" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">fetch('/api/account',</text>
+  <text x="113" y="232" text-anchor="middle" font-size="10" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">credentials:'include')</text>
+
+  <rect x="598" y="166" width="178" height="84" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="687" y="196" text-anchor="middle" font-size="12.5" fill="#e3fffa">victim server</text>
+  <text x="687" y="217" text-anchor="middle" font-size="10.5" fill="#ff2a6d">reflects Origin</text>
+  <text x="687" y="233" text-anchor="middle" font-size="10.5" fill="#ff2a6d">sets ACAC: true</text>
+
+  <rect x="236" y="90" width="326" height="66" rx="7" fill="#111827" stroke="#00f0ff" stroke-dasharray="5 4"/>
+  <text x="399" y="112" text-anchor="middle" font-size="11.5" fill="#e3fffa">Request the browser sends</text>
+  <text x="399" y="131" text-anchor="middle" font-size="10.5" fill="#00f0ff" font-family="'JetBrains Mono',monospace">Origin: https://evil.example</text>
+  <text x="399" y="147" text-anchor="middle" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">Cookie: session=sess-alice</text>
+
+  <rect x="236" y="256" width="326" height="92" rx="7" fill="#111827" stroke="#fcee0a"/>
+  <text x="399" y="278" text-anchor="middle" font-size="11.5" fill="#e3fffa">Response the server allows</text>
+  <text x="399" y="297" text-anchor="middle" font-size="10.5" fill="#fcee0a" font-family="'JetBrains Mono',monospace">ACAO: https://evil.example</text>
+  <text x="399" y="313" text-anchor="middle" font-size="10.5" fill="#fcee0a" font-family="'JetBrains Mono',monospace">ACAC: true</text>
+  <text x="399" y="333" text-anchor="middle" font-size="10.5" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">{ api_token: FLAG{...} }</text>
+
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="170" y1="172" x2="234" y2="126"/>
+    <line x1="564" y1="126" x2="596" y2="176"/>
+    <line x1="596" y1="240" x2="564" y2="296"/>
+    <line x1="234" y1="300" x2="178" y2="244"/>
+  </g>
+  <text x="113" y="270" text-anchor="middle" font-size="10.5" fill="#5fe3b0">evil JS reads the JSON</text>
+</svg>

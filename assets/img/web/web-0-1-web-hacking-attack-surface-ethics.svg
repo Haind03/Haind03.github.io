@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 340" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="340" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">What web hacking actually is</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">the app trusts input it never checked, and the input reaches a sink</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <text x="90" y="118" text-anchor="middle" font-size="11" fill="#00f0ff" font-family="'JetBrains Mono',monospace">input you fully control</text>
+  <text x="402" y="130" text-anchor="middle" font-size="11" fill="#ff2a6d" font-family="'JetBrains Mono',monospace">no validation</text>
+
+  <g font-size="12.5" text-anchor="middle">
+    <rect x="24" y="142" width="132" height="72" rx="7" fill="#0b1518" stroke="#00f0ff" stroke-dasharray="5 4"/>
+    <text x="90" y="170" fill="#e3fffa">Attacker</text>
+    <text x="90" y="188" fill="#6c7b93" font-size="10.5">anyone who can</text>
+    <text x="90" y="202" fill="#6c7b93" font-size="10.5">send a request</text>
+
+    <rect x="196" y="142" width="186" height="72" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="289" y="166" fill="#e3fffa">HTTP request</text>
+    <text x="289" y="186" fill="#9fb0c8" font-size="10.5">form, URL, header,</text>
+    <text x="289" y="200" fill="#9fb0c8" font-size="10.5">cookie, body, file</text>
+
+    <rect x="422" y="142" width="150" height="72" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="497" y="174" fill="#ff2a6d" font-weight="700">App trusts</text>
+    <text x="497" y="192" fill="#ff2a6d" font-weight="700">the input</text>
+
+    <rect x="612" y="142" width="164" height="72" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="694" y="166" fill="#e3fffa">Sink</text>
+    <text x="694" y="186" fill="#9fb0c8" font-size="10.5">DB, filesystem,</text>
+    <text x="694" y="200" fill="#9fb0c8" font-size="10.5">template, auth</text>
+  </g>
+
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="156" y1="178" x2="192" y2="178"/>
+    <line x1="382" y1="178" x2="418" y2="178"/>
+    <line x1="572" y1="178" x2="608" y2="178"/>
+  </g>
+
+  <text x="400" y="266" text-anchor="middle" font-size="12" fill="#9fb0c8">For every arrow, ask whether the app checks this data before it is used.</text>
+  <text x="400" y="296" text-anchor="middle" font-size="11" fill="#6c7b93" font-family="'JetBrains Mono',monospace">OWASP Top 10 A01 to A10 are variations of this single untrusted arrow</text>
+</svg>

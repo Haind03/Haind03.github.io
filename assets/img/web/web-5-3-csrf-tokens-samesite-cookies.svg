@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="400" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">CSRF: the browser attaches the cookie on a cross-site request</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">evil.example makes the victim's browser act on shop.local</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- chain -->
+  <g font-size="12" text-anchor="middle">
+    <rect x="22" y="150" width="150" height="64" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="97" y="174" fill="#e3fffa">Victim browser</text>
+    <text x="97" y="192" fill="#6c7b93" font-size="10">logged in to shop.local</text>
+    <text x="97" y="207" fill="#6c7b93" font-size="10">holds session cookie</text>
+
+    <rect x="214" y="150" width="166" height="64" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="297" y="174" fill="#ff2a6d">evil.example</text>
+    <text x="297" y="192" fill="#9fb0c8" font-size="10.5">hidden form auto-submit</text>
+    <text x="297" y="207" fill="#9fb0c8" font-size="10">on page load</text>
+
+    <rect x="422" y="150" width="182" height="64" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="513" y="172" fill="#e3fffa">POST shop.local</text>
+    <text x="513" y="190" fill="#e3fffa">/change-email</text>
+    <text x="513" y="207" fill="#ff2a6d" font-size="10">cookie attached by browser</text>
+
+    <rect x="646" y="150" width="130" height="64" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="711" y="178" fill="#e3fffa">email changed</text>
+    <text x="711" y="196" fill="#fcee0a" font-size="10.5">to attacker's</text>
+  </g>
+
+  <!-- arrows -->
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="172" y1="182" x2="210" y2="182"/>
+    <line x1="380" y1="182" x2="418" y2="182"/>
+    <line x1="604" y1="182" x2="642" y2="182"/>
+  </g>
+  <text x="297" y="138" text-anchor="middle" font-size="10.5" fill="#6c7b93">victim opens the page</text>
+
+  <!-- defenses -->
+  <g font-size="11" text-anchor="middle">
+    <rect x="214" y="278" width="390" height="56" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="409" y="300" fill="#5fe3b0">Defense: synchronizer CSRF token + SameSite cookie</text>
+    <text x="409" y="318" fill="#9fb0c8" font-size="10.5">cross-origin page cannot read the token; Lax blocks the cross-site POST</text>
+  </g>
+  <line x1="409" y1="272" x2="409" y2="218" stroke="#5fe3b0" stroke-width="2" marker-end="url(#a)" opacity="0.85"/>
+  <text x="400" y="364" text-anchor="middle" font-size="11" fill="#6c7b93">CSRF needs a cookie-only session and a request with no secret the attacker cannot guess.</text>
+</svg>

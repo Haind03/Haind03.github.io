@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 380" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="380" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Stored XSS, inject once and fire for everyone</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">one stored payload steals every logged-in viewer's session cookie</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- row 1 -->
+  <rect x="40" y="72" width="300" height="54" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+  <text x="190" y="94" text-anchor="middle" font-size="12.5" fill="#e3fffa">1. Attacker posts a comment</text>
+  <text x="190" y="113" text-anchor="middle" font-size="10" fill="#ff2a6d" font-family="'JetBrains Mono',monospace">text=&lt;script&gt;steal cookie&lt;/script&gt;</text>
+
+  <rect x="460" y="72" width="300" height="54" rx="7" fill="#111827" stroke="#263451"/>
+  <text x="610" y="94" text-anchor="middle" font-size="12.5" fill="#e3fffa">2. Server stores it, no escaping</text>
+  <text x="610" y="113" text-anchor="middle" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">saved in DB / file</text>
+
+  <!-- row 2 -->
+  <rect x="460" y="176" width="300" height="54" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="610" y="198" text-anchor="middle" font-size="12.5" fill="#e3fffa">3. Victim (logged in) opens page</text>
+  <text x="610" y="217" text-anchor="middle" font-size="10.5" fill="#9fb0c8">payload served verbatim</text>
+
+  <rect x="40" y="176" width="300" height="54" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="190" y="198" text-anchor="middle" font-size="12.5" fill="#ff2a6d" font-weight="700">4. Script runs in victim origin</text>
+  <text x="190" y="217" text-anchor="middle" font-size="10.5" fill="#9fb0c8">full access to the session</text>
+
+  <!-- row 3 -->
+  <rect x="40" y="280" width="300" height="54" rx="7" fill="#111827" stroke="#fcee0a"/>
+  <text x="190" y="302" text-anchor="middle" font-size="12.5" fill="#e3fffa">5. Reads document.cookie</text>
+  <text x="190" y="321" text-anchor="middle" font-size="10.5" fill="#fcee0a">session cookie, no HttpOnly</text>
+
+  <rect x="460" y="280" width="300" height="54" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="610" y="302" text-anchor="middle" font-size="12.5" fill="#e3fffa">6. new Image().src to attacker</text>
+  <text x="610" y="321" text-anchor="middle" font-size="10.5" fill="#9fb0c8">cookie logged to loot.txt</text>
+
+  <!-- arrows -->
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="340" y1="99" x2="456" y2="99"/>
+    <line x1="610" y1="126" x2="610" y2="172"/>
+    <line x1="460" y1="203" x2="344" y2="203"/>
+    <line x1="190" y1="230" x2="190" y2="276"/>
+    <line x1="340" y1="307" x2="456" y2="307"/>
+  </g>
+</svg>

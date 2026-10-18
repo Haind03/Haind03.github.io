@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="360" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Insecure deserialization: loading is running</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">pickle.loads on untrusted bytes executes __reduce__</text>
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <g text-anchor="middle">
+    <rect x="24" y="108" width="172" height="80" rx="7" fill="#111827" stroke="#00f0ff" stroke-dasharray="5 4"/>
+    <text x="110" y="134" font-size="12.5" fill="#e3fffa">Cookie prefs</text>
+    <text x="110" y="155" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">base64(pickle)</text>
+    <text x="110" y="177" font-size="10" fill="#6c7b93">attacker-controlled</text>
+
+    <rect x="228" y="108" width="158" height="80" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="307" y="140" font-size="12.5" fill="#ff2a6d" font-weight="700">pickle.loads()</text>
+    <text x="307" y="162" font-size="10.5" fill="#9fb0c8">rebuilds object</text>
+
+    <rect x="418" y="108" width="182" height="80" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="509" y="134" font-size="12.5" fill="#fcee0a" font-weight="700">__reduce__</text>
+    <text x="509" y="156" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">(os.system,("id",))</text>
+    <text x="509" y="177" font-size="10" fill="#6c7b93">REDUCE opcode calls it</text>
+
+    <rect x="632" y="108" width="144" height="80" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="704" y="140" font-size="12.5" fill="#e3fffa">command runs</text>
+    <text x="704" y="162" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">os.system("id")</text>
+  </g>
+
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="196" y1="148" x2="224" y2="148"/>
+    <line x1="386" y1="148" x2="414" y2="148"/>
+    <line x1="600" y1="148" x2="628" y2="148"/>
+  </g>
+  <line x1="704" y1="188" x2="704" y2="250" stroke="#5fe3b0" stroke-width="2" marker-end="url(#a)" fill="none"/>
+
+  <rect x="420" y="250" width="356" height="62" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="598" y="274" text-anchor="middle" font-size="11.5" fill="#e3fffa">output is not in the HTTP response</text>
+  <text x="598" y="294" text-anchor="middle" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">write to /tmp file, read back (or OOB)</text>
+
+  <g font-family="'JetBrains Mono',monospace">
+    <text x="24" y="268" font-size="11" fill="#ff2a6d">rule:</text>
+    <text x="24" y="288" font-size="11" fill="#9fb0c8">never unpickle data</text>
+    <text x="24" y="308" font-size="11" fill="#9fb0c8">from the outside</text>
+    <text x="24" y="332" font-size="10.5" fill="#6c7b93">response only returns exit code 0</text>
+  </g>
+</svg>

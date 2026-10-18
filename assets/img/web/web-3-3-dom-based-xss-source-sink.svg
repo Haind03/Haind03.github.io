@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 424" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="424" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">DOM-based XSS, from source to sink</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">the fragment never reaches the server, so the flaw is in client JS</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- spine -->
+  <g text-anchor="middle">
+    <rect x="100" y="66" width="300" height="46" rx="7" fill="#0b1518" stroke="#00f0ff" stroke-dasharray="5 4"/>
+    <text x="250" y="85" font-size="11.5" fill="#9fb0c8">URL fragment (attacker-controlled)</text>
+    <text x="250" y="103" font-size="10" fill="#00f0ff" font-family="'JetBrains Mono',monospace">http://site/#&lt;img src=x onerror=alert(1)&gt;</text>
+
+    <rect x="100" y="138" width="300" height="46" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="250" y="157" font-size="12.5" fill="#e3fffa">Source</text>
+    <text x="250" y="175" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">location.hash</text>
+
+    <rect x="100" y="210" width="300" height="46" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="250" y="229" font-size="12" fill="#e3fffa" font-family="'JetBrains Mono',monospace">decodeURIComponent()</text>
+    <text x="250" y="247" font-size="10.5" fill="#9fb0c8">no sanitizing step</text>
+
+    <rect x="100" y="282" width="300" height="46" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="250" y="301" font-size="12.5" fill="#ff2a6d" font-weight="700">Sink = element.innerHTML</text>
+    <text x="250" y="319" font-size="10.5" fill="#9fb0c8">the string is parsed as HTML</text>
+
+    <rect x="100" y="354" width="300" height="50" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="250" y="375" font-size="12.5" fill="#ff2a6d" font-weight="700">&lt;img onerror&gt; fires</text>
+    <text x="250" y="393" font-size="10" fill="#9fb0c8">runs attacker JS (alert / exfil cookie)</text>
+  </g>
+
+  <!-- server dead end -->
+  <rect x="468" y="138" width="300" height="50" rx="7" fill="#0b1518" stroke="#263451" stroke-dasharray="5 4"/>
+  <text x="618" y="158" text-anchor="middle" font-size="12" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">Server sees path = /</text>
+  <text x="618" y="176" text-anchor="middle" font-size="10.5" fill="#6c7b93">fragment never sent, filter is blind</text>
+
+  <!-- arrows -->
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="250" y1="112" x2="250" y2="136"/>
+    <line x1="250" y1="184" x2="250" y2="208"/>
+    <line x1="250" y1="256" x2="250" y2="280"/>
+    <line x1="250" y1="328" x2="250" y2="352"/>
+    <line x1="400" y1="92" x2="464" y2="150"/>
+  </g>
+  <text x="470" y="108" font-size="10" fill="#6c7b93" font-family="'JetBrains Mono',monospace">path only</text>
+</svg>

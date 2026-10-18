@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 380" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="380" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">UNION-based SQL injection</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">a quote breaks the string, a UNION SELECT appends a query of your own</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- main chain -->
+  <g font-size="12" text-anchor="middle">
+    <rect x="20" y="150" width="166" height="60" rx="7" fill="#0b1518" stroke="#00f0ff" stroke-dasharray="5 4"/>
+    <text x="103" y="174" fill="#e3fffa">Search input</text>
+    <text x="103" y="192" fill="#00f0ff" font-family="'JetBrains Mono',monospace" font-size="10">' UNION SELECT ...-- -</text>
+    <text x="103" y="204" fill="#6c7b93" font-size="10">(attacker-controlled)</text>
+
+    <rect x="214" y="150" width="176" height="60" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="302" y="172" fill="#e3fffa">String concatenation</text>
+    <text x="302" y="192" fill="#9fb0c8" font-family="'JetBrains Mono',monospace" font-size="9.5">WHERE title LIKE '%<tspan fill="#ff2a6d">q</tspan>%'</text>
+
+    <rect x="418" y="150" width="182" height="60" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="509" y="172" fill="#ff2a6d" font-weight="700">Two queries merged</text>
+    <text x="509" y="191" fill="#9fb0c8" font-size="10">original + injected SELECT</text>
+    <text x="509" y="204" fill="#6c7b93" font-size="10">same column count = 3</text>
+
+    <rect x="628" y="138" width="150" height="84" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="703" y="160" fill="#e3fffa">Dumped rows</text>
+    <text x="703" y="178" fill="#9fb0c8" font-size="10">users, passwords</text>
+    <text x="703" y="196" fill="#fcee0a" font-size="10">secret_flag</text>
+    <text x="703" y="212" fill="#fcee0a" font-size="9.5">WEB{un10n_...}</text>
+  </g>
+
+  <!-- arrows -->
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="186" y1="180" x2="210" y2="180"/>
+    <line x1="390" y1="180" x2="414" y2="180"/>
+    <line x1="600" y1="180" x2="624" y2="180"/>
+  </g>
+
+  <!-- error-based side channel -->
+  <g font-size="11.5" text-anchor="middle">
+    <rect x="214" y="266" width="386" height="54" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="407" y="288" fill="#00f0ff">Error-based oracle: ' ORDER BY 4-- -</text>
+    <text x="407" y="306" fill="#9fb0c8" font-family="'JetBrains Mono',monospace" font-size="10">out of range - should be between 1 and 3</text>
+  </g>
+  <line x1="407" y1="260" x2="407" y2="214" stroke="#00f0ff" stroke-width="2" marker-end="url(#a)" opacity="0.85"/>
+  <text x="400" y="350" text-anchor="middle" font-size="11" fill="#6c7b93">Input stops being data and becomes part of the command.</text>
+</svg>

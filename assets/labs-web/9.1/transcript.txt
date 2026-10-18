@@ -1,0 +1,19 @@
+[*] Buoc 1: dang nhap bang tai khoan cua CHINH ta (alice)
+    token alice = tok-alice-111
+
+[*] Buoc 2: BOLA - doc object cua bob (id=2) bang token alice
+    HTTP 200
+    bob.email       = bob@shop.local
+    bob.ssn         = 002-22-2222
+    bob.card        = 5500-0000-0000-0004
+    bob.secret_note = FLAG{9.1_bola_read_other_users_object}
+
+[*] Buoc 3: BOLA tren orders - doc don hang cua bob
+    {'orders': [{'note': 'don hang VIP cua bob', 'order': 'B-2002', 'total': 9900000}], 'user_id': 2}
+
+[*] Buoc 4: BFLA - user thuong goi ham admin de tu nang quyen
+    HTTP 200
+    {'flag': 'FLAG{9.1_bfla_function_level_bypass}', 'message': 'user 1 da thanh admin', 'ok': True, 'promoted_by': 'alice'}
+
+[+] BOLA flag: FLAG{9.1_bola_read_other_users_object}
+[+] BFLA flag: FLAG{9.1_bfla_function_level_bypass}

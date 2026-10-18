@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 380" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="380" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Copy as cURL: from browser to a request you control</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">observe in DevTools, export to curl, then edit the path and call the API directly</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- DevTools observed request -->
+  <g font-size="12" text-anchor="middle">
+    <rect x="28" y="110" width="178" height="96" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="117" y="133" fill="#00f0ff" font-weight="700">DevTools Network</text>
+    <text x="117" y="156" fill="#9fb0c8" font-size="10.5" font-family="'JetBrains Mono',monospace">GET /api/me</text>
+    <text x="117" y="172" fill="#9fb0c8" font-size="10.5" font-family="'JetBrains Mono',monospace">Cookie: session=...</text>
+    <text x="117" y="188" fill="#9fb0c8" font-size="10.5" font-family="'JetBrains Mono',monospace">Authorization: Bearer</text>
+  </g>
+
+  <!-- Copy as cURL step -->
+  <g font-size="12" text-anchor="middle">
+    <rect x="266" y="126" width="150" height="64" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="341" y="152" fill="#5fe3b0" font-weight="700">Copy as cURL</text>
+    <text x="341" y="172" fill="#9fb0c8" font-size="10.5">reproduce exactly</text>
+  </g>
+
+  <!-- curl command, attacker-controlled -->
+  <g font-size="12" text-anchor="middle">
+    <rect x="476" y="110" width="200" height="96" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="576" y="133" fill="#ff2a6d" font-weight="700">curl / httpie</text>
+    <text x="576" y="156" fill="#9fb0c8" font-size="10.5" font-family="'JetBrains Mono',monospace">drop unneeded -H</text>
+    <text x="576" y="172" fill="#9fb0c8" font-size="10.5" font-family="'JetBrains Mono',monospace">/api/me</text>
+    <text x="576" y="188" fill="#ff2a6d" font-size="10.5" font-family="'JetBrains Mono',monospace">-&gt; /api/users/2</text>
+  </g>
+
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="206" y1="158" x2="262" y2="158"/>
+    <line x1="416" y1="158" x2="472" y2="158"/>
+  </g>
+
+  <!-- target API -->
+  <g font-size="12.5" text-anchor="middle">
+    <rect x="320" y="270" width="160" height="60" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="400" y="296" fill="#e3fffa">Server API</text>
+    <text x="400" y="316" fill="#6c7b93" font-size="10.5">full control over the call</text>
+  </g>
+  <line x1="576" y1="206" x2="440" y2="268" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+
+  <text x="400" y="356" text-anchor="middle" font-size="11" fill="#6c7b93">Crafting the request by hand removes the dependency on the interface.</text>
+</svg>

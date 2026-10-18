@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="420" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Prototype pollution: one write, every object changed</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">a raw JSON __proto__ key reaches a recursive merge and lands in Object.prototype</text>
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <rect x="24" y="92" width="238" height="80" rx="7" fill="#111827" stroke="#00f0ff" stroke-dasharray="5 4"/>
+  <text x="143" y="114" text-anchor="middle" font-size="11.5" fill="#e3fffa">POST /api/profile (raw JSON)</text>
+  <text x="143" y="135" text-anchor="middle" font-size="10" fill="#00f0ff" font-family="'JetBrains Mono',monospace">{"__proto__":{"isAdmin":true,</text>
+  <text x="143" y="151" text-anchor="middle" font-size="10" fill="#00f0ff" font-family="'JetBrains Mono',monospace">"preprocess":"id"}}</text>
+  <text x="143" y="167" text-anchor="middle" font-size="10" fill="#6c7b93">attacker-controlled</text>
+
+  <rect x="306" y="98" width="170" height="68" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="391" y="126" text-anchor="middle" font-size="12" fill="#ff2a6d" font-weight="700">merge(target, src)</text>
+  <text x="391" y="147" text-anchor="middle" font-size="10.5" fill="#9fb0c8">recursion by key</text>
+
+  <rect x="520" y="92" width="256" height="80" rx="7" fill="#111827" stroke="#fcee0a"/>
+  <text x="648" y="116" text-anchor="middle" font-size="12" fill="#fcee0a" font-weight="700">Object.prototype</text>
+  <text x="648" y="138" text-anchor="middle" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">isAdmin = true</text>
+  <text x="648" y="154" text-anchor="middle" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">preprocess = "id"</text>
+
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="262" y1="132" x2="304" y2="132"/>
+    <line x1="476" y1="132" x2="518" y2="132"/>
+  </g>
+
+  <text x="400" y="218" text-anchor="middle" font-size="11.5" fill="#6c7b93">every object created afterward inherits the planted properties, and a gadget reads them</text>
+
+  <rect x="110" y="256" width="290" height="104" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="255" y="282" text-anchor="middle" font-size="12" fill="#e3fffa">gadget 1: GET /api/whoami</text>
+  <text x="255" y="304" text-anchor="middle" font-size="10.5" fill="#9fb0c8">new {} now has isAdmin = true</text>
+  <text x="255" y="324" text-anchor="middle" font-size="11" fill="#fcee0a" font-weight="700">privilege escalation</text>
+  <text x="255" y="344" text-anchor="middle" font-size="10" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">FLAG{..._priv_esc}</text>
+
+  <rect x="430" y="256" width="290" height="104" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="575" y="282" text-anchor="middle" font-size="12" fill="#e3fffa">gadget 2: POST /api/export</text>
+  <text x="575" y="304" text-anchor="middle" font-size="10.5" fill="#9fb0c8">reads config.preprocess, runs it</text>
+  <text x="575" y="324" text-anchor="middle" font-size="11" fill="#ff2a6d" font-weight="700">RCE: id executes</text>
+  <text x="575" y="344" text-anchor="middle" font-size="10" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">FLAG{..._to_rce}</text>
+
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="590" y1="172" x2="300" y2="254"/>
+    <line x1="660" y1="172" x2="590" y2="254"/>
+  </g>
+
+  <text x="400" y="392" text-anchor="middle" font-size="11" fill="#9fb0c8">Pollution is half the bug. The gadget that reads the planted property is the other half.</text>
+</svg>

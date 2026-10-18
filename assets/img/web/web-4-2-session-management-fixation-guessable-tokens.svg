@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="400" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Hijacking a session two ways</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">sequential tokens are guessable, and a reused sid is fixation</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- path 1: guessable token -->
+  <text x="40" y="92" font-size="12" fill="#00f0ff" font-family="'JetBrains Mono',monospace">1. guess the next token</text>
+
+  <g font-size="12" text-anchor="middle">
+    <rect x="40" y="104" width="150" height="54" rx="7" fill="#0b1518" stroke="#00f0ff" stroke-dasharray="5 4"/>
+    <text x="115" y="126" fill="#e3fffa">attacker logs in</text>
+    <text x="115" y="144" fill="#9fb0c8" font-size="11" font-family="'JetBrains Mono',monospace">token = 00001000</text>
+  </g>
+  <line x1="190" y1="131" x2="236" y2="131" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+
+  <g font-size="12" text-anchor="middle">
+    <rect x="238" y="104" width="186" height="54" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="331" y="126" fill="#e3fffa">add one -&gt; /me</text>
+    <text x="331" y="144" fill="#9fb0c8" font-size="11" font-family="'JetBrains Mono',monospace">guess 00001001</text>
+  </g>
+  <line x1="424" y1="131" x2="470" y2="131" stroke="#ff2a6d" stroke-width="2" marker-end="url(#a)"/>
+
+  <g font-size="11.5" text-anchor="middle">
+    <rect x="472" y="102" width="304" height="58" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="624" y="124" fill="#fcee0a">admin session taken over</text>
+    <text x="624" y="142" fill="#9fb0c8" font-size="10.5" font-family="'JetBrains Mono',monospace">FLAG{4.2_weak_session_hijack}</text>
+  </g>
+
+  <!-- divider -->
+  <line x1="40" y1="194" x2="760" y2="194" stroke="#263451" stroke-width="1" stroke-dasharray="3 5"/>
+
+  <!-- path 2: fixation -->
+  <text x="40" y="226" font-size="12" fill="#ff2a6d" font-family="'JetBrains Mono',monospace">2. session fixation</text>
+
+  <g font-size="11.5" text-anchor="middle">
+    <rect x="40" y="238" width="168" height="58" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="124" y="260" fill="#e3fffa">attacker picks sid</text>
+    <text x="124" y="278" fill="#9fb0c8" font-size="10.5" font-family="'JetBrains Mono',monospace">?sid=deadbeef</text>
+  </g>
+  <line x1="208" y1="267" x2="252" y2="267" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+
+  <g font-size="11.5" text-anchor="middle">
+    <rect x="254" y="238" width="190" height="58" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="349" y="258" fill="#e3fffa">victim logs in</text>
+    <text x="349" y="275" fill="#9fb0c8" font-size="10.5">server keeps the same sid</text>
+    <text x="349" y="290" fill="#6c7b93" font-size="9.5">no regeneration after auth</text>
+  </g>
+  <line x1="444" y1="267" x2="488" y2="267" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+
+  <g font-size="11.5" text-anchor="middle">
+    <rect x="490" y="238" width="286" height="58" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="633" y="260" fill="#fcee0a">attacker reuses deadbeef</text>
+    <text x="633" y="278" fill="#9fb0c8" font-size="10.5">now it is the admin session</text>
+  </g>
+
+  <!-- cookie flags note -->
+  <g font-size="11" text-anchor="middle">
+    <rect x="40" y="326" width="720" height="40" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="400" y="351" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">Set-Cookie: SESSIONID=00001000; Path=/   (no HttpOnly, no Secure, no SameSite, no logout destroy)</text>
+  </g>
+  <text x="400" y="386" text-anchor="middle" font-size="11" fill="#6c7b93">A session id is a temporary password; predictable or reusable, it is account takeover.</text>
+</svg>

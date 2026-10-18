@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="420" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Bypassing a string-blocklist SSRF filter</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">one IP has many spellings, so a text match always misses some</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- filter -->
+  <g text-anchor="middle">
+    <rect x="300" y="90" width="200" height="60" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="400" y="114" fill="#ff2a6d" font-weight="700" font-size="13">Naive filter</text>
+    <text x="400" y="134" fill="#9fb0c8" font-size="11" font-family="'JetBrains Mono',monospace">if "127.0.0.1" in url</text>
+  </g>
+
+  <!-- blocked literal -->
+  <g text-anchor="middle" font-size="11">
+    <rect x="40" y="96" width="210" height="48" rx="7" fill="#0b1518" stroke="#263451" stroke-dasharray="5 4"/>
+    <text x="145" y="116" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">http://127.0.0.1:8058/</text>
+    <text x="145" y="133" fill="#ff2a6d">blocked (contains the string)</text>
+  </g>
+  <line x1="250" y1="120" x2="296" y2="120" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+
+  <!-- bypass forms -->
+  <g font-size="11" font-family="'JetBrains Mono',monospace">
+    <rect x="40" y="186" width="330" height="200" rx="7" fill="#0b1518" stroke="#00f0ff" stroke-dasharray="5 4"/>
+    <text x="56" y="208" fill="#00f0ff" font-size="11.5" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">Forms that skip the string match</text>
+    <text x="56" y="232" fill="#9fb0c8">2130706433          decimal</text>
+    <text x="56" y="252" fill="#9fb0c8">0x7f000001          hex</text>
+    <text x="56" y="272" fill="#9fb0c8">0177.0.0.1          octal</text>
+    <text x="56" y="292" fill="#9fb0c8">127.1               shortened</text>
+    <text x="56" y="312" fill="#9fb0c8">0                   maps to 0.0.0.0</text>
+    <text x="56" y="332" fill="#9fb0c8">[::ffff:7f00:1]     IPv6-mapped</text>
+    <text x="56" y="352" fill="#9fb0c8">allowed@2130706433  userinfo @</text>
+    <text x="56" y="372" fill="#9fb0c8">302 redirect via /bounce</text>
+  </g>
+
+  <!-- loopback target -->
+  <g text-anchor="middle" font-size="11.5">
+    <rect x="560" y="256" width="210" height="62" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="665" y="280" fill="#e3fffa">Resolves to loopback</text>
+    <text x="665" y="300" fill="#fcee0a" font-family="'JetBrains Mono',monospace" font-size="11">127.0.0.1:8058/admin/secret</text>
+  </g>
+
+  <!-- bypass arrow -->
+  <path d="M370 286 C 460 286, 480 287, 556 287" stroke="#00f0ff" stroke-width="2" fill="none" marker-end="url(#a)" stroke-dasharray="5 4"/>
+  <text x="463" y="276" text-anchor="middle" font-size="10.5" fill="#00f0ff">passes the filter</text>
+
+  <text x="400" y="406" text-anchor="middle" font-size="11" fill="#6c7b93">Fix: resolve the host, then check the IP against an allowlist, and re-check after each redirect.</text>
+</svg>

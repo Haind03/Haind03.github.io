@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="420" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Stealing an OAuth2 code via redirect_uri</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">no allowlist check sends the victim's code to the attacker</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- victim -->
+  <g font-size="12" text-anchor="middle">
+    <rect x="30" y="92" width="150" height="60" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="105" y="116" fill="#e3fffa">Victim browser</text>
+    <text x="105" y="134" fill="#9fb0c8" font-size="10.5">carol, logged in to IdP</text>
+  </g>
+
+  <!-- attacker link (attacker controlled) -->
+  <line x1="105" y1="152" x2="105" y2="194" stroke="#ff2a6d" stroke-width="2" marker-end="url(#a)"/>
+  <g font-size="11" text-anchor="middle">
+    <rect x="20" y="196" width="230" height="64" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="135" y="216" fill="#ff2a6d" font-weight="700">attacker's authorize link</text>
+    <text x="135" y="233" fill="#9fb0c8" font-size="10" font-family="'JetBrains Mono',monospace">?client_id=portal</text>
+    <text x="135" y="247" fill="#9fb0c8" font-size="10" font-family="'JetBrains Mono',monospace">&amp;redirect_uri=:8049/collect</text>
+  </g>
+
+  <!-- IdP -->
+  <line x1="180" y1="122" x2="300" y2="122" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <g font-size="12" text-anchor="middle">
+    <rect x="302" y="92" width="196" height="60" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="400" y="114" fill="#e3fffa">Authorization server</text>
+    <text x="400" y="132" fill="#ff2a6d" font-size="10.5">redirect_uri NOT checked</text>
+    <text x="400" y="146" fill="#6c7b93" font-size="9.5">issues one-time code</text>
+  </g>
+  <line x1="250" y1="228" x2="330" y2="156" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+
+  <!-- 302 to attacker -->
+  <line x1="498" y1="122" x2="600" y2="122" stroke="#ff2a6d" stroke-width="2" marker-end="url(#a)"/>
+  <text x="548" y="112" font-size="9.5" fill="#ff2a6d" text-anchor="middle">302</text>
+  <g font-size="11" text-anchor="middle">
+    <rect x="602" y="92" width="178" height="60" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="691" y="114" fill="#ff2a6d" font-weight="700">attacker server</text>
+    <text x="691" y="132" fill="#9fb0c8" font-size="10">/collect?code=09c5...</text>
+    <text x="691" y="146" fill="#9fb0c8" font-size="10">catches the code</text>
+  </g>
+
+  <!-- exchange code -->
+  <line x1="691" y1="152" x2="691" y2="216" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <g font-size="11" text-anchor="middle">
+    <rect x="560" y="218" width="220" height="60" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="670" y="240" fill="#e3fffa">POST /token (backend)</text>
+    <text x="670" y="258" fill="#9fb0c8" font-size="10" font-family="'JetBrains Mono',monospace">code -&gt; access_token</text>
+    <text x="670" y="272" fill="#6c7b93" font-size="9.5">client_secret often public</text>
+  </g>
+
+  <!-- userinfo / flag -->
+  <line x1="560" y1="248" x2="500" y2="248" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <g font-size="11.5" text-anchor="middle">
+    <rect x="270" y="218" width="288" height="60" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="414" y="240" fill="#fcee0a">GET /userinfo of carol</text>
+    <text x="414" y="258" fill="#9fb0c8" font-size="10.5" font-family="'JetBrains Mono',monospace">FLAG{4.4_oauth_code_theft}</text>
+    <text x="414" y="272" fill="#6c7b93" font-size="9.5">account takeover</text>
+  </g>
+
+  <!-- missing state note -->
+  <g font-size="11" text-anchor="middle">
+    <rect x="30" y="320" width="740" height="48" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="400" y="342" fill="#9fb0c8">Second flaw: the client sends no <tspan fill="#ff2a6d" font-family="'JetBrains Mono',monospace">state</tspan> and checks none at the callback,</text>
+    <text x="400" y="359" fill="#9fb0c8">so it accepts any code -- the condition for login CSRF.</text>
+  </g>
+  <text x="400" y="398" text-anchor="middle" font-size="11" fill="#6c7b93">The code travels through the browser, so redirect_uri and state are what keep it from the attacker.</text>
+</svg>

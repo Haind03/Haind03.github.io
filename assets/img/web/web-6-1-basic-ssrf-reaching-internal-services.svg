@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 380" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="380" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">SSRF: the server fetches a URL you control</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">the app asks for a URL, then the server itself sends the request</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- attacker -->
+  <g font-size="12.5" text-anchor="middle">
+    <rect x="24" y="150" width="150" height="66" rx="7" fill="#0b1518" stroke="#00f0ff" stroke-dasharray="5 4"/>
+    <text x="99" y="176" fill="#e3fffa">Attacker</text>
+    <text x="99" y="195" fill="#9fb0c8" font-size="10.5" font-family="'JetBrains Mono',monospace">url=http://127.0.0.1</text>
+    <text x="99" y="209" fill="#9fb0c8" font-size="10.5" font-family="'JetBrains Mono',monospace">:8055/admin/config</text>
+  </g>
+
+  <!-- app server -->
+  <g font-size="12.5" text-anchor="middle">
+    <rect x="250" y="150" width="160" height="66" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="330" y="176" fill="#ff2a6d" font-weight="700">App /fetch</text>
+    <text x="330" y="195" fill="#9fb0c8" font-size="10.5" font-family="'JetBrains Mono',monospace">requests.get(url)</text>
+    <text x="330" y="209" fill="#9fb0c8" font-size="10.5">no host check</text>
+  </g>
+
+  <!-- internal targets -->
+  <g font-size="11.5" text-anchor="middle">
+    <rect x="500" y="92" width="276" height="54" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="638" y="113" fill="#e3fffa" font-family="'JetBrains Mono',monospace" font-size="11">127.0.0.1:8055/admin/config</text>
+    <text x="638" y="131" fill="#fcee0a" font-size="10.5">db_password, flag (loopback only)</text>
+
+    <rect x="500" y="158" width="276" height="54" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="638" y="179" fill="#e3fffa" font-family="'JetBrains Mono',monospace" font-size="11">169.254.169.254/latest/...</text>
+    <text x="638" y="197" fill="#fcee0a" font-size="10.5">cloud metadata, IAM credentials</text>
+
+    <rect x="500" y="224" width="276" height="50" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="638" y="244" fill="#9fb0c8" font-family="'JetBrains Mono',monospace" font-size="11">10.x / 172.16-31.x / 192.168.x</text>
+    <text x="638" y="261" fill="#9fb0c8" font-size="10.5">private-range services</text>
+  </g>
+
+  <!-- arrows -->
+  <g stroke="#00f0ff" stroke-width="2" marker-end="url(#a)" fill="none" stroke-dasharray="5 4">
+    <line x1="174" y1="183" x2="246" y2="183"/>
+  </g>
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="410" y1="172" x2="496" y2="119"/>
+    <line x1="410" y1="183" x2="496" y2="185"/>
+    <line x1="410" y1="196" x2="496" y2="247"/>
+  </g>
+
+  <!-- blocked direct route -->
+  <g>
+    <path d="M70 230 C 120 320, 420 320, 498 278" stroke="#ff2a6d" stroke-width="1.6" fill="none" stroke-dasharray="4 4" opacity="0.7"/>
+    <text x="300" y="330" text-anchor="middle" font-size="11" fill="#ff2a6d">no direct route from the Internet to these hosts</text>
+    <line x1="280" y1="312" x2="320" y2="300" stroke="#ff2a6d" stroke-width="2"/>
+    <line x1="280" y1="300" x2="320" y2="312" stroke="#ff2a6d" stroke-width="2"/>
+  </g>
+
+  <text x="400" y="358" text-anchor="middle" font-size="11" fill="#6c7b93">The server sits inside the network, so it reaches what the attacker cannot.</text>
+</svg>

@@ -1,0 +1,6 @@
+[2026-10-18T10:27:22.952647Z] type=cookie    data=session=victim-session-5e9d2a
+[2026-10-18T10:27:22.964380Z] type=takeover  data=email-changed
+[2026-10-18T10:27:22.971191Z] type=key       data=p
+[2026-10-18T10:27:22.975257Z] type=key       data=@
+[2026-10-18T10:27:22.979317Z] type=key       data=s
+[2026-10-18T10:27:22.983280Z] type=key       data=s

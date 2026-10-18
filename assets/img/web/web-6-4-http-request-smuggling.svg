@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="420" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">HTTP request smuggling (CL.TE)</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">two tiers disagree on where one request ends and the next begins</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- attacker payload -->
+  <g font-size="11" font-family="'JetBrains Mono',monospace">
+    <rect x="28" y="92" width="238" height="214" rx="7" fill="#0b1518" stroke="#00f0ff" stroke-dasharray="5 4"/>
+    <text x="44" y="114" fill="#00f0ff" font-size="11.5" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">Attacker request</text>
+    <text x="44" y="140" fill="#9fb0c8">POST / HTTP/1.1</text>
+    <text x="44" y="158" fill="#9fb0c8">Host: front</text>
+    <text x="44" y="176" fill="#fcee0a">Content-Length: 46</text>
+    <text x="44" y="194" fill="#fcee0a">Transfer-Encoding: chunked</text>
+    <text x="44" y="218" fill="#9fb0c8">0</text>
+    <text x="44" y="242" fill="#ff2a6d">GET /admin HTTP/1.1</text>
+    <text x="44" y="260" fill="#ff2a6d">Host: back</text>
+    <text x="44" y="278" fill="#ff2a6d">Foo: bar</text>
+    <text x="44" y="298" fill="#6c7b93" font-size="10">sends both CL and TE headers</text>
+  </g>
+
+  <!-- front-end -->
+  <g text-anchor="middle" font-size="12">
+    <rect x="320" y="104" width="190" height="86" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="415" y="128" fill="#e3fffa" font-weight="700">Front-end (proxy)</text>
+    <text x="415" y="149" fill="#9fb0c8" font-size="11">uses Content-Length</text>
+    <text x="415" y="169" fill="#9fb0c8" font-size="11">sees 1 request</text>
+    <text x="415" y="185" fill="#6c7b93" font-size="10.5">body = 46 bytes, all forwarded</text>
+  </g>
+
+  <!-- back-end -->
+  <g text-anchor="middle" font-size="12">
+    <rect x="320" y="222" width="190" height="98" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="415" y="246" fill="#ff2a6d" font-weight="700">Back-end (app)</text>
+    <text x="415" y="267" fill="#9fb0c8" font-size="11">uses Transfer-Encoding</text>
+    <text x="415" y="287" fill="#9fb0c8" font-size="11">stops at chunk 0, sees 2</text>
+    <text x="415" y="306" fill="#6c7b93" font-size="10.5">leftover becomes next request</text>
+  </g>
+
+  <path d="M266 170 L 316 150" stroke="#00f0ff" stroke-width="2" fill="none" marker-end="url(#a)" stroke-dasharray="5 4"/>
+  <path d="M415 190 L 415 218" stroke="#6c7b93" stroke-width="2" fill="none" marker-end="url(#a)"/>
+
+  <!-- back-end view -->
+  <g font-size="11" font-family="'JetBrains Mono',monospace" text-anchor="middle">
+    <rect x="560" y="214" width="212" height="46" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="666" y="241" fill="#9fb0c8">req 1: POST / (empty body)</text>
+    <rect x="560" y="270" width="212" height="54" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="666" y="292" fill="#ff2a6d">req 2: GET /admin</text>
+    <text x="666" y="310" fill="#9fb0c8" font-size="10">smuggled, nobody sent it directly</text>
+  </g>
+  <path d="M510 254 L 556 240" stroke="#6c7b93" stroke-width="2" fill="none" marker-end="url(#a)"/>
+  <path d="M510 290 L 556 294" stroke="#6c7b93" stroke-width="2" fill="none" marker-end="url(#a)"/>
+
+  <text x="400" y="360" text-anchor="middle" font-size="11" fill="#6c7b93">The smuggled GET /admin prepends the next victim request on the shared keep-alive connection.</text>
+  <text x="400" y="384" text-anchor="middle" font-size="11" fill="#6c7b93">Fix: HTTP/2 end-to-end, and make front-end and back-end parse framing the same way.</text>
+</svg>

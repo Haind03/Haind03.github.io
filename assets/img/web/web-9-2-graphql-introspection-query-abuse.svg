@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="400" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">GraphQL: one endpoint that describes itself</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">introspection maps the schema, missing per-field authz leaks the values</text>
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <rect x="24" y="162" width="132" height="72" rx="7" fill="#111827" stroke="#00f0ff" stroke-dasharray="5 4"/>
+  <text x="90" y="192" text-anchor="middle" font-size="12.5" fill="#e3fffa">attacker</text>
+  <text x="90" y="213" text-anchor="middle" font-size="10.5" fill="#9fb0c8">any client</text>
+
+  <rect x="188" y="162" width="130" height="72" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="253" y="192" text-anchor="middle" font-size="12.5" fill="#ff2a6d" font-weight="700">/graphql</text>
+  <text x="253" y="213" text-anchor="middle" font-size="10.5" fill="#9fb0c8">single endpoint</text>
+
+  <!-- Row a: introspection -->
+  <rect x="360" y="90" width="192" height="56" rx="7" fill="#111827" stroke="#263451"/>
+  <text x="456" y="113" text-anchor="middle" font-size="11" fill="#e3fffa" font-family="'JetBrains Mono',monospace">__schema</text>
+  <text x="456" y="134" text-anchor="middle" font-size="10.5" fill="#9fb0c8">list all types and fields</text>
+
+  <rect x="584" y="90" width="192" height="56" rx="7" fill="#111827" stroke="#fcee0a"/>
+  <text x="680" y="113" text-anchor="middle" font-size="11" fill="#fcee0a" font-weight="700">apiKey, ssn revealed</text>
+  <text x="680" y="134" text-anchor="middle" font-size="10.5" fill="#9fb0c8">hidden from the UI</text>
+
+  <!-- Row b: query -->
+  <rect x="360" y="172" width="192" height="56" rx="7" fill="#111827" stroke="#263451"/>
+  <text x="456" y="195" text-anchor="middle" font-size="10.5" fill="#e3fffa" font-family="'JetBrains Mono',monospace">query user{apiKey}</text>
+  <text x="456" y="216" text-anchor="middle" font-size="10.5" fill="#9fb0c8">ask for the value</text>
+
+  <rect x="584" y="172" width="192" height="56" rx="7" fill="#111827" stroke="#fcee0a"/>
+  <text x="680" y="195" text-anchor="middle" font-size="11" fill="#fcee0a" font-weight="700">FLAG returned</text>
+  <text x="680" y="216" text-anchor="middle" font-size="10.5" fill="#9fb0c8">no field-level authz</text>
+
+  <!-- Row c: mutation -->
+  <rect x="360" y="254" width="192" height="56" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="456" y="277" text-anchor="middle" font-size="10.5" fill="#e3fffa" font-family="'JetBrains Mono',monospace">mutation promoteUser</text>
+  <text x="456" y="298" text-anchor="middle" font-size="10.5" fill="#9fb0c8">low-privilege client</text>
+
+  <rect x="584" y="254" width="192" height="56" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="680" y="277" text-anchor="middle" font-size="11" fill="#ff2a6d" font-weight="700">promoted</text>
+  <text x="680" y="298" text-anchor="middle" font-size="10.5" fill="#9fb0c8">no authz check</text>
+
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="156" y1="198" x2="186" y2="198"/>
+    <line x1="318" y1="188" x2="358" y2="120"/>
+    <line x1="318" y1="198" x2="358" y2="200"/>
+    <line x1="318" y1="208" x2="358" y2="280"/>
+    <line x1="552" y1="118" x2="582" y2="118"/>
+    <line x1="552" y1="200" x2="582" y2="200"/>
+    <line x1="552" y1="282" x2="582" y2="282"/>
+  </g>
+
+  <text x="400" y="368" text-anchor="middle" font-size="11.5" fill="#9fb0c8">A field in the schema resolves for anyone, unless each resolver checks permission.</text>
+</svg>

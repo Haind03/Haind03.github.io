@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="400" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Broken access control: three ways a user reaches admin</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">a normal account (carol) escalates to the admin function</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- user -->
+  <g font-size="12" text-anchor="middle">
+    <rect x="24" y="170" width="132" height="58" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="90" y="194" fill="#e3fffa">carol</text>
+    <text x="90" y="212" fill="#6c7b93" font-size="10.5">role=user</text>
+  </g>
+
+  <!-- three attack paths -->
+  <g font-size="11" text-anchor="middle">
+    <rect x="256" y="86" width="296" height="52" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="404" y="106" fill="#ff2a6d" font-family="'JetBrains Mono',monospace" font-size="10.5">GET /backup/users.json</text>
+    <text x="404" y="124" fill="#9fb0c8">forced browsing: no link, no auth check</text>
+
+    <rect x="256" y="172" width="296" height="52" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="404" y="192" fill="#ff2a6d" font-family="'JetBrains Mono',monospace" font-size="10.5">Cookie: role=admin</text>
+    <text x="404" y="210" fill="#9fb0c8">client-supplied flag trusted by server</text>
+
+    <rect x="256" y="258" width="296" height="52" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="404" y="278" fill="#ff2a6d" font-family="'JetBrains Mono',monospace" font-size="10.5">POST /admin/promote</text>
+    <text x="404" y="296" fill="#9fb0c8">verb tampering: GET checked, POST not</text>
+  </g>
+
+  <!-- target -->
+  <g font-size="12" text-anchor="middle">
+    <rect x="636" y="170" width="140" height="58" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="706" y="194" fill="#e3fffa">admin function</text>
+    <text x="706" y="212" fill="#fcee0a" font-size="10.5">panel + FLAG</text>
+  </g>
+
+  <!-- arrows from user to each path -->
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <path d="M156 190 C 206 190, 206 112, 252 112"/>
+    <line x1="156" y1="199" x2="252" y2="199"/>
+    <path d="M156 208 C 206 208, 206 284, 252 284"/>
+    <path d="M552 112 C 600 112, 600 190, 632 190"/>
+    <line x1="552" y1="198" x2="632" y2="198"/>
+    <path d="M552 284 C 600 284, 600 206, 632 206"/>
+  </g>
+
+  <text x="400" y="372" text-anchor="middle" font-size="11" fill="#6c7b93">Deny by default, derive the role from the session, and check every method at the point of action.</text>
+</svg>

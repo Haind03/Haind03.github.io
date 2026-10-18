@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 370" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="370" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">IDOR: a valid session, a missing ownership check</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">change the id in the request, read another user's object</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- main chain -->
+  <g font-size="12" text-anchor="middle">
+    <rect x="22" y="150" width="140" height="58" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="92" y="174" fill="#e3fffa">Mallory</text>
+    <text x="92" y="192" fill="#6c7b93" font-size="10.5">logged in (auth OK)</text>
+
+    <rect x="206" y="150" width="176" height="58" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="294" y="172" fill="#ff2a6d" font-family="'JetBrains Mono',monospace" font-size="11">GET /api/order/1001</text>
+    <text x="294" y="190" fill="#9fb0c8" font-size="10.5">id swapped 1003 -&gt; 1001</text>
+
+    <rect x="426" y="150" width="156" height="58" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="504" y="174" fill="#e3fffa">get_order(1001)</text>
+    <text x="504" y="192" fill="#ff2a6d" font-size="10.5">no owner check</text>
+
+    <rect x="626" y="138" width="152" height="82" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="702" y="160" fill="#e3fffa">order 1001</text>
+    <text x="702" y="178" fill="#fcee0a" font-size="10.5">owner=alice</text>
+    <text x="702" y="194" fill="#9fb0c8" font-size="10">card_last4, address</text>
+    <text x="702" y="210" fill="#fcee0a" font-size="10.5">note=FLAG{...}</text>
+  </g>
+
+  <!-- arrows -->
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="162" y1="179" x2="202" y2="179"/>
+    <line x1="382" y1="179" x2="422" y2="179"/>
+    <line x1="582" y1="179" x2="622" y2="179"/>
+  </g>
+
+  <!-- the fix -->
+  <g font-size="11.5" text-anchor="middle">
+    <rect x="206" y="268" width="376" height="54" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="394" y="290" fill="#5fe3b0">Fix: check ownership at the query</text>
+    <text x="394" y="308" fill="#9fb0c8" font-family="'JetBrains Mono',monospace" font-size="10.5">SELECT ... WHERE id=? AND owner=current_user</text>
+  </g>
+  <line x1="394" y1="262" x2="394" y2="212" stroke="#5fe3b0" stroke-width="2" marker-end="url(#a)" opacity="0.85"/>
+  <text x="400" y="348" text-anchor="middle" font-size="11" fill="#6c7b93">Authentication says who you are; authorization checks what you may touch.</text>
+</svg>

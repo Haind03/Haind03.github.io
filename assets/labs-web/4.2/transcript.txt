@@ -1,0 +1,29 @@
+$ python3 app.py        # terminal 1, lang nghe 127.0.0.1:8042
+ * Running on http://127.0.0.1:8042
+
+$ python3 exploit.py     # terminal 2
+[*] Man A: token tuan tu -> doan session admin
+    attacker token = 00001000
+    (victim admin vua login o dau do, token khong lo cho attacker)
+    doan 00001001 -> user=admin <= CHIEM DUOC admin! flag=FLAG{4.2_weak_session_hijack}
+
+[*] Man B: session fixation
+    attacker chon san sid=deadbeef-fixed-sid va gui cho victim (vd qua link ?sid=...)
+    attacker dung sid co dinh -> user=admin flag=FLAG{4.2_weak_session_hijack}
+
+[*] Man C: cookie thieu co bao mat
+    Set-Cookie: SESSIONID=00001002; Path=/
+    THIEU: httponly, secure, samesite
+
+[*] Man D: logout khong huy session o server
+    truoc logout: /me -> {'ok': True, 'token': '00001003', 'user': 'mallory'}
+    sau logout, dung lai token cu 00001003 -> {'ok': True, 'token': '00001003', 'user': 'mallory'}
+
+=== KET QUA ===
+Man A (predict): OK flag=FLAG{4.2_weak_session_hijack}
+Man B (fixation): OK flag=FLAG{4.2_weak_session_hijack}
+Man D (logout van song): OK (token cu van dung)
+
+# Quan sat: token cap tuan tu 00001000, 00001001, 00001002... nen doan token cua
+# admin chi can +1. Fixation: server giu nguyen sid do client dua vao. Cookie khong
+# co HttpOnly/Secure/SameSite. Logout khong xoa session server-side.

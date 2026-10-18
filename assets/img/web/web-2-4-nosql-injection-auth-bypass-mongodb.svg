@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 380" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="380" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">NoSQL injection: a string becomes an operator</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">the app expects a string, the attacker sends a MongoDB operator object</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- main chain -->
+  <g font-size="12" text-anchor="middle">
+    <rect x="18" y="150" width="202" height="64" rx="7" fill="#0b1518" stroke="#00f0ff" stroke-dasharray="5 4"/>
+    <text x="119" y="174" fill="#e3fffa">Attacker input</text>
+    <text x="119" y="194" fill="#00f0ff" font-family="'JetBrains Mono',monospace" font-size="10">password:</text>
+    <text x="119" y="207" fill="#00f0ff" font-family="'JetBrains Mono',monospace" font-size="10">{"$ne": null}</text>
+
+    <rect x="236" y="150" width="192" height="64" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="332" y="176" fill="#e3fffa">findOne(query)</text>
+    <text x="332" y="196" fill="#9fb0c8" font-size="9.5">{ username, password }</text>
+
+    <rect x="444" y="150" width="174" height="64" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="531" y="174" fill="#ff2a6d" font-weight="700">password != null</text>
+    <text x="531" y="194" fill="#9fb0c8" font-size="10">always true for admin</text>
+
+    <rect x="634" y="138" width="146" height="88" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="707" y="162" fill="#e3fffa">admin doc</text>
+    <text x="707" y="180" fill="#fcee0a" font-size="10">role=admin</text>
+    <text x="707" y="200" fill="#9fb0c8" font-size="9.5">WEB{nosql_</text>
+    <text x="707" y="213" fill="#9fb0c8" font-size="9.5">..._bypass}</text>
+  </g>
+
+  <!-- arrows -->
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="220" y1="182" x2="234" y2="182"/>
+    <line x1="428" y1="182" x2="442" y2="182"/>
+    <line x1="618" y1="182" x2="632" y2="182"/>
+  </g>
+
+  <!-- query string note -->
+  <g font-size="11.5" text-anchor="middle">
+    <rect x="236" y="272" width="382" height="54" rx="7" fill="#0b1518" stroke="#00f0ff" stroke-dasharray="5 4"/>
+    <text x="427" y="294" fill="#00f0ff">Query string form, same result</text>
+    <text x="427" y="312" fill="#9fb0c8" font-family="'JetBrains Mono',monospace" font-size="10.5">password[$ne]=x  parsed into an object</text>
+  </g>
+  <line x1="427" y1="266" x2="427" y2="218" stroke="#00f0ff" stroke-width="2" marker-end="url(#a)" opacity="0.85"/>
+  <text x="400" y="352" text-anchor="middle" font-size="11" fill="#6c7b93">$regex probes one character at a time to recover the full password.</text>
+</svg>

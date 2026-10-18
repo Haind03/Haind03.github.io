@@ -1,7 +1,7 @@
 ---
 title: Cryptography
 icon: fas fa-lock
-order: 4
+order: 5
 render_with_liquid: false
 ---
 

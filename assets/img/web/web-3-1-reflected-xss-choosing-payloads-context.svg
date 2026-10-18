@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 424" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="424" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Reflected XSS, one input, three contexts</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">the position in HTML decides the breakout payload</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- attacker link -->
+  <rect x="250" y="64" width="300" height="46" rx="7" fill="#0b1518" stroke="#00f0ff" stroke-dasharray="5 4"/>
+  <text x="400" y="83" text-anchor="middle" font-size="12" fill="#9fb0c8">Attacker link (victim clicks)</text>
+  <text x="400" y="100" text-anchor="middle" font-size="10.5" fill="#00f0ff" font-family="'JetBrains Mono',monospace">/page?q=PAYLOAD</text>
+
+  <!-- server reflects -->
+  <rect x="250" y="122" width="300" height="46" rx="7" fill="#111827" stroke="#263451"/>
+  <text x="400" y="141" text-anchor="middle" font-size="12" fill="#e3fffa">Server echoes q into the page</text>
+  <text x="400" y="158" text-anchor="middle" font-size="10.5" fill="#6c7b93">verbatim, no escaping</text>
+
+  <line x1="400" y1="110" x2="400" y2="120" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+
+  <!-- fan out -->
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <path d="M400,168 L400,188 L144,188 L144,204"/>
+    <line x1="400" y1="168" x2="400" y2="204"/>
+    <path d="M400,168 L400,188 L656,188 L656,204"/>
+  </g>
+
+  <!-- context boxes -->
+  <g text-anchor="middle">
+    <rect x="28" y="206" width="232" height="52" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="144" y="227" font-size="12.5" fill="#e3fffa">HTML body</text>
+    <text x="144" y="246" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">&lt;div&gt;...INPUT&lt;/div&gt;</text>
+
+    <rect x="284" y="206" width="232" height="52" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="400" y="227" font-size="12.5" fill="#e3fffa">Attribute value</text>
+    <text x="400" y="246" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">&lt;input value="INPUT"&gt;</text>
+
+    <rect x="540" y="206" width="232" height="52" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="656" y="227" font-size="12.5" fill="#e3fffa">JS string</text>
+    <text x="656" y="246" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">var k='INPUT';</text>
+  </g>
+
+  <!-- arrows to payloads -->
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="144" y1="258" x2="144" y2="284"/>
+    <line x1="400" y1="258" x2="400" y2="284"/>
+    <line x1="656" y1="258" x2="656" y2="284"/>
+  </g>
+
+  <!-- payload boxes -->
+  <g text-anchor="middle">
+    <rect x="28" y="286" width="232" height="56" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="144" y="306" font-size="11" fill="#ff2a6d">inject a tag directly</text>
+    <text x="144" y="326" font-size="10" fill="#e3fffa" font-family="'JetBrains Mono',monospace">&lt;script&gt;alert(1)&lt;/script&gt;</text>
+
+    <rect x="284" y="286" width="232" height="56" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="400" y="306" font-size="11" fill="#ff2a6d">break out of the value</text>
+    <text x="400" y="326" font-size="10" fill="#e3fffa" font-family="'JetBrains Mono',monospace">"&gt;&lt;img src=x onerror=alert(1)&gt;</text>
+
+    <rect x="540" y="286" width="232" height="56" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="656" y="306" font-size="11" fill="#ff2a6d">close the JS string</text>
+    <text x="656" y="326" font-size="10" fill="#e3fffa" font-family="'JetBrains Mono',monospace">';alert(1);//</text>
+  </g>
+
+  <!-- defense note -->
+  <rect x="120" y="364" width="560" height="40" rx="7" fill="#0b1518" stroke="#5fe3b0"/>
+  <text x="400" y="389" text-anchor="middle" font-size="11.5" fill="#5fe3b0">Defense: escape for the exact output context (HTML entity vs JS/JSON encoding)</text>
+</svg>

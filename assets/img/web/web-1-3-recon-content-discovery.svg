@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="400" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Content discovery brute-forces paths and filters 404</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">one request per word; drop 404, keep what exists</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- wordlist -->
+  <g font-size="12" text-anchor="middle">
+    <rect x="28" y="140" width="150" height="96" rx="7" fill="#0b1518" stroke="#00f0ff" stroke-dasharray="5 4"/>
+    <text x="103" y="163" fill="#00f0ff" font-weight="700">wordlist</text>
+    <text x="103" y="185" fill="#9fb0c8" font-size="10.5" font-family="'JetBrains Mono',monospace">admin</text>
+    <text x="103" y="201" fill="#9fb0c8" font-size="10.5" font-family="'JetBrains Mono',monospace">backup</text>
+    <text x="103" y="217" fill="#9fb0c8" font-size="10.5" font-family="'JetBrains Mono',monospace">.git/config ...</text>
+  </g>
+
+  <!-- ffuf loop -->
+  <g font-size="12" text-anchor="middle">
+    <rect x="240" y="150" width="150" height="76" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="315" y="178" fill="#ff2a6d" font-weight="700">ffuf</text>
+    <text x="315" y="199" fill="#9fb0c8" font-size="10.5" font-family="'JetBrains Mono',monospace">GET /FUZZ</text>
+    <text x="315" y="215" fill="#9fb0c8" font-size="10.5" font-family="'JetBrains Mono',monospace">-fc 404</text>
+  </g>
+
+  <!-- server -->
+  <g font-size="12.5" text-anchor="middle">
+    <rect x="452" y="152" width="140" height="72" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="522" y="180" fill="#e3fffa">target server</text>
+    <text x="522" y="201" fill="#6c7b93" font-size="10.5">status per path</text>
+  </g>
+
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="178" y1="188" x2="236" y2="188"/>
+    <line x1="390" y1="188" x2="448" y2="188"/>
+  </g>
+
+  <!-- discarded 404 -->
+  <g font-size="11.5" text-anchor="middle">
+    <rect x="636" y="104" width="138" height="44" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="705" y="124" fill="#6c7b93">404 discarded</text>
+    <text x="705" y="139" fill="#6c7b93" font-size="10">no such path</text>
+  </g>
+  <line x1="592" y1="172" x2="632" y2="140" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+
+  <!-- found -->
+  <g font-size="11.5" text-anchor="middle">
+    <rect x="636" y="214" width="138" height="72" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="705" y="237" fill="#fcee0a" font-weight="700">found (200/403)</text>
+    <text x="705" y="257" fill="#9fb0c8" font-size="10" font-family="'JetBrains Mono',monospace">/admin /old</text>
+    <text x="705" y="272" fill="#9fb0c8" font-size="10" font-family="'JetBrains Mono',monospace">/backup /.git</text>
+  </g>
+  <line x1="592" y1="206" x2="632" y2="238" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+
+  <!-- leak -->
+  <g font-size="11.5" text-anchor="middle">
+    <rect x="452" y="318" width="322" height="60" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="613" y="342" fill="#ff2a6d" font-weight="700">/backup leaks the config</text>
+    <text x="613" y="363" fill="#9fb0c8" font-size="10.5" font-family="'JetBrains Mono',monospace">DB_PASS=sup3r-s3cr3t-pw  FLAG=WEB{...}</text>
+  </g>
+  <line x1="705" y1="286" x2="650" y2="316" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+
+  <text x="240" y="352" text-anchor="middle" font-size="11" fill="#6c7b93" transform="rotate(0)">Hidden resources rely on obscurity,</text>
+  <text x="240" y="368" text-anchor="middle" font-size="11" fill="#6c7b93">which is not real security.</text>
+</svg>

