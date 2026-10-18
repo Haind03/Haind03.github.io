@@ -41,4 +41,5 @@ Both services fell to the same shape of bug, a server-side fetch that will happi
 
 I cleaned up the two scripts from the day. The game server address is dead and the team token is removed.
 
-**Files:** [asean-2024-web-payloads.zip](/assets/ctf-files/asean-2024/asean-2024-web-payloads.zip)
+**Challenge files:** [pepeviewer.rar](/assets/ctf-files/asean-2024/pepeviewer.rar) (the PHP source) and [linkextractor.jar](/assets/ctf-files/asean-2024/linkextractor.jar) (the Java service).
+**Exploit scripts:** [asean-2024-web-payloads.zip](/assets/ctf-files/asean-2024/asean-2024-web-payloads.zip)
