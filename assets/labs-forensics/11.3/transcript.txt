@@ -1,0 +1,83 @@
+### LAB 11.3 - Sinh khung bao cao forensics tu IOC (exercise)
+### Transcript that: python3 -I gen_report.py ioc.json --analyst "HaiND" --tlp AMBER
+### (phan [TODO] la cho dieu tra vien viet tay; phan [AUTO] duoc dien tu ioc.json)
+
+$ python3 -I gen_report.py ioc.json --analyst "HaiND" --tlp AMBER
+----------------------------------------------------------------------
+# Bao cao forensics: web01-0107
+
+- Host: web01
+- Ngay lap: 2026-10-18
+- Dieu tra vien: HaiND
+- Muc bao mat (TLP): AMBER
+
+> Khung bao cao theo 10 muc cua Bai 11.3. Cac muc tu dong dien tu IOC duoc danh dau
+> [AUTO]; cac muc con lai la [TODO] de dieu tra vien viet tay (fact/opinion/gioi han).
+
+## 1. Thong tin ca
+- So ca: web01-0107
+- Pham vi: web01
+- Trang thai: [TODO: dang xu ly / da dong]
+
+## 2. Executive Summary  [TODO: 1 trang, khong thuat ngu, cho lanh dao]
+[TODO] Viet ngan gon: chuyen gi xay ra, nghiem trong co nao, can lam gi tiep.
+Goi y mo dau tu du lieu co san: he thong web01 bi xam nhap qua Web shell upload qua POST /upload.php (T1505.003).
+
+## 3. Pham vi & cau hoi dieu tra  [TODO]
+[TODO] Duoc giao lam gi, tra loi cau hoi nao, gioi han gi.
+
+## 4. Methodology  [TODO]
+[TODO] Cong cu, phien ban, cach thu thap, moi truong phan tich, lam tren ban sao, hash truoc/sau.
+
+## 5. Findings  [TODO: moi finding theo khuon fact / opinion / gioi han]
+
+### F-01: Initial Access
+- Quan sat (fact): Web shell upload qua POST /upload.php (T1505.003) (nguon: log, phu luc A-1).
+- Danh gia (opinion): [TODO]
+- Gioi han: [TODO]
+
+### F-02 ... [TODO: them cac finding cho persistence, C2, exfil, anti-forensic]
+
+## 6. Timeline  [AUTO tu IOC, bo sung tay neu thieu]
+| Thoi gian (UTC) | Su kien | ATT&CK | Phu luc |
+|-----------------|---------|--------|---------|
+| 2026-01-07 09:01:12 | Upload shell.php qua POST /upload.php | T1505.003 | A-1 |
+| 2026-01-07 09:01:40 | Khai thac webshell: shell.php?cmd=id | T1059 | A-1 |
+| 2026-01-07 09:02:05 | Tai implant kworkerd tu C2 185.234.72.19 | T1105 | A-2 |
+| 2026-01-07 09:03:11 | network-helper.service khoi dong implant | T1543.002 | A-3 |
+| 2026-01-07 09:03:30 | Implant ket noi C2 185.234.72.19:8443 | T1071.001 | A-4 |
+| 2026-01-07 10:15:00 | Khoi dong lai rsyslog (nghi xoa log) | T1070 | A-5 |
+
+## 7. IOC  [AUTO]
+| Loai | Gia tri | Ghi chu |
+|------|---------|---------|
+| ip | 185.234.72.19 | C2 hoac nguon tan cong |
+| ip | 198.51.100.23 | C2 hoac nguon tan cong |
+| url | https://185.234.72.19:8443/gate.php | kenh C2 |
+| ua | Mozilla/5.0 (X11; Linux x86_64) AcctLoader/1.2 | nhan dien ho malware |
+| mutex | Global\AcctLdr_7f3a | nhan dien ho malware |
+| path | var/www/html/uploads/shell.php | vi tri tren disk |
+| path | var/tmp/.sysd/kworkerd | vi tri tren disk |
+| path | var/tmp/.sysd/data.tar.gz | vi tri tren disk |
+| sha256 | aa4884cab4f21d77f55775c8d03a21c72a047d1ca5ce90518872ea519f35e9af | var/tmp/.sysd/kworkerd |
+| sha256 | 04cf135a10fe188b07c7dd2716b9136a7effc9570bcb42ff8831533cd1671967 | var/www/html/uploads/shell.php |
+| persistence | etc/cron.d/nginx-cache | co che bam lai |
+| persistence | etc/systemd/system/network-helper.service | co che bam lai |
+
+## 8. Ket luan & khuyen nghi  [TODO]
+[TODO] Tra loi cau hoi dieu tra, de xuat khac phuc (uu tien giam dan).
+
+## 9. Chain of custody  [TODO]
+| ID | Mo ta | Thu luc/boi ai | Hash luc thu | Luu o dau | Ban giao |
+|----|-------|----------------|--------------|-----------|----------|
+| EVD-01 | [TODO] | [TODO] | [TODO] | [TODO] | [TODO] |
+
+## 10. Phu luc  [AUTO danh sach + TODO bo sung]
+- A-1: hash + mo ta `var/tmp/.sysd/kworkerd` (sha256 aa4884cab4f21d77...)
+- A-2: hash + mo ta `var/www/html/uploads/shell.php` (sha256 04cf135a10fe188b...)
+- A-3: noi dung `etc/cron.d/nginx-cache`
+- A-4: noi dung `etc/systemd/system/network-helper.service`
+- A-5: bang chung anti-forensic: timestomp implant mtime -> 2009
+- A-6: bang chung anti-forensic: rsyslog restart 10:15 (nghi xoa log)
+- A-7: [TODO] anh chup output cong cu, mapping ATT&CK Navigator
+----------------------------------------------------------------------

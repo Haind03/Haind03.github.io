@@ -1,0 +1,98 @@
+{
+  "name": "TechForensics lab 9.2 - case walk",
+  "versions": {
+    "attack": "14",
+    "navigator": "4.9.1",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Artifact -> technique tu cac lab 2.2/7.1/7.2/7.3/9.1 (exercise).",
+  "techniques": [
+    {
+      "techniqueID": "T1105",
+      "score": 100,
+      "color": "",
+      "comment": "[7.1 / 7.2] HTTP tai payload MZ (update.exe/payload.exe)",
+      "enabled": true
+    },
+    {
+      "techniqueID": "T1071.001",
+      "score": 100,
+      "color": "",
+      "comment": "[7.3] C2 beacon nhip deu +/- jitter toi :443",
+      "enabled": true
+    },
+    {
+      "techniqueID": "T1071.004",
+      "score": 100,
+      "color": "",
+      "comment": "[7.3] DNS tunnel nhan base32 tren domain cha",
+      "enabled": true
+    },
+    {
+      "techniqueID": "T1048.003",
+      "score": 100,
+      "color": "",
+      "comment": "[7.3] Du lieu tuon ra qua query DNS",
+      "enabled": true
+    },
+    {
+      "techniqueID": "T1190",
+      "score": 100,
+      "color": "",
+      "comment": "[9.1] upload.php webshell tren web server",
+      "enabled": true
+    },
+    {
+      "techniqueID": "T1505.003",
+      "score": 100,
+      "color": "",
+      "comment": "[9.1] upload.php (webshell ton tai lau dai)",
+      "enabled": true
+    },
+    {
+      "techniqueID": "T1059.004",
+      "score": 100,
+      "color": "",
+      "comment": "[9.1] sysupd ELF trong /tmp/.cache (chay dropper)",
+      "enabled": true
+    },
+    {
+      "techniqueID": "T1053.003",
+      "score": 100,
+      "color": "",
+      "comment": "[9.1] /etc/cron.d/apache-check",
+      "enabled": true
+    },
+    {
+      "techniqueID": "T1098.004",
+      "score": 100,
+      "color": "",
+      "comment": "[9.1] /root/.ssh/authorized_keys them key",
+      "enabled": true
+    },
+    {
+      "techniqueID": "T1560.001",
+      "score": 100,
+      "color": "",
+      "comment": "[9.1] exfil.tar.gz staging truoc khi tuon",
+      "enabled": true
+    },
+    {
+      "techniqueID": "T1070.004",
+      "score": 100,
+      "color": "",
+      "comment": "[2.2 / 9.1] exfil.tar.gz bi xoa (va file xoa o lab 2.2)",
+      "enabled": true
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#ffffff",
+      "#ff6666"
+    ],
+    "minValue": 0,
+    "maxValue": 100
+  },
+  "legendItems": []
+}

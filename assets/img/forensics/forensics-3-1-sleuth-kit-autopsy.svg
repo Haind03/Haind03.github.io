@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="420" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">The Sleuth Kit: four layers of a disk image</text>
+  <text x="400" y="55" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">mmls, fsstat, fls, istat/icat, blkcat, and a timeline</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- Row 1: partition and file system -->
+  <text x="28" y="90" font-size="12.5" fill="#00f0ff" font-family="'JetBrains Mono',monospace">1. mmls finds the partition, then fsstat reads the file system</text>
+  <g font-size="12" text-anchor="middle">
+    <rect x="28" y="104" width="330" height="46" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="193" y="126" fill="#e3fffa">mmls</text>
+    <text x="193" y="142" fill="#9fb0c8" font-size="10.5" font-family="'JetBrains Mono',monospace">partition starts at sector 2048 (pass -o 2048)</text>
+
+    <rect x="430" y="104" width="342" height="46" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="601" y="126" fill="#e3fffa">fsstat -o 2048</text>
+    <text x="601" y="142" fill="#9fb0c8" font-size="10.5" font-family="'JetBrains Mono',monospace">FS type, cluster size, $MFT location</text>
+  </g>
+  <line x1="358" y1="127" x2="426" y2="127" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+
+  <!-- Row 2: name -> metadata -> data -->
+  <text x="28" y="186" font-size="12.5" fill="#fcee0a" font-family="'JetBrains Mono',monospace">2. A name points to a metadata entry, which points to data blocks</text>
+  <g font-size="12" text-anchor="middle">
+    <rect x="28" y="200" width="226" height="56" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="141" y="224" fill="#e3fffa">fls / ffind</text>
+    <text x="141" y="241" fill="#9fb0c8" font-size="10.5" font-family="'JetBrains Mono',monospace">directory: name -&gt; inode #</text>
+
+    <rect x="286" y="200" width="228" height="56" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="400" y="224" fill="#e3fffa">istat / icat / ils</text>
+    <text x="400" y="241" fill="#9fb0c8" font-size="10.5" font-family="'JetBrains Mono',monospace">metadata: times + data run</text>
+
+    <rect x="546" y="200" width="226" height="56" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="659" y="224" fill="#e3fffa">blkcat / blkls</text>
+    <text x="659" y="241" fill="#9fb0c8" font-size="10.5" font-family="'JetBrains Mono',monospace">data clusters (raw bytes)</text>
+  </g>
+  <line x1="254" y1="228" x2="282" y2="228" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="514" y1="228" x2="542" y2="228" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+
+  <!-- Row 3: delete -->
+  <text x="28" y="288" font-size="12.5" fill="#ff2a6d" font-family="'JetBrains Mono',monospace">3. Deleting unlinks the name and the metadata, the data blocks stay</text>
+  <g text-anchor="middle">
+    <rect x="28" y="300" width="744" height="56" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="400" y="323" font-size="12" fill="#e3fffa">fls lists the file with * , then icat follows the old data run</text>
+    <text x="400" y="342" font-size="11" fill="#9fb0c8">recovered intact, with name and timestamps, until the clusters are overwritten</text>
+  </g>
+
+  <text x="400" y="396" text-anchor="middle" font-size="11" fill="#6c7b93">mactime sorts fls -m output (the bodyfile) into one chronological MACB timeline.</text>
+</svg>

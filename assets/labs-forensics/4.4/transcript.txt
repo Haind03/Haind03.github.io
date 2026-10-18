@@ -1,0 +1,22 @@
+=== Lab 4.4: File/folder access (LNK + Jump List + Shellbag) ===
+
+--- [1] LNK tu sinh: dung target IDList dung lai duong dan ---
+   file: bang_luong.xlsx.lnk
+   target (IDList): My Computer / E:\ / Du_an_mat / bang_luong.xlsx
+   header ctime=2026-10-18 10:44:16+00:00 mtime=2026-10-18 10:44:16+00:00
+   (VolumeSerial/DriveType nam trong LinkInfo cua LNK Windows that -> xem BAI TAP voi LECmd)
+
+--- [2] Jump List (CustomDestinations) la container cua nhieu LNK ---
+   so LNK nhung ben trong: 9
+   target=C:\Windows\System32\GettingStarted.exe  (ctime 2009-07-13 23:40:18.770082+00:00)
+
+--- [3] Shellbag tu UsrClass.dat (user da DUYET thu muc nao) ---
+   tong node: 29
+   D:\                                        type=Volume     mtime=2018-04-05T02:13:26.843024+00:00
+   D:\\AKMonitor                              type=Directory  mtime=2018-03-22T02:50:44
+   D:\\AKMonitor\logs                         type=Directory  mtime=2018-03-27T09:12:36
+   D:\\AKMonitor\logs\pic                     type=Directory  mtime=2018-03-27T23:34:48
+   My Computer\Desktop                        type=Volume     mtime=2018-04-05T06:06:37.498430+00:00
+   My Computer\Desktop\Cubs' Anthony Rizzo Praises Parkland Kids, Says 'It's too Easy to Get a Gun'_files type=Directory  mtime=2018-03-30T04:32:34
+   My Computer\Downloads                      type=Volume     mtime=2018-04-05T06:06:37.498430+00:00
+   My Computer\Documents                      type=Volume     mtime=2018-04-05T06:06:37.498430+00:00

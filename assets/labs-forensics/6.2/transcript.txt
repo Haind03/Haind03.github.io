@@ -1,0 +1,37 @@
+# Transcript lab 6.2 - process/network memory forensics (IOC C2 trong RAM + ket noi song)
+# Moi truong: WSL2 Ubuntu, Python 3.11.9, ptrace_scope=1, chay khong can root
+# Chay: 2026-10-18T10:28:02Z UTC
+# IP 198.51.100.x / 203.0.113.x la dai TEST-NET (RFC 5737), chi la IOC minh hoa.
+# Ket noi THAT la 127.0.0.1 (loopback, stub noi bo). Cong ephemeral doi moi lan chay.
+
+$ DUMPDIR=_dump python3 -I capture.py
+[*] stub C2 (loopback) tren cong 38959
+[*] victim PID = 44761 da ket noi toi 127.0.0.1:38959
+[*] bang ket noi -> _dump/connections.txt
+[*] da chup 18 vung, 5255168 byte (~5.0 MB) -> _dump/victim.dump
+[*] maps -> _dump/victim.maps
+
+$ DUMPDIR=_dump bash solve.sh
+== 1. Cau hinh C2 nhung trong RAM (grep dump) ==
+C2CONFIG|campaign=LAB62|c2_host=198.51.100.77|c2_port=4444|beacon_url=http://198.51.100.77/beacon|fallback=203.0.113.9:8443|key=lab62-not-a-real-secret
+
+== 2. Trich IP:cong kieu C2 trong dump (IOC) ==
+beacon_url=http://198.51.100.77
+c2_host=198.51.100.77
+fallback=203.0.113.9:8443
+
+== 3. Bang ket noi song luc chup (netscan analog, tu ss -tnp) ==
+State    Recv-Q Send-Q Local Address:Port   Peer Address:Port Process                                
+ESTAB    0      0          127.0.0.1:38959     127.0.0.1:46918 users:(("python3",pid=44760,fd=4))    
+ESTAB    0      0          127.0.0.1:46918     127.0.0.1:38959 users:(("python3",pid=44761,fd=3))    
+
+== 4. Module nap vao tien trinh (dlllist analog, cac .so tu maps) ==
+/home/haipanda/.pyenv/versions/3.11.9/lib/libpython3.11.so.1.0
+/home/haipanda/.pyenv/versions/3.11.9/lib/python3.11/lib-dynload/_socket.cpython-311-x86_64-linux-gnu.so
+/home/haipanda/.pyenv/versions/3.11.9/lib/python3.11/lib-dynload/array.cpython-311-x86_64-linux-gnu.so
+/home/haipanda/.pyenv/versions/3.11.9/lib/python3.11/lib-dynload/math.cpython-311-x86_64-linux-gnu.so
+/home/haipanda/.pyenv/versions/3.11.9/lib/python3.11/lib-dynload/select.cpython-311-x86_64-linux-gnu.so
+/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+/usr/lib/x86_64-linux-gnu/libc.so.6
+/usr/lib/x86_64-linux-gnu/libm.so.6
+... (tong so .so: 8)

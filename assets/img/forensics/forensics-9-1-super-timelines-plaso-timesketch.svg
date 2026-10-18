@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 410" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="410" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Super timeline: many sources into one story</text>
+  <text x="400" y="54" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">log2timeline builds the .plaso once; psort filters it many times</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- source boxes (each artifact carries its own time mark) -->
+  <g font-size="11.5" text-anchor="middle">
+    <rect x="22"  y="80"  width="162" height="32" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="103" y="100" fill="#e3fffa">MFT (MACB)</text>
+    <rect x="22"  y="122" width="162" height="32" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="103" y="142" fill="#e3fffa">Registry (LastWrite)</text>
+    <rect x="22"  y="164" width="162" height="32" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="103" y="184" fill="#e3fffa">Event log (TimeCreated)</text>
+    <rect x="22"  y="206" width="162" height="32" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="103" y="226" fill="#e3fffa">Prefetch (last run)</text>
+    <rect x="22"  y="248" width="162" height="32" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="103" y="268" fill="#e3fffa">Browser (visit time)</text>
+  </g>
+
+  <!-- pipeline boxes -->
+  <g font-size="12.5" text-anchor="middle">
+    <rect x="214" y="148" width="132" height="70" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="280" y="176" fill="#e3fffa">log2timeline.py</text>
+    <text x="280" y="196" fill="#9fb0c8" font-size="10.5">runs 100+ parsers</text>
+
+    <rect x="380" y="148" width="104" height="70" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="432" y="176" fill="#fcee0a" font-weight="700">.plaso</text>
+    <text x="432" y="196" fill="#9fb0c8" font-size="10.5">build once</text>
+
+    <rect x="520" y="148" width="120" height="70" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="580" y="176" fill="#e3fffa">psort.py</text>
+    <text x="580" y="196" fill="#9fb0c8" font-size="10.5">filter + sort</text>
+  </g>
+
+  <!-- converging arrows from sources into log2timeline -->
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none" opacity="0.9">
+    <line x1="184" y1="96"  x2="212" y2="176"/>
+    <line x1="184" y1="138" x2="212" y2="180"/>
+    <line x1="184" y1="180" x2="212" y2="183"/>
+    <line x1="184" y1="222" x2="212" y2="186"/>
+    <line x1="184" y1="264" x2="212" y2="190"/>
+  </g>
+  <!-- pipeline arrows -->
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="346" y1="183" x2="378" y2="183"/>
+    <line x1="484" y1="183" x2="518" y2="183"/>
+    <line x1="580" y1="218" x2="580" y2="296"/>
+  </g>
+
+  <!-- filtered result: the attack in order -->
+  <rect x="22" y="300" width="756" height="94" rx="7" fill="#0b1518" stroke="#5fe3b0"/>
+  <text x="40" y="322" font-size="12" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">psort: date &gt; 09:00 AND date &lt; 09:06  -&gt; the attack read in one pass</text>
+  <g font-size="11" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">
+    <text x="40" y="344">09:03  EXCEL.EXE -&gt; powershell.exe -enc</text>
+    <text x="40" y="362">09:04  svc_host.exe created + prefetch run</text>
+    <text x="410" y="344">09:05  Run key Updater = svc_host.exe</text>
+    <text x="410" y="362">09:06  svc_host.exe -&gt; 185.x.x.x:443 (C2)</text>
+  </g>
+  <text x="40" y="382" font-size="10.5" fill="#6c7b93">Each row keeps its source column, so you know where every timestamp came from.</text>
+</svg>

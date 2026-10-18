@@ -1,0 +1,84 @@
+=== B1: fsstat NTFS ===
+FILE SYSTEM INFORMATION
+--------------------------------------------
+File System Type: NTFS
+Volume Serial Number: 684F8DE653F08799
+OEM Name: NTFS    
+Volume Name: LABNTFS
+Version: Windows XP
+
+METADATA INFORMATION
+--------------------------------------------
+First Cluster of MFT: 4
+First Cluster of MFT Mirror: 1279
+Size of MFT Entries: 1024 bytes
+Size of Index Records: 4096 bytes
+
+=== B2: istat record 0 ($MFT) ===
+MFT Entry Header Values:
+Entry: 0        Sequence: 1
+$LogFile Sequence Number: 0
+Allocated File
+Links: 1
+
+$STANDARD_INFORMATION Attribute Values:
+Flags: Hidden, System
+Owner ID: 0
+Security ID: 256  ()
+Created:	2026-10-18 17:35:05.000000000 (+07)
+File Modified:	2026-10-18 17:35:05.000000000 (+07)
+MFT Modified:	2026-10-18 17:35:05.000000000 (+07)
+Accessed:	2026-10-18 17:35:05.000000000 (+07)
+
+=== B3: istat record 5 (root directory) - co $STANDARD_INFORMATION va $FILE_NAME ===
+MFT Entry Header Values:
+Entry: 5        Sequence: 5
+$LogFile Sequence Number: 0
+Allocated Directory
+Links: 1
+
+$STANDARD_INFORMATION Attribute Values:
+Flags: Hidden, System, Archive
+Owner ID: 0
+Security ID: 0  ()
+Created:	2026-10-18 17:35:05.000000000 (+07)
+File Modified:	2026-10-18 17:35:05.000000000 (+07)
+MFT Modified:	2026-10-18 17:35:05.000000000 (+07)
+Accessed:	2026-10-18 17:35:05.000000000 (+07)
+
+$FILE_NAME Attribute Values:
+Flags: Directory, Hidden, System
+Name: .
+Parent MFT Entry: 5 	Sequence: 5
+Allocated Size: 0   	Actual Size: 0
+Created:	2026-10-18 17:35:05.000000000 (+07)
+File Modified:	2026-10-18 17:35:05.000000000 (+07)
+MFT Modified:	2026-10-18 17:35:05.000000000 (+07)
+Accessed:	2026-10-18 17:35:05.000000000 (+07)
+
+Attributes: 
+Type: $STANDARD_INFORMATION (16-0)   Name: N/A   Resident   size: 48
+Type: $FILE_NAME (48-1)   Name: N/A   Resident   size: 68
+Type: $SECURITY_DESCRIPTOR (80-2)   Name: N/A   Non-Resident   size: 4140  init_size: 4140
+323 324 
+
+=== B4: 4 byte dau record tho = chu ky FILE ===
+00000000: 4649 4c45 3000 0300 0000 0000 0000 0000  FILE0...........
+
+=== B5: parse header record tho bang mftparse.py ===
+Signature (0x00)            : b'FILE' -> FILE record hop le
+Update Sequence offset (0x04): 48  count: 3
+$LogFile Seq Number    (0x08): 0
+Sequence number        (0x10): 1  Hard links (0x12): 1
+Offset to 1st attribute(0x14): 56 (0x38)
+Flags                  (0x16): 0x0001 -> IN_USE, FILE
+Used size / Allocated  (0x18): 408 / 1024 byte
+Attributes:
+  type 0x10  $STANDARD_INFORMATION   len=96    resident
+  type 0x30  $FILE_NAME              len=104   resident
+  type 0x80  $DATA                   len=72    non-resident
+  type 0xb0  $BITMAP                 len=72    non-resident
+  0xffffffff  END marker
+
+=== B6: convert FILETIME sang gio nguoi doc (vi du bai) ===
+2024-03-05 16:43:47.196369

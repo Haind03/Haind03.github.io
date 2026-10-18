@@ -1,0 +1,3 @@
+ndhai    pts/1        10.0.0.5         Fri Oct 16 02:45   still logged in
+ndhai    pts/0        10.0.0.5         Fri Oct 16 02:03 - 02:11  (00:08)
+reboot   system boot  6.1.0            Fri Oct 16 01:58   still running

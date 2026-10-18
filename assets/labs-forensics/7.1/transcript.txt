@@ -1,0 +1,63 @@
+============================================================
+[1] capinfos: so goi + cua so thoi gian
+============================================================
+File name:           lab71.pcap
+Number of packets:   12
+Capture duration:    0.110000 seconds
+First packet time:   2026-01-10 06:06:40.000000
+Last packet time:    2026-01-10 06:06:40.110000
+
+============================================================
+[2] Conversations (Statistics > Conversations): phien nang nhat
+============================================================
+================================================================================
+TCP Conversations
+Filter:<No Filter>
+                                                           |       <-      | |       ->      | |     Total     |    Relative    |   Duration   |
+                                                           | Frames  Bytes | | Frames  Bytes | | Frames  Bytes |      Start     |              |
+10.0.0.50:49152            <-> 10.0.0.80:80                     5 1099 bytes       5 367 bytes      10 1466 bytes     0.020000000         0.0900
+================================================================================
+
+============================================================
+[3] http.request + Follow HTTP Stream (xac nhan magic byte)
+============================================================
+--- cac HTTP request ---
+6	GET	files.lab.test	/download/update.exe
+--- follow tcp stream 0 (header request + response) ---
+
+===================================================================
+Follow: tcp,ascii
+Filter: tcp.stream eq 0
+Node 0: 10.0.0.50:49152
+Node 1: 10.0.0.80:80
+97
+GET /download/update.exe HTTP/1.1
+Host: files.lab.test
+User-Agent: curl/7.81.0
+Accept: */*
+
+
+	829
+HTTP/1.1 200 OK
+Server: lab-httpd/1.0
+Content-Type: application/octet-stream
+Content-Disposition: attachment; filename="update.exe"
+Content-Length: 651
+Connection: close
+
+MZ....Harmless lab sample, not a real executable. Marker: LAB-FILE-7.1
+
+============================================================
+[4] Export Objects HTTP -> trich file ra dia
+============================================================
+total 0
+-rwxrwxrwx 1 haipanda Administrator 651 Oct 18 17:27 update.exe
+--- loai file that (khong tin ten header) ---
+extracted/update.exe: MS-DOS executable, MZ for MS-DOS
+
+============================================================
+[5] VERIFY: hash file trich duoc == hash file goc
+============================================================
+file goc        sha256 : db3f14469f9091af308c9e20b797cfed444693a2ffd1020d42fd1e3b167065c6
+file trich (http) sha : db3f14469f9091af308c9e20b797cfed444693a2ffd1020d42fd1e3b167065c6
+=> MATCH: file lay tu pcap nguyen ven, dung bang file da truyen.

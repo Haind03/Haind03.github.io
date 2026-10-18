@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="420" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">RAM acquisition</text>
+  <text x="400" y="54" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">live state that never reaches disk, read into a dump, then hashed</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- RAM contents -->
+  <rect x="24" y="84" width="240" height="226" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="144" y="107" text-anchor="middle" font-size="13" fill="#e3fffa">RAM (live state)</text>
+  <g font-size="11" fill="#9fb0c8">
+    <text x="40" y="135">fileless malware</text>
+    <text x="40" y="157">decryption keys (BitLocker/LUKS)</text>
+    <text x="40" y="179">C2 connections, open sockets</text>
+    <text x="40" y="201">hidden processes</text>
+    <text x="40" y="223">unsaved data, clipboard</text>
+    <text x="40" y="245">LSASS credential cache</text>
+  </g>
+  <text x="144" y="282" text-anchor="middle" font-size="10.5" fill="#ff2a6d">gone the moment power is cut</text>
+
+  <!-- acquisition tool -->
+  <rect x="316" y="158" width="172" height="72" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="402" y="187" text-anchor="middle" font-size="12.5" fill="#e3fffa">Acquisition tool</text>
+  <text x="402" y="206" text-anchor="middle" font-size="10" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">WinPmem / avml / DumpIt</text>
+  <text x="402" y="251" text-anchor="middle" font-size="10.5" fill="#ff2a6d">the tool itself uses RAM</text>
+
+  <!-- dump + hash -->
+  <rect x="540" y="120" width="236" height="60" rx="7" fill="#111827" stroke="#fcee0a"/>
+  <text x="658" y="144" text-anchor="middle" font-size="12.5" fill="#e3fffa">Memory dump</text>
+  <text x="658" y="163" text-anchor="middle" font-size="10.5" fill="#9fb0c8">about the size of RAM</text>
+
+  <rect x="540" y="236" width="236" height="54" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="658" y="268" text-anchor="middle" font-size="12.5" fill="#e3fffa">Hash (SHA-256), seal</text>
+
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="264" y1="194" x2="314" y2="194"/>
+    <line x1="488" y1="183" x2="538" y2="155"/>
+    <line x1="658" y1="180" x2="658" y2="234"/>
+  </g>
+
+  <!-- smear bar -->
+  <text x="400" y="331" text-anchor="middle" font-size="11" fill="#9fb0c8">physical address space, read low to high over minutes</text>
+  <rect x="40" y="343" width="720" height="26" rx="4" fill="#0b1518" stroke="#263451"/>
+  <line x1="184" y1="343" x2="184" y2="369" stroke="#263451"/>
+  <line x1="328" y1="343" x2="328" y2="369" stroke="#263451"/>
+  <line x1="472" y1="343" x2="472" y2="369" stroke="#263451"/>
+  <line x1="616" y1="343" x2="616" y2="369" stroke="#263451"/>
+  <text x="56" y="360" font-size="10.5" fill="#00f0ff" font-family="'JetBrains Mono',monospace">t0</text>
+  <text x="744" y="360" text-anchor="end" font-size="10.5" fill="#ff2a6d" font-family="'JetBrains Mono',monospace">t + minutes</text>
+
+  <text x="400" y="396" text-anchor="middle" font-size="11" fill="#6c7b93">Smear: early and late regions are not consistent on a busy machine. A VM snapshot avoids it.</text>
+</svg>

@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 448" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="448" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">What "delete" changes on NTFS and FAT</text>
+  <text x="400" y="55" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">the data stays, only the bookkeeping is marked free</text>
+
+  <!-- NTFS column -->
+  <text x="28" y="84" font-size="12.5" fill="#00f0ff" font-family="'JetBrains Mono',monospace">NTFS: the $MFT entry</text>
+  <g text-anchor="middle">
+    <rect x="28" y="96" width="360" height="54" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="208" y="120" font-size="12" fill="#e3fffa">$MFT entry (~1024 B)</text>
+    <text x="208" y="138" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">$STD_INFO, $FILE_NAME, $DATA (data run)</text>
+
+    <rect x="28" y="162" width="360" height="72" rx="7" fill="#0b1518" stroke="#ff2a6d"/>
+    <text x="208" y="182" font-size="12" fill="#ff2a6d">on delete</text>
+    <text x="208" y="200" font-size="10.5" fill="#9fb0c8">clear the in-use flag at offset 0x16</text>
+    <text x="208" y="216" font-size="10.5" fill="#9fb0c8">mark the clusters free in $Bitmap</text>
+    <text x="208" y="232" font-size="10.5" fill="#9fb0c8">unlink from the parent index</text>
+
+    <rect x="28" y="246" width="360" height="60" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="208" y="266" font-size="12" fill="#5fe3b0">recover</text>
+    <text x="208" y="283" font-size="10.5" fill="#9fb0c8">entry + data run still reach the clusters</text>
+    <text x="208" y="299" font-size="10.5" fill="#9fb0c8">icat recovers clean, with timestamps</text>
+  </g>
+
+  <!-- FAT column -->
+  <text x="412" y="84" font-size="12.5" fill="#00f0ff" font-family="'JetBrains Mono',monospace">FAT: the directory entry + FAT chain</text>
+  <g text-anchor="middle">
+    <rect x="412" y="96" width="360" height="54" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="592" y="120" font-size="12" fill="#e3fffa">directory entry</text>
+    <text x="592" y="138" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">name (8.3 / LFN), first cluster, size</text>
+
+    <rect x="412" y="162" width="360" height="72" rx="7" fill="#0b1518" stroke="#ff2a6d"/>
+    <text x="592" y="182" font-size="12" fill="#ff2a6d">on delete</text>
+    <text x="592" y="202" font-size="10.5" fill="#9fb0c8">first byte of the entry -&gt; 0xE5</text>
+    <text x="592" y="220" font-size="10.5" fill="#9fb0c8">FAT chain entries set to 0 (free)</text>
+
+    <rect x="412" y="246" width="360" height="60" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="592" y="266" font-size="12" fill="#fcee0a">recover</text>
+    <text x="592" y="283" font-size="10.5" fill="#9fb0c8">first cluster + size still in the entry</text>
+    <text x="592" y="299" font-size="10.5" fill="#9fb0c8">contiguous OK; fragmented -&gt; chain lost, carve</text>
+  </g>
+
+  <!-- Recycle Bin -->
+  <text x="28" y="334" font-size="12.5" fill="#00f0ff" font-family="'JetBrains Mono',monospace">Recycle Bin (not Shift+Delete): one $I / $R pair per deleted file</text>
+  <g text-anchor="middle">
+    <rect x="28" y="346" width="360" height="66" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="208" y="368" font-size="12" fill="#e3fffa">$I...  metadata</text>
+    <text x="208" y="386" font-size="10.5" fill="#9fb0c8">original path, size, deleted time (FILETIME)</text>
+    <text x="208" y="402" font-size="10.5" fill="#9fb0c8">the SID tells you who deleted it</text>
+
+    <rect x="412" y="346" width="360" height="66" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="592" y="368" font-size="12" fill="#e3fffa">$R...  content</text>
+    <text x="592" y="386" font-size="10.5" fill="#9fb0c8">the original bytes, just renamed</text>
+    <text x="592" y="402" font-size="10.5" fill="#9fb0c8">copy it out and restore the original name</text>
+  </g>
+
+  <text x="400" y="436" text-anchor="middle" font-size="11" fill="#6c7b93">Stop writing to the drive at once, or you risk overwriting the clusters you want back.</text>
+</svg>

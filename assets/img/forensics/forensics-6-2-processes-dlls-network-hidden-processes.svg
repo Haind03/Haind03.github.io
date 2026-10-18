@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="400" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Why pslist and psscan disagree</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">DKOM unlinks an EPROCESS from the kernel list, but the structure stays in memory</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- linked list nodes -->
+  <g font-size="12" text-anchor="middle">
+    <rect x="60"  y="100" width="140" height="52" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="130" y="124" fill="#e3fffa">EPROCESS</text>
+    <text x="130" y="142" fill="#9fb0c8" font-size="10.5" font-family="'JetBrains Mono',monospace">winword.exe</text>
+
+    <rect x="250" y="100" width="140" height="52" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="320" y="124" fill="#e3fffa">EPROCESS</text>
+    <text x="320" y="142" fill="#9fb0c8" font-size="10.5" font-family="'JetBrains Mono',monospace">powershell.exe</text>
+
+    <rect x="600" y="100" width="140" height="52" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="670" y="124" fill="#e3fffa">EPROCESS</text>
+    <text x="670" y="142" fill="#9fb0c8" font-size="10.5" font-family="'JetBrains Mono',monospace">nc.exe</text>
+  </g>
+
+  <!-- Flink chain that skips the hidden node -->
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="200" y1="126" x2="248" y2="126"/>
+    <line x1="390" y1="126" x2="598" y2="126"/>
+  </g>
+  <text x="494" y="116" text-anchor="middle" font-size="10" fill="#6c7b93" font-family="'JetBrains Mono',monospace">Flink jumps past the unlinked node</text>
+
+  <!-- hidden unlinked node -->
+  <rect x="430" y="178" width="160" height="58" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+  <text x="510" y="200" text-anchor="middle" font-size="12" fill="#ff2a6d" font-weight="700">svch0st.exe</text>
+  <text x="510" y="217" text-anchor="middle" font-size="10" fill="#9fb0c8">EPROCESS still in memory</text>
+  <text x="510" y="231" text-anchor="middle" font-size="10" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">pool tag: Proc</text>
+  <line x1="510" y1="178" x2="510" y2="130" stroke="#ff2a6d" stroke-width="1.5" stroke-dasharray="3 4" opacity="0.7"/>
+  <text x="526" y="160" font-size="10" fill="#ff2a6d">links cut</text>
+
+  <!-- reader methods -->
+  <rect x="50" y="286" width="330" height="76" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="66" y="308" font-size="12.5" fill="#00f0ff" font-weight="700">pslist / pstree</text>
+  <text x="66" y="328" font-size="11" fill="#9fb0c8">walks ActiveProcessLinks (kernel list)</text>
+  <text x="66" y="348" font-size="11" fill="#6c7b93">result: misses svch0st.exe</text>
+
+  <rect x="420" y="286" width="330" height="76" rx="7" fill="#111827" stroke="#ff2a6d"/>
+  <text x="436" y="308" font-size="12.5" fill="#ff2a6d" font-weight="700">psscan</text>
+  <text x="436" y="328" font-size="11" fill="#9fb0c8">scans all memory for the Proc pool tag</text>
+  <text x="436" y="348" font-size="11" fill="#e3fffa">result: finds svch0st.exe (hidden)</text>
+
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="260" y1="152" x2="215" y2="284"/>
+    <line x1="520" y1="236" x2="585" y2="284"/>
+  </g>
+
+  <text x="400" y="384" text-anchor="middle" font-size="11" fill="#6c7b93">In psscan but not pslist, with a blank ExitTime, means actively hidden.</text>
+</svg>

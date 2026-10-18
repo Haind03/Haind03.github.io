@@ -1,0 +1,66 @@
+### LAB 8.1 - Browser forensics: dung lai hoat dong duyet web
+### Transcript that: python3 -I make_artifacts.py profile && bash solve.sh profile
+
+$ python3 -I make_artifacts.py profile
+[+] Da tao: /tmp/claude-1000/-mnt-d-REVERSE-IDA-DNSPY-JADX-PYCDC/fc419170-3bc5-46ea-9f29-940ccd065882/scratchpad/run81/profile/History
+[+] Da tao: /tmp/claude-1000/-mnt-d-REVERSE-IDA-DNSPY-JADX-PYCDC/fc419170-3bc5-46ea-9f29-940ccd065882/scratchpad/run81/profile/places.sqlite
+[+] Da tao: /tmp/claude-1000/-mnt-d-REVERSE-IDA-DNSPY-JADX-PYCDC/fc419170-3bc5-46ea-9f29-940ccd065882/scratchpad/run81/profile/formhistory.sqlite
+[+] Chay tiep:  bash solve.sh profile
+
+$ bash solve.sh profile
+
+==== 0. Hash truoc khi dong (lam viec tren ban sao) ====
+f9724ace912790a4bfbba07aba23f0a51fcf066e23794cebf6085b1ec43df34e  profile/History
+689f2e017b7a5f8e4c829e27cc85a388168a7c82d356ed875b9da6409c48e39d  profile/places.sqlite
+ec272501d5fb5d4f1d6a244cce03fb2daccb71ccb123cbd1d02da47f9d023c5f  profile/formhistory.sqlite
+
+==== 1. Chrome: trang ghe nhieu nhat (WebKit -> UTC: /1e6 - 11644473600) ====
+url                                                                      title                     visit_count  last_utc           
+-----------------------------------------------------------------------  ------------------------  -----------  -------------------
+https://www.google.com/                                                  Google                    3            2026-01-07 14:02:00
+https://mail.example.net/inbox                                           Webmail Inbox             2            2026-01-07 14:20:00
+https://www.google.com/search?q=usb+wiping+tool                          usb wiping tool - Google  1            2026-01-07 14:02:10
+https://eraser-tools.example/download                                    Eraser - Download         1            2026-01-07 14:03:05
+https://www.google.com/search?q=how%20to%20wipe%20usb%20without%20trace  how to wipe usb - Google  1            2026-01-07 14:04:20
+
+==== 2. Chrome: chuoi ghe theo thoi gian + kieu transition ====
+visit_utc            transition   url                                                                    
+-------------------  -----------  -----------------------------------------------------------------------
+2026-01-07 14:02:00  TYPED        https://www.google.com/                                                
+2026-01-07 14:02:10  FORM_SUBMIT  https://www.google.com/search?q=usb+wiping+tool                        
+2026-01-07 14:03:05  LINK         https://eraser-tools.example/download                                  
+2026-01-07 14:04:20  FORM_SUBMIT  https://www.google.com/search?q=how%20to%20wipe%20usb%20without%20trace
+2026-01-07 14:20:00  TYPED        https://mail.example.net/inbox                                         
+
+==== 3. Chrome: tu khoa tim kiem trich tu URL (giai URL-encoding) ====
+  https://www.google.com/search?q=usb+wiping+tool
+    -> tu khoa: usb wiping tool
+  https://www.google.com/search?q=how%20to%20wipe%20usb%20without%20trace
+    -> tu khoa: how to wipe usb without trace
+
+==== 4. Chrome: download (file tai ve va trang khoi phat) ====
+started              target_path                                    tab_url                                total_bytes
+-------------------  ---------------------------------------------  -------------------------------------  -----------
+2026-01-07 14:05:12  C:\Users\nghiphamt\Downloads\eraser-setup.exe  https://eraser-tools.example/download  7360512    
+
+==== 5. Firefox places.sqlite (PRTime -> UTC: chi /1e6, KHONG tru) ====
+t                    url                                                 title                    
+-------------------  --------------------------------------------------  -------------------------
+2026-01-07 14:09:00  https://duckduckgo.com/?q=secure+erase+flash+drive  secure erase - DuckDuckGo
+2026-01-07 14:09:30  https://eraser-tools.example/download               Eraser - Download        
+
+==== 6. Firefox formhistory.sqlite (lo tu khoa da go, ke ca khong Enter) ====
+fieldname          value                          timesUsed  first_utc          
+-----------------  -----------------------------  ---------  -------------------
+email              suspect@example.net            1          2026-01-06 10:00:00
+searchbar-history  how to wipe usb without trace  1          2026-01-07 14:08:00
+q                  secure erase flash drive       2          2026-01-07 14:09:00
+
+==== KET LUAN (timeline duyet web, moi moc co nguon artifact) ====
+  14:02:00 UTC  Chrome urls/visits  go tay vao Google (TYPED)
+  14:02:10 UTC  Chrome urls         tim "usb wiping tool" (FORM_SUBMIT, giai tu q=)
+  14:03:05 UTC  Chrome visits       click sang eraser-tools.example/download (LINK)
+  14:05:12 UTC  Chrome downloads    tai eraser-setup.exe ve C:\Users\...\Downloads (7.3 MB)
+  14:08:00 UTC  Firefox formhistory go "how to wipe usb without trace" vao search box
+  14:20:00 UTC  Chrome urls         ghe webmail inbox (TYPED)
+  Chrome  = WebKit epoch (1601), phai tru 11644473600; Firefox = PRTime (1970), chi chia 1e6.

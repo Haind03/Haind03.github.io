@@ -1,0 +1,49 @@
+LUU Y: moi truong nay KHONG co zeek. Ta dung tshark de dung bang tuong duong
+conn.log (tshark -z conv,tcp) va dns.log (tshark -T fields tren dns).
+
+============================================================
+[1] conn.log tuong duong  (tshark -z conv,tcp)
+============================================================
+================================================================================
+TCP Conversations
+Filter:<No Filter>
+                                                           |       <-      | |       ->      | |     Total     |    Relative    |   Duration   |
+                                                           | Frames  Bytes | | Frames  Bytes | | Frames  Bytes |      Start     |              |
+10.0.0.50:49201            <-> 10.0.0.80:80                     5 471 bytes       5 361 bytes      10 832 bytes     0.200000000         0.4500
+10.0.0.50:49202            <-> 10.0.0.66:80                     5 760 bytes       5 364 bytes      10 1124 bytes     0.699999000         0.4500
+10.0.0.51:49050            <-> 10.0.0.99:80                     5 372 bytes       5 349 bytes      10 721 bytes     1.199999000         0.4500
+================================================================================
+
+============================================================
+[2] conn.log dang TSV goi gon (stream = uid de ghep log)
+============================================================
+uid	proto	orig_h	orig_p	resp_h	resp_p	service
+0	tcp	10.0.0.50	49201	10.0.0.80	80	http
+1	tcp	10.0.0.50	49202	10.0.0.66	80	http
+2	tcp	10.0.0.51	49050	10.0.0.99	80	http
+
+============================================================
+[3] dns.log tuong duong  (query -> answer, TTL)
+============================================================
+query	qtype	answer	ttl
+cdn.lab.test	1	10.0.0.80	300
+files.evil.test	1	10.0.0.66	300
+
+============================================================
+[4] files.log tuong duong: carve file HTTP + MIME + hash
+============================================================
+beacon         text/plain             sha256:2689367b205c16ce32ed4200942b8b8b1e262dfc70d9bc9fbc77c49699a4f1df
+pack.zip       application/octet-stream sha256:fbd653690c6cf3db6b348dcd2307231b5236a944800bfb35a04295eb16944edb
+payload.exe    application/x-dosexec  sha256:b82ec728eb84ed86a8ada0ff35293df36f33da393f166da588c4519c0039ec9f
+
+============================================================
+[5] GHEP LOG + VERIFY: payload.exe carve == file goc; host nao connect bang IP
+============================================================
+payload.exe goc   : b82ec728eb84ed86a8ada0ff35293df36f33da393f166da588c4519c0039ec9f
+payload.exe carve : b82ec728eb84ed86a8ada0ff35293df36f33da393f166da588c4519c0039ec9f
+=> MATCH: file carve nguyen ven.
+
+Ket luan ghep log:
+ - 10.0.0.50 phan giai files.evil.test -> 10.0.0.66, roi tai payload.exe (MZ) tu do.
+ - 10.0.0.51 ket noi THANG 10.0.0.99 bang IP: co trong conn.log nhung VANG trong dns.log
+   (khong qua DNS cung la mot ket luan - dang ngo C2 cau hinh cung IP).

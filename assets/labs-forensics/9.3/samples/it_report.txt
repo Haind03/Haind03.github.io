@@ -1,0 +1,1 @@
+Weekly IT note: our malware scanner found nothing unusual this week.

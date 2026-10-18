@@ -1,0 +1,43 @@
+################ EXT4 ################
+=== fls -rd ===
+r/r * 12:	baocao.txt
+inode da xoa = 12
+=== istat ===
+inode: 12
+Not Allocated
+Group: 0
+Inode Times:
+Accessed:	2026-10-18 17:43:10.000000000 (+07)
+File Modified:	2026-10-18 17:43:10.000000000 (+07)
+Inode Modified:	2026-10-18 17:43:10.000000000 (+07)
+File Created:	2026-10-18 17:43:10.000000000 (+07)
+Deleted:	2026-10-18 17:43:10 (+07)
+
+Direct Blocks:
+=== icat khoi phuc + so MD5 ===
+md5 goc:   dd486ead3cbc22982c89bb5d01b169f8
+md5 cuu:   dd486ead3cbc22982c89bb5d01b169f8
+
+################ FAT ################
+=== fls -rd (ten dau bi thay 0xE5) ===
+r/r * 4:	_OTE.TXT
+inode da xoa = 4
+=== istat ===
+Directory Entry: 4
+Not Allocated
+File Attributes: File, Archive
+Size: 30
+Name: _OTE.TXT
+
+Directory Entry Times:
+Written:	2024-10-08 09:17:02 (+07)
+=== icat khoi phuc + so MD5 ===
+md5 goc:   6345e5f3b2b8ffc682a52f3f363ca90c
+md5 cuu:   6345e5f3b2b8ffc682a52f3f363ca90c
+
+################ GHI DE = MAT DU LIEU ################
+Ghi mot file moi de len dung cluster cua NOTE.TXT da xoa, roi thu cuu lai:
+injected OTHER.TXT (41 bytes) cluster=2 sector=100 slot=1
+-- icat lai inode da xoa 4 sau khi cluster bi ghi de --
+DU LIEU MOI DE LEN CLUSTER CU 0000000000
+-> noi dung cu da bi thay, khong con cuu dung nua. Bai hoc: ngung dung o ngay khi can khoi phuc.

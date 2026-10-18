@@ -1,0 +1,18 @@
+### [1] tao sample signature (stub, KHONG phai container ma hoa that):
+wrote luks_header.sig (4096 bytes, signature stub only)
+wrote bitlocker.sig (4096 bytes, signature stub only)
+wrote filevault.sig (4096 bytes, signature stub only)
+
+### [2] nhan dien FDE bang signature:
+[*] /mnt/d/REVERSE_IDA_DNSPY_JADX_PYCDC/TechForensics/labs/10.2/luks_header.sig
+    offset 0x0: magic b'LUKS\xba\xbe' => LUKS (Linux Unified Key Setup) - dm-crypt
+        LUKS version field = 2 (buoc tiep: cryptsetup luksDump)
+[*] /mnt/d/REVERSE_IDA_DNSPY_JADX_PYCDC/TechForensics/labs/10.2/bitlocker.sig
+    offset 0x3: magic b'-FVE-FS-' => BitLocker (Windows Full Volume Encryption)
+        buoc tiep: dislocker -V / repair-bde -rp de lay RecoveryKeyID
+[*] /mnt/d/REVERSE_IDA_DNSPY_JADX_PYCDC/TechForensics/labs/10.2/filevault.sig
+    khong thay signature FDE quen thuoc trong 4096 byte dau.
+    => co the chua ma hoa, hoac FDE khac (VeraCrypt khong co magic ro rang).
+
+### cryptsetup co trong moi truong nay khong?
+KHONG co cryptsetup -> phan tao/mo/crack LUKS la BAI TAP (xem README).

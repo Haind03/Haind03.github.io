@@ -1,0 +1,86 @@
+### LAB 8.2 - Email forensics: doc header va truy nguon gui
+### Transcript that: python3 -I make_artifacts.py mail && python3 -I solve.py mail/phish.eml mail/legit.eml
+
+$ python3 -I make_artifacts.py mail
+[+] Da tao: /tmp/claude-1000/-mnt-d-REVERSE-IDA-DNSPY-JADX-PYCDC/fc419170-3bc5-46ea-9f29-940ccd065882/scratchpad/run82/mail/phish.eml
+[+] Da tao: /tmp/claude-1000/-mnt-d-REVERSE-IDA-DNSPY-JADX-PYCDC/fc419170-3bc5-46ea-9f29-940ccd065882/scratchpad/run82/mail/legit.eml
+[+] Chay tiep:  python3 -I solve.py mail/phish.eml
+
+$ python3 -I solve.py mail/phish.eml mail/legit.eml
+FILE: mail/phish.eml
+
+==== 1. Cac header chinh ====
+  From: PayPal Service <service@paypal.com>
+  Return-Path: <bounce@paypa1-support.com>
+  Reply-To: verify@secure-paypal-check.info
+  To: user@victim.com
+  Subject: [Action Required] Your account has been limited
+  Date: Wed, 07 Jan 2026 14:01:50 +0000
+  Message-ID: <9f3a2b1c7e@relay.cheaphost.net>
+
+==== 2. Chuoi Received doc tu DUOI len (chang dau = gan nguoi gui nhat) ====
+  [1] from paypa1-support.com (unknown [45.77.123.45]) by relay.cheaphost.net with ESMTP id 7d0f3a for <user@victim.com>; Tue, 07 Jan 2026 14:01:55 +0000 (UTC)   <== CHANG DAU, IP gui goc
+  [2] from relay.cheaphost.net (relay.cheaphost.net [203.0.113.200]) by mx.victim.com (Postfix) with ESMTPS id 9C1aa for <user@victim.com>; Tue, 07 Jan 2026 14:02:01 +0000 (UTC)
+  [3] from mx.victim.com (mx.victim.com [198.51.100.10]) by mbox.victim.com (Postfix) with ESMTP id 4FbK2 for <user@victim.com>; Tue, 07 Jan 2026 14:02:03 +0000 (UTC)
+
+  -> IP gui goc: 45.77.123.45
+
+==== 3. Authentication-Results (SPF / DKIM / DMARC) ====
+  spf=fail (sender IP is 45.77.123.45) smtp.mailfrom=paypa1-support.com  <== FAIL
+  dkim=none  <== khong co
+  dmarc=fail (p=reject) header.from=paypal.com  <== FAIL
+
+==== 4. Soi diem venh giua cac truong dia chi ====
+  From domain        : paypal.com
+  Return-Path domain : paypa1-support.com   (VENH voi From)
+  Reply-To domain    : secure-paypal-check.info   (VENH voi From)
+  Message-ID domain  : relay.cheaphost.net   (khong phai ha tang cua From)
+
+==== 5. Link trong body (KHONG bam, chi trich de doi chieu) ====
+  https://secure-paypal-check.info/login  <== domain la
+
+==== KET LUAN ====
+  Email NGHI GIA MAO. Khai From=paypal.com nhung:
+    - IP gui goc 45.77.123.45 (chang Received duoi cung)
+    - SPF/DMARC fail trong Authentication-Results
+    - Return-Path ve paypa1-support.com (khac From)
+    - Reply-To ve secure-paypal-check.info (khac From)
+    - Message-ID sinh tu relay.cheaphost.net (khong phai ha tang cua From)
+
+----------------------------------------------------------------------
+FILE: mail/legit.eml
+
+==== 1. Cac header chinh ====
+  From: GitHub <notify@github.com>
+  Return-Path: <notify@github.com>
+  Reply-To: notify@github.com
+  To: user@victim.com
+  Subject: [repo] A new sign-in to your account
+  Date: Tue, 06 Jan 2026 02:10:00 +0000
+  Message-ID: <abc123@mail.github.com>
+
+==== 2. Chuoi Received doc tu DUOI len (chang dau = gan nguoi gui nhat) ====
+  [1] from out-1.smtp.github.com (out-1.smtp.github.com [192.30.252.192]) by mx.victim.com (Postfix) with ESMTPS id 3DeF4 for <user@victim.com>; Mon, 06 Jan 2026 02:10:02 +0000 (UTC)   <== CHANG DAU, IP gui goc
+  [2] from mx.victim.com (mx.victim.com [198.51.100.10]) by mbox.victim.com (Postfix) with ESMTP id 1AbC2 for <user@victim.com>; Mon, 06 Jan 2026 02:10:04 +0000 (UTC)
+
+  -> IP gui goc: 192.30.252.192
+
+==== 3. Authentication-Results (SPF / DKIM / DMARC) ====
+  spf=pass (sender IP is 192.30.252.192) smtp.mailfrom=github.com
+  dkim=pass header.d=github.com
+  dmarc=pass (p=none) header.from=github.com
+
+==== 4. Soi diem venh giua cac truong dia chi ====
+  From domain        : github.com
+  Return-Path domain : github.com   
+  Reply-To domain    : github.com   
+  Message-ID domain  : mail.github.com   
+
+==== 5. Link trong body (KHONG bam, chi trich de doi chieu) ====
+  (khong co link href)
+
+==== KET LUAN ====
+  Email NHIEU KHA NANG THAT: From=github.com, SPF/DKIM/DMARC pass,
+  Return-Path/Reply-To cung domain, Message-ID tu ha tang hop le.
+
+----------------------------------------------------------------------

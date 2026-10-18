@@ -1,0 +1,39 @@
+============================================================
+[1] ACQUISITION: dd tu thiet bi nguon ra image
+============================================================
+dd xong: device.img -> evidence.img
+
+============================================================
+[2] VERIFY: hash nguon phai KHOP hash image
+============================================================
+source md5    : 49a10324717d6292377fe2319bdaa758
+image  md5    : 49a10324717d6292377fe2319bdaa758
+source sha256 : c63fe95d35a012d2bcec7cbbe633a3aeb8a58cf6b5d333b66b5b0556c8a7cb58
+image  sha256 : c63fe95d35a012d2bcec7cbbe633a3aeb8a58cf6b5d333b66b5b0556c8a7cb58
+=> MATCH: image la ban sao bit-by-bit chinh xac cua nguon.
+
+============================================================
+[3] NOI DUNG: liet ke file (gom file an va file DA XOA)
+============================================================
+--- fls -r (dau * = file da xoa) ---
+d/d 11:	lost+found
+r/r 12:	secret.txt
+r/r 13:	.notes.hidden
+r/r * 14:	deleted_invoice.txt
+V/V 129:	$OrphanFiles
+
+--- khoi phuc file da xoa deleted_invoice.txt bang icat ---
+inode cua file da xoa: 14
+noi dung khoi phuc:
+hoa don bi nghi pham xoa de phi tang
+so tien: 5000 USD
+
+============================================================
+[4] TAMPER TEST: sua 1 byte -> hash doi hoan toan
+============================================================
+image goc   sha256 : c63fe95d35a012d2bcec7cbbe633a3aeb8a58cf6b5d333b66b5b0556c8a7cb58
+sau sua 1B  sha256 : e4330034858dfc8b0d94913ec92e9883ea8ad9f26bd7a0ec02637ef4596018d5
+image goc   md5    : 49a10324717d6292377fe2319bdaa758
+sau sua 1B  md5    : c18f6fc217cd448f00e06f4e24680b1d
+=> Doi 1 byte lam ca MD5 lan SHA-256 doi hoan toan (avalanche effect).
+   Day la vi sao verify hash phat hien moi thay doi, du nho nhat.

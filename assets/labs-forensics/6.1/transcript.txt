@@ -1,0 +1,28 @@
+# Transcript lab 6.1 - process memory forensics co ban (dump + strings/grep tim secret)
+# Moi truong: WSL2 Ubuntu, Python 3.11.9, kernel.yama.ptrace_scope=1, chay khong can root
+# Chay: 2026-10-18T10:25:46Z UTC
+# Luu y: dump nam trong thu muc tam (DUMPDIR=_dump), KHONG commit vao labs/.
+#        sha256 dump doi theo moi lan chay (bo cuc bo nho khac nhau), day la binh thuong.
+
+$ DUMPDIR=_dump python3 -I capture.py
+[*] holder PID = 37759 (READY)
+[*] da chup 14 vung, 4866048 byte (~4.6 MB)
+[*] dump: _dump/holder.dump
+
+$ DUMPDIR=_dump bash solve.sh
+== kich thuoc dump ==
+-rw-r--r-- 1 haipanda Administrator 4866048 Oct 18 17:25 _dump/holder.dump
+
+== sha256 dump (ghi lai de dam bao toan ven) ==
+c9436803096cd7cd6b04b492dd61f0ac9a12be8248a9586e803dd139a7f8f699  _dump/holder.dump
+
+== grep secret truc tiep trong dump ==
+FORENSICS_MARKER_SECRET{proc_memory_forensics_lab_6_1}_ENDMARKER
+FORENSICS_MARKER_SECRET{proc_memory_forensics_lab_6_1}_ENDMARKER
+FORENSICS_MARKER_SECRET{proc_memory_forensics_lab_6_1}_ENDMARKER
+
+== trich rieng chuoi secret ==
+SECRET{proc_memory_forensics_lab_6_1}
+
+== dem so lan marker xuat hien (holder giu 64 ban) ==
+68

@@ -1,0 +1,50 @@
+### LAB 8.3 - Mobile forensics: Android SMS/WhatsApp + iOS backup
+### Transcript that: python3 -I make_artifacts.py backup && python3 -I solve.py backup
+
+$ python3 -I make_artifacts.py backup
+[+] Android SMS : /tmp/claude-1000/-mnt-d-REVERSE-IDA-DNSPY-JADX-PYCDC/fc419170-3bc5-46ea-9f29-940ccd065882/scratchpad/run83/backup/android/mmssms.db (kem -wal co tin moi nhat)
+[+] WhatsApp    : /tmp/claude-1000/-mnt-d-REVERSE-IDA-DNSPY-JADX-PYCDC/fc419170-3bc5-46ea-9f29-940ccd065882/scratchpad/run83/backup/android/msgstore.db
+[+] iOS backup  : ios/00008030-000A1B2C3D4E5F6G/Manifest.db + ios/00008030-000A1B2C3D4E5F6G/3d/3d0d7e5fb2ce288813306e4d4636395e047a3d28
+[+] Chay tiep:  python3 -I solve.py backup
+
+$ ls -la backup/android
+total 64
+drwxr-xr-x 2 haipanda Administrator  4096 Oct 18 17:35 .
+drwxr-xr-x 4 haipanda Administrator  4096 Oct 18 17:35 ..
+-rw-r--r-- 1 haipanda Administrator  8192 Oct 18 17:35 mmssms.db
+-rw-r--r-- 1 haipanda Administrator 32768 Oct 18 17:35 mmssms.db-shm
+-rw-r--r-- 1 haipanda Administrator  4152 Oct 18 17:35 mmssms.db-wal
+-rw-r--r-- 1 haipanda Administrator  8192 Oct 18 17:35 msgstore.db
+
+$ python3 -I solve.py backup
+
+==== 1. Android SMS (mmssms.db): date la epoch MILIgiay -> /1000 ====
+  2026-01-07 03:10:00  +84901234567   nhan Alo, chieu nay hop luc may gio?
+  2026-01-07 03:11:00  +84901234567   gui  3 gio chieu nhe
+  2026-01-07 06:45:00  +84988888888   nhan Ma OTP cua ban la 884213
+  2026-01-07 06:46:00  +84901234567   gui  Ok da nhan
+  2026-01-07 09:02:30  +84901234567   nhan Nho mang USB qua giup minh
+
+==== 2. Cai bay WAL: tin moi nhat co the chi nam trong mmssms.db-wal ====
+  Co file mmssms.db-wal: True
+  So tin khi BO -wal (chi db chinh): 4
+  So tin khi GIU -wal (db + wal)   : 5
+  => bo -wal mat 1 tin (chinh la tin moi nhat, thuong quan trong nhat)
+
+==== 3. WhatsApp (msgstore.db): timestamp epoch MILIgiay -> /1000 ====
+  2026-01-07 08:00:00  84901234567@s.whatsapp.net     nhan File da gui chua?
+  2026-01-07 08:01:00  84901234567@s.whatsapp.net     gui  Dang upload
+  2026-01-07 08:03:00  84901234567@s.whatsapp.net     gui  https://files.example/x.zip
+
+==== 4. iOS backup: tra Manifest.db -> fileID -> mo file bam (CoreData nano-giay) ====
+  Manifest.db: Library/SMS/sms.db -> fileID 3d0d7e5fb2ce288813306e4d4636395e047a3d28
+  Mo file bam: ios/.../3d/3d0d7e5fb2ce288813306e4d4636395e047a3d28
+    2026-01-07 09:30:00  iMessage: tai lieu da luu vao iCloud
+    2026-01-07 09:40:00  Da xoa lich su duyet web
+
+==== KET LUAN / luu y acquisition ====
+  Android SMS = Unix epoch MILIgiay (/1000); WhatsApp cung MILIgiay.
+  iOS message.date = CoreData nano-giay tu 2001 (/1e9 + 978307200).
+  Moi nen mot cong thuc: sai don vi la moc nhay ra tuong lai xa.
+  LUON thu ca -wal: o day bo -wal mat dung tin moi nhat.
+  Day la logical acquisition mo phong: tin da xoa / app chan backup khong nam trong pham vi.

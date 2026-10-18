@@ -1,0 +1,23 @@
+============================================================
+MAPPING artifact -> ATT&CK (tu cac lab khac)
+============================================================
+T1105       command-and-control  HTTP tai payload MZ (update.exe/payload.exe)  [lab 7.1 / 7.2]
+T1071.001   command-and-control  C2 beacon nhip deu +/- jitter toi :443  [lab 7.3]
+T1071.004   command-and-control  DNS tunnel nhan base32 tren domain cha  [lab 7.3]
+T1048.003   exfiltration         Du lieu tuon ra qua query DNS  [lab 7.3]
+T1190       initial-access       upload.php webshell tren web server  [lab 9.1]
+T1505.003   persistence          upload.php (webshell ton tai lau dai)  [lab 9.1]
+T1059.004   execution            sysupd ELF trong /tmp/.cache (chay dropper)  [lab 9.1]
+T1053.003   persistence          /etc/cron.d/apache-check  [lab 9.1]
+T1098.004   persistence          /root/.ssh/authorized_keys them key  [lab 9.1]
+T1560.001   collection           exfil.tar.gz staging truoc khi tuon  [lab 9.1]
+T1070.004   defense-evasion      exfil.tar.gz bi xoa (va file xoa o lab 2.2)  [lab 2.2 / 9.1]
+
+technique duy nhat : 11
+tactic co mat (7): collection, command-and-control, defense-evasion, execution, exfiltration, initial-access, persistence
+tactic CON TRONG (7): reconnaissance, resource-development, privilege-escalation, credential-access, discovery, lateral-movement, impact
+
+Da ghi Navigator layer: navigator_layer.json (11 technique)
+Import file nay vao https://mitre-attack.github.io/attack-navigator/ (Open Existing Layer).
+
+>> EXERCISE: voi moi tactic CON TRONG o tren, viet mot gia thuyet + noi se kiem chung.

@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 344" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="344" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Five steps, with documentation through all of them</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">order matters: preserve before collect, collect before analyze</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+    <marker id="u" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#5fe3b0"/>
+    </marker>
+  </defs>
+
+  <!-- five step boxes -->
+  <g text-anchor="middle">
+    <rect x="24"  y="84" width="132" height="86" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="90"  y="110" font-size="13" font-weight="700" fill="#00f0ff">Identify</text>
+    <text x="90"  y="130" font-size="10" fill="#9fb0c8">question, scope,</text>
+    <text x="90"  y="145" font-size="10" fill="#9fb0c8">authorization</text>
+
+    <rect x="179" y="84" width="132" height="86" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="245" y="110" font-size="13" font-weight="700" fill="#fcee0a">Preserve</text>
+    <text x="245" y="130" font-size="10" fill="#9fb0c8">keep unchanged,</text>
+    <text x="245" y="145" font-size="10" fill="#9fb0c8">hash, custody</text>
+
+    <rect x="334" y="84" width="132" height="86" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="400" y="110" font-size="13" font-weight="700" fill="#00f0ff">Collect</text>
+    <text x="400" y="130" font-size="10" fill="#9fb0c8">bit-for-bit image,</text>
+    <text x="400" y="145" font-size="10" fill="#9fb0c8">verify hash</text>
+
+    <rect x="489" y="84" width="132" height="86" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="555" y="110" font-size="13" font-weight="700" fill="#00f0ff">Analyze</text>
+    <text x="555" y="130" font-size="10" fill="#9fb0c8">artifacts, timeline,</text>
+    <text x="555" y="145" font-size="10" fill="#9fb0c8">correlate sources</text>
+
+    <rect x="644" y="84" width="132" height="86" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="710" y="110" font-size="13" font-weight="700" fill="#5fe3b0">Report</text>
+    <text x="710" y="130" font-size="10" fill="#9fb0c8">answer the question,</text>
+    <text x="710" y="145" font-size="10" fill="#9fb0c8">facts vs inference</text>
+  </g>
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="156" y1="127" x2="177" y2="127"/>
+    <line x1="311" y1="127" x2="332" y2="127"/>
+    <line x1="466" y1="127" x2="487" y2="127"/>
+    <line x1="621" y1="127" x2="642" y2="127"/>
+  </g>
+
+  <!-- documentation band -->
+  <rect x="24" y="238" width="752" height="66" rx="7" fill="#0b1518" stroke="#5fe3b0" stroke-dasharray="6 4"/>
+  <text x="400" y="266" text-anchor="middle" font-size="12.5" font-weight="700" fill="#5fe3b0">Documentation and chain of custody run through every step</text>
+  <text x="400" y="288" text-anchor="middle" font-size="11" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">what is not written down did not happen</text>
+
+  <!-- connectors from each step down to the band -->
+  <g stroke="#5fe3b0" stroke-width="1.5" marker-end="url(#u)" fill="none" opacity="0.7">
+    <line x1="90"  y1="170" x2="90"  y2="236"/>
+    <line x1="245" y1="170" x2="245" y2="236"/>
+    <line x1="400" y1="170" x2="400" y2="236"/>
+    <line x1="555" y1="170" x2="555" y2="236"/>
+    <line x1="710" y1="170" x2="710" y2="236"/>
+  </g>
+</svg>

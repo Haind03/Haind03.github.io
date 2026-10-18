@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 372" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="372" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Four branches, four views of one incident</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">digital forensics is split by where the data lives</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- four branch boxes -->
+  <g text-anchor="middle">
+    <rect x="28"  y="82" width="168" height="94" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="112" y="104" font-size="13" font-weight="700" fill="#00f0ff">Disk</text>
+    <text x="112" y="124" font-size="11" fill="#e3fffa">images, file system,</text>
+    <text x="112" y="140" font-size="11" fill="#e3fffa">deleted files, OS artifacts</text>
+    <text x="112" y="162" font-size="10" fill="#6c7b93" font-family="'JetBrains Mono',monospace">persistent, foundational</text>
+
+    <rect x="220" y="82" width="168" height="94" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="304" y="104" font-size="13" font-weight="700" fill="#ff2a6d">Memory (RAM)</text>
+    <text x="304" y="124" font-size="11" fill="#e3fffa">processes, connections,</text>
+    <text x="304" y="140" font-size="11" fill="#e3fffa">keys, fileless malware</text>
+    <text x="304" y="162" font-size="10" fill="#6c7b93" font-family="'JetBrains Mono',monospace">volatile, lost on power off</text>
+
+    <rect x="412" y="82" width="168" height="94" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="496" y="104" font-size="13" font-weight="700" fill="#fcee0a">Network</text>
+    <text x="496" y="124" font-size="11" fill="#e3fffa">pcap, firewall and</text>
+    <text x="496" y="140" font-size="11" fill="#e3fffa">DNS logs, who it talked to</text>
+    <text x="496" y="162" font-size="10" fill="#6c7b93" font-family="'JetBrains Mono',monospace">only if captured in advance</text>
+
+    <rect x="604" y="82" width="168" height="94" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="688" y="104" font-size="13" font-weight="700" fill="#5fe3b0">Mobile</text>
+    <text x="688" y="124" font-size="11" fill="#e3fffa">Android and iOS,</text>
+    <text x="688" y="140" font-size="11" fill="#e3fffa">app SQLite, backups</text>
+    <text x="688" y="162" font-size="10" fill="#6c7b93" font-family="'JetBrains Mono',monospace">locked and encrypted</text>
+  </g>
+
+  <!-- incident node -->
+  <rect x="276" y="252" width="248" height="78" rx="7" fill="#111827" stroke="#263451"/>
+  <text x="400" y="278" text-anchor="middle" font-size="13" font-weight="700" fill="#e3fffa">One incident</text>
+  <text x="400" y="298" text-anchor="middle" font-size="11" fill="#9fb0c8">reconstruct who, what, when,</text>
+  <text x="400" y="314" text-anchor="middle" font-size="11" fill="#9fb0c8">where, how (not why)</text>
+
+  <!-- fan-out arrows incident -> branches -->
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="360" y1="252" x2="130"  y2="180"/>
+    <line x1="382" y1="252" x2="300"  y2="180"/>
+    <line x1="418" y1="252" x2="500"  y2="180"/>
+    <line x1="440" y1="252" x2="670"  y2="180"/>
+  </g>
+
+  <text x="400" y="352" text-anchor="middle" font-size="11" fill="#6c7b93">Every action leaves an artifact. Each branch reads the artifacts in its own layer.</text>
+</svg>

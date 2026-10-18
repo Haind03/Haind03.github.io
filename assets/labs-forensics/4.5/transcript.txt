@@ -1,0 +1,19 @@
+=== Lab 4.5: Persistence hunting (Run keys / IFEO / services) ===
+
+--- [1] Autostart Run keys ---
+   [SOFTWARE\Microsoft\Windows\CurrentVersion\Run] VMware Tools = "C:\Program Files\VMware\VMware Tools\VMwareTray.exe"
+   [SOFTWARE\Microsoft\Windows\CurrentVersion\Run] VMware User Process = "C:\Program Files\VMware\VMware Tools\VMwareUser.exe"
+   [SOFTWARE\Microsoft\Windows\CurrentVersion\Run] Adobe ARM = "C:\Program Files\Common Files\Adobe\ARM\1.0\AdobeARM.exe"
+   [SOFTWARE\Microsoft\Windows\CurrentVersion\Run] McAfeeUpdaterUI = "C:\Program Files\McAfee\Common Framework\udaterui.exe" /StartedFromRunKey
+   [SOFTWARE\Microsoft\Windows\CurrentVersion\Run] ShStatEXE = "C:\Program Files\McAfee\VirusScan Enterprise\SHSTAT.EXE" /STANDALONE
+   [SOFTWARE\Microsoft\Windows\CurrentVersion\Run] McAfee Host Intrusion Prevention Tray = "C:\Program Files\McAfee\Host Intrusion Prevention\FireTray.exe"
+   [SOFTWARE\Microsoft\Windows\CurrentVersion\Run] svchost = c:\windows\system32\dllhost\svchost.exe   <== DANG NGO
+   [NTUSER\Software\Microsoft\Windows\CurrentVersion\Run] Sidebar = %ProgramFiles%\Windows Sidebar\Sidebar.exe /autoRun
+
+--- [2] Image File Execution Options (Debugger hijack) ---
+   tong entry IFEO: 32 | co Debugger: 0
+
+--- [3] Services: quet ImagePath tro cho la ---
+   tong service: 467 | co ImagePath: 401 | dang ngo: 0
+   (hive nay la baseline sach: khong co service ImagePath tro Temp/Public/PowerShell.
+    COMSysApp dung dllhost.exe la HOP LE (COM+), minh hoa false positive can doi chieu.)

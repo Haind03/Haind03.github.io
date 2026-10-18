@@ -1,0 +1,22 @@
+=== B1: hash goc da luu ===
+96d92acbaa9bb70095b27e669c8e317d8b5d20e0606543776dfb41254cfd52de  disk.img
+
+=== B2: tao ban lam viec, verify OK, roi sua 1 byte va verify lai ===
+-- verify truoc khi sua --
+work.img: OK
+-- verify sau khi sua 1 byte tai offset 100 --
+work.img: FAILED
+sha256sum: WARNING: 1 computed checksum did NOT match
+
+=== B3: hai bien the van ban, hash mat ma khac hoan toan ===
+ae334ce0d122ade46ab10af0b7f4e310  v1.txt
+70231d098eb432257c54d97ccba5450d  v2.txt
+555c720dcd6563dedbab475821caf64fe7bdfddf5c466b7395ca2c14616a43d8  v1.txt
+e0349aa65edb4f8be2b9f43f7e7536a5072d2ec47ea8db9dbbf354d717a47a0d  v2.txt
+
+=== B4: fuzzy hash minh hoa (ssdeep khong co) ===
+Do tuong dong (Jaccard tren shingle 8-byte), 0..100:
+  v1.txt     vs v2.txt     :  66
+  v1.txt     vs disk.img   :   0
+  v2.txt     vs disk.img   :   0
+(v1 vs v2 cao vi gan giong; v1/v2 vs disk.img ~0 vi khong lien quan)

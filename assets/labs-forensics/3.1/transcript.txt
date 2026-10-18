@@ -1,0 +1,23 @@
+=== B1: mmls (image la mot phan vung don -> khong co bang phan vung) ===
+mmls: khong tim thay partition table (exit 1) -> image la FS don, dung offset 0, bo -o.
+
+=== B2: fsstat - loai FS va offset (dung offset 0) ===
+FILE SYSTEM INFORMATION
+--------------------------------------------
+File System Type: Ext4
+Volume Name: CASE01
+Volume ID: 45391dbfae27268e964f325616bbf4fa
+
+
+=== B3: fls -rd - liet ke file da xoa ===
+r/r * 13:	tobedeleted.txt
+inode file da xoa = 13
+
+=== B4: icat khoi phuc noi dung file da xoa ===
+ke hoach ro ri du lieu qua email - xoa gap
+
+=== B5: bodyfile + mactime timeline (hien thi UTC cho khop gio da gan) ===
+Tue Sep 10 2024 08:00:00       27 macb r/rrwxrwxrwx 0        0        12       /keep.txt
+Sat Sep 14 2024 02:30:00       43 ...b r/rrwxrwxrwx 0        0        13       /tobedeleted.txt (deleted)
+Sun Sep 15 2024 07:30:00       43 mac. r/rrwxrwxrwx 0        0        13       /tobedeleted.txt (deleted)
+Sun Oct 18 2026 10:39:49    12288 macb d/drwx------ 0        0        11       /lost+found

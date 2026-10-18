@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="360" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="28" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Volume Shadow Copy: slices of time</text>
+  <text x="400" y="48" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">copy-on-write keeps old blocks; compare one artifact across shadows</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- copy-on-write row -->
+  <g font-size="12.5">
+    <rect x="40" y="70" width="190" height="50" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="52" y="91" fill="#e3fffa">Block overwritten</text>
+    <text x="52" y="108" fill="#6c7b93" font-size="9.5" font-family="'JetBrains Mono',monospace">new data incoming</text>
+
+    <rect x="305" y="70" width="190" height="50" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="317" y="91" fill="#e3fffa">Old block saved first</text>
+    <text x="317" y="108" fill="#6c7b93" font-size="9.5" font-family="'JetBrains Mono',monospace">before the write lands</text>
+
+    <rect x="570" y="70" width="190" height="50" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="582" y="91" fill="#e3fffa">System Volume Info</text>
+    <text x="582" y="108" fill="#6c7b93" font-size="9.5" font-family="'JetBrains Mono',monospace">shadow storage</text>
+  </g>
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="232" y1="95" x2="301" y2="95"/>
+    <line x1="497" y1="95" x2="566" y2="95"/>
+  </g>
+
+  <!-- time axis -->
+  <line x1="70" y1="162" x2="730" y2="162" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <text x="742" y="158" font-size="10" fill="#6c7b93" font-family="'JetBrains Mono',monospace">time</text>
+  <g font-size="11" fill="#9fb0c8" text-anchor="middle" font-family="'JetBrains Mono',monospace">
+    <text x="160" y="152">20/09</text>
+    <text x="400" y="152">28/09</text>
+    <text x="640" y="152">now</text>
+  </g>
+
+  <!-- snapshot boxes -->
+  <g font-size="12">
+    <rect x="70" y="178" width="180" height="100" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="82" y="200" fill="#e3fffa">VSS 20/09</text>
+    <text x="82" y="224" fill="#9fb0c8" font-size="10">Run key svc: absent</text>
+    <text x="82" y="246" fill="#9fb0c8" font-size="10">doc v1: present</text>
+
+    <rect x="310" y="178" width="180" height="100" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="322" y="200" fill="#e3fffa">VSS 28/09</text>
+    <text x="322" y="224" fill="#ff2a6d" font-size="10">Run key svc: PRESENT</text>
+    <text x="322" y="240" fill="#6c7b93" font-size="9.5">installed in this window</text>
+    <text x="322" y="258" fill="#9fb0c8" font-size="10">doc v1: present</text>
+
+    <rect x="550" y="178" width="180" height="100" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="562" y="200" fill="#e3fffa">Current</text>
+    <text x="562" y="224" fill="#9fb0c8" font-size="10">Run key svc: present</text>
+    <text x="562" y="246" fill="#9fb0c8" font-size="10">doc v1: DELETED</text>
+    <text x="562" y="262" fill="#6c7b93" font-size="9.5">recover it from VSS</text>
+  </g>
+
+  <line x1="70" y1="294" x2="730" y2="294" stroke="#263451" stroke-width="1"/>
+  <text x="70" y="318" font-size="11" fill="#9fb0c8">Persistence was installed between 20/09 and 28/09, and the deleted v1 is recovered from the shadow.</text>
+  <text x="70" y="338" font-size="11" fill="#6c7b93">vssadmin delete shadows /all in the log is a ransomware IOC. Always mount read-only on a copy.</text>
+</svg>

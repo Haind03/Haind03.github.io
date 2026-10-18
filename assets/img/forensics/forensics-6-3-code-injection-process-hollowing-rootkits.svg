@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="400" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Spotting injected code in a process</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">healthy regions are RX code or RW data (W^X); one region breaks the rule</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <text x="24" y="84" font-size="11" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">explorer.exe address space (VAD regions)</text>
+
+  <!-- VAD region boxes -->
+  <g font-size="12" text-anchor="middle">
+    <rect x="24"  y="94" width="175" height="72" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="111" y="118" fill="#e3fffa">.text (image)</text>
+    <text x="111" y="137" fill="#9fb0c8" font-size="10.5">RX, mapped</text>
+    <text x="111" y="153" fill="#6c7b93" font-size="10" font-family="'JetBrains Mono',monospace">backed: explorer.exe</text>
+
+    <rect x="215" y="94" width="175" height="72" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="302" y="118" fill="#e3fffa">heap / stack</text>
+    <text x="302" y="137" fill="#9fb0c8" font-size="10.5">RW, private</text>
+    <text x="302" y="153" fill="#6c7b93" font-size="10">data only, no exec</text>
+
+    <rect x="406" y="94" width="175" height="72" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="493" y="118" fill="#e3fffa">shell32.dll</text>
+    <text x="493" y="137" fill="#9fb0c8" font-size="10.5">RX, mapped</text>
+    <text x="493" y="153" fill="#6c7b93" font-size="10" font-family="'JetBrains Mono',monospace">backed: System32</text>
+
+    <rect x="597" y="94" width="179" height="72" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="686" y="118" fill="#ff2a6d" font-weight="700">region 0x2a0000</text>
+    <text x="686" y="137" fill="#9fb0c8" font-size="10.5">RWX, private</text>
+    <text x="686" y="153" fill="#9fb0c8" font-size="10.5">no backing file</text>
+  </g>
+
+  <!-- arrow to verdict panel -->
+  <line x1="686" y1="166" x2="686" y2="212" stroke="#ff2a6d" stroke-width="2" marker-end="url(#a)" fill="none"/>
+
+  <!-- malfind verdict panel -->
+  <rect x="24" y="214" width="752" height="150" rx="7" fill="#0b1518" stroke="#263451"/>
+  <text x="40" y="238" font-size="12.5" fill="#e3fffa" font-weight="700">windows.malfind: suspect region in explorer.exe</text>
+  <text x="40" y="266" font-size="11.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">0x2a0000  4d 5a 90 00 03 00 00 00   MZ......</text>
+  <text x="40" y="286" font-size="11" fill="#fcee0a">4D 5A = "MZ", a PE header hand-mapped into memory</text>
+  <text x="40" y="308" font-size="11" fill="#9fb0c8">RWX (PAGE_EXECUTE_READWRITE) + private + no FileObject</text>
+  <text x="40" y="330" font-size="11" fill="#9fb0c8">ldrmodules: missing from all three PEB module lists</text>
+  <text x="40" y="352" font-size="11.5" fill="#ff2a6d" font-weight="700">=&gt; injected code: dump the region, then reverse or scan with YARA</text>
+
+  <text x="400" y="388" text-anchor="middle" font-size="11" fill="#6c7b93">JIT (browsers, .NET) also makes RWX, so always check the content before accusing.</text>
+</svg>

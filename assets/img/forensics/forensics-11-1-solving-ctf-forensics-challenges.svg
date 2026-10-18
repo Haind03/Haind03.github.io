@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 394" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="394" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">A pcap challenge, from capture to flag</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">HTTP gives a locked zip; the DNS TXT record hides the base64 password</text>
+
+  <defs>
+    <marker id="af1" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- entry -->
+  <g font-size="12" text-anchor="middle">
+    <rect x="24" y="140" width="120" height="50" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="84" y="162" fill="#e3fffa">capture.pcap</text>
+    <text x="84" y="179" fill="#6c7b93" font-size="10">input file</text>
+
+    <rect x="168" y="140" width="132" height="50" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="234" y="162" fill="#e3fffa">tshark io,phs</text>
+    <text x="234" y="179" fill="#9fb0c8" font-size="10">HTTP + DNS</text>
+  </g>
+
+  <!-- top chain: HTTP -->
+  <g font-size="12" text-anchor="middle">
+    <rect x="320" y="96" width="140" height="50" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="390" y="118" fill="#e3fffa">export HTTP</text>
+    <text x="390" y="135" fill="#9fb0c8" font-size="10">--export-objects</text>
+
+    <rect x="482" y="96" width="150" height="50" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="557" y="118" fill="#e3fffa">secret.zip</text>
+    <text x="557" y="135" fill="#fcee0a" font-size="10">password protected</text>
+  </g>
+
+  <!-- bottom chain: DNS side channel -->
+  <g font-size="12" text-anchor="middle">
+    <rect x="320" y="214" width="140" height="50" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="390" y="236" fill="#e3fffa">DNS TXT query</text>
+    <text x="390" y="253" fill="#9fb0c8" font-size="9.5">cGFzcz... (base64)</text>
+
+    <rect x="482" y="214" width="150" height="50" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="557" y="236" fill="#e3fffa">base64 -d</text>
+    <text x="557" y="253" fill="#9fb0c8" font-size="10">pass:S3cr3tP455</text>
+  </g>
+
+  <!-- converge -->
+  <g font-size="12" text-anchor="middle">
+    <rect x="652" y="140" width="124" height="50" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="714" y="162" fill="#e3fffa">unzip -P</text>
+    <text x="714" y="179" fill="#9fb0c8" font-size="10">zip + password</text>
+  </g>
+
+  <!-- arrows -->
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#af1)" fill="none">
+    <line x1="144" y1="165" x2="166" y2="165"/>
+    <line x1="300" y1="160" x2="320" y2="125"/>
+    <line x1="460" y1="121" x2="480" y2="121"/>
+    <line x1="632" y1="121" x2="672" y2="152"/>
+    <line x1="460" y1="239" x2="480" y2="239"/>
+    <line x1="632" y1="239" x2="672" y2="178"/>
+    <line x1="714" y1="190" x2="714" y2="306"/>
+  </g>
+  <!-- DNS branch arrow (hidden channel) -->
+  <line x1="300" y1="170" x2="320" y2="234" stroke="#ff2a6d" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#af1)" fill="none"/>
+
+  <!-- flag banner -->
+  <rect x="24" y="306" width="752" height="48" rx="7" fill="#0b1f18" stroke="#5fe3b0"/>
+  <text x="40" y="328" font-size="12" fill="#5fe3b0" font-weight="700">flag</text>
+  <text x="40" y="344" font-size="12" fill="#e3fffa" font-family="'JetBrains Mono',monospace">flag{pcap_http_object_plus_dns_exfil}</text>
+
+  <text x="400" y="378" text-anchor="middle" font-size="11" fill="#6c7b93">Protocol statistics point the way, and DNS is a classic hidden channel.</text>
+</svg>

@@ -1,0 +1,56 @@
+### LAB 11.1 - CTF forensics: mini challenge pcap (HTTP object + DNS exfil)
+### Transcript that: python3 -I make_artifacts.py chal && bash solve.sh chal
+
+$ python3 -I make_artifacts.py chal
+[+] secret.zip (228 bytes) nhung trong HTTP response
+[+] DNS TXT mang mat khau da base64 (label: cGFzczpaMXBLM3lfRE5TXzIwMjY)
+[+] Da tao challenge: /tmp/claude-1000/-mnt-d-REVERSE-IDA-DNSPY-JADX-PYCDC/fc419170-3bc5-46ea-9f29-940ccd065882/scratchpad/run111/chal/capture.pcap
+[+] De bai: 'Nhan vien tai nham mot file. Lay lai noi dung bi mat.' Flag dang flag{...}
+[+] Chay tiep:  bash solve.sh chal
+
+$ bash solve.sh chal
+
+==== 1. Quan sat tong the: loai file va thong ke giao thuc ====
+chal/capture.pcap: pcap capture file, microsecond ts (little-endian) - version 2.4 (Ethernet, capture length 65535)
+Protocol Hierarchy Statistics
+Filter: 
+
+eth                                      frames:11 bytes:1261
+  ip                                     frames:11 bytes:1261
+    tcp                                  frames:9 bytes:972
+      http                               frames:2 bytes:594
+        media                            frames:1 bytes:443
+    udp                                  frames:2 bytes:289
+      dns                                frames:2 bytes:289
+===================================================================
+
+==== 2. Cac HTTP request (theo goi y 'tai file') ====
+files.example.ctf	/download/secret.zip
+
+==== 3. Export moi HTTP object ====
+total 12
+drwxr-xr-x 2 haipanda Administrator 4096 Oct 18 17:36 .
+drwxr-xr-x 3 haipanda Administrator 4096 Oct 18 17:36 ..
+-rw-r--r-- 1 haipanda Administrator  228 Oct 18 17:36 secret.zip
+chal/objs/secret.zip: Zip archive data, at least v1.0 to extract, compression method=store
+
+==== 4. Thu giai nen: zip co mat khau ====
+  -> secret.zip YEU CAU mat khau (unzip bao 'password required')
+
+==== 5. Tim mat khau trong kenh khac: DNS ====
+cGFzczpaMXBLM3lfRE5TXzIwMjY.files.example.ctf	
+cGFzczpaMXBLM3lfRE5TXzIwMjY.files.example.ctf	zippw=Z1pK3y_DNS_2026
+  Nhan subdomain base64: cGFzczpaMXBLM3lfRE5TXzIwMjY
+
+==== 6. Giai base64 nhan DNS -> mat khau ====
+  base64 -d: pass:Z1pK3y_DNS_2026
+  TXT record cho:  zippw=Z1pK3y_DNS_2026
+
+==== 7. Giai nen lay flag ====
+  Noi dung flag.txt:
+flag{dns_txt_carried_the_zip_key}
+
+==== KET LUAN ====
+  Chuoi ky nang: thong ke giao thuc -> export HTTP object -> zip co mat khau
+  -> mat khau giau trong DNS (base64 + ban ghi TXT) -> giai nen ra flag.
+  FLAG: flag{dns_txt_carried_the_zip_key}

@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="420" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Three places data hides that Explorer never shows</text>
+  <text x="400" y="55" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">slack space, Alternate Data Streams, steganography</text>
+
+  <!-- Panel 1: slack space -->
+  <rect x="28" y="88" width="236" height="262" rx="9" fill="#0b1518" stroke="#263451"/>
+  <text x="146" y="114" text-anchor="middle" font-size="13" font-weight="700" fill="#00f0ff">1. Slack space</text>
+  <g text-anchor="middle">
+    <rect x="42" y="128" width="208" height="66" rx="6" fill="#111827" stroke="#00f0ff"/>
+    <text x="146" y="148" font-size="11" fill="#e3fffa">4 KB cluster</text>
+    <text x="146" y="166" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">[ file 10 B | slack ]</text>
+    <text x="146" y="184" font-size="10.5" fill="#9fb0c8">slack keeps old file bytes</text>
+  </g>
+  <text x="146" y="214" text-anchor="middle" font-size="10.5" fill="#9fb0c8">the FS gives whole clusters;</text>
+  <text x="146" y="229" text-anchor="middle" font-size="10.5" fill="#9fb0c8">the unused tail is never shown</text>
+  <text x="42" y="258" font-size="10" fill="#6c7b93">detect:</text>
+  <rect x="42" y="266" width="208" height="64" rx="6" fill="#111827" stroke="#5fe3b0"/>
+  <text x="146" y="288" text-anchor="middle" font-size="10.5" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">blkls -s image.dd</text>
+  <text x="146" y="308" text-anchor="middle" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">strings / bulk_extractor</text>
+
+  <!-- Panel 2: ADS -->
+  <rect x="282" y="88" width="236" height="262" rx="9" fill="#0b1518" stroke="#263451"/>
+  <text x="400" y="114" text-anchor="middle" font-size="13" font-weight="700" fill="#fcee0a">2. Alternate Data Stream</text>
+  <g text-anchor="middle">
+    <rect x="296" y="128" width="208" height="66" rx="6" fill="#111827" stroke="#fcee0a"/>
+    <text x="400" y="148" font-size="10.5" fill="#e3fffa" font-family="'JetBrains Mono',monospace">report.txt</text>
+    <text x="400" y="166" font-size="10.5" fill="#ff2a6d" font-family="'JetBrains Mono',monospace">report.txt:hidden:$DATA</text>
+    <text x="400" y="184" font-size="10.5" fill="#9fb0c8">Explorer shows the main stream only</text>
+  </g>
+  <text x="400" y="214" text-anchor="middle" font-size="10.5" fill="#9fb0c8">NTFS only; lost on copy to FAT</text>
+  <text x="400" y="229" text-anchor="middle" font-size="10.5" fill="#9fb0c8">Zone.Identifier = download source</text>
+  <text x="296" y="258" font-size="10" fill="#6c7b93">detect:</text>
+  <rect x="296" y="266" width="208" height="64" rx="6" fill="#111827" stroke="#5fe3b0"/>
+  <text x="400" y="285" text-anchor="middle" font-size="10.5" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">dir /r</text>
+  <text x="400" y="302" text-anchor="middle" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">Get-Item -Stream *</text>
+  <text x="400" y="319" text-anchor="middle" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">streams.exe</text>
+
+  <!-- Panel 3: steganography -->
+  <rect x="536" y="88" width="236" height="262" rx="9" fill="#0b1518" stroke="#263451"/>
+  <text x="654" y="114" text-anchor="middle" font-size="13" font-weight="700" fill="#ff2a6d">3. Steganography</text>
+  <g text-anchor="middle">
+    <rect x="550" y="128" width="208" height="66" rx="6" fill="#111827" stroke="#ff2a6d"/>
+    <text x="654" y="148" font-size="11" fill="#e3fffa">carrier image</text>
+    <text x="654" y="166" font-size="10.5" fill="#9fb0c8">payload in LSB or after footer</text>
+    <text x="654" y="184" font-size="10.5" fill="#9fb0c8">or in an EXIF comment</text>
+  </g>
+  <text x="654" y="214" text-anchor="middle" font-size="10.5" fill="#9fb0c8">odd size or high entropy</text>
+  <text x="654" y="229" text-anchor="middle" font-size="10.5" fill="#9fb0c8">is the tell</text>
+  <text x="550" y="258" font-size="10" fill="#6c7b93">detect:</text>
+  <rect x="550" y="266" width="208" height="64" rx="6" fill="#111827" stroke="#5fe3b0"/>
+  <text x="654" y="288" text-anchor="middle" font-size="10.5" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">file, exiftool, strings</text>
+  <text x="654" y="308" text-anchor="middle" font-size="10.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">binwalk, unzip, zsteg</text>
+
+  <text x="400" y="392" text-anchor="middle" font-size="11" fill="#6c7b93">Check the simple things first: file, exiftool, strings, binwalk, unzip, then reach for LSB tools.</text>
+</svg>

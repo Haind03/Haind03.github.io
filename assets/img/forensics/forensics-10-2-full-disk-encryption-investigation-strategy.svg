@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 372" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="372" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">BitLocker key chain and where the key comes from</text>
+  <text x="400" y="54" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">enter at any link; the live key sits only in RAM</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- key sources on top -->
+  <g font-size="11" text-anchor="middle">
+    <rect x="30"  y="86" width="250" height="46" rx="7" fill="#0b1518" stroke="#00f0ff" stroke-dasharray="5 4"/>
+    <text x="155" y="105" fill="#9fb0c8">Recovery key (AD / MS acct)</text>
+    <text x="155" y="121" fill="#9fb0c8">or user password</text>
+
+    <rect x="320" y="86" width="210" height="46" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="425" y="105" fill="#ff2a6d" font-weight="700">RAM dump (live)</text>
+    <text x="425" y="121" fill="#9fb0c8">VMK/FVEK, skips the password</text>
+
+    <rect x="560" y="86" width="210" height="46" rx="7" fill="#0b1518" stroke="#00f0ff" stroke-dasharray="5 4"/>
+    <text x="665" y="105" fill="#9fb0c8">hiberfil.sys / clear key</text>
+    <text x="665" y="121" fill="#9fb0c8">RAM image, bare VMK</text>
+  </g>
+
+  <!-- the key chain -->
+  <g text-anchor="middle">
+    <rect x="30"  y="208" width="150" height="64" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="105" y="234" font-size="12.5" font-weight="700" fill="#00f0ff">Protector</text>
+    <text x="105" y="252" font-size="10" fill="#9fb0c8">TPM / PIN / recovery / pwd</text>
+
+    <rect x="220" y="208" width="120" height="64" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="280" y="234" font-size="12.5" font-weight="700" fill="#fcee0a">VMK</text>
+    <text x="280" y="252" font-size="10" fill="#9fb0c8">Volume Master Key</text>
+
+    <rect x="390" y="208" width="120" height="64" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="450" y="234" font-size="12.5" font-weight="700" fill="#fcee0a">FVEK</text>
+    <text x="450" y="252" font-size="10" fill="#9fb0c8">encrypts sectors</text>
+
+    <rect x="560" y="208" width="210" height="64" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="665" y="234" font-size="12.5" font-weight="700" fill="#5fe3b0">Decrypted volume</text>
+    <text x="665" y="252" font-size="10" fill="#9fb0c8">mount read-only, treat as NTFS</text>
+  </g>
+
+  <!-- source arrows -->
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="140" y1="132" x2="108" y2="206"/>
+    <line x1="425" y1="132" x2="450" y2="206"/>
+    <line x1="665" y1="132" x2="470" y2="206"/>
+  </g>
+  <!-- chain arrows -->
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="180" y1="240" x2="218" y2="240"/>
+    <line x1="340" y1="240" x2="388" y2="240"/>
+    <line x1="510" y1="240" x2="558" y2="240"/>
+  </g>
+  <g font-size="10" fill="#6c7b93" text-anchor="middle">
+    <text x="199" y="233">opens</text>
+    <text x="364" y="233">opens</text>
+    <text x="534" y="233">decrypts</text>
+  </g>
+
+  <!-- scene decision warning -->
+  <rect x="30" y="300" width="740" height="52" rx="7" fill="#0b1518" stroke="#ff2a6d"/>
+  <text x="48" y="322" font-size="11.5" font-weight="700" fill="#ff2a6d">Scene rule:</text>
+  <text x="120" y="322" font-size="11.5" fill="#e3fffa">pulling power on a running machine loses the key in RAM, leaving an unreadable disk.</text>
+  <text x="48" y="340" font-size="11" fill="#9fb0c8">Consider live acquisition (RAM + unlocked image) first; shut down last.</text>
+</svg>

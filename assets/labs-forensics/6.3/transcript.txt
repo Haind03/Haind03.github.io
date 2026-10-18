@@ -1,0 +1,27 @@
+# Transcript lab 6.3 - phat hien vung RWX bat thuong (malfind analog) trong RAM tien trinh
+# Moi truong: WSL2 Ubuntu, Python 3.11.9, ptrace_scope=1, chay khong can root
+# Chay: 2026-10-18T10:30:22Z UTC
+# 'Shellcode' chi la bytes gia (MZ + NOP + marker), KHONG BAO GIO duoc thuc thi. Vo hai.
+# Dia chi vung RWX doi moi lan chay (ASLR).
+
+$ DUMPDIR=_dump python3 -I capture.py
+[*] victim PID = 47074 (RWX region at 0x77fc716c5000 size 4096)
+[*] maps -> _dump/victim.maps
+[*] vung RWX: 77fc716c5000-77fc716c6000 rwxp (4096 byte) -> _dump/rwx_0x77fc716c5000.bin
+
+$ DUMPDIR=_dump bash solve.sh
+== 1. Quet maps tim vung RWX private + khong backing file (malfind analog) ==
+77fc716c5000-77fc716c6000 rwxp 00000000 00:00 0 
+
+== 2. Soi dau vung RWX da carve (header + noi dung) ==
+-- _dump/rwx_0x77fc716c5000.bin --
+   16 byte dau (xxd):
+00000000: 4d5a 9090 9090 9090 4641 4b45 5f53 4845  MZ......FAKE_SHE
+00000010: 4c4c 434f 4445 5f4e 4f54 5f45 5845 4355  LLCODE_NOT_EXECU
+   magic 2 byte dau:
+00000000: 4d5a                                     MZ
+   chuoi trong vung:
+FAKE_SHELLCODE_NOT_EXECUTED_LAB63
+
+== 3. Ket luan tu dong ==
+Vung RWX bat dau bang 4d 5a (MZ) -> giong PE map tay / injected code. CO DAU.

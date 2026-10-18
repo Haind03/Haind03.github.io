@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 410" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="410" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="28" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Event log hunting: channels to alerts</text>
+  <text x="400" y="48" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">filter millions of lines down to the Event IDs that matter</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <text x="24" y="80" font-size="12" fill="#9fb0c8">Channels (.evtx)</text>
+  <text x="296" y="80" font-size="12" fill="#9fb0c8">Signal Event IDs</text>
+  <text x="568" y="80" font-size="12" fill="#9fb0c8">Hunt and report</text>
+
+  <!-- col 1 channels -->
+  <g font-size="12">
+    <rect x="24" y="90" width="172" height="40" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="34" y="107" fill="#e3fffa">Security.evtx</text>
+    <text x="34" y="122" fill="#6c7b93" font-size="9.5" font-family="'JetBrains Mono',monospace">logons, audit, 1102</text>
+
+    <rect x="24" y="138" width="172" height="40" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="34" y="155" fill="#e3fffa">System.evtx</text>
+    <text x="34" y="170" fill="#6c7b93" font-size="9.5" font-family="'JetBrains Mono',monospace">services 7045, boot</text>
+
+    <rect x="24" y="186" width="172" height="40" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="34" y="203" fill="#e3fffa">Sysmon/Operational</text>
+    <text x="34" y="218" fill="#6c7b93" font-size="9.5" font-family="'JetBrains Mono',monospace">cmdline, net, inject</text>
+
+    <rect x="24" y="234" width="172" height="40" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="34" y="251" fill="#e3fffa">PowerShell/Oper</text>
+    <text x="34" y="266" fill="#6c7b93" font-size="9.5" font-family="'JetBrains Mono',monospace">4104 script block</text>
+  </g>
+
+  <!-- col 2 event ids -->
+  <g font-size="12.5">
+    <rect x="296" y="90" width="200" height="54" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="308" y="112" fill="#e3fffa">4624 / 4625  logon</text>
+    <text x="308" y="130" fill="#6c7b93" font-size="10" font-family="'JetBrains Mono',monospace">+ LogonType, Status code</text>
+
+    <rect x="296" y="156" width="200" height="54" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="308" y="178" fill="#e3fffa">7045 service, 4688 proc</text>
+    <text x="308" y="196" fill="#6c7b93" font-size="10" font-family="'JetBrains Mono',monospace">PsExec, C2, lateral move</text>
+
+    <rect x="296" y="222" width="200" height="54" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="308" y="244" fill="#e3fffa">1102 / 104  log cleared</text>
+    <text x="308" y="262" fill="#6c7b93" font-size="10" font-family="'JetBrains Mono',monospace">anti-forensics, red alert</text>
+  </g>
+
+  <!-- col 3 tools + timeline -->
+  <g font-size="12.5">
+    <rect x="568" y="90" width="208" height="48" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="580" y="110" fill="#e3fffa">Chainsaw / Hayabusa</text>
+    <text x="580" y="127" fill="#6c7b93" font-size="10" font-family="'JetBrains Mono',monospace">Sigma rules, sweep</text>
+
+    <rect x="568" y="150" width="208" height="48" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="580" y="170" fill="#e3fffa">EvtxECmd -&gt; CSV</text>
+    <text x="580" y="187" fill="#6c7b93" font-size="10" font-family="'JetBrains Mono',monospace">pull detail, normalize UTC</text>
+
+    <rect x="568" y="240" width="208" height="48" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="580" y="260" fill="#e3fffa">Alert timeline</text>
+    <text x="580" y="277" fill="#6c7b93" font-size="10" font-family="'JetBrains Mono',monospace">scored, time-ordered</text>
+  </g>
+
+  <!-- arrows between columns -->
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="200" y1="180" x2="292" y2="175"/>
+    <line x1="500" y1="170" x2="564" y2="150"/>
+    <line x1="672" y1="138" x2="672" y2="148"/>
+    <line x1="672" y1="198" x2="672" y2="238"/>
+  </g>
+
+  <line x1="24" y1="318" x2="776" y2="318" stroke="#263451" stroke-width="1"/>
+  <text x="24" y="344" font-size="11" fill="#9fb0c8">TimeCreated is UTC. Missing logs (1102/104) can be evidence in themselves.</text>
+  <text x="24" y="366" font-size="11" fill="#6c7b93">Rules have false positives; open the raw record before concluding.</text>
+</svg>

@@ -1,0 +1,26 @@
+=== B1: file noi gi (doc magic, bo qua duoi) ===
+report.pdf:  PNG image data, 160 x 100, 1-bit colormap, non-interlaced
+hoa-don.pdf: JPEG image data, JFIF standard 1.01, aspect ratio, density 1x1, segment length 16, baseline, precision 8, 200x140, components 3
+logo.jpg:    PDF document, version 1.4, 1 pages
+backup.dat:  Zip archive data, at least v1.0 to extract, compression method=store
+anh.png:     ASCII text
+
+=== B2: 8 byte dau tung file (xxd) ===
+report.pdf     00000000: 8950 4e47 0d0a 1a0a                      .PNG....
+hoa-don.pdf    00000000: ffd8 ffe0 0010 4a46                      ......JF
+logo.jpg       00000000: 2550 4446 2d31 2e34                      %PDF-1.4
+backup.dat     00000000: 504b 0304 0a00 0000                      PK......
+anh.png        00000000: 6461 7920 6368 6920                      day chi 
+
+=== B3: solver python (doi chieu bang magic) ===
+report.pdf       duoi=.pdf   magic=89 50 4e 47 0d 0a 1a 0a  -> PNG image  <== DUOI NOI DOI
+hoa-don.pdf      duoi=.pdf   magic=ff d8 ff                 -> JPEG image  <== DUOI NOI DOI
+logo.jpg         duoi=.jpg   magic=25 50 44 46 2d           -> PDF document  <== DUOI NOI DOI
+backup.dat       duoi=.dat   magic=50 4b 03 04              -> ZIP container (co the la docx/xlsx/apk/jar)  <== DUOI NOI DOI
+anh.png          duoi=.png   magic=64 61 79 20 63 68 69 20  -> KHONG RO (khong khop bang magic)  <== DUOI NOI DOI
+
+=== B4: pha roi va magic byte cua PNG ===
+-- sau khi dap 4 byte dau --
+benh-nhan.png: data
+-- sau khi va lai chu ky PNG --
+benh-nhan.png: PNG image data, 120 x 80, 1-bit grayscale, non-interlaced

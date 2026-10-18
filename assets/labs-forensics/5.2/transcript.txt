@@ -1,0 +1,43 @@
+### LAB 5.2 - macOS artifact (MO PHONG tren Linux): app la tu khoi dong
+### Transcript that: python3 -I make_artifacts.py mac && python3 -I solve.py mac
+
+$ python3 -I make_artifacts.py mac
+[+] Da tao artifact macOS gia lap tai: /tmp/claude-1000/-mnt-d-REVERSE-IDA-DNSPY-JADX-PYCDC/fc419170-3bc5-46ea-9f29-940ccd065882/scratchpad/run52/mac
+[+] quarantine xattr: OK (fs ho tro user.*)
+[+] WhereFroms xattr: OK
+[+] Chay tiep:  python3 -I solve.py mac
+
+$ python3 -I solve.py mac
+
+==== 1. LaunchAgents: doc binary plist tim autostart dang ngo ====
+  Users/an/Library/LaunchAgents/com.apple.softwareupdated.plist
+    Label=com.apple.softwareupdated  Program=/Users/Shared/.updater/softwareupdated  RunAtLoad+KeepAlive  <== DANG NGO
+  Users/an/Library/LaunchAgents/com.google.keystone.agent.plist
+    Label=com.google.keystone.agent  Program=/Library/Google/GoogleSoftwareUpdate/Agent  
+
+==== 2. Nguon tai: quarantine + kMDItemWhereFroms ====
+  com.apple.quarantine = 0081;695e2416;Google Chrome;F1B2C3D4-0000-4000-8000-ABCDEF012345
+    -> tai bang: Google Chrome
+    -> luc:      2026-01-07 09:15:02 UTC (tu timestamp hex 695e2416)
+  kMDItemWhereFroms = ['http://cdn-update.example.bad/su.zip', 'http://cdn-update.example.bad/download']
+    -> URL tai: http://cdn-update.example.bad/su.zip
+
+==== 3. knowledgeC.db: app foreground luc nao (Mac absolute time + 978307200) ====
+  2026-01-07 09:16:00 -> 2026-01-07 09:16:08  /Users/Shared/.updater/softwareupdated  <== app la
+  2026-01-07 09:20:00 -> 2026-01-07 09:35:00  com.apple.Safari
+  2026-01-08 08:02:00 -> 2026-01-08 08:02:09  /Users/Shared/.updater/softwareupdated  <== app la
+  2026-01-09 07:51:00 -> 2026-01-09 07:51:07  /Users/Shared/.updater/softwareupdated  <== app la
+  => app la foreground 3 lan (dung khung sau moi lan login)
+
+==== 4. TCC.db: quyen nhay cam da cap (auth_value 2 = cho phep) ====
+  2026-01-05 12:00:00  kTCCServiceCamera  auth=2  com.apple.Safari
+  2026-01-07 09:17:10  kTCCServiceAccessibility  auth=2  /Users/Shared/.updater/softwareupdated  <== CO RED FLAG
+  2026-01-07 09:17:15  kTCCServiceSystemPolicyAllFiles  auth=2  /Users/Shared/.updater/softwareupdated  <== CO RED FLAG
+
+==== KET LUAN ====
+  Vao may    : tai http://cdn-update.example.bad/su.zip bang Google Chrome (quarantine + WhereFroms)
+  Autostart  : LaunchAgent com.apple.softwareupdated (gia danh Apple), RunAtLoad + KeepAlive,
+               Program /Users/Shared/.updater/softwareupdated (Apple khong bao gio de binary o /Users/Shared)
+  Da chay    : knowledgeC cho thay app foreground sau moi lan login
+  Quyen      : TCC cap kTCCServiceAccessibility + AllFiles (auth=2) -> du suc keylog -> nghi stalkerware
+  Ghi chu    : day la MO PHONG cau truc tren Linux (plistlib/os.getxattr/sqlite3 thay plutil/xattr/mdls)

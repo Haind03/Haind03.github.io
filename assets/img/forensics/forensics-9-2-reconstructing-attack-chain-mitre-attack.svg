@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 345" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="345" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">One attack chain mapped to MITRE ATT&amp;CK</text>
+  <text x="400" y="54" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">WIN10-ACCT01: a mail at 09:01, data out by 10:42</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- row 1 -->
+  <g text-anchor="middle">
+    <rect x="24"  y="92" width="142" height="58" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="95"  y="112" font-size="11.5" font-weight="700" fill="#00f0ff">Initial Access</text>
+    <text x="95"  y="129" font-size="11" fill="#e3fffa" font-family="'JetBrains Mono',monospace">T1566.001</text>
+    <text x="95"  y="143" font-size="10" fill="#6c7b93">09:01</text>
+
+    <rect x="176" y="92" width="142" height="58" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="247" y="112" font-size="11.5" font-weight="700" fill="#ff2a6d">Execution</text>
+    <text x="247" y="129" font-size="11" fill="#e3fffa" font-family="'JetBrains Mono',monospace">T1059.001</text>
+    <text x="247" y="143" font-size="10" fill="#6c7b93">09:03</text>
+
+    <rect x="328" y="92" width="142" height="58" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="399" y="112" font-size="11.5" font-weight="700" fill="#ff2a6d">Defense Evasion</text>
+    <text x="399" y="129" font-size="11" fill="#e3fffa" font-family="'JetBrains Mono',monospace">T1027</text>
+    <text x="399" y="143" font-size="10" fill="#6c7b93">09:03</text>
+
+    <rect x="480" y="92" width="142" height="58" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="551" y="112" font-size="11.5" font-weight="700" fill="#fcee0a">Persistence</text>
+    <text x="551" y="129" font-size="11" fill="#e3fffa" font-family="'JetBrains Mono',monospace">T1547.001</text>
+    <text x="551" y="143" font-size="10" fill="#6c7b93">09:05</text>
+
+    <rect x="632" y="92" width="142" height="58" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="703" y="112" font-size="10.5" font-weight="700" fill="#ff2a6d">Command &amp; Control</text>
+    <text x="703" y="129" font-size="11" fill="#e3fffa" font-family="'JetBrains Mono',monospace">T1071.001</text>
+    <text x="703" y="143" font-size="10" fill="#6c7b93">09:06</text>
+  </g>
+
+  <!-- row 2 -->
+  <g text-anchor="middle">
+    <rect x="24"  y="230" width="142" height="58" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="95"  y="250" font-size="11" font-weight="700" fill="#fcee0a">Credential Access</text>
+    <text x="95"  y="267" font-size="11" fill="#e3fffa" font-family="'JetBrains Mono',monospace">T1003.001</text>
+    <text x="95"  y="281" font-size="10" fill="#6c7b93">09:40</text>
+
+    <rect x="176" y="230" width="142" height="58" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="247" y="250" font-size="11.5" font-weight="700" fill="#00f0ff">Discovery</text>
+    <text x="247" y="267" font-size="11" fill="#e3fffa" font-family="'JetBrains Mono',monospace">T1087 / T1018</text>
+    <text x="247" y="281" font-size="10" fill="#6c7b93">09:52</text>
+
+    <rect x="328" y="230" width="142" height="58" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="399" y="250" font-size="11" font-weight="700" fill="#00f0ff">Lateral Movement</text>
+    <text x="399" y="267" font-size="11" fill="#e3fffa" font-family="'JetBrains Mono',monospace">T1021.002</text>
+    <text x="399" y="281" font-size="10" fill="#6c7b93">10:05</text>
+
+    <rect x="480" y="230" width="142" height="58" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="551" y="250" font-size="11.5" font-weight="700" fill="#fcee0a">Collection</text>
+    <text x="551" y="267" font-size="11" fill="#e3fffa" font-family="'JetBrains Mono',monospace">T1560.001</text>
+    <text x="551" y="281" font-size="10" fill="#6c7b93">10:30</text>
+
+    <rect x="632" y="230" width="142" height="58" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="703" y="250" font-size="11.5" font-weight="700" fill="#ff2a6d">Exfiltration</text>
+    <text x="703" y="267" font-size="11" fill="#e3fffa" font-family="'JetBrains Mono',monospace">T1041</text>
+    <text x="703" y="281" font-size="10" fill="#6c7b93">10:42</text>
+  </g>
+
+  <!-- arrows row 1 -->
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="166" y1="121" x2="174" y2="121"/>
+    <line x1="318" y1="121" x2="326" y2="121"/>
+    <line x1="470" y1="121" x2="478" y2="121"/>
+    <line x1="622" y1="121" x2="630" y2="121"/>
+    <!-- wrap connector down to row 2 -->
+    <path d="M703,150 L703,190 L95,190 L95,228"/>
+    <!-- arrows row 2 -->
+    <line x1="166" y1="259" x2="174" y2="259"/>
+    <line x1="318" y1="259" x2="326" y2="259"/>
+    <line x1="470" y1="259" x2="478" y2="259"/>
+    <line x1="622" y1="259" x2="630" y2="259"/>
+  </g>
+
+  <text x="400" y="315" text-anchor="middle" font-size="11" fill="#6c7b93">Each cell is backed by a specific artifact and time; empty tactics become hypotheses to verify.</text>
+</svg>

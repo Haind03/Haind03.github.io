@@ -1,0 +1,24 @@
+=== Lab 10.1: timestomp & log-clearing detection on ext4 ===
+image: case_disk.img
+
+--- [1] Quet timestamp moi file, so mtime/atime voi crtime ---
+auth.log             crtime=2026-10-16 02:00:00  mtime=2026-10-16 03:05:00  ctime=2026-10-16 03:05:00
+holiday_photo.jpg    crtime=2026-10-10 20:15:00  mtime=2026-10-10 20:15:00  ctime=2026-10-10 20:15:00
+meeting_notes.txt    crtime=2026-10-14 08:30:00  mtime=2026-10-14 08:30:00  ctime=2026-10-14 08:30:00
+report_q4.pdf        crtime=2026-10-15 09:12:00  mtime=2009-01-05 07:00:00  ctime=2026-10-15 09:12:00  <-- TIMESTOMP: mtime < crtime (sua truoc khi tao, bat kha thi)
+
+--- [2] Neo su that bang nguon doc lap (upload_server.log) ---
+server audit: 2026-10-15T09:12:03+00:00 fileserver AUDIT upload user=ndhai name=report_q4.pdf size=42 src=10.0.0.5
+=> report_q4.pdf that su xuat hien 2026-10-15, khop crtime(2026), KHONG phai mtime(2009).
+=> Ket luan: mtime/atime da bi timestomp lui ve 2009.
+
+--- [3] Phat hien log clearing tren auth.log ---
+auth.log: so dong con lai = 12 | dong cuoi = 2026-10-16T02:11:17+00:00
+auth.log inode: mtime=2026-10-16 03:05:00 ctime=2026-10-16 03:05:00
+=> BAT THUONG: file bi ghi luc 2026-10-16 03:05:00 nhung dong log moi nhat chi toi 2026-10-16 02:11:17 (lech 0:53:43).
+   Mot log ngung o 02:11 nhung inode bi sua luc 03:05 => co nguoi ghi de/cat log.
+doi chieu wtmp (nguon doc lap):
+   ndhai    pts/1        10.0.0.5         Fri Oct 16 02:45   still logged in  <-- phien nay KHONG con trong auth.log => bi xoa co chu dich
+
+--- Tuong ung tren Windows/NTFS (xem phan ly thuyet) ---
+  timestomp: so $SI voi $FN bang MFTECmd/istat; log clearing: Security event 1102, channel khac 104.

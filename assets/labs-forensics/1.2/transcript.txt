@@ -1,0 +1,31 @@
+=== B1: block size + layout ===
+Block Range: 0 - 8191
+Block Size: 1024
+  Block Range: 1 - 8191
+
+=== B2: file hien tai va kich thuoc (khai niem file slack) ===
+r/r 12:	small.bin
+-- istat small.bin (inode 12): size vs 1 block = slack --
+size: 19
+num of links: 1
+--
+Direct Blocks:
+1618 
+
+=== B3: trich toan bo unallocated bang blkls, tim pattern file da xoa ===
+-rwxrwxrwx 1 haipanda Administrator 6730752 Oct 18 17:30 unalloc.raw
+so lan xuat hien pattern cu trong unallocated: 3936
+
+=== B4: doc truc tiep mot block cu (probe_block=1623) bang blkcat ===
+00000000: 4f4c 442d 5345 4352 4554 2d44 4154 412d  OLD-SECRET-DATA-
+00000010: 4f4c 442d 5345 4352 4554 2d44 4154 412d  OLD-SECRET-DATA-
+
+=== B5: GHI CHU trung thuc ve slack trong block da tai su dung ===
+Block ma file nho chiem lai (first block cua big cu = 1618):
+00000000: 4455 204c 4945 5520 4d4f 4920 286e 6761  DU LIEU MOI (nga
+00000010: 6e29 0a00 0000 0000 0000 0000 0000 0000  n)..............
+00000020: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+-> debugfs khi 'write' zero-pad tron block cua file moi, nen phan slack NGAY TRONG
+   block vua ghi doc ra la 0 trong lab khong-root nay. Tren o that (OS ghi qua mount)
+   OS khong zero duoi block nen slack giu lai du lieu cu. Du vay, du lieu cu VAN con
+   o cac block unallocated khac (B3/B4) va do la diem forensic cot loi.

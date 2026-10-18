@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 440" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="440" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Mobile backups: unwrap the .ab, map the iOS hashes</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">app data is SQLite, but each platform counts time differently</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- Android row -->
+  <text x="24" y="82" font-size="11.5" fill="#9fb0c8" font-weight="700">Android logical backup</text>
+  <g font-size="11.5" text-anchor="middle">
+    <rect x="24" y="92" width="158" height="58" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="103" y="116" fill="#ff2a6d" font-weight="700">backup.ab</text>
+    <text x="103" y="134" fill="#9fb0c8" font-size="10">header + zlib (+AES)</text>
+
+    <rect x="212" y="92" width="146" height="58" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="285" y="116" fill="#5fe3b0" font-weight="700">abe.jar unpack</text>
+    <text x="285" y="134" fill="#9fb0c8" font-size="10">peels the layers</text>
+
+    <rect x="388" y="92" width="130" height="58" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="453" y="116" fill="#e3fffa">backup.tar</text>
+    <text x="453" y="134" fill="#9fb0c8" font-size="10">standard tar</text>
+
+    <rect x="548" y="92" width="216" height="58" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="656" y="116" fill="#00f0ff" font-weight="700">mmssms.db (+ -wal)</text>
+    <text x="656" y="134" fill="#9fb0c8" font-size="10" font-family="'JetBrains Mono',monospace">table sms: date in ms</text>
+  </g>
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="182" y1="121" x2="208" y2="121"/>
+    <line x1="358" y1="121" x2="384" y2="121"/>
+    <line x1="518" y1="121" x2="544" y2="121"/>
+  </g>
+
+  <!-- iOS row -->
+  <text x="24" y="192" font-size="11.5" fill="#9fb0c8" font-weight="700">iOS backup</text>
+  <g font-size="11.5" text-anchor="middle">
+    <rect x="24" y="202" width="228" height="58" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="138" y="226" fill="#fcee0a" font-weight="700">Manifest.db -&gt; Files</text>
+    <text x="138" y="244" fill="#9fb0c8" font-size="10">domain + relativePath</text>
+
+    <rect x="282" y="202" width="176" height="58" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="370" y="226" fill="#e3fffa">fileID</text>
+    <text x="370" y="244" fill="#9fb0c8" font-size="10">40-hex hash</text>
+
+    <rect x="488" y="202" width="276" height="58" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="626" y="226" fill="#00f0ff" font-weight="700">3d/3d0d...e047 = sms.db</text>
+    <text x="626" y="244" fill="#9fb0c8" font-size="10" font-family="'JetBrains Mono',monospace">message.date CoreData</text>
+  </g>
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="252" y1="231" x2="278" y2="231"/>
+    <line x1="458" y1="231" x2="484" y2="231"/>
+  </g>
+
+  <!-- timestamp base -->
+  <rect x="24" y="300" width="740" height="64" rx="7" fill="#111827" stroke="#fcee0a"/>
+  <text x="44" y="323" font-size="12" fill="#fcee0a" font-weight="700">Each platform has its own epoch</text>
+  <text x="44" y="345" font-size="11" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">Android: Unix ms -&gt; /1000      iOS: CoreData -&gt; +978307200</text>
+  <text x="44" y="360" font-size="10" fill="#6c7b93">Chrome WebKit and Firefox PRTime come from Lesson 8.1; use the right formula per source.</text>
+
+  <!-- WAL warning -->
+  <rect x="24" y="378" width="740" height="46" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+  <text x="400" y="406" text-anchor="middle" font-size="11.5" fill="#ff2a6d">Collect the -wal and -shm files too, or the newest messages stay only in the WAL and are lost.</text>
+</svg>

@@ -1,0 +1,31 @@
+=== Lab 4.3: Program execution (Amcache + Shimcache + UserAssist) ===
+
+--- [1] Amcache: SHA1 cua binary (chung minh HIEN DIEN + cho hash de tra IOC) ---
+Tong entry co SHA1: 1367
+   c:\users\user\appdata\local\temp\vmware-user\000052fe\setup64.exe
+      sha1=e992f0c2aa48b763b5f7109ea16b8f800436c27e  ts=2017-08-01T11:55:26.781756+00:00
+   c:\users\user\appdata\local\temp\{d2236796-832d-4e8c-a337-0c6eeb8acb27}~setup\vcredist_x86.exe
+      sha1=470640aa4bb7db8e69196b5edb0010933569e98d  ts=2017-08-01T11:53:42.338502+00:00
+   c:\users\user\appdata\local\temp\{d2236796-832d-4e8c-a337-0c6eeb8acb27}~setup\vcredist_x64.exe
+      sha1=a7c83077b8a28d409e36316d2d7321fa0ccdb7e8  ts=2017-08-01T11:54:03.901116+00:00
+   c:\users\user\appdata\local\microsoft\onedrive\17.3.6943.0625\Qt5QuickTemplates2.dll
+      sha1=a8ce1efa24b234fb5bea6f08d7550beba904313f  ts=2017-08-03T11:34:04.669800+00:00
+
+--- [2] Shimcache: path + last_mod_date (LA mtime, KHONG phai gio chay) ---
+Tong entry: 660  (thu tu: moi nhat o dau)
+   mtime=2011-01-12T12:08:00+00:00  exec_flag=True  \??\C:\Program Files\McAfee\VirusScan Enterprise\mfeann.exe
+   mtime=2010-11-20T12:17:48.148000+00:00  exec_flag=True  \??\C:\Windows\servicing\TrustedInstaller.exe
+   mtime=2010-11-20T12:17:16.327000+00:00  exec_flag=True  \??\C:\Windows\system32\LogonUI.exe
+   mtime=2009-07-14T01:14:30.364000+00:00  exec_flag=True  \??\C:\Windows\system32\reg.exe
+   mtime=2010-11-20T12:17:00.401000+00:00  exec_flag=True  \??\C:\Windows\system32\cmd.exe
+BAM/DAM entries: 0 (hive Win7 nay khong co BAM -> xem BAI TAP tren Win10 1709+)
+
+--- [3] UserAssist: chuong trinh chay QUA Explorer, co run_counter + last run ---
+   run=14  last=2012-04-03T22:06:58.124282+00:00  %PROGRAMDATA%\Microsoft\Windows\Start Menu\Programs\Accessories\Welcome Center.lnk
+   run=14  last=2012-04-03T22:06:58.124282+00:00  Microsoft.Windows.GettingStarted
+   run=13  last=2012-04-03T22:06:58.124282+00:00  %PROGRAMDATA%\Microsoft\Windows\Start Menu\Programs\Media Center.lnk
+   run=13  last=2012-04-03T22:06:58.124282+00:00  Microsoft.Windows.MediaCenter
+   run=12  last=2012-04-03T22:06:58.124282+00:00  %PROGRAMDATA%\Microsoft\Windows\Start Menu\Programs\Accessories\Calculator.lnk
+   run=12  last=2012-04-03T22:06:58.124282+00:00  %WINDIR%\SysWOW64\calc.exe
+
+--- Nguyen tac: Amcache/Shimcache = HIEN DIEN; UserAssist/Prefetch/BAM = DA CHAY ---

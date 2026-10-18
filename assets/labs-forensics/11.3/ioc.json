@@ -1,0 +1,25 @@
+{
+  "case": "web01-0107",
+  "host": "web01",
+  "initial_access": "Web shell upload qua POST /upload.php (T1505.003)",
+  "ip": ["185.234.72.19", "198.51.100.23"],
+  "url": ["https://185.234.72.19:8443/gate.php"],
+  "user_agent": ["Mozilla/5.0 (X11; Linux x86_64) AcctLoader/1.2"],
+  "mutex": ["Global\\AcctLdr_7f3a"],
+  "paths": ["var/www/html/uploads/shell.php", "var/tmp/.sysd/kworkerd", "var/tmp/.sysd/data.tar.gz"],
+  "sha256": {
+    "var/tmp/.sysd/kworkerd": "aa4884cab4f21d77f55775c8d03a21c72a047d1ca5ce90518872ea519f35e9af",
+    "var/www/html/uploads/shell.php": "04cf135a10fe188b07c7dd2716b9136a7effc9570bcb42ff8831533cd1671967"
+  },
+  "persistence": ["etc/cron.d/nginx-cache", "etc/systemd/system/network-helper.service"],
+  "exfil": "var/tmp/.sysd/data.tar.gz",
+  "anti_forensics": ["timestomp implant mtime -> 2009", "rsyslog restart 10:15 (nghi xoa log)"],
+  "timeline": [
+    ["2026-01-07 09:01:12", "Upload shell.php qua POST /upload.php", "T1505.003", "A-1"],
+    ["2026-01-07 09:01:40", "Khai thac webshell: shell.php?cmd=id", "T1059", "A-1"],
+    ["2026-01-07 09:02:05", "Tai implant kworkerd tu C2 185.234.72.19", "T1105", "A-2"],
+    ["2026-01-07 09:03:11", "network-helper.service khoi dong implant", "T1543.002", "A-3"],
+    ["2026-01-07 09:03:30", "Implant ket noi C2 185.234.72.19:8443", "T1071.001", "A-4"],
+    ["2026-01-07 10:15:00", "Khoi dong lai rsyslog (nghi xoa log)", "T1070", "A-5"]
+  ]
+}

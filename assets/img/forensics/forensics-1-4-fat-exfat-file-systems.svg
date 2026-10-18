@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="420" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">A FAT volume and its cluster chain</text>
+  <text x="400" y="55" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">the FAT is a linked list of clusters; the data area starts at cluster 2</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- Row 1: volume layout -->
+  <g font-size="10.5" text-anchor="middle">
+    <rect x="33" y="76" width="150" height="40" rx="6" fill="#111827" stroke="#00f0ff"/>
+    <text x="108" y="94" fill="#e3fffa">Reserved</text>
+    <text x="108" y="108" fill="#6c7b93" font-size="9.5">boot sector + BPB</text>
+    <rect x="187" y="76" width="130" height="40" rx="6" fill="#111827" stroke="#fcee0a"/>
+    <text x="252" y="100" fill="#e3fffa">FAT 0</text>
+    <rect x="321" y="76" width="130" height="40" rx="6" fill="#111827" stroke="#263451"/>
+    <text x="386" y="100" fill="#9fb0c8">FAT 1 (copy)</text>
+    <rect x="455" y="76" width="130" height="40" rx="6" fill="#111827" stroke="#263451"/>
+    <text x="520" y="100" fill="#9fb0c8">Root directory</text>
+    <rect x="589" y="76" width="178" height="40" rx="6" fill="#111827" stroke="#5fe3b0"/>
+    <text x="678" y="94" fill="#e3fffa">Data area</text>
+    <text x="678" y="108" fill="#6c7b93" font-size="9.5">clusters, numbered from 2</text>
+  </g>
+
+  <!-- Row 2: cluster chain -->
+  <text x="33" y="158" font-size="11.5" fill="#9fb0c8">The directory entry gives the first cluster; the FAT tells you where the file goes next.</text>
+  <g font-size="11" text-anchor="middle" font-family="'JetBrains Mono',monospace">
+    <rect x="33" y="186" width="132" height="48" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="99" y="206" fill="#e3fffa" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">dir entry</text>
+    <text x="99" y="222" fill="#9fb0c8">first cl = 10</text>
+
+    <rect x="190" y="190" width="72" height="40" rx="6" fill="#111827" stroke="#263451"/>
+    <text x="226" y="214" fill="#e3fffa">cl 10</text>
+    <rect x="302" y="190" width="72" height="40" rx="6" fill="#111827" stroke="#263451"/>
+    <text x="338" y="214" fill="#e3fffa">cl 11</text>
+    <rect x="414" y="190" width="72" height="40" rx="6" fill="#111827" stroke="#263451"/>
+    <text x="450" y="214" fill="#e3fffa">cl 12</text>
+    <rect x="580" y="190" width="72" height="40" rx="6" fill="#111827" stroke="#263451"/>
+    <text x="616" y="214" fill="#e3fffa">cl 20</text>
+    <rect x="672" y="190" width="95" height="40" rx="6" fill="#111827" stroke="#5fe3b0"/>
+    <text x="719" y="214" fill="#5fe3b0">EOF</text>
+  </g>
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="165" y1="210" x2="188" y2="210"/>
+    <line x1="262" y1="210" x2="300" y2="210"/>
+    <line x1="374" y1="210" x2="412" y2="210"/>
+    <line x1="486" y1="210" x2="578" y2="210"/>
+    <line x1="652" y1="210" x2="670" y2="210"/>
+  </g>
+  <g font-size="9.5" text-anchor="middle" fill="#6c7b93" font-family="'JetBrains Mono',monospace">
+    <text x="281" y="182">FAT[10]=11</text>
+    <text x="393" y="182">FAT[11]=12</text>
+    <text x="532" y="182">FAT[12]=20 (jump)</text>
+  </g>
+
+  <!-- Row 3: delete mechanism -->
+  <text x="33" y="278" font-size="11.5" fill="#9fb0c8">Deleting a FAT file does exactly two things, and touches no data:</text>
+  <g font-size="10.5" text-anchor="middle">
+    <rect x="33" y="292" width="230" height="46" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="148" y="312" fill="#ff2a6d">1) name[0] set to 0xE5</text>
+    <text x="148" y="328" fill="#6c7b93" font-size="9.5">31 other bytes stay</text>
+    <rect x="285" y="292" width="230" height="46" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="400" y="312" fill="#fcee0a">2) FAT chain set to free</text>
+    <text x="400" y="328" fill="#6c7b93" font-size="9.5">first cluster still readable</text>
+    <rect x="537" y="292" width="230" height="46" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="652" y="312" fill="#5fe3b0">data area untouched</text>
+    <text x="652" y="328" fill="#6c7b93" font-size="9.5">icat recovers the content</text>
+  </g>
+
+  <text x="400" y="372" text-anchor="middle" font-size="11" fill="#6c7b93">Small unfragmented file: near-certain recovery. Fragmented file: the chain is gone, so it is a gamble.</text>
+</svg>

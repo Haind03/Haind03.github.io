@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 410" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="410" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Where browsers hide history, and the timestamp trap</text>
+  <text x="400" y="56" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">Chrome counts microseconds from 1601, Firefox from 1970</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- Chrome panel -->
+  <rect x="24" y="76" width="360" height="116" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="44" y="100" font-size="13" fill="#00f0ff" font-weight="700">Chrome / Edge (Chromium)</text>
+  <text x="44" y="122" font-size="11" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">User Data\Default\</text>
+  <text x="44" y="146" font-size="11.5" fill="#e3fffa">History   Cookies</text>
+  <text x="44" y="166" font-size="11.5" fill="#e3fffa">Login Data   Web Data</text>
+  <text x="44" y="184" font-size="10" fill="#6c7b93">SQLite files (values encrypted with DPAPI)</text>
+
+  <!-- Firefox panel -->
+  <rect x="416" y="76" width="360" height="116" rx="7" fill="#111827" stroke="#263451"/>
+  <text x="436" y="100" font-size="13" fill="#e3fffa" font-weight="700">Firefox profile</text>
+  <text x="436" y="122" font-size="11" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">xxxx.default-release\</text>
+  <text x="436" y="146" font-size="11.5" fill="#e3fffa">places.sqlite   cookies.sqlite</text>
+  <text x="436" y="166" font-size="11.5" fill="#e3fffa">formhistory.sqlite</text>
+  <text x="436" y="184" font-size="10" fill="#6c7b93">formhistory leaks typed search terms</text>
+
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="204" y1="192" x2="204" y2="230"/>
+    <line x1="596" y1="192" x2="596" y2="230"/>
+  </g>
+
+  <!-- timestamp formula boxes -->
+  <rect x="24" y="232" width="360" height="86" rx="7" fill="#111827" stroke="#fcee0a"/>
+  <text x="44" y="256" font-size="12.5" fill="#fcee0a" font-weight="700">WebKit timestamp</text>
+  <text x="44" y="277" font-size="11" fill="#9fb0c8">microseconds since 1601-01-01 UTC</text>
+  <text x="44" y="300" font-size="12" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">unix = t/1e6 - 11644473600</text>
+
+  <rect x="416" y="232" width="360" height="86" rx="7" fill="#111827" stroke="#fcee0a"/>
+  <text x="436" y="256" font-size="12.5" fill="#fcee0a" font-weight="700">PRTime timestamp</text>
+  <text x="436" y="277" font-size="11" fill="#9fb0c8">microseconds since 1970-01-01 UTC</text>
+  <text x="436" y="300" font-size="12" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">unix = t/1e6</text>
+
+  <!-- warning -->
+  <rect x="24" y="338" width="752" height="56" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+  <text x="400" y="361" text-anchor="middle" font-size="11.5" fill="#ff2a6d">Mix the two formulas and the date is off by about 369 years.</text>
+  <text x="400" y="380" text-anchor="middle" font-size="11" fill="#9fb0c8">Copy History-wal and History-shm as well, or lose the newest rows.</text>
+</svg>

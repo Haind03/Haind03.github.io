@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="400" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">One cluster, eight sectors, and the slack at the end</text>
+  <text x="400" y="55" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">byte_offset = LBA x sector_size</text>
+
+  <!-- formula box -->
+  <rect x="200" y="74" width="400" height="40" rx="7" fill="#111827" stroke="#00f0ff"/>
+  <text x="400" y="99" text-anchor="middle" font-size="12.5" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">LBA 2048 x 512 = 1 048 576 = 1 MiB (partition start)</text>
+
+  <!-- cluster label -->
+  <text x="33" y="150" font-size="12.5" fill="#9fb0c8">1 cluster = 4096 bytes = 8 sectors of 512 bytes. File is 100 bytes.</text>
+
+  <!-- eight sectors -->
+  <g font-size="11" text-anchor="middle" font-family="'JetBrains Mono',monospace">
+    <!-- sector 0 : data + RAM slack -->
+    <rect x="33" y="164" width="90" height="56" rx="6" fill="#111827" stroke="#00f0ff"/>
+    <rect x="37" y="168" width="20" height="48" rx="3" fill="#0b2a22" stroke="#5fe3b0"/>
+    <text x="47" y="246" fill="#5fe3b0" font-size="9.5">data</text>
+    <text x="78" y="196" fill="#e3fffa">sec0</text>
+
+    <rect x="125" y="164" width="90" height="56" rx="6" fill="#111827" stroke="#fcee0a"/>
+    <text x="170" y="196" fill="#e3fffa">sec1</text>
+    <rect x="217" y="164" width="90" height="56" rx="6" fill="#111827" stroke="#fcee0a"/>
+    <text x="262" y="196" fill="#e3fffa">sec2</text>
+    <rect x="309" y="164" width="90" height="56" rx="6" fill="#111827" stroke="#fcee0a"/>
+    <text x="354" y="196" fill="#e3fffa">sec3</text>
+    <rect x="401" y="164" width="90" height="56" rx="6" fill="#111827" stroke="#fcee0a"/>
+    <text x="446" y="196" fill="#e3fffa">sec4</text>
+    <rect x="493" y="164" width="90" height="56" rx="6" fill="#111827" stroke="#fcee0a"/>
+    <text x="538" y="196" fill="#e3fffa">sec5</text>
+    <rect x="585" y="164" width="90" height="56" rx="6" fill="#111827" stroke="#fcee0a"/>
+    <text x="630" y="196" fill="#e3fffa">sec6</text>
+    <rect x="677" y="164" width="90" height="56" rx="6" fill="#111827" stroke="#fcee0a"/>
+    <text x="722" y="196" fill="#e3fffa">sec7</text>
+  </g>
+
+  <!-- brackets -->
+  <g stroke="#6c7b93" stroke-width="1.5" fill="none">
+    <path d="M57,230 L57,238 L123,238 L123,230"/>
+    <path d="M125,230 L125,238 L767,238 L767,230"/>
+  </g>
+  <text x="90" y="256" text-anchor="middle" font-size="10.5" fill="#9fb0c8">RAM slack</text>
+  <text x="90" y="270" text-anchor="middle" font-size="10" fill="#6c7b93" font-family="'JetBrains Mono',monospace">512-100 = 412 B</text>
+  <text x="446" y="256" text-anchor="middle" font-size="10.5" fill="#fcee0a">drive slack: old data from a deleted file (recoverable)</text>
+  <text x="446" y="270" text-anchor="middle" font-size="10" fill="#6c7b93" font-family="'JetBrains Mono',monospace">7 x 512 = 3584 B</text>
+
+  <!-- totals and unallocated -->
+  <rect x="33" y="296" width="360" height="44" rx="7" fill="#111827" stroke="#263451"/>
+  <text x="213" y="316" text-anchor="middle" font-size="11.5" fill="#e3fffa">total slack = 412 + 3584 = 3996 B</text>
+  <text x="213" y="332" text-anchor="middle" font-size="10.5" fill="#6c7b93" font-family="'JetBrains Mono',monospace">= 4096 - 100 (cluster - file)</text>
+
+  <rect x="407" y="296" width="360" height="44" rx="7" fill="#0b1518" stroke="#5fe3b0" stroke-dasharray="5 4"/>
+  <text x="587" y="316" text-anchor="middle" font-size="11.5" fill="#5fe3b0">unallocated space = deleted files not yet overwritten</text>
+  <text x="587" y="332" text-anchor="middle" font-size="10.5" fill="#6c7b93">on SSD, TRIM may have already wiped it</text>
+
+  <text x="400" y="376" text-anchor="middle" font-size="11" fill="#6c7b93">Deleting a file removes the index that points to it, not the data itself.</text>
+</svg>

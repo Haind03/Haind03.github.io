@@ -1,0 +1,28 @@
+=== B1: steghide trich tu JPG ===
+FLAG{steghide_jpg_works}
+
+=== B2: steghide trich tu WAV ===
+FLAG{steghide_wav_works}
+
+=== B3: append ZIP sau PNG - binwalk phat hien + unzip lay ra ===
+
+DECIMAL       HEXADECIMAL     DESCRIPTION
+--------------------------------------------------------------------------------
+0             0x0             PNG image, 120 x 80, 1-bit grayscale, non-interlaced
+270           0x10E           Zip archive data, at least v1.0 to extract, compressed size: 40, uncompressed size: 40, name: s.txt
+448           0x1C0           End of Zip archive, footer length: 22
+
+-- unzip phan dinh kem --
+  (attempting to process anyway)
+ extracting: out_append/s.txt        
+-- noi dung file giau --
+co mat khau trong day: FLAG{append_zip}
+
+=== B4: exiftool doc metadata an ===
+Artist                          : HaiND
+Comment                         : hidden-note FLAG{exif_meta}
+
+=== B5: LSB tren PNG - trich bang lsb.py ===
+thong diep giau: FLAG{lsb_png_works}
+-- so khac o muc PIXEL (mat thuong khong thay) --
+so pixel bi doi: 81 / 40000 ; muc doi lon nhat moi kenh: 1 (chi LSB, tuc +/-1)

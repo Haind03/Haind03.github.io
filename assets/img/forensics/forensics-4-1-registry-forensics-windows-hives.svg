@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 410" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="410" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="28" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Registry forensics: hives to artifacts</text>
+  <text x="400" y="48" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">offline hives carry context, USB history, autorun and user activity</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <text x="28" y="82" font-size="12" fill="#9fb0c8">Hives on disk (regf)</text>
+  <text x="558" y="82" font-size="12" fill="#9fb0c8">Artifacts recovered</text>
+
+  <!-- left: hives -->
+  <g font-size="12.5">
+    <rect x="28" y="94" width="175" height="44" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="40" y="116" fill="#e3fffa">SYSTEM</text>
+    <text x="40" y="131" fill="#6c7b93" font-size="10" font-family="'JetBrains Mono',monospace">services, USBSTOR, timezone</text>
+
+    <rect x="28" y="150" width="175" height="44" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="40" y="172" fill="#e3fffa">SOFTWARE</text>
+    <text x="40" y="187" fill="#6c7b93" font-size="10" font-family="'JetBrains Mono',monospace">installed sw, Run keys</text>
+
+    <rect x="28" y="206" width="175" height="44" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="40" y="228" fill="#e3fffa">NTUSER.DAT</text>
+    <text x="40" y="243" fill="#6c7b93" font-size="10" font-family="'JetBrains Mono',monospace">per-user activity</text>
+
+    <rect x="28" y="262" width="175" height="44" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="40" y="284" fill="#e3fffa">UsrClass.dat</text>
+    <text x="40" y="299" fill="#6c7b93" font-size="10" font-family="'JetBrains Mono',monospace">Shellbags, COM</text>
+  </g>
+
+  <!-- middle: tool -->
+  <rect x="318" y="94" width="150" height="212" rx="7" fill="#111827" stroke="#5fe3b0"/>
+  <text x="393" y="188" text-anchor="middle" font-size="13" fill="#e3fffa">RegRipper /</text>
+  <text x="393" y="206" text-anchor="middle" font-size="13" fill="#e3fffa">Registry Explorer</text>
+  <text x="393" y="230" text-anchor="middle" font-size="10" fill="#6c7b93" font-family="'JetBrains Mono',monospace">read offline hive</text>
+  <text x="393" y="246" text-anchor="middle" font-size="10" fill="#6c7b93" font-family="'JetBrains Mono',monospace">replay .LOG1/.LOG2</text>
+
+  <!-- right: artifacts -->
+  <g font-size="12.5">
+    <rect x="558" y="94" width="218" height="44" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="570" y="116" fill="#e3fffa">USB history</text>
+    <text x="570" y="131" fill="#6c7b93" font-size="10" font-family="'JetBrains Mono',monospace">USBSTOR, MountedDevices, MountPoints2</text>
+
+    <rect x="558" y="150" width="218" height="44" rx="7" fill="#111827" stroke="#ff2a6d"/>
+    <text x="570" y="172" fill="#e3fffa">Autorun / persistence</text>
+    <text x="570" y="187" fill="#6c7b93" font-size="10" font-family="'JetBrains Mono',monospace">Run, RunOnce, Winlogon</text>
+
+    <rect x="558" y="206" width="218" height="44" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="570" y="228" fill="#e3fffa">User activity</text>
+    <text x="570" y="243" fill="#6c7b93" font-size="10" font-family="'JetBrains Mono',monospace">TypedPaths, RunMRU, RecentDocs</text>
+
+    <rect x="558" y="262" width="218" height="44" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="570" y="284" fill="#e3fffa">Shellbags (Lesson 4.4)</text>
+    <text x="570" y="299" fill="#6c7b93" font-size="10" font-family="'JetBrains Mono',monospace">folders the user browsed</text>
+  </g>
+
+  <!-- arrows hives -> tool -->
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="205" y1="116" x2="314" y2="130"/>
+    <line x1="205" y1="172" x2="314" y2="180"/>
+    <line x1="205" y1="228" x2="314" y2="220"/>
+    <line x1="205" y1="284" x2="314" y2="270"/>
+  </g>
+  <!-- arrows tool -> artifacts -->
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="468" y1="130" x2="554" y2="116"/>
+    <line x1="468" y1="180" x2="554" y2="172"/>
+    <line x1="468" y1="220" x2="554" y2="228"/>
+    <line x1="468" y1="270" x2="554" y2="284"/>
+  </g>
+
+  <line x1="28" y1="330" x2="776" y2="330" stroke="#263451" stroke-width="1"/>
+  <text x="28" y="356" font-size="11" fill="#9fb0c8">Every key has a LastWrite (UTC); a value has no timestamp of its own.</text>
+  <text x="28" y="378" font-size="11" fill="#6c7b93">Work on a copy, replay the transaction log first, then parse.</text>
+</svg>

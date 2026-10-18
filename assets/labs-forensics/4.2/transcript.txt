@@ -1,0 +1,26 @@
+=== Lab 4.2: Event log triage (python-evtx) ===
+file: security_4624_4688.evtx 
+
+--- Phan bo Event ID ---
+   EventID 4672 : 4
+   EventID 4624 : 4
+   EventID 1102 : 1
+   EventID 4688 : 1
+   EventID 4634 : 1
+
+--- 4624 Logon (LogonType, account, nguon) ---
+   2022-05-01 04:41:37.642368+00:00  user=WINLAB.LOCAL\Administrator  type=3(Network)  src=192.168.1.219  auth=Kerberos
+   2022-05-01 04:41:47.653254+00:00  user=WINLAB.LOCAL\Administrator  type=3(Network)  src=192.168.1.219  auth=Kerberos
+   2022-05-01 04:41:54.272333+00:00  user=WINLAB.LOCAL\Administrator  type=3(Network)  src=192.168.1.219  auth=Kerberos
+   2022-05-01 04:42:00.800072+00:00  user=WINLAB.LOCAL\Administrator  type=3(Network)  src=192.168.1.219  auth=Kerberos
+
+--- 4688 Process creation ---
+   2022-05-01 04:42:06.656542+00:00  new=C:\Windows\System32\notepad.exe  cmdline=None  parent=C:\Windows\System32\wbem\WmiPrvSE.exe
+   (CommandLine rong => may chua bat 'include command line in 4688'; xem bai hoc muc 1.2)
+
+--- 4625 Failed logon ---
+   (khong co 4625 trong mau nay)
+
+--- SU KIEN DANG NGO ---
+   [1102] Security log BI XOA luc 2022-05-01 04:40:18.084003+00:00, tai khoan: admin
+   [4688] C:\Windows\System32\notepad.exe sinh ra boi WmiPrvSE.exe luc 2022-05-01 04:42:06.656542+00:00 => thuc thi tu xa qua WMI (vd wmiexec)

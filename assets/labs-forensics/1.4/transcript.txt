@@ -1,0 +1,64 @@
+=== B1: fsstat - layout FAT16 (reserved/FAT/root/data) ===
+FILE SYSTEM INFORMATION
+--------------------------------------------
+File System Type: FAT16
+
+OEM Name: mkfs.fat
+Volume ID: 0x7faa0f8
+Volume Label (Boot Sector): LABFAT     
+Volume Label (Root Directory): LABFAT     
+File System Type Label: FAT16   
+
+Sectors before file system: 0
+
+File System Layout (in sectors)
+Total Range: 0 - 32767
+* Reserved: 0 - 3
+** Boot Sector: 0
+* FAT 0: 4 - 35
+* FAT 1: 36 - 67
+* Data Area: 68 - 32767
+** Root Directory: 68 - 99
+** Cluster Area: 100 - 32767
+
+
+=== B2: boot sector (BPB) bang xxd ===
+00000000: eb3c 906d 6b66 732e 6661 7400 0204 0400  .<.mkfs.fat.....
+00000010: 0200 0200 80f8 2000 2000 0200 0000 0000  ...... . .......
+00000020: 0000 0000 8000 29f8 a0fa 074c 4142 4641  ......)....LABFA
+00000030: 5420 2020 2020 4641 5431 3620 2020 0e1f  T     FAT16   ..
+
+=== B3: fls - liet ke file (volume label + 2 file) ===
+r/r 3:	LABFAT      (Volume Label Entry)
+r/r 4:	NOTE.TXT
+r/r 5:	LUONG.TXT
+v/v 523203:	$MBR
+v/v 523204:	$FAT1
+v/v 523205:	$FAT2
+V/V 523206:	$OrphanFiles
+
+=== B4: istat NOTE.TXT (first cluster, sector, size) ===
+Directory Entry: 4
+Allocated
+File Attributes: File, Archive
+Size: 42
+Name: NOTE.TXT
+
+Directory Entry Times:
+Written:	2024-10-08 09:17:02 (+07)
+Accessed:	0000-00-00 00:00:00 (UTC)
+Created:	0000-00-00 00:00:00 (UTC)
+
+Sectors:
+100 0 0 0 
+
+=== B5: xoa LUONG.TXT (0xE5 + free FAT chain) roi khoi phuc ===
+MD5 goc: a8885a7164761b6649ea30adc4f2e60e
+deleted LUONG.TXT (was cluster 3)
+-- fls -rd (file da xoa, ten dau bi thay) --
+r/r * 5:	_UONG.TXT
+deleted inode = 5
+-- icat khoi phuc --
+bang luong thang 9: giam doc 50tr, ke toan 18tr
+MD5 sau khoi phuc: a8885a7164761b6649ea30adc4f2e60e
+khop tung byte? YES (identical)

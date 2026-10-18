@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 430" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="430" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">An MFT record: in NTFS everything is a file</text>
+  <text x="400" y="55" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">a 1024-byte record is a header plus a chain of attributes</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- Left: MFT record stack -->
+  <text x="33" y="72" font-size="11.5" fill="#00f0ff" font-family="'JetBrains Mono',monospace">one record = 1024 bytes</text>
+  <g font-size="11" text-anchor="middle">
+    <rect x="33" y="78" width="330" height="42" rx="6" fill="#111827" stroke="#00f0ff"/>
+    <text x="198" y="96" fill="#e3fffa">HEADER</text>
+    <text x="198" y="112" fill="#6c7b93" font-size="9.5">"FILE" signature + fixup array</text>
+    <rect x="33" y="124" width="330" height="38" rx="6" fill="#111827" stroke="#fcee0a"/>
+    <text x="198" y="147" fill="#e3fffa">$STANDARD_INFORMATION (0x10): 4 MACB</text>
+    <rect x="33" y="166" width="330" height="38" rx="6" fill="#111827" stroke="#fcee0a"/>
+    <text x="198" y="189" fill="#e3fffa">$FILE_NAME (0x30): name, parent, 4 MACB</text>
+    <rect x="33" y="208" width="330" height="38" rx="6" fill="#111827" stroke="#5fe3b0"/>
+    <text x="198" y="231" fill="#e3fffa">$DATA (0x80): content or runlist</text>
+    <rect x="33" y="250" width="330" height="26" rx="6" fill="#111827" stroke="#263451"/>
+    <text x="198" y="267" fill="#9fb0c8" font-size="10" font-family="'JetBrains Mono',monospace">0xFFFFFFFF end marker</text>
+    <rect x="33" y="280" width="330" height="26" rx="6" fill="#0b1518" stroke="#263451" stroke-dasharray="5 4"/>
+    <text x="198" y="297" fill="#6c7b93" font-size="10">record slack (rest of 1024 bytes)</text>
+  </g>
+
+  <!-- Right: resident vs non-resident -->
+  <text x="400" y="72" font-size="11.5" fill="#00f0ff" font-family="'JetBrains Mono',monospace">resident vs non-resident $DATA</text>
+  <g font-size="10.5" text-anchor="middle">
+    <rect x="400" y="80" width="367" height="48" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="583" y="100" fill="#e3fffa">small file: $DATA resident</text>
+    <text x="583" y="116" fill="#6c7b93" font-size="9.5">content lives in the record, read it even after overwrite</text>
+
+    <rect x="400" y="140" width="175" height="48" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="487" y="160" fill="#e3fffa">large file</text>
+    <text x="487" y="176" fill="#9fb0c8" font-size="9.5">$DATA non-resident</text>
+    <rect x="592" y="140" width="175" height="48" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="679" y="160" fill="#e3fffa">runlist</text>
+    <text x="679" y="176" fill="#9fb0c8" font-size="9.5" font-family="'JetBrains Mono',monospace">21 18 34 56</text>
+
+    <rect x="400" y="200" width="367" height="48" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="583" y="220" fill="#e3fffa">24 clusters starting at LCN 22068</text>
+    <text x="583" y="236" fill="#6c7b93" font-size="9.5">header nibbles give LENGTH and OFFSET, offset is relative</text>
+  </g>
+  <line x1="575" y1="164" x2="590" y2="164" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="679" y1="188" x2="640" y2="198" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+
+  <!-- Footer: timestomp -->
+  <rect x="33" y="320" width="734" height="56" rx="8" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+  <text x="48" y="342" font-size="11.5" fill="#ff2a6d">Timestomp detection</text>
+  <text x="48" y="362" font-size="11" fill="#9fb0c8">$SI (4 times, Explorer reads, easy to forge) vs $FN (4 times, kernel sets, hard). $SI.Created far earlier than $FN.Created, or a .0000000 fraction, means forged.</text>
+
+  <text x="400" y="404" text-anchor="middle" font-size="11" fill="#6c7b93">C in MACB is MFT entry Changed, not Create. B (Born) is the real creation time.</text>
+</svg>

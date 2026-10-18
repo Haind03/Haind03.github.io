@@ -1,0 +1,11 @@
+=== Lab 4.6: kiem tra cong cu Volume Shadow Copy ===
+  [thieu]  vshadowinfo
+  [thieu]  vshadowmount
+  [co]     mmls -> /usr/bin/mmls
+  [co]     fls -> /usr/bin/fls
+
+libvshadow (vshadowinfo/vshadowmount) cai bang: apt install libvshadow-utils
+hoac build tu github.com/libyal/libvshadow.
+
+Dua image co VSS lam tham so de chay thu: bash check_tools.sh disk.raw
+Khong co image/tool -> xem README.md de lam BAI TAP tren VM Windows.

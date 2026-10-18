@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="420" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">File carving: recover files by their signature</text>
+  <text x="400" y="55" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">no metadata, scan raw bytes from header to footer</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- Row 1: signatures -->
+  <text x="28" y="86" font-size="12.5" fill="#00f0ff" font-family="'JetBrains Mono',monospace">1. Each format has a fixed header, many have a footer too</text>
+  <g font-size="12" text-anchor="middle">
+    <rect x="28" y="98" width="240" height="50" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="148" y="120" fill="#e3fffa">JPEG</text>
+    <text x="148" y="138" fill="#9fb0c8" font-size="10.5" font-family="'JetBrains Mono',monospace">FF D8 FF ... FF D9</text>
+
+    <rect x="282" y="98" width="236" height="50" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="400" y="120" fill="#e3fffa">PNG</text>
+    <text x="400" y="138" fill="#9fb0c8" font-size="10.5" font-family="'JetBrains Mono',monospace">89 50 4E 47 ... IEND</text>
+
+    <rect x="532" y="98" width="240" height="50" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="652" y="120" fill="#e3fffa">PDF</text>
+    <text x="652" y="138" fill="#9fb0c8" font-size="10.5" font-family="'JetBrains Mono',monospace">%PDF ... %%EOF</text>
+  </g>
+
+  <!-- Row 2: carve action -->
+  <text x="28" y="180" font-size="12.5" fill="#5fe3b0" font-family="'JetBrains Mono',monospace">2. Scan the block, cut from the header to the matching footer</text>
+  <g text-anchor="middle">
+    <rect x="28" y="192" width="430" height="48" rx="7" fill="#111827" stroke="#263451"/>
+    <text x="243" y="186" font-size="10.5" fill="#6c7b93" text-anchor="start">raw data block</text>
+    <rect x="118" y="198" width="160" height="36" rx="5" fill="#0b1518" stroke="#ff2a6d"/>
+    <text x="198" y="221" font-size="11" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">FF D8 FF ... FF D9</text>
+
+    <rect x="516" y="192" width="256" height="48" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="644" y="214" font-size="12" fill="#e3fffa">carved file</text>
+    <text x="644" y="231" font-size="10.5" fill="#9fb0c8">content only, no name / no timestamp</text>
+  </g>
+  <line x1="458" y1="216" x2="512" y2="216" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+
+  <!-- Row 3: fragmentation -->
+  <text x="28" y="288" font-size="12.5" fill="#ff2a6d" font-family="'JetBrains Mono',monospace">3. Fragmented files defeat header/footer carving</text>
+  <g text-anchor="middle">
+    <rect x="28" y="300" width="744" height="54" rx="7" fill="#0b1518" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+    <text x="400" y="322" font-size="11.5" fill="#e3fffa" font-family="'JetBrains Mono',monospace">FF D8 FF [part A]  |  another file's data  |  [part B] FF D9</text>
+    <text x="400" y="341" font-size="11" fill="#9fb0c8">the carver grabs everything in between and produces a corrupt JPEG</text>
+  </g>
+
+  <text x="400" y="394" text-anchor="middle" font-size="11" fill="#6c7b93">foremost and scalpel carve by signature; PhotoRec handles fragmentation better; bulk_extractor scans raw bytes for IOCs.</text>
+</svg>

@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 390" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="390" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="28" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">File and folder access: one copy-to-USB story</text>
+  <text x="400" y="48" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">these artifacts persist after the file is deleted and the USB removed</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- timeline -->
+  <line x1="70" y1="150" x2="730" y2="150" stroke="#6c7b93" stroke-width="2" marker-end="url(#a)"/>
+  <text x="742" y="146" font-size="10" fill="#6c7b93" font-family="'JetBrains Mono',monospace">time</text>
+
+  <!-- time labels -->
+  <g font-size="12" fill="#9fb0c8" text-anchor="middle" font-family="'JetBrains Mono',monospace">
+    <text x="160" y="132">13:40</text>
+    <text x="400" y="132">13:41</text>
+    <text x="640" y="132">13:42</text>
+  </g>
+
+  <!-- nodes -->
+  <circle cx="160" cy="150" r="7" fill="#0d121d" stroke="#00f0ff" stroke-width="2"/>
+  <circle cx="400" cy="150" r="7" fill="#0d121d" stroke="#fcee0a" stroke-width="2"/>
+  <circle cx="640" cy="150" r="7" fill="#0d121d" stroke="#5fe3b0" stroke-width="2"/>
+
+  <!-- connectors -->
+  <g stroke="#263451" stroke-width="1.5">
+    <line x1="160" y1="157" x2="160" y2="176"/>
+    <line x1="400" y1="157" x2="400" y2="176"/>
+    <line x1="640" y1="157" x2="640" y2="176"/>
+  </g>
+
+  <!-- step boxes -->
+  <g font-size="12.5">
+    <rect x="70" y="176" width="180" height="74" rx="7" fill="#111827" stroke="#00f0ff"/>
+    <text x="82" y="198" fill="#e3fffa">USB inserted</text>
+    <text x="82" y="216" fill="#6c7b93" font-size="10" font-family="'JetBrains Mono',monospace">USBSTOR,</text>
+    <text x="82" y="231" fill="#6c7b93" font-size="10" font-family="'JetBrains Mono',monospace">MountedDevices (4.1)</text>
+
+    <rect x="310" y="176" width="180" height="74" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="322" y="198" fill="#e3fffa">browse E:\Du_an_mat</text>
+    <text x="322" y="216" fill="#6c7b93" font-size="10" font-family="'JetBrains Mono',monospace">Shellbag</text>
+    <text x="322" y="231" fill="#6c7b93" font-size="10" font-family="'JetBrains Mono',monospace">(UsrClass.dat)</text>
+
+    <rect x="550" y="176" width="180" height="74" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="562" y="198" fill="#e3fffa">open bang_luong.xlsx</text>
+    <text x="562" y="216" fill="#6c7b93" font-size="10" font-family="'JetBrains Mono',monospace">LNK + RecentDocs</text>
+    <text x="562" y="231" fill="#6c7b93" font-size="10" font-family="'JetBrains Mono',monospace">+ Jump List DestList</text>
+  </g>
+
+  <!-- persistence band -->
+  <rect x="70" y="286" width="660" height="72" rx="7" fill="#0b1518" stroke="#5fe3b0" stroke-dasharray="5 4"/>
+  <text x="84" y="308" font-size="12.5" fill="#5fe3b0">Persists after cleanup</text>
+  <text x="84" y="328" font-size="11" fill="#9fb0c8">File deleted, USB pulled, share removed. The LNK, Shellbag and Jump List stay behind.</text>
+  <text x="84" y="346" font-size="11" fill="#6c7b93">They still hold the target path, the target MAC, the volume serial and DriveType Removable.</text>
+</svg>

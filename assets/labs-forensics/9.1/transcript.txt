@@ -1,0 +1,71 @@
+============================================================
+[1] fsstat: xac nhan filesystem ext4
+============================================================
+FILE SYSTEM INFORMATION
+--------------------------------------------
+File System Type: Ext4
+Volume Name: WEBSRV
+Volume ID: eeeeeeeeeeeeddddccccbbbbaaaaaaaa
+
+Last Written at: 2026-10-18 17:32:03 (+07)
+Last Checked at: 2026-10-18 17:32:03 (+07)
+
+============================================================
+[2] fls -r -m /: tao bodyfile (nguon cho mactime)
+============================================================
+bodyfile.txt: 23 dong
+0|/home|18|d/drwxr-xr-x|0|0|4096|1792319523|1792319523|1792319523|1792319523
+0|/home/user|19|d/drwxr-xr-x|0|0|4096|1792319523|1792319523|1792319523|1792319523
+0|/home/user/.bashrc|26|r/rrw-r--r--|0|0|33|1761984000|1761984000|1761984000|1761984000
+0|/lost+found|11|d/drwx------|0|0|16384|1792319523|1792319523|1792319523|1792319523
+0|/var|12|d/drwxr-xr-x|0|0|4096|1792319523|1792319523|1792319523|1792319523
+
+============================================================
+[3] mactime: super timeline day du (UTC)
+============================================================
+Date,Size,Type,Mode,UID,GID,Meta,File Name
+2025-11-01T08:00:00Z,32,macb,r/rrw-r--r--,0,0,24,"/etc/passwd"
+2025-11-01T08:00:00Z,33,macb,r/rrw-r--r--,0,0,26,"/home/user/.bashrc"
+2025-11-02T09:30:00Z,22,macb,r/rrw-r--r--,0,0,25,"/var/www/html/index.php"
+2026-01-15T00:05:01Z,44,macb,r/rrw-r--r--,0,0,27,"/var/log/auth.log"
+2026-01-15T10:15:03Z,29,macb,r/rrw-r--r--,0,0,28,"/var/www/html/upload.php"
+2026-01-15T10:16:40Z,33,macb,r/rrw-r--r--,0,0,29,"/tmp/.cache/sysupd"
+2026-01-15T10:17:12Z,36,macb,r/rrw-r--r--,0,0,30,"/etc/cron.d/apache-check"
+2026-01-15T10:18:30Z,49,macb,r/rrw-r--r--,0,0,31,"/root/.ssh/authorized_keys"
+2026-01-15T10:22:45Z,47,macb,r/rrw-r--r--,0,0,32,"/tmp/exfil.tar.gz (deleted)"
+2026-10-18T10:32:03Z,16384,macb,d/drwx------,0,0,11,"/lost+found"
+2026-10-18T10:32:03Z,4096,macb,d/drwxr-xr-x,0,0,12,"/var"
+2026-10-18T10:32:03Z,4096,macb,d/drwxr-xr-x,0,0,13,"/var/www"
+2026-10-18T10:32:03Z,4096,macb,d/drwxr-xr-x,0,0,14,"/var/www/html"
+2026-10-18T10:32:03Z,4096,macb,d/drwxr-xr-x,0,0,15,"/var/log"
+2026-10-18T10:32:03Z,4096,macb,d/drwxr-xr-x,0,0,16,"/etc"
+2026-10-18T10:32:03Z,4096,macb,d/drwxr-xr-x,0,0,17,"/etc/cron.d"
+2026-10-18T10:32:03Z,4096,macb,d/drwxr-xr-x,0,0,18,"/home"
+2026-10-18T10:32:03Z,4096,macb,d/drwxr-xr-x,0,0,19,"/home/user"
+2026-10-18T10:32:03Z,4096,macb,d/drwxr-xr-x,0,0,20,"/root"
+2026-10-18T10:32:03Z,4096,macb,d/drwxr-xr-x,0,0,21,"/root/.ssh"
+2026-10-18T10:32:03Z,4096,macb,d/drwxr-xr-x,0,0,22,"/tmp"
+2026-10-18T10:32:03Z,4096,macb,d/drwxr-xr-x,0,0,23,"/tmp/.cache"
+
+============================================================
+[4] LOC CUA SO SU KIEN: 2026-01-15 10:15 -> 10:25 UTC
+============================================================
+Chi con dung chuoi tan cong, sap theo thu tu thoi gian:
+Date,Size,Type,Mode,UID,GID,Meta,File Name
+2026-01-15T10:15:03Z,29,macb,r/rrw-r--r--,0,0,28,"/var/www/html/upload.php"
+2026-01-15T10:16:40Z,33,macb,r/rrw-r--r--,0,0,29,"/tmp/.cache/sysupd"
+2026-01-15T10:17:12Z,36,macb,r/rrw-r--r--,0,0,30,"/etc/cron.d/apache-check"
+2026-01-15T10:18:30Z,49,macb,r/rrw-r--r--,0,0,31,"/root/.ssh/authorized_keys"
+2026-01-15T10:22:45Z,47,macb,r/rrw-r--r--,0,0,32,"/tmp/exfil.tar.gz (deleted)"
+
+============================================================
+[5] NHAN XET
+============================================================
+ Thu tu doc duoc tu timeline (initial access -> persistence -> staging):
+  10:15:03  /var/www/html/upload.php      webshell (initial access / T1190)
+  10:16:40  /tmp/.cache/sysupd            payload ELF trong thu muc an (execution)
+  10:17:12  /etc/cron.d/apache-check      persistence qua cron (T1053.003)
+  10:18:30  /root/.ssh/authorized_keys    them SSH key attacker (persistence)
+  10:22:45  /tmp/exfil.tar.gz (deleted)   staging truoc exfil (T1560)
+ File exfil.tar.gz da bi xoa nhung van hien trong timeline voi nhan (deleted).
+ Noise truoc do (passwd, index.php, .bashrc, auth.log) nam ngoai cua so -> da bi loc bo.

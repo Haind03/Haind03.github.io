@@ -1,0 +1,27 @@
+Bien dich rule tu: rules.yar
+================================================================
+file                 sha256(16)         matches
+----------------------------------------------------------------
+invoice_2026.exe     8edbde1b760e78ce   ['LAB_marker_weak', 'LAB_BADGER_strong']
+it_report.txt        4a40e2fde8adb4ff   ['LAB_marker_weak']
+photo.jpg            fb27504d9d676f02   clean
+readme.txt           9132e67017c15b89   clean
+setup.exe            c2610a2ce70dedad   clean
+================================================================
+Chi tiet chuoi khop tren mau 'mã độc' (kieu yara -s):
+  [LAB_marker_weak]
+     $w       @ 0x5f
+  [LAB_BADGER_strong]
+     $mutex   @ 0x9d
+     $c2      @ 0x7d
+     $cfg     @ 0x73
+     $api1    @ 0xb4
+     $api2    @ 0xc7
+     $api3    @ 0xd6
+================================================================
+Bai hoc strong vs weak:
+ - invoice_2026.exe khop CA HAI rule (co marker manh + nhom API).
+ - it_report.txt (ghi chu IT lanh) khop rule YEU vi chi chua tu 'malware'
+   -> false positive. Rule MANH khong khop no (thieu magic MZ + marker).
+ - setup.exe co chuoi API yeu (VirtualAllocEx) nhung thieu marker manh
+   -> rule MANH khong khop -> tranh duoc false positive.

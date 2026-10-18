@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 358" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="358" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">Timestomp leaves $SI and $FN disagreeing</text>
+  <text x="400" y="54" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">user mode rewrites $SI; the kernel's $FN and three outside sources keep the real time</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- MFT record with two timestamp attributes -->
+  <rect x="40" y="74" width="720" height="140" rx="8" fill="#0d121d" stroke="#263451"/>
+  <text x="56" y="94" font-size="12" fill="#9fb0c8" font-family="'JetBrains Mono',monospace">MFT record  C:\Users\Public\svc_host.exe</text>
+
+  <rect x="58" y="104" width="684" height="42" rx="6" fill="#111827" stroke="#ff2a6d" stroke-dasharray="5 4"/>
+  <text x="72" y="122" font-size="11.5" font-weight="700" fill="#ff2a6d">$STANDARD_INFORMATION ($SI)</text>
+  <text x="72" y="139" font-size="11" fill="#e3fffa" font-family="'JetBrains Mono',monospace">Born: 2009-01-05 07:00:00.0000000</text>
+  <text x="726" y="129" text-anchor="end" font-size="10.5" fill="#9fb0c8">user-mode writable, nanos all 0</text>
+
+  <rect x="58" y="152" width="684" height="42" rx="6" fill="#111827" stroke="#00f0ff"/>
+  <text x="72" y="170" font-size="11.5" font-weight="700" fill="#00f0ff">$FILE_NAME ($FN)</text>
+  <text x="72" y="187" font-size="11" fill="#e3fffa" font-family="'JetBrains Mono',monospace">Born: 2024-03-14 09:04:17.3351246</text>
+  <text x="726" y="177" text-anchor="end" font-size="10.5" fill="#9fb0c8">kernel only, natural nanos</text>
+
+  <!-- independent anchors -->
+  <g font-size="11.5">
+    <rect x="40" y="248" width="226" height="66" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="54" y="268" fill="#5fe3b0" font-weight="700">Prefetch (PECmd)</text>
+    <text x="54" y="286" fill="#9fb0c8" font-size="10.5">first + last run</text>
+    <text x="54" y="303" fill="#e3fffa" font-family="'JetBrains Mono',monospace" font-size="11">2024-03-14 09:04</text>
+
+    <rect x="287" y="248" width="226" height="66" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="301" y="268" fill="#5fe3b0" font-weight="700">$UsnJrnl (UsnJrnl2Csv)</text>
+    <text x="301" y="286" fill="#9fb0c8" font-size="10.5">FileCreate</text>
+    <text x="301" y="303" fill="#e3fffa" font-family="'JetBrains Mono',monospace" font-size="11">2024-03-14 09:04</text>
+
+    <rect x="534" y="248" width="226" height="66" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="548" y="268" fill="#5fe3b0" font-weight="700">Super timeline (9.1)</text>
+    <text x="548" y="286" fill="#9fb0c8" font-size="10.5">crtime</text>
+    <text x="548" y="303" fill="#e3fffa" font-family="'JetBrains Mono',monospace" font-size="11">2024-03-14 09:04</text>
+  </g>
+
+  <!-- anchors confirm the real time against $FN -->
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="153" y1="246" x2="382" y2="198"/>
+    <line x1="400" y1="246" x2="400" y2="198"/>
+    <line x1="647" y1="246" x2="418" y2="198"/>
+  </g>
+
+  <text x="400" y="338" text-anchor="middle" font-size="11" fill="#6c7b93">Three independent sources agree on 2024, so the 2009 in $SI is a timestomp, not the truth.</text>
+</svg>

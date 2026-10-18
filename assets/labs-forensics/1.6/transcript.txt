@@ -1,0 +1,43 @@
+=== B1: dumpe2fs - block size, inode size, backup superblock ===
+Block size:               1024
+Blocks per group:         8192
+Inode blocks per group:   512
+Inode size:	          256
+  Primary superblock at 1, Group descriptors at 2-2
+  Backup superblock at 8193, Group descriptors at 8194-8194
+
+=== B2: fls -r - cay thu muc + inode ===
+d/d 11:	lost+found
+d/d 12:	hoso
++ r/r 14:	ketoan.csv
+r/r 13:	baocao.txt
+V/V 4097:	$OrphanFiles
+
+=== B3: icat doc noi dung theo inode ===
+inode baocao.txt = 13
+bao cao dieu tra - noi dung mat quy 3
+
+=== B4: istat - 4 timestamp (co ca File Created cua ext4) ===
+inode: 13
+Allocated
+Group: 0
+Generation Id: 0
+uid / gid: 0 / 0
+mode: rrwxrwxrwx
+Flags: Extents, 
+size: 38
+num of links: 1
+
+Inode Times:
+Accessed:	2026-10-18 17:36:28.000000000 (+07)
+File Modified:	2026-10-18 17:36:28.000000000 (+07)
+Inode Modified:	2026-10-18 17:36:28.000000000 (+07)
+File Created:	2026-10-18 17:36:28.000000000 (+07)
+
+Direct Blocks:
+1173 
+
+=== B5: xoa /baocao.txt roi kiem fls -r (dau *) va icat khoi phuc ===
+MD5 goc: 96ca51f8d66ecc81df0f8e7ba497beb1
+r/r * 13:	baocao.txt
+icat inode 13 sau xoa: 96ca51f8d66ecc81df0f8e7ba497beb1  (md5 noi dung khoi phuc)

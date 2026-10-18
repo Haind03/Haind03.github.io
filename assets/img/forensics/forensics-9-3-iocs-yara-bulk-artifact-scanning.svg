@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 380" font-family="'Chakra Petch','Segoe UI',Arial,sans-serif">
+  <rect x="0" y="0" width="800" height="380" rx="12" fill="#0d121d" stroke="#263451"/>
+  <text x="400" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#e3fffa">The Pyramid of Pain and where each tool catches</text>
+  <text x="400" y="54" text-anchor="middle" font-size="12" fill="#6c7b93" font-family="'JetBrains Mono',monospace">higher up the pyramid = harder for the attacker to change</text>
+
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#6c7b93"/>
+    </marker>
+  </defs>
+
+  <!-- pyramid bands, centered at x=250 -->
+  <g text-anchor="middle" font-size="11.5">
+    <rect x="175" y="70"  width="150" height="42" rx="5" fill="#111827" stroke="#5fe3b0"/>
+    <text x="250" y="96"  fill="#e3fffa">TTPs (behavior)</text>
+
+    <rect x="150" y="114" width="200" height="42" rx="5" fill="#111827" stroke="#fcee0a"/>
+    <text x="250" y="140" fill="#e3fffa">Tools</text>
+
+    <rect x="120" y="158" width="260" height="42" rx="5" fill="#111827" stroke="#fcee0a"/>
+    <text x="250" y="184" fill="#e3fffa">Network / Host Artifacts</text>
+
+    <rect x="90"  y="202" width="320" height="42" rx="5" fill="#111827" stroke="#00f0ff"/>
+    <text x="250" y="228" fill="#e3fffa">Domain Names</text>
+
+    <rect x="60"  y="246" width="380" height="42" rx="5" fill="#111827" stroke="#00f0ff"/>
+    <text x="250" y="272" fill="#e3fffa">IP Addresses</text>
+
+    <rect x="30"  y="290" width="440" height="42" rx="5" fill="#111827" stroke="#00f0ff"/>
+    <text x="250" y="316" fill="#e3fffa">Hash Values</text>
+  </g>
+
+  <!-- edge annotations -->
+  <text x="250" y="66" text-anchor="middle" font-size="10" fill="#5fe3b0">hardest to change, catching here hurts most</text>
+  <text x="250" y="347" text-anchor="middle" font-size="10" fill="#6c7b93">easiest, change 1 byte and the hash differs, nearly useless alone</text>
+
+  <!-- tool boxes on the right -->
+  <g font-size="11.5">
+    <rect x="520" y="70"  width="256" height="46" rx="7" fill="#111827" stroke="#5fe3b0"/>
+    <text x="534" y="90"  fill="#5fe3b0" font-weight="700">Sigma</text>
+    <text x="534" y="107" fill="#9fb0c8" font-size="10.5">hunt TTPs in the event log</text>
+
+    <rect x="520" y="130" width="256" height="46" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="534" y="150" fill="#fcee0a" font-weight="700">capa</text>
+    <text x="534" y="167" fill="#9fb0c8" font-size="10.5">reads capabilities / behavior</text>
+
+    <rect x="520" y="190" width="256" height="46" rx="7" fill="#111827" stroke="#fcee0a"/>
+    <text x="534" y="210" fill="#fcee0a" font-weight="700">YARA</text>
+    <text x="534" y="227" fill="#9fb0c8" font-size="10.5">file strings, hex, PE structure</text>
+
+    <rect x="520" y="256" width="256" height="60" rx="7" fill="#0b1518" stroke="#00f0ff" stroke-dasharray="5 4"/>
+    <text x="534" y="276" fill="#9fb0c8" font-size="10.5">Hash / IP / Domain =</text>
+    <text x="534" y="292" fill="#9fb0c8" font-size="10.5">block-list IOCs, precise but</text>
+    <text x="534" y="308" fill="#9fb0c8" font-size="10.5">easy for the attacker to swap</text>
+  </g>
+
+  <!-- arrows from tools to the matching band -->
+  <g stroke="#6c7b93" stroke-width="2" marker-end="url(#a)" fill="none">
+    <line x1="518" y1="93"  x2="327" y2="91"/>
+    <line x1="518" y1="153" x2="352" y2="137"/>
+    <line x1="518" y1="213" x2="382" y2="181"/>
+  </g>
+</svg>

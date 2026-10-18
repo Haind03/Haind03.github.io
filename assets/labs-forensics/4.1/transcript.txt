@@ -1,0 +1,35 @@
+=== Lab 4.1: Registry forensics (hive offline, regipy) ===
+
+--- [1] Boi canh may ---
+ComputerName: ['WKS-WIN732BITA', 'WIN-V5T3CSP8U4H']
+TimeZone Bias (phut): 300 => UTC-5 (moi timestamp registry la UTC)
+Select (ControlSet dang dung): [{'name': 'Current', 'value': 1, 'value_type': 'REG_DWORD', 'is_corrupted': False}, {'name': 'Default', 'value': 1, 'value_type': 'REG_DWORD', 'is_corrupted': False}, {'name': 'Failed', 'value': 0, 'value_type': 'REG_DWORD', 'is_corrupted': False}, {'name': 'LastKnownGood', 'value': 2, 'value_type': 'REG_DWORD', 'is_corrupted': False}]
+
+--- [2] Lich su USB (USBSTOR, ControlSet001) ---
+  Ven_HP Prod_v100w Rev_1024 | serial=AA951D0000007252&0 | lastwrite=2012-04-07T10:31:37.640872+00:00
+
+--- [3] Autorun / persistence ---
+  SOFTWARE\Microsoft\Windows\CurrentVersion\Run (lastwrite 2012-04-04T01:54:23.669836+00:00)
+     VMware Tools = "C:\Program Files\VMware\VMware Tools\VMwareTray.exe"
+     VMware User Process = "C:\Program Files\VMware\VMware Tools\VMwareUser.exe"
+     Adobe ARM = "C:\Program Files\Common Files\Adobe\ARM\1.0\AdobeARM.exe"
+     McAfeeUpdaterUI = "C:\Program Files\McAfee\Common Framework\udaterui.exe" /StartedFromRunKey
+     ShStatEXE = "C:\Program Files\McAfee\VirusScan Enterprise\SHSTAT.EXE" /STANDALONE
+     McAfee Host Intrusion Prevention Tray = "C:\Program Files\McAfee\Host Intrusion Prevention\FireTray.exe"
+     svchost = c:\windows\system32\dllhost\svchost.exe
+  NTUSER\Software\Microsoft\Windows\CurrentVersion\Run (lastwrite 2012-04-03T21:19:54.837716+00:00)
+     Sidebar = %ProgramFiles%\Windows Sidebar\Sidebar.exe /autoRun
+
+--- [4] Hoat dong user (NTUSER) ---
+UserAssist: 62 entries. Top 5 theo run_counter:
+   run=14  last=2012-04-03T22:06:58.124282+00:00  %PROGRAMDATA%\Microsoft\Windows\Start Menu\Programs\Accessories\Welcome Center.lnk
+   run=14  last=2012-04-03T22:06:58.124282+00:00  Microsoft.Windows.GettingStarted
+   run=13  last=2012-04-03T22:06:58.124282+00:00  %PROGRAMDATA%\Microsoft\Windows\Start Menu\Programs\Media Center.lnk
+   run=13  last=2012-04-03T22:06:58.124282+00:00  Microsoft.Windows.MediaCenter
+   run=12  last=2012-04-03T22:06:58.124282+00:00  %PROGRAMDATA%\Microsoft\Windows\Start Menu\Programs\Accessories\Calculator.lnk
+WordWheelQuery (tu khoa Explorer search): ['alloy', 'test-plan', 'vibranium', 'accounts', 'myron maclain', 'adamantium']
+WinRAR history (archive da mo):
+   C:\Users\tony\Downloads\RegistryFinder64.zip  (2021-11-18T13:59:04.888952+00:00)
+   C:\temp\token.zip  (2021-11-18T13:59:04.888952+00:00)
+   C:\Users\tony\Downloads  (2021-11-18T14:00:44.180468+00:00)
+   C:\temp  (2021-11-18T14:00:44.180468+00:00)

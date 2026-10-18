@@ -1,0 +1,32 @@
+=== B1: binwalk quet chu ky ===
+
+DECIMAL       HEXADECIMAL     DESCRIPTION
+--------------------------------------------------------------------------------
+300           0x12C           JPEG image data, JFIF standard 1.01
+4760          0x1298          PNG image, 160 x 100, 1-bit colormap, non-interlaced
+5249          0x1481          Zip archive data, at least v2.0 to extract, compressed size: 61, uncompressed size: 65, name: doc.txt
+5452          0x154C          End of Zip archive, footer length: 22
+5674          0x162A          PDF document, version: "1.4"
+
+
+=== B2: carver python theo header/footer ===
+01.jpg     offset=300    size=4260
+01.png     offset=4760   size=289
+01.zip     offset=5249   size=225
+01.pdf     offset=5674   size=296
+
+=== B3: verify tung file carve ra co mo duoc khong ===
+out/01.jpg   -> JPEG image data, JFIF standard 1.01, aspect ratio, density 1x1, segment length 16, baseline, precision 8, 200x140, components 3
+out/01.pdf   -> PDF document, version 1.4, 1 pages
+out/01.png   -> PNG image data, 160 x 100, 1-bit colormap, non-interlaced
+out/01.zip   -> Zip archive data, at least v2.0 to extract, compression method=deflate
+-- unzip test --
+    testing: doc.txt                  OK
+No errors detected in compressed data of out/01.zip.
+
+=== B4: so khop byte voi ban goc (JPG/PNG carve dung tron) ===
+JPG khop tung byte (md5 ef35c91d2fc1cdd8993906fc964f3c31)
+PNG khop tung byte (md5 5df443cc635492c077b5cb4cd6a64e43)
+
+=== B5: tu tim header JPEG bang xxd + grep (doi chieu offset voi binwalk) ===
+00000120: af3b 0f73 128c 4c05 7901 5e19 ffd8 ffe0  .;.s..L.y.^.....
