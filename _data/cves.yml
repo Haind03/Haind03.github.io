@@ -162,6 +162,12 @@
   type: "OS Command Injection"
   date: 2026-10-11
   url: https://www.cve.org/CVERecord?id=CVE-2026-108744
+- id: CVE-2026-112018
+  cvss: 7.3
+  plugin: "cgltf <= 1.15"
+  type: "Out-of-bounds Write"
+  date: 2026-10-18
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112018
 - id: CVE-2026-105883
   cvss: 7.1
   plugin: "Th Shop Mania <= 1.9.1"
@@ -528,6 +534,30 @@
   type: "Out-of-bounds Write"
   date: 2026-10-15
   url: https://www.cve.org/CVERecord?id=CVE-2026-111275
+- id: CVE-2026-112007
+  cvss: 6.9
+  plugin: "Schism Tracker <= 20260524"
+  type: "Out-of-bounds Write"
+  date: 2026-10-18
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112007
+- id: CVE-2026-112008
+  cvss: 6.9
+  plugin: "libmng <= 2.0.3"
+  type: "Heap Overflow"
+  date: 2026-10-18
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112008
+- id: CVE-2026-112019
+  cvss: 6.9
+  plugin: "cgltf <= 1.15"
+  type: "Out-of-bounds Read"
+  date: 2026-10-18
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112019
+- id: CVE-2026-112020
+  cvss: 6.9
+  plugin: "lodepng <= 20261006"
+  type: "Out-of-bounds Read"
+  date: 2026-10-18
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112020
 - id: CVE-2016-20099
   cvss: 6.8
   plugin: "l-smash <= 2.14.5"
@@ -702,6 +732,24 @@
   type: "Out-of-bounds Read"
   date: 2026-10-16
   url: https://www.cve.org/CVERecord?id=CVE-2026-111677
+- id: CVE-2026-112009
+  cvss: 6.8
+  plugin: "smpeg <= 2.0.0"
+  type: "Out-of-bounds Read"
+  date: 2026-10-18
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112009
+- id: CVE-2026-112010
+  cvss: 6.8
+  plugin: "smpeg <= 2.0.0"
+  type: "Integer Underflow (Wrap or Wraparound)"
+  date: 2026-10-18
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112010
+- id: CVE-2026-112013
+  cvss: 6.8
+  plugin: "libtta <= 2.3"
+  type: "Divide by Zero"
+  date: 2026-10-18
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112013
 - id: CVE-2026-56050
   cvss: 6.5
   plugin: "PPOM Product Addons & Custom Fields for WooCommerce <= 33.0.18"
@@ -822,6 +870,12 @@
   type: "Improper Handling of Case Sensitivity"
   date: 2026-10-11
   url: https://www.cve.org/CVERecord?id=CVE-2026-108721
+- id: CVE-2026-112011
+  cvss: 5.8
+  plugin: "libtta <= 2.3"
+  type: "Integer Overflow or Wraparound"
+  date: 2026-10-18
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112011
 - id: CVE-2026-108599
   cvss: 5.7
   plugin: "phi <= 0.28.4"
@@ -990,6 +1044,12 @@
   type: "Decompression Bomb"
   date: 2026-10-11
   url: https://www.cve.org/CVERecord?id=CVE-2026-108750
+- id: CVE-2026-112012
+  cvss: 5.3
+  plugin: "libtta <= 2.3"
+  type: "Out-of-bounds Write"
+  date: 2026-10-18
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112012
 - id: CVE-2026-108115
   cvss: 4.9
   plugin: "suna <= 0.13.52"
