@@ -1,7 +1,7 @@
 ---
 title: "Lesson 7.2: File Upload to RCE"
 image:
-  path: /assets/img/covers/web-7-2-upload-shell-rce.webp
+  path: /assets/img/covers/web-7-2-file-upload-to-rce.webp
   alt: "File Upload to RCE"
 date: 2024-06-15 15:10:00 +0700
 categories: ["Web Security", "Web · File and Path"]
