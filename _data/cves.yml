@@ -558,6 +558,24 @@
   type: "Out-of-bounds Read"
   date: 2026-10-18
   url: https://www.cve.org/CVERecord?id=CVE-2026-112020
+- id: CVE-2026-112048
+  cvss: 6.9
+  plugin: "libspatialite <= 5.1.0"
+  type: "Uncontrolled Memory Allocation"
+  date: 2026-10-18
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112048
+- id: CVE-2026-112052
+  cvss: 6.9
+  plugin: "libspatialite <= 5.1.0"
+  type: "Integer Overflow or Wraparound"
+  date: 2026-10-18
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112052
+- id: CVE-2026-112059
+  cvss: 6.9
+  plugin: "libLAS <= 1.8.1"
+  type: "Out-of-bounds Write"
+  date: 2026-10-18
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112059
 - id: CVE-2016-20099
   cvss: 6.8
   plugin: "l-smash <= 2.14.5"
@@ -750,6 +768,42 @@
   type: "Divide by Zero"
   date: 2026-10-18
   url: https://www.cve.org/CVERecord?id=CVE-2026-112013
+- id: CVE-2026-112053
+  cvss: 6.8
+  plugin: "schroedinger <= 1.0.11"
+  type: "Out-of-bounds Read"
+  date: 2026-10-18
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112053
+- id: CVE-2026-112054
+  cvss: 6.8
+  plugin: "schroedinger <= 1.0.11"
+  type: "Divide by Zero"
+  date: 2026-10-18
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112054
+- id: CVE-2026-112055
+  cvss: 6.8
+  plugin: "wv <= 1.2.9"
+  type: "Out-of-bounds Read"
+  date: 2026-10-18
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112055
+- id: CVE-2026-112056
+  cvss: 6.8
+  plugin: "wv <= 1.2.9"
+  type: "Out-of-bounds Read"
+  date: 2026-10-18
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112056
+- id: CVE-2026-112057
+  cvss: 6.8
+  plugin: "libdvdnav < 7.0.0"
+  type: "Out-of-bounds Read"
+  date: 2026-10-18
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112057
+- id: CVE-2026-112058
+  cvss: 6.8
+  plugin: "libdvdnav <= 7.0.0"
+  type: "Out-of-bounds Read"
+  date: 2026-10-18
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112058
 - id: CVE-2026-56050
   cvss: 6.5
   plugin: "PPOM Product Addons & Custom Fields for WooCommerce <= 33.0.18"
@@ -780,6 +834,12 @@
   type: "Unauthenticated Unauthorized Lead and Search Manipulation"
   date: 2026-09-08
   url: https://www.cve.org/CVERecord?id=CVE-2026-81787
+- id: CVE-2026-112060
+  cvss: 6.4
+  plugin: "librtmp <= 2.6"
+  type: "Out-of-bounds Write"
+  date: 2026-10-18
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112060
 - id: CVE-2026-108604
   cvss: 6.3
   plugin: "tabularis <= 0.27.0"
@@ -852,6 +912,18 @@
   type: "Cleartext Transmission"
   date: 2026-10-11
   url: https://www.cve.org/CVERecord?id=CVE-2026-108716
+- id: CVE-2026-112062
+  cvss: 6.0
+  plugin: "lwIP <= 2.2.1"
+  type: "Stack-based Buffer Overflow"
+  date: 2026-10-18
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112062
+- id: CVE-2026-112063
+  cvss: 6.0
+  plugin: "libstrophe <= 0.14.0"
+  type: "Stack-based Buffer Overflow"
+  date: 2026-10-18
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112063
 - id: CVE-2026-108591
   cvss: 5.9
   plugin: "InnoShop <= 0.9.2"
@@ -1050,6 +1122,12 @@
   type: "Out-of-bounds Write"
   date: 2026-10-18
   url: https://www.cve.org/CVERecord?id=CVE-2026-112012
+- id: CVE-2026-112061
+  cvss: 5.3
+  plugin: "librtmp <= 2.6"
+  type: "Out-of-bounds Read"
+  date: 2026-10-18
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112061
 - id: CVE-2026-108115
   cvss: 4.9
   plugin: "suna <= 0.13.52"
