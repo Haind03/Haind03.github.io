@@ -804,6 +804,12 @@
   type: "Out-of-bounds Read"
   date: 2026-10-18
   url: https://www.cve.org/CVERecord?id=CVE-2026-112058
+- id: CVE-2026-112283
+  cvss: 6.8
+  plugin: "libbluray <= 1.5.1"
+  type: "Uncontrolled Memory Allocation"
+  date: 2026-10-19
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112283
 - id: CVE-2026-56050
   cvss: 6.5
   plugin: "PPOM Product Addons & Custom Fields for WooCommerce <= 33.0.18"
@@ -1182,6 +1188,12 @@
   type: "Out-of-bounds Read"
   date: 2026-10-16
   url: https://www.cve.org/CVERecord?id=CVE-2026-111678
+- id: CVE-2026-112284
+  cvss: 4.8
+  plugin: "libaribcaption <= 1.1.2"
+  type: "Out-of-bounds Read"
+  date: 2026-10-19
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112284
 - id: CVE-2026-108579
   cvss: 4.2
   plugin: "openpanel <= 2.3.0"
