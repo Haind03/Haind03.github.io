@@ -228,6 +228,24 @@
   type: "Integer Underflow (Wrap or Wraparound)"
   date: 2026-10-14
   url: https://www.cve.org/CVERecord?id=CVE-2026-110714
+- id: CVE-2026-112277
+  cvss: 7.1
+  plugin: "rdesktop <= 1.9.0"
+  type: "Out-of-bounds Read"
+  date: 2026-10-19
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112277
+- id: CVE-2026-112278
+  cvss: 7.1
+  plugin: "rdesktop <= 1.9.0"
+  type: "Out-of-bounds Read"
+  date: 2026-10-19
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112278
+- id: CVE-2026-112279
+  cvss: 7.1
+  plugin: "rdesktop <= 1.9.0"
+  type: "Out-of-bounds Read"
+  date: 2026-10-19
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112279
 - id: CVE-2026-27536
   cvss: 7.1
   plugin: "MailChimp Subscribe Form, Optin Builder, PopUp Builder, Form Builder <= 4.3.3"
@@ -576,6 +594,36 @@
   type: "Out-of-bounds Write"
   date: 2026-10-18
   url: https://www.cve.org/CVERecord?id=CVE-2026-112059
+- id: CVE-2026-112273
+  cvss: 6.9
+  plugin: "libtins <= 4.6"
+  type: "Out-of-bounds Read"
+  date: 2026-10-19
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112273
+- id: CVE-2026-112275
+  cvss: 6.9
+  plugin: "Netpbm <= 11.16.00"
+  type: "Out-of-bounds Write"
+  date: 2026-10-19
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112275
+- id: CVE-2026-112276
+  cvss: 6.9
+  plugin: "Netpbm <= 11.16.00"
+  type: "Out-of-bounds Read"
+  date: 2026-10-19
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112276
+- id: CVE-2026-112280
+  cvss: 6.9
+  plugin: "aribb24 <= 1.0.3"
+  type: "Heap-based Buffer Overflow"
+  date: 2026-10-19
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112280
+- id: CVE-2026-112281
+  cvss: 6.9
+  plugin: "aribb24 <= 1.0.3"
+  type: "Stack-based Buffer Overflow"
+  date: 2026-10-19
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112281
 - id: CVE-2016-20099
   cvss: 6.8
   plugin: "l-smash <= 2.14.5"
@@ -804,6 +852,24 @@
   type: "Out-of-bounds Read"
   date: 2026-10-18
   url: https://www.cve.org/CVERecord?id=CVE-2026-112058
+- id: CVE-2026-112271
+  cvss: 6.8
+  plugin: "libdisplay-info <= 0.4.0"
+  type: "Out-of-bounds Read"
+  date: 2026-10-19
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112271
+- id: CVE-2026-112272
+  cvss: 6.8
+  plugin: "libdisplay-info 0.4.0"
+  type: "Out-of-bounds Read"
+  date: 2026-10-19
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112272
+- id: CVE-2026-112282
+  cvss: 6.8
+  plugin: "libbluray <= 1.5.1"
+  type: "Out-of-bounds Read"
+  date: 2026-10-19
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112282
 - id: CVE-2026-112283
   cvss: 6.8
   plugin: "libbluray <= 1.5.1"
@@ -888,6 +954,12 @@
   type: "Uninitialized Pointer"
   date: 2026-10-14
   url: https://www.cve.org/CVERecord?id=CVE-2026-110603
+- id: CVE-2026-112274
+  cvss: 6.3
+  plugin: "libtins <= 4.6"
+  type: "Out-of-bounds Read"
+  date: 2026-10-19
+  url: https://www.cve.org/CVERecord?id=CVE-2026-112274
 - id: CVE-2026-81788
   cvss: 6.3
   plugin: "IMPress for IDX Broker <= 3.3.0"
