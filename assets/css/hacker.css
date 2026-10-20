@@ -1,9 +1,11 @@
 /* ==========================================================================
-   Cyberpunk skin on top of Chirpy (dark mode is forced in _config.yml)
+   Cyberpunk skin on top of Chirpy
+   Dark is the default look; a light palette follows further down and the
+   sidebar toggle switches between them (theme_mode is empty in _config.yml).
    ========================================================================== */
 
 html:root,
-html:root[data-bs-theme] {
+html:root[data-bs-theme='dark'] {
   --cp-bg: #07090f;
   --cp-bg-2: #0a0e17;
   --cp-panel: #0d121d;
@@ -89,6 +91,45 @@ html:root[data-bs-theme] {
   --kbd-text-color: var(--cp-ink);
   --menu-bg: var(--cp-panel);
   --menu-border-color: var(--cp-line-2);
+}
+
+/* ---------- light theme (sidebar toggle) ---------------------------------
+   Only the color tokens change. Everything below this block is written in
+   terms of --cp-* / the Chirpy variables, so it follows the palette.
+   -------------------------------------------------------------------------- */
+
+html:root[data-bs-theme='light'] {
+  --cp-bg: #f3f5fa;
+  --cp-bg-2: #e9edf5;
+  --cp-panel: #ffffff;
+  --cp-panel-2: #eef2f9;
+  --cp-line: #d5dce8;
+  --cp-line-2: #b7c2d4;
+  --cp-cyan: #0a7e90;
+  --cp-cyan-dim: #0a6677;
+  --cp-magenta: #cf1457;
+  --cp-yellow: #c08a00;
+  --cp-text: #2b3650;
+  --cp-mute: #5d6a81;
+  --cp-ink: #121a2b;
+
+  /* Chirpy variables that held a hardcoded dark value above */
+  --mask-bg: #c7d0de;
+  --text-muted-highlight-color: #3f4a60;
+  --blockquote-text-color: #4a5570;
+  --link-underline-color: rgb(10 126 144 / 35%);
+  --card-shadow: 0 1px 3px rgb(18 26 43 / 8%);
+  --sidebar-bg: #eef2f9;
+  --sidebar-hover-bg: rgb(10 126 144 / 10%);
+  --topbar-bg: rgb(243 245 250 / 85%);
+  --tag-hover: rgb(10 126 144 / 12%);
+  --footnote-target-bg: rgb(207 20 87 / 18%);
+  --inline-code-bg: rgb(10 126 144 / 10%);
+  --code-color: #0a6f80;
+  --highlight-bg-color: #f1f4f9;
+  --highlight-lineno-color: #9aa6bb;
+  --code-header-bg: #e7ecf5;
+  --code-header-muted-color: #aeb9cb;
 }
 
 /* ---------- base ---------------------------------------------------------- */
@@ -533,3 +574,21 @@ details.lab-solution[open] > :not(summary) { animation: cp-line .3s ease-out bot
 #sidebar .site-subtitle span:nth-child(2n) { color: var(--cp-magenta); background: rgb(255 42 109 / 6%); border-color: rgb(255 42 109 / 28%); }
 .categories .category-trigger i { transition: transform .2s; }
 .categories .category-trigger.collapsed i { transform: rotate(-90deg); }
+
+/* ==========================================================================
+   Light theme: decorative bits that were hardcoded dark
+   ========================================================================== */
+
+/* scanlines read as heavy gray bands on white, so keep them barely there */
+html:root[data-bs-theme='light'] body::after {
+  background: repeating-linear-gradient(0deg, rgb(0 0 0 / 0%) 0 2px, rgb(0 0 0 / 4%) 3px, rgb(0 0 0 / 0%) 4px);
+}
+
+/* boot screen matches the light page instead of flashing near-black */
+html:root[data-bs-theme='light'] #cp-boot {
+  background: radial-gradient(circle at 50% 40%, #ffffff, #e6ebf4 70%);
+}
+
+/* lab box: keep the "LAB x.x" badge legible and the border visible on white */
+html:root[data-bs-theme='light'] .lab-box { border-color: rgb(192 138 0 / 55%) !important; }
+html:root[data-bs-theme='light'] .lab-box .lab-head b { color: #1a1300; }
