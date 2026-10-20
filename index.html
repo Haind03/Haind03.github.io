@@ -29,6 +29,17 @@ image:
   .cursor { display: inline-block; width: .6em; height: 1.1em; background: var(--cp-cyan); vertical-align: -.2em; box-shadow: 0 0 10px var(--cp-cyan); animation: blink 1s steps(1) infinite; }
   @keyframes blink { 50% { opacity: 0; } }
 
+  /* the terminal keeps a near-black background in both themes, so its text
+     stays on the neon palette even when the rest of the page goes light */
+  html:root[data-bs-theme='light'] .term-bar,
+  html:root[data-bs-theme='light'] .term .m { color: #6c7b93; }
+  html:root[data-bs-theme='light'] .term-bar b,
+  html:root[data-bs-theme='light'] .term .p { color: #00f0ff; }
+  html:root[data-bs-theme='light'] .term-bar .live,
+  html:root[data-bs-theme='light'] .term .d { color: #ff2a6d; }
+  html:root[data-bs-theme='light'] .term .y { color: #fcee0a; }
+  html:root[data-bs-theme='light'] .cursor { background: #00f0ff; box-shadow: 0 0 10px #00f0ff; }
+
   .portrait { position: relative; width: 210px; height: 210px; }
   .portrait .frame { position: absolute; inset: 0; padding: 3px; background: linear-gradient(135deg, var(--cp-cyan), transparent 40%, transparent 60%, var(--cp-magenta)); clip-path: polygon(24px 0, 100% 0, 100% calc(100% - 24px), calc(100% - 24px) 100%, 0 100%, 0 24px); }
   .portrait .frame a, .portrait .frame img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 0 !important; border: 0 !important; clip-path: polygon(22px 0, 100% 0, 100% calc(100% - 22px), calc(100% - 22px) 100%, 0 100%, 0 22px); }
@@ -65,6 +76,7 @@ image:
   .sec-h h2::before { content: none !important; }
   .sec-h::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, var(--cp-line-2), transparent); }
   .lead-cp { font-size: 1.08rem; color: #dbe6f3; border-left: 2px solid var(--cp-magenta); padding-left: 1rem; }
+  html:root[data-bs-theme='light'] .lead-cp { color: var(--cp-text); }
 
   /* ---------- timeline ---------- */
 

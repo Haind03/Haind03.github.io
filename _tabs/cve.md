@@ -19,6 +19,7 @@ order: 1
   .ca-kick { font: 500 .72rem var(--cp-mono); letter-spacing: .28em; text-transform: uppercase; color: var(--cp-magenta); margin: .25rem 0 1.25rem; }
   .ca-kick::before { content: ''; display: inline-block; width: 28px; height: 2px; background: var(--cp-magenta); vertical-align: middle; margin-right: .6rem; box-shadow: 0 0 8px var(--cp-magenta); }
   .ca-lead { font-size: 1.08rem; color: #dbe6f3; border-left: 2px solid var(--cp-cyan); padding-left: 1rem; }
+  html:root[data-bs-theme='light'] .ca-lead { color: var(--cp-text); }
 
   .ca-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .8rem; margin: 2rem 0 1.25rem; }
   .ca-stat { position: relative; background: var(--cp-panel); border: 1px solid var(--cp-line); padding: 1rem 1.1rem .9rem; clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%); }
