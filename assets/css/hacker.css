@@ -205,6 +205,7 @@ a:hover { text-shadow: 0 0 10px rgb(0 240 255 / 45%); }
 #sidebar #avatar img {
   border-radius: 0 !important;
   clip-path: polygon(var(--cp-cut) 0, 100% 0, 100% calc(100% - var(--cp-cut)), calc(100% - var(--cp-cut)) 100%, 0 100%, 0 var(--cp-cut));
+  background: var(--cp-panel);
 }
 
 #sidebar .site-title {

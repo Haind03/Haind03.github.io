@@ -29,20 +29,22 @@ image:
   .cursor { display: inline-block; width: .6em; height: 1.1em; background: var(--cp-cyan); vertical-align: -.2em; box-shadow: 0 0 10px var(--cp-cyan); animation: blink 1s steps(1) infinite; }
   @keyframes blink { 50% { opacity: 0; } }
 
-  /* the terminal keeps a near-black background in both themes, so its text
-     stays on the neon palette even when the rest of the page goes light */
+  /* light theme: the terminal becomes a light panel with dark, readable text */
+  html:root[data-bs-theme='light'] .term { background: #f1f4fa; }
+  html:root[data-bs-theme='light'] .term pre { color: var(--cp-text); }
   html:root[data-bs-theme='light'] .term-bar,
-  html:root[data-bs-theme='light'] .term .m { color: #6c7b93; }
+  html:root[data-bs-theme='light'] .term .m,
+  html:root[data-bs-theme='light'] .term .m2 { color: var(--cp-mute); }
   html:root[data-bs-theme='light'] .term-bar b,
-  html:root[data-bs-theme='light'] .term .p { color: #00f0ff; }
+  html:root[data-bs-theme='light'] .term .p { color: var(--cp-cyan); }
   html:root[data-bs-theme='light'] .term-bar .live,
-  html:root[data-bs-theme='light'] .term .d { color: #ff2a6d; }
-  html:root[data-bs-theme='light'] .term .y { color: #fcee0a; }
-  html:root[data-bs-theme='light'] .cursor { background: #00f0ff; box-shadow: 0 0 10px #00f0ff; }
+  html:root[data-bs-theme='light'] .term .d { color: var(--cp-magenta); }
+  html:root[data-bs-theme='light'] .term .y { color: #9a7400; }
+  html:root[data-bs-theme='light'] .cursor { background: var(--cp-cyan); box-shadow: 0 0 8px rgb(10 126 144 / 50%); }
 
   .portrait { position: relative; width: 210px; height: 210px; }
   .portrait .frame { position: absolute; inset: 0; padding: 3px; background: linear-gradient(135deg, var(--cp-cyan), transparent 40%, transparent 60%, var(--cp-magenta)); clip-path: polygon(24px 0, 100% 0, 100% calc(100% - 24px), calc(100% - 24px) 100%, 0 100%, 0 24px); }
-  .portrait .frame a, .portrait .frame img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 0 !important; border: 0 !important; clip-path: polygon(22px 0, 100% 0, 100% calc(100% - 22px), calc(100% - 22px) 100%, 0 100%, 0 22px); }
+  .portrait .frame a, .portrait .frame img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 0 !important; border: 0 !important; background: var(--cp-panel); clip-path: polygon(22px 0, 100% 0, 100% calc(100% - 22px), calc(100% - 22px) 100%, 0 100%, 0 22px); }
   .portrait::before, .portrait::after { content: ''; position: absolute; width: 26px; height: 26px; border: 2px solid var(--cp-yellow); }
   .portrait::before { top: -10px; right: -10px; border-left: 0; border-bottom: 0; }
   .portrait::after { bottom: -10px; left: -10px; border-right: 0; border-top: 0; }
