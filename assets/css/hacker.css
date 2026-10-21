@@ -6,12 +6,12 @@
 
 html:root,
 html:root[data-bs-theme='dark'] {
-  --cp-bg: #07090f;
-  --cp-bg-2: #0a0e17;
-  --cp-panel: #0d121d;
-  --cp-panel-2: #111827;
-  --cp-line: #1a2336;
-  --cp-line-2: #263451;
+  --cp-bg: #0c111c;
+  --cp-bg-2: #0f1522;
+  --cp-panel: #131a28;
+  --cp-panel-2: #171f30;
+  --cp-line: #202a40;
+  --cp-line-2: #2c3b57;
   --cp-cyan: #00f0ff;
   --cp-cyan-dim: #0aa8b8;
   --cp-magenta: #ff2a6d;
@@ -25,7 +25,7 @@ html:root[data-bs-theme='dark'] {
 
   /* Chirpy variables */
   --main-bg: var(--cp-bg);
-  --mask-bg: #0d1426;
+  --mask-bg: #0f1829;
   --main-border-color: var(--cp-line);
   --text-color: var(--cp-text);
   --text-muted-color: var(--cp-mute);
@@ -46,7 +46,7 @@ html:root[data-bs-theme='dark'] {
   --card-shadow: none;
   --site-title-color: var(--cp-ink);
   --site-subtitle-color: var(--cp-mute);
-  --sidebar-bg: #05070c;
+  --sidebar-bg: #080c15;
   --sidebar-border-color: var(--cp-line);
   --sidebar-muted-color: var(--cp-mute);
   --sidebar-active-color: var(--cp-cyan);
@@ -54,7 +54,7 @@ html:root[data-bs-theme='dark'] {
   --sidebar-btn-bg: var(--cp-panel);
   --sidebar-btn-color: var(--cp-mute);
   --avatar-border-color: var(--cp-cyan);
-  --topbar-bg: rgb(7 9 15 / 78%);
+  --topbar-bg: rgb(12 17 28 / 80%);
   --topbar-text-color: var(--cp-text);
   --search-border-color: var(--cp-line-2);
   --search-icon-color: var(--cp-mute);
@@ -73,10 +73,10 @@ html:root[data-bs-theme='dark'] {
   --btn-share-hover-color: var(--cp-cyan);
   --inline-code-bg: rgb(0 240 255 / 7%);
   --code-color: #7cf6ff;
-  --highlight-bg-color: #0a0f1a;
+  --highlight-bg-color: #0f1522;
   --highlighter-rouge-color: var(--cp-text);
   --highlight-lineno-color: #3d4b66;
-  --code-header-bg: #0d1322;
+  --code-header-bg: #121a28;
   --code-header-text-color: var(--cp-mute);
   --code-header-muted-color: #33415c;
   --code-header-icon-color: var(--cp-mute);
@@ -99,12 +99,12 @@ html:root[data-bs-theme='dark'] {
    -------------------------------------------------------------------------- */
 
 html:root[data-bs-theme='light'] {
-  --cp-bg: #f3f5fa;
-  --cp-bg-2: #e9edf5;
-  --cp-panel: #ffffff;
-  --cp-panel-2: #eef2f9;
-  --cp-line: #d5dce8;
-  --cp-line-2: #b7c2d4;
+  --cp-bg: #edf0f6;
+  --cp-bg-2: #e4e9f1;
+  --cp-panel: #f7f9fc;
+  --cp-panel-2: #ebeff6;
+  --cp-line: #d1d9e5;
+  --cp-line-2: #b4bfd1;
   --cp-cyan: #0a7e90;
   --cp-cyan-dim: #0a6677;
   --cp-magenta: #cf1457;
@@ -119,16 +119,16 @@ html:root[data-bs-theme='light'] {
   --blockquote-text-color: #4a5570;
   --link-underline-color: rgb(10 126 144 / 35%);
   --card-shadow: 0 1px 3px rgb(18 26 43 / 8%);
-  --sidebar-bg: #eef2f9;
+  --sidebar-bg: #e9edf4;
   --sidebar-hover-bg: rgb(10 126 144 / 10%);
-  --topbar-bg: rgb(243 245 250 / 85%);
+  --topbar-bg: rgb(237 240 246 / 88%);
   --tag-hover: rgb(10 126 144 / 12%);
   --footnote-target-bg: rgb(207 20 87 / 18%);
   --inline-code-bg: rgb(10 126 144 / 10%);
   --code-color: #0a6f80;
-  --highlight-bg-color: #f1f4f9;
+  --highlight-bg-color: #eaeef5;
   --highlight-lineno-color: #9aa6bb;
-  --code-header-bg: #e7ecf5;
+  --code-header-bg: #e2e8f1;
   --code-header-muted-color: #aeb9cb;
 }
 
@@ -587,7 +587,7 @@ html:root[data-bs-theme='light'] body::after {
 
 /* boot screen matches the light page instead of flashing near-black */
 html:root[data-bs-theme='light'] #cp-boot {
-  background: radial-gradient(circle at 50% 40%, #ffffff, #e6ebf4 70%);
+  background: radial-gradient(circle at 50% 40%, #f3f6fb, #e4eaf3 70%);
 }
 
 /* lab box: keep the "LAB x.x" badge legible and the border visible on white */
