@@ -132,6 +132,12 @@
   type: "Binding to an Unrestricted IP Address"
   date: 2026-10-11
   url: https://www.cve.org/CVERecord?id=CVE-2026-108760
+- id: CVE-2026-115505
+  cvss: 7.6
+  plugin: "libsmb2 < 6.3"
+  type: "Integer Overflow or Wraparound"
+  date: 2026-10-22
+  url: https://www.cve.org/CVERecord?id=CVE-2026-115505
 - id: CVE-2026-32481
   cvss: 7.5
   plugin: "Ezoic <= 2.22.11"
