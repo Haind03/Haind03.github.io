@@ -702,6 +702,18 @@
   type: "Out-of-bounds Write"
   date: 2026-10-27
   url: https://www.cve.org/CVERecord?id=CVE-2026-116842
+- id: CVE-2026-117555
+  cvss: 6.9
+  plugin: "CImg <= 4.0.6"
+  type: "Integer Overflow or Wraparound"
+  date: 2026-10-27
+  url: https://www.cve.org/CVERecord?id=CVE-2026-117555
+- id: CVE-2026-117557
+  cvss: 6.9
+  plugin: "SDL_image <= 2.8.12 and 3.0.0 to 3.4.8"
+  type: "Out-of-bounds Read"
+  date: 2026-10-27
+  url: https://www.cve.org/CVERecord?id=CVE-2026-117557
 - id: CVE-2016-20099
   cvss: 6.8
   plugin: "l-smash <= 2.14.5"
@@ -1332,6 +1344,12 @@
   type: "Use of Uninitialized Resource"
   date: 2026-10-26
   url: https://www.cve.org/CVERecord?id=CVE-2026-116739
+- id: CVE-2026-117556
+  cvss: 5.3
+  plugin: "zchunk < 1.5.5"
+  type: "Out-of-bounds Read"
+  date: 2026-10-27
+  url: https://www.cve.org/CVERecord?id=CVE-2026-117556
 - id: CVE-2026-108115
   cvss: 4.9
   plugin: "suna <= 0.13.52"
