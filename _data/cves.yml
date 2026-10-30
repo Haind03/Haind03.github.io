@@ -714,6 +714,12 @@
   type: "Out-of-bounds Read"
   date: 2026-10-27
   url: https://www.cve.org/CVERecord?id=CVE-2026-117557
+- id: CVE-2026-119601
+  cvss: 6.9
+  plugin: "AFFLIB <= 3.7.22"
+  type: "Out-of-bounds Write"
+  date: 2026-10-30
+  url: https://www.cve.org/CVERecord?id=CVE-2026-119601
 - id: CVE-2016-20099
   cvss: 6.8
   plugin: "l-smash <= 2.14.5"
@@ -1098,6 +1104,18 @@
   type: "Integer Overflow or Wraparound"
   date: 2026-10-26
   url: https://www.cve.org/CVERecord?id=CVE-2026-116734
+- id: CVE-2026-119600
+  cvss: 6.3
+  plugin: "tcpflow <= 1.6.1"
+  type: "Improper Handling of Length Parameter Inconsistency"
+  date: 2026-10-30
+  url: https://www.cve.org/CVERecord?id=CVE-2026-119600
+- id: CVE-2026-119602
+  cvss: 6.3
+  plugin: "libmspack <= 0.11alpha"
+  type: "Use of Uninitialized Resource"
+  date: 2026-10-30
+  url: https://www.cve.org/CVERecord?id=CVE-2026-119602
 - id: CVE-2026-108592
   cvss: 6.0
   plugin: "mini-swe-agent <= 2.4.6"
