@@ -336,6 +336,12 @@
   type: "NULL Pointer Dereference"
   date: 2026-10-26
   url: https://www.cve.org/CVERecord?id=CVE-2026-116740
+- id: CVE-2026-120451
+  cvss: 7.0
+  plugin: "libgphoto2 <= 2.5.34"
+  type: "Out-of-bounds Write"
+  date: 2026-11-02
+  url: https://www.cve.org/CVERecord?id=CVE-2026-120451
 - id: CVE-2024-58397
   cvss: 6.9
   plugin: "mp4v2 <= 2.1.3"
@@ -720,6 +726,18 @@
   type: "Out-of-bounds Write"
   date: 2026-10-30
   url: https://www.cve.org/CVERecord?id=CVE-2026-119601
+- id: CVE-2026-120455
+  cvss: 6.9
+  plugin: "rapidyaml <= 0.16.0"
+  type: "Out-of-bounds Write"
+  date: 2026-11-02
+  url: https://www.cve.org/CVERecord?id=CVE-2026-120455
+- id: CVE-2026-120456
+  cvss: 6.9
+  plugin: "L-SMASH <= 2.14.5"
+  type: "Out-of-bounds Write"
+  date: 2026-11-02
+  url: https://www.cve.org/CVERecord?id=CVE-2026-120456
 - id: CVE-2016-20099
   cvss: 6.8
   plugin: "l-smash <= 2.14.5"
@@ -1002,6 +1020,18 @@
   type: "Out-of-bounds Read"
   date: 2026-10-27
   url: https://www.cve.org/CVERecord?id=CVE-2026-116841
+- id: CVE-2026-120454
+  cvss: 6.8
+  plugin: "The Sleuth Kit <= 4.15.0"
+  type: "NULL Pointer Dereference"
+  date: 2026-11-02
+  url: https://www.cve.org/CVERecord?id=CVE-2026-120454
+- id: CVE-2026-120458
+  cvss: 6.8
+  plugin: "Kvazaar <= 2.3.2"
+  type: "Infinite Loop"
+  date: 2026-11-02
+  url: https://www.cve.org/CVERecord?id=CVE-2026-120458
 - id: CVE-2026-56050
   cvss: 6.5
   plugin: "PPOM Product Addons & Custom Fields for WooCommerce <= 33.0.18"
@@ -1176,6 +1206,12 @@
   type: "Integer Overflow or Wraparound"
   date: 2026-10-18
   url: https://www.cve.org/CVERecord?id=CVE-2026-112011
+- id: CVE-2026-120457
+  cvss: 5.8
+  plugin: "libaec <= 1.1.7"
+  type: "Unsigned to Signed Conversion Error"
+  date: 2026-11-02
+  url: https://www.cve.org/CVERecord?id=CVE-2026-120457
 - id: CVE-2026-108599
   cvss: 5.7
   plugin: "phi <= 0.28.4"
@@ -1230,6 +1266,12 @@
   type: "Missing Authorization"
   date: 2026-10-11
   url: https://www.cve.org/CVERecord?id=CVE-2026-108756
+- id: CVE-2026-120452
+  cvss: 5.4
+  plugin: "libgphoto2 <= 2.5.34"
+  type: "Out-of-bounds Write"
+  date: 2026-11-02
+  url: https://www.cve.org/CVERecord?id=CVE-2026-120452
 - id: CVE-2026-108111
   cvss: 5.3
   plugin: "ruoyi-ai <= 3.1.0"
@@ -1458,6 +1500,18 @@
   type: "Numeric Truncation Error"
   date: 2026-10-26
   url: https://www.cve.org/CVERecord?id=CVE-2026-116742
+- id: CVE-2025-71450
+  cvss: 4.8
+  plugin: "inih < r63"
+  type: "Buffer Under-read"
+  date: 2026-11-02
+  url: https://www.cve.org/CVERecord?id=CVE-2025-71450
+- id: CVE-2026-120453
+  cvss: 4.8
+  plugin: "The Sleuth Kit <= 4.15.0"
+  type: "Out-of-bounds Read"
+  date: 2026-11-02
+  url: https://www.cve.org/CVERecord?id=CVE-2026-120453
 - id: CVE-2026-108579
   cvss: 4.2
   plugin: "openpanel <= 2.3.0"
