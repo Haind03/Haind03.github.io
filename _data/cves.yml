@@ -102,6 +102,12 @@
   type: "Integer Overflow or Wraparound"
   date: 2026-10-26
   url: https://www.cve.org/CVERecord?id=CVE-2026-116724
+- id: CVE-2026-121941
+  cvss: 8.5
+  plugin: "libmt32emu < 2.8.4"
+  type: "Heap-based Buffer Overflow"
+  date: 2026-11-04
+  url: https://www.cve.org/CVERecord?id=CVE-2026-121941
 - id: CVE-2026-108740
   cvss: 8.3
   plugin: "GoatCounter <= 2.7.0"
@@ -738,6 +744,12 @@
   type: "Out-of-bounds Write"
   date: 2026-11-02
   url: https://www.cve.org/CVERecord?id=CVE-2026-120456
+- id: CVE-2026-121942
+  cvss: 6.9
+  plugin: "ZBar <= 0.23.95"
+  type: "Out-of-bounds Read"
+  date: 2026-11-04
+  url: https://www.cve.org/CVERecord?id=CVE-2026-121942
 - id: CVE-2016-20099
   cvss: 6.8
   plugin: "l-smash <= 2.14.5"
@@ -1032,6 +1044,12 @@
   type: "Infinite Loop"
   date: 2026-11-02
   url: https://www.cve.org/CVERecord?id=CVE-2026-120458
+- id: CVE-2026-121944
+  cvss: 6.8
+  plugin: "sngrep <= 1.9.0"
+  type: "Infinite Loop"
+  date: 2026-11-04
+  url: https://www.cve.org/CVERecord?id=CVE-2026-121944
 - id: CVE-2026-56050
   cvss: 6.5
   plugin: "PPOM Product Addons & Custom Fields for WooCommerce <= 33.0.18"
@@ -1146,6 +1164,12 @@
   type: "Use of Uninitialized Resource"
   date: 2026-10-30
   url: https://www.cve.org/CVERecord?id=CVE-2026-119602
+- id: CVE-2026-121943
+  cvss: 6.3
+  plugin: "sngrep <= 1.9.0"
+  type: "Improper Null Termination"
+  date: 2026-11-04
+  url: https://www.cve.org/CVERecord?id=CVE-2026-121943
 - id: CVE-2026-108592
   cvss: 6.0
   plugin: "mini-swe-agent <= 2.4.6"
