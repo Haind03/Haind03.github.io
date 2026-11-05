@@ -108,6 +108,18 @@
   type: "Heap-based Buffer Overflow"
   date: 2026-11-04
   url: https://www.cve.org/CVERecord?id=CVE-2026-121941
+- id: CVE-2026-122328
+  cvss: 8.5
+  plugin: "SDL_mixer 3.1.2 to 3.2.4"
+  type: "Stack-based Buffer Overflow"
+  date: 2026-11-05
+  url: https://www.cve.org/CVERecord?id=CVE-2026-122328
+- id: CVE-2026-122329
+  cvss: 8.5
+  plugin: "SDL_mixer 3.1.2 to 3.2.4"
+  type: "Stack-based Buffer Overflow"
+  date: 2026-11-05
+  url: https://www.cve.org/CVERecord?id=CVE-2026-122329
 - id: CVE-2026-108740
   cvss: 8.3
   plugin: "GoatCounter <= 2.7.0"
@@ -1050,6 +1062,12 @@
   type: "Infinite Loop"
   date: 2026-11-04
   url: https://www.cve.org/CVERecord?id=CVE-2026-121944
+- id: CVE-2026-122330
+  cvss: 6.8
+  plugin: "c-blosc2 < 3.5.0"
+  type: "Divide by Zero"
+  date: 2026-11-05
+  url: https://www.cve.org/CVERecord?id=CVE-2026-122330
 - id: CVE-2026-56050
   cvss: 6.5
   plugin: "PPOM Product Addons & Custom Fields for WooCommerce <= 33.0.18"
